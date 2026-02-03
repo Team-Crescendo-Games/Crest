@@ -1,0 +1,67 @@
+# -----------------------------
+# NEXT.JS & REACT
+# -----------------------------
+/.next/
+/out/
+/build
+.next
+dist/
+.cache/
+
+# -----------------------------
+# DEPENDENCIES
+# -----------------------------
+/node_modules
+/.pnp
+.pnp.js
+
+# -----------------------------
+# ENVIRONMENT & SECRETS (AWS, Cognito, RDS)
+# -----------------------------
+# Ignore ALL .env files to prevent leaking AWS keys/DB passwords
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.local
+
+# AWS specific (if using AWS CLI or SDKs locally)
+.aws/
+aws-credentials
+aws-config
+
+# If you use AWS Amplify locally by accident
+# (Keeps project config but hides specifics)
+amplify/\#current-cloud-backend
+amplify/.config/local-*
+amplify/mock-data
+src/aws-exports.js
+aws_exports.js
+awsconfiguration.json
+
+# -----------------------------
+# LOGS & DIAGNOSTICS
+# -----------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# -----------------------------
+# TESTING & COVERAGE
+# -----------------------------
+/coverage
+/.nyc_output
+
+# -----------------------------
+# SYSTEM & IDE
+# -----------------------------
+.DS_Store
+*.pem
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
