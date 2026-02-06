@@ -25,16 +25,19 @@ const BoardView = ({ id, setIsModalNewTaskOpen }: BoardProps) => {
 
   // Modal state management for task detail modal
   const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<TaskType | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+
+  // Derive selected task from fresh query data
+  const selectedTask = tasks?.find((t) => t.id === selectedTaskId) || null;
 
   const handleTaskClick = (task: TaskType) => {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
     setIsTaskDetailModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsTaskDetailModalOpen(false);
-    setSelectedTask(null);
+    setSelectedTaskId(null);
   };
 
   const moveTask = (taskId: number, toStatus: string) => {
@@ -62,6 +65,7 @@ const BoardView = ({ id, setIsModalNewTaskOpen }: BoardProps) => {
         isOpen={isTaskDetailModalOpen}
         onClose={handleCloseModal}
         task={selectedTask}
+        tasks={tasks || []}
       />
     </DndProvider>
   );
@@ -133,6 +137,18 @@ const TaskColumn = ({
           </div>
         </div>
       </div>
+
+      {status === "To Do" && (
+        <button
+          onClick={() => setIsModalNewTaskOpen(true)}
+          className="mb-2 flex w-full items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 p-3 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:border-stroke-dark dark:bg-dark-secondary/50 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200/70 dark:bg-dark-tertiary/70">
+            <Plus size={14} />
+          </span>
+          <span className="text-sm font-medium">Create Task</span>
+        </button>
+      )}
 
       {tasks
         .filter((task) => task.status === status)

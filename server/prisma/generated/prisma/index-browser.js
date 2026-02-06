@@ -144,7 +144,8 @@ exports.Prisma.TaskScalarFieldEnum = {
   points: 'points',
   projectId: 'projectId',
   authorUserId: 'authorUserId',
-  assignedUserId: 'assignedUserId'
+  assignedUserId: 'assignedUserId',
+  parentTaskId: 'parentTaskId'
 };
 
 exports.Prisma.TagScalarFieldEnum = {

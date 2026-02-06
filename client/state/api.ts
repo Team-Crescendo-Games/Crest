@@ -45,6 +45,19 @@ export interface TaskTag {
     tag: Tag;
 }
 
+export interface SubtaskSummary {
+    id: number;
+    title: string;
+    status?: string;
+    priority?: string;
+    assignee?: { userId: number; username: string; profilePictureUrl?: string };
+}
+
+export interface ParentTaskSummary {
+    id: number;
+    title: string;
+}
+
 export interface Task {
     id: number;
     title: string;
@@ -63,6 +76,8 @@ export interface Task {
     comments?: Comment[];
     attachments?: Attachment[];
     taskTags?: TaskTag[];
+    subtasks?: SubtaskSummary[];
+    parentTask?: ParentTaskSummary | null;
 }
 
 export interface SearchResults {
@@ -160,6 +175,17 @@ export const api = createApi({
             ],
         }),
 
+        updateTask: build.mutation<Task, Partial<Task> & { id: number }>({
+            query: ({ id, ...body }) => ({
+                url: `tasks/${id}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (result, error, { id }) => [
+                { type: "Tasks", id },
+            ],
+        }),
+
         // users
         getUsers: build.query<User[], void>({
             query: () => "users",
@@ -232,6 +258,7 @@ export const {
     useGetTasksQuery,
     useCreateTaskMutation,
     useUpdateTaskStatusMutation,
+    useUpdateTaskMutation,
     useSearchQuery,
     useGetUsersQuery,
     useGetTasksByUserQuery,

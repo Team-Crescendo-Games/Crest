@@ -29,6 +29,18 @@ export const getTasks = async (_req: Request, res: Response) => {
                     comments: true,
                     attachments: true,
                     taskTags: { include: { tag: true } },
+                    subtasks: {
+                        select: {
+                            id: true,
+                            title: true,
+                            status: true,
+                            priority: true,
+                            assignee: { select: { userId: true, username: true, profilePictureUrl: true } },
+                        },
+                    },
+                    parentTask: {
+                        select: { id: true, title: true },
+                    },
                 }
             }
         );
@@ -103,6 +115,52 @@ export const updateTaskStatus = async (
         res.json(updatedTask);
     } catch (error: any) {
         res.status(500).json({ message: `Error updating task: ${error.message}` });
+    }
+};
+
+export const updateTask = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const { taskId } = req.params;
+    const { title, description, status, priority, startDate, dueDate, points, assignedUserId } = req.body;
+    try {
+        const data: Record<string, any> = {};
+        if (title !== undefined) data.title = title;
+        if (description !== undefined) data.description = description;
+        if (status !== undefined) data.status = status || null;
+        if (priority !== undefined) data.priority = priority || null;
+        if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
+        if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+        if (points !== undefined) data.points = points !== null && points !== "" ? Number(points) : null;
+        if (assignedUserId !== undefined) data.assignedUserId = assignedUserId ? Number(assignedUserId) : null;
+
+        const updatedTask = await getPrismaClient().task.update({
+            where: { id: Number(taskId) },
+            data,
+            include: {
+                author: true,
+                assignee: true,
+                comments: true,
+                attachments: true,
+                taskTags: { include: { tag: true } },
+                subtasks: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        priority: true,
+                        assignee: { select: { userId: true, username: true, profilePictureUrl: true } },
+                    },
+                },
+                parentTask: {
+                    select: { id: true, title: true },
+                },
+            },
+        });
+        res.json(updatedTask);
+    } catch (error: any) {
+        res.status(500).json({ error: `Error updating task: ${error.message}` });
     }
 };
 

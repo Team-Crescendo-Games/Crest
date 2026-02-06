@@ -64,6 +64,7 @@ const Users = () => {
                     }}
                     className={dataGridClassNames}
                     sx={dataGridSxStyles(isDarkMode)}
+                    rowHeight={30}
                 />
             </div>
         </div>

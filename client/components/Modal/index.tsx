@@ -8,9 +8,11 @@ type Props = {
     isOpen: boolean;
     onClose: () => void;
     name: string;
+    headerRight?: React.ReactNode;
+    hideClose?: boolean;
 };
 
-const Modal = ({ children, isOpen, onClose, name }: Props) => {
+const Modal = ({ children, isOpen, onClose, name, headerRight, hideClose }: Props) => {
     useEffect(() => {
         if (!isOpen) return;
 
@@ -41,12 +43,17 @@ const Modal = ({ children, isOpen, onClose, name }: Props) => {
                 <Header
                     name={name}
                     buttonComponent={
-                        <button
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
-                            onClick={onClose}
-                        >
-                            <X size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {headerRight}
+                            {!hideClose && (
+                                <button
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+                                    onClick={onClose}
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </div>
                     }
                     isSmallText
                 />

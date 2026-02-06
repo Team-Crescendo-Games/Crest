@@ -1,4 +1,5 @@
 import { Task } from "@/state/api";
+import RadialProgress from "@/components/RadialProgress";
 import { format } from "date-fns";
 import { MessageSquareMore } from "lucide-react";
 import Image from "next/image";
@@ -30,14 +31,17 @@ const PriorityTag = ({ priority }: { priority: Task["priority"] }) => (
 const TaskCard = ({ task, onClick, className = "" }: Props) => {
   const tags = task.taskTags?.map((tt) => tt.tag.name) || [];
 
-  const formattedStartDate = task.startDate
-    ? format(new Date(task.startDate), "P")
-    : "";
   const formattedDueDate = task.dueDate
     ? format(new Date(task.dueDate), "P")
     : "";
 
   const numberOfComments = (task.comments && task.comments.length) || 0;
+
+  const subtasks = task.subtasks ?? [];
+  const totalCount = subtasks.length;
+  const completedCount = subtasks.filter(
+    (s) => s.status === "Completed",
+  ).length;
 
   return (
     <div
@@ -47,24 +51,11 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
       } ${className}`}
     >
       <div className="p-2 md:p-3">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-1 flex-wrap items-center gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-bold dark:text-white">{task.title}</h4>
             {task.priority && <PriorityTag priority={task.priority} />}
-            <div className="flex gap-1">
-              {tags.map((tag) => (
-                <div
-                  key={tag}
-                  className="rounded-full bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-tertiary"
-                >
-                  {tag}
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
-
-        <div className="my-1.5 flex justify-between">
-          <h4 className="text-sm font-bold dark:text-white">{task.title}</h4>
           {typeof task.points === "number" && (
             <div className="text-xs font-semibold dark:text-white">
               {task.points} pts
@@ -72,10 +63,24 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
           )}
         </div>
 
-        <div className="text-xs text-gray-500 dark:text-neutral-500">
-          {formattedStartDate && <span>{formattedStartDate} - </span>}
-          {formattedDueDate && <span>{formattedDueDate}</span>}
-        </div>
+        {tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <div
+                key={tag}
+                className="rounded-full bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-dark-tertiary"
+              >
+                {tag}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {formattedDueDate && (
+          <div className="mt-1.5 text-xs text-gray-500 dark:text-neutral-500">
+            DueDate: {formattedDueDate}
+          </div>
+        )}
         <div className="mt-2 border-t border-gray-200 dark:border-stroke-dark" />
 
         {/* Users */}
@@ -107,6 +112,14 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
               <MessageSquareMore size={16} />
               <span className="ml-1 text-xs dark:text-neutral-400">
                 {numberOfComments}
+              </span>
+            </div>
+          )}
+          {totalCount > 0 && (
+            <div className="flex items-center gap-1 text-gray-500 dark:text-neutral-500">
+              <RadialProgress completed={completedCount} total={totalCount} />
+              <span className="text-xs dark:text-neutral-400">
+                {completedCount}/{totalCount}
               </span>
             </div>
           )}

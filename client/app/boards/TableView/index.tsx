@@ -1,9 +1,9 @@
+import { useState } from "react";
 import { useAppSelector } from "@/app/redux";
-import Header from "@/components/Header";
 import { dataGridClassNames, dataGridSxStyles } from "@/lib/utils";
 import { useGetTasksQuery } from "@/state/api";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import React from "react";
+import TaskDetailModal from "@/components/TaskDetailModal";
 
 type Props = {
   id: string;
@@ -68,30 +68,40 @@ const TableView = ({ id, setIsModalNewTaskOpen }: Props) => {
     isLoading,
   } = useGetTasksQuery({ projectId: Number(id) });
 
+  // Modal state management for task detail modal
+  const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+
+  const selectedTask = tasks?.find((t) => t.id === selectedTaskId) || null;
+
+  const handleRowClick = (params: { id: number | string }) => {
+    setSelectedTaskId(Number(params.id));
+    setIsTaskDetailModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsTaskDetailModalOpen(false);
+    setSelectedTaskId(null);
+  };
+
   if (isLoading) return <div>Loading...</div>;
   if (error || !tasks) return <div>An error occurred while fetching tasks</div>;
 
   return (
-    <div className="h-[540px] w-full px-4 pb-8 xl:px-6">
-      <div className="pt-5">
-        <Header
-          name="Table"
-          buttonComponent={
-            <button
-              className="flex items-center rounded bg-blue-primary px-3 py-2 text-white hover:bg-blue-600"
-              onClick={() => setIsModalNewTaskOpen(true)}
-            >
-              Add Task
-            </button>
-          }
-          isSmallText
-        />
-      </div>
+    <div className="h-[500px] w-full px-4 pb-8 xl:px-6">
       <DataGrid
         rows={tasks || []}
         columns={columns}
         className={dataGridClassNames}
         sx={dataGridSxStyles(isDarkMode)}
+        rowHeight={30}
+        onRowClick={handleRowClick}
+      />
+      <TaskDetailModal
+        isOpen={isTaskDetailModalOpen}
+        onClose={handleCloseModal}
+        task={selectedTask}
+        tasks={tasks || []}
       />
     </div>
   );
