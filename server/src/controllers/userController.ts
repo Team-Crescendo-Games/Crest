@@ -30,7 +30,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
     try {
         const user = await getPrismaClient().user.findUnique({
             where: {
-                userId: 1,
+                cognitoId: String(cognitoId),
             },
         });
 
