@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Modal from "../Modal";
 import SubtaskHierarchy from "@/components/SubtaskHierarchy";
-import { Task, Priority, Status, useUpdateTaskMutation, useGetUsersQuery, useGetTagsQuery, useCreateCommentMutation, useGetAuthUserQuery, getAttachmentS3Key, getUserProfileS3Key } from "@/state/api";
+import { Task, Priority, Status, useUpdateTaskMutation, useGetUsersQuery, useGetTagsQuery, useCreateCommentMutation, useGetAuthUserQuery, useGetProjectsQuery, getAttachmentS3Key, getUserProfileS3Key } from "@/state/api";
 import { format } from "date-fns";
-import { Calendar, MessageSquareMore, User, Users, Tag, Award, Pencil, X, Plus, Paperclip } from "lucide-react";
+import { Calendar, MessageSquareMore, User, Users, Tag, Award, Pencil, X, Plus, Paperclip, Zap, Flag } from "lucide-react";
+import UserIcon from "@/components/UserIcon";
 import S3Image from "@/components/S3Image";
+import { BiColumns } from "react-icons/bi";
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -60,6 +63,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
   const [createComment, { isLoading: isAddingComment }] = useCreateCommentMutation();
   const { data: users } = useGetUsersQuery();
   const { data: allTags } = useGetTagsQuery();
+  const { data: projects } = useGetProjectsQuery();
   const { data: authData } = useGetAuthUserQuery({});
   const [previewAttachmentId, setPreviewAttachmentId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState("");
@@ -171,12 +175,20 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      name={currentTask.title}
+      name={
+        <div className="flex items-center gap-2">
+          <span>{currentTask.title}</span>
+          {!isEditing && typeof currentTask.points === "number" && (
+            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              {currentTask.points} pts
+            </span>
+          )}
+        </div>
+      }
       hideClose={isEditing}
       hideHeader={isEditing}
       headerRight={
-        <div className="flex items-center gap-2">
-          {currentTask.priority && <PriorityTag priority={currentTask.priority} />}
+        !isEditing && (
           <button
             onClick={handleEditClick}
             className="flex h-7 w-7 items-center justify-center rounded text-gray-600 hover:bg-gray-100 dark:text-neutral-300 dark:hover:bg-dark-tertiary"
@@ -184,7 +196,83 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
           >
             <Pencil size={16} />
           </button>
-        </div>
+        )
+      }
+      leftPanel={
+        !isEditing ? (
+          <div className="flex flex-col gap-3 pt-4 items-end animate-slide-in-left">
+            {/* Board */}
+            {projects && (
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                  {projects.find(p => p.id === currentTask.projectId)?.name || `Board ${currentTask.projectId}`}
+                </span>
+                <div className="relative group">
+                  <BiColumns className="h-4 w-4 text-white dark:text-neutral-500" />
+                </div>
+              </div>
+            )}
+            
+            {/* Priority */}
+            {currentTask.priority && (
+              <div className="flex items-center gap-2">
+                <PriorityTag priority={currentTask.priority} />
+                <div className="relative group">
+                  <Flag className="h-4 w-4 text-white dark:text-neutral-500" />
+                </div>
+              </div>
+            )}
+            
+            {/* Status */}
+            {currentTask.status && (
+              <div className="flex items-center gap-2">
+                <StatusBadge status={currentTask.status} />
+                <div className="relative group">
+                  <Award className="h-4 w-4 text-white dark:text-neutral-500" />
+                </div>
+              </div>
+            )}
+            
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div className="flex items-start gap-2">
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="relative group">
+                  <Tag className="h-4 w-4 text-white dark:text-neutral-500 mt-0.5" />
+                </div>
+              </div>
+            )}
+            
+            {/* Sprints */}
+            {currentTask.sprints && currentTask.sprints.length > 0 && (
+              <div className="flex items-start gap-2">
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {currentTask.sprints.map((sprint) => (
+                    <Link
+                      key={sprint.id}
+                      href={`/sprints/${sprint.id}`}
+                      className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800"
+                    >
+                      {sprint.title}
+                    </Link>
+                  ))}
+                </div>
+                <div className="relative group">
+                  <Zap className="h-4 w-4 text-white dark:text-neutral-500 mt-0.5" />
+                </div>
+              </div>
+            )}
+          </div>
+        ) : undefined
       }
       rightPanel={
         !isEditing ? (
@@ -305,17 +393,18 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
         ) : undefined
       }
     >
-      <div className="space-y-6 dark:text-white">
+      <div className="space-y-6 dark:text-white animate-fade-in-up">
         {/* Save success message */}
         {saveMessage && (
-          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-300">
+          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-300 animate-slide-down">
             Task saved successfully
           </div>
         )}
+        
         {/* Title edit input (only in edit mode) */}
         {isEditing && (
           <input
-            className={inputClass}
+            className={`${inputClass} animate-slide-down`}
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             placeholder="Task title"
@@ -338,25 +427,73 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
           )}
         </div>
 
-        {/* Metadata */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Status */}
+        {/* Schedule - Start Date & Due Date */}
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+            <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+            <span className="text-sm text-gray-600 dark:text-neutral-400">Start:</span>
             {isEditing ? (
+              <input type="date" className={selectClass} value={editStartDate} onChange={(e) => setEditStartDate(e.target.value)} />
+            ) : (
+              <span className="text-sm text-gray-900 dark:text-white">{formattedStartDate}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+            <span className="text-sm text-gray-600 dark:text-neutral-400">Due:</span>
+            {isEditing ? (
+              <input type="date" className={selectClass} value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} />
+            ) : (
+              <span className="text-sm text-gray-900 dark:text-white">{formattedDueDate}</span>
+            )}
+          </div>
+        </div>
+
+        {/* People Section - Assignee and Author */}
+        {!isEditing && (
+          <div className="flex items-center gap-4">
+            {/* Assignee */}
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+              <UserIcon
+                userId={currentTask.assignee?.userId}
+                username={currentTask.assignee?.username}
+                profilePictureExt={currentTask.assignee?.profilePictureExt}
+                size={32}
+                tooltipLabel="Assignee"
+              />
+            </div>
+            
+            {/* Author */}
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+              <UserIcon
+                userId={currentTask.author?.userId}
+                username={currentTask.author?.username}
+                profilePictureExt={currentTask.author?.profilePictureExt}
+                size={32}
+                tooltipLabel="Author"
+                opacity="opacity-75"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Edit mode metadata */}
+        {isEditing && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Status */}
+            <div className="flex items-center gap-2">
+              <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
               <select className={selectClass} value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
                 <option value="">Select Status</option>
                 {Object.values(Status).map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
-            ) : (
-              currentTask.status && <StatusBadge status={currentTask.status} />
-            )}
-          </div>
+            </div>
 
-          {/* Priority */}
-          {isEditing ? (
+            {/* Priority */}
             <div className="flex items-center gap-2">
               <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
               <span className="text-sm text-gray-600 dark:text-neutral-400">Priority:</span>
@@ -367,20 +504,8 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                 ))}
               </select>
             </div>
-          ) : (
-            typeof currentTask.points === "number" && (
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                <span className="text-sm text-gray-600 dark:text-neutral-400">Points:</span>
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {currentTask.points} pts
-                </span>
-              </div>
-            )
-          )}
 
-          {/* Points (edit mode) */}
-          {isEditing && (
+            {/* Points */}
             <div className="flex items-center gap-2">
               <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
               <span className="text-sm text-gray-600 dark:text-neutral-400">Points:</span>
@@ -391,32 +516,8 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                 onChange={(e) => setEditPoints(e.target.value)}
               />
             </div>
-          )}
 
-          {/* Start Date & Due Date */}
-          <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <span className="text-sm text-gray-600 dark:text-neutral-400">Start:</span>
-              {isEditing ? (
-                <input type="date" className={selectClass} value={editStartDate} onChange={(e) => setEditStartDate(e.target.value)} />
-              ) : (
-                <span className="text-sm text-gray-900 dark:text-white">{formattedStartDate}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <span className="text-sm text-gray-600 dark:text-neutral-400">Due:</span>
-              {isEditing ? (
-                <input type="date" className={selectClass} value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} />
-              ) : (
-                <span className="text-sm text-gray-900 dark:text-white">{formattedDueDate}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Assignee (edit mode) */}
-          {isEditing && (
+            {/* Assignee */}
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
               <span className="text-sm text-gray-600 dark:text-neutral-400">Assignee:</span>
@@ -427,14 +528,27 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                 ))}
               </select>
             </div>
-          )}
-        </div>
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tags</h3>
           </div>
-          {isEditing ? (
+        )}
+
+        {/* View mode - Points display */}
+        {!isEditing && typeof currentTask.points === "number" && (
+          <div className="flex items-center gap-2">
+            <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+            <span className="text-sm text-gray-600 dark:text-neutral-400">Points:</span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              {currentTask.points} pts
+            </span>
+          </div>
+        )}
+
+        {/* Tags (edit mode only) */}
+        {isEditing && (
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <Tag className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tags</h3>
+            </div>
             <div className="flex flex-wrap gap-2">
               {allTags?.map((tag) => {
                 const isSelected = editTagIds.includes(tag.id);
@@ -458,21 +572,8 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                 <span className="text-sm text-gray-500 dark:text-neutral-400">No tags available</span>
               )}
             </div>
-          ) : tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="text-sm text-gray-500 dark:text-neutral-400">No tags</span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Subtasks Management (edit mode only) */}
         {isEditing && tasks && (
@@ -562,62 +663,6 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
           </div>
         )}
 
-        {/* People Section */}
-        {!isEditing && (
-          <div className="border-t border-gray-200 pt-4 dark:border-stroke-dark">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Author</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  {currentTask.author?.profilePictureExt && currentTask.author?.userId ? (
-                    <S3Image
-                      s3Key={getUserProfileS3Key(currentTask.author.userId, currentTask.author.profilePictureExt)}
-                      alt={currentTask.author.username}
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary">
-                      <User className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                    </div>
-                  )}
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {currentTask.author?.username || "Unknown"}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Assignee</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  {currentTask.assignee?.profilePictureExt && currentTask.assignee?.userId ? (
-                    <S3Image
-                      s3Key={getUserProfileS3Key(currentTask.assignee.userId, currentTask.assignee.profilePictureExt)}
-                      alt={currentTask.assignee.username}
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary">
-                      <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                    </div>
-                  )}
-                  <span className="text-sm text-gray-900 dark:text-white">
-                    {currentTask.assignee?.username || "Unassigned"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Attachments */}
         {!isEditing && currentTask.attachments && currentTask.attachments.length > 0 && (
           <div className="border-t border-gray-200 pt-4 dark:border-stroke-dark">
@@ -642,13 +687,14 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                     </button>
                   </div>
                   {previewAttachmentId === attachment.id && (
-                    <div className="p-2">
+                    <div className="p-2 animate-slide-down">
                       <S3Image
                         s3Key={getAttachmentS3Key(attachment.taskId, attachment.id, attachment.fileExt)}
                         alt={attachment.fileName}
                         width={600}
                         height={400}
                         className="h-auto w-full rounded object-contain"
+                        fallbackType="image"
                       />
                     </div>
                   )}

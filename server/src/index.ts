@@ -14,6 +14,7 @@ import searchRoutes from "./routes/searchRoutes.ts";
 import tagRoutes from "./routes/tagRoutes.ts";
 import commentRoutes from "./routes/commentRoutes.ts";
 import s3Routes from "./routes/s3Routes.ts";
+import sprintRoutes from "./routes/sprintRoutes.ts";
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,7 @@ app.use("/search", searchRoutes);
 app.use("/tags", tagRoutes);
 app.use("/comments", commentRoutes);
 app.use("/s3", s3Routes);
+app.use("/sprints", sprintRoutes);
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, "0.0.0.0", () => {

@@ -6,7 +6,7 @@ import RadialProgress from "@/components/RadialProgress";
 import { format } from "date-fns";
 import { MessageSquareMore, X, Plus } from "lucide-react";
 import { Paperclip } from "lucide-react";
-import S3Image from "@/components/S3Image";
+import UserIcon from "@/components/UserIcon";
 
 type Props = {
   task: Task;
@@ -149,13 +149,14 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
 
         <div className="mt-2 flex items-center justify-between">
           <div className="flex -space-x-1 overflow-hidden">
-            {task.assignee?.userId && task.assignee?.profilePictureExt && (
-              <S3Image
-                s3Key={`users/${task.assignee.userId}/profile.${task.assignee.profilePictureExt}`}
-                alt={task.assignee.username}
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
+            {task.assignee?.userId && (
+              <UserIcon
+                userId={task.assignee.userId}
+                username={task.assignee.username}
+                profilePictureExt={task.assignee.profilePictureExt}
+                size={24}
+                className="border-2 border-white dark:border-dark-secondary"
+                tooltipLabel="Assignee"
               />
             )}
           </div>

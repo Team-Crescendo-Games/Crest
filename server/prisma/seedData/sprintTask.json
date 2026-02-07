@@ -1,0 +1,17 @@
+[
+  { "id": 1, "sprintId": 1, "taskId": 1 },
+  { "id": 2, "sprintId": 1, "taskId": 4 },
+  { "id": 3, "sprintId": 1, "taskId": 7 },
+  { "id": 4, "sprintId": 1, "taskId": 13 },
+  { "id": 5, "sprintId": 1, "taskId": 14 },
+  { "id": 6, "sprintId": 2, "taskId": 2 },
+  { "id": 7, "sprintId": 2, "taskId": 5 },
+  { "id": 8, "sprintId": 2, "taskId": 8 },
+  { "id": 9, "sprintId": 2, "taskId": 15 },
+  { "id": 10, "sprintId": 2, "taskId": 16 },
+  { "id": 11, "sprintId": 3, "taskId": 3 },
+  { "id": 12, "sprintId": 3, "taskId": 6 },
+  { "id": 13, "sprintId": 3, "taskId": 9 },
+  { "id": 14, "sprintId": 3, "taskId": 17 },
+  { "id": 15, "sprintId": 3, "taskId": 18 }
+]

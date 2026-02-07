@@ -12,9 +12,10 @@ type Props = {
     hideClose?: boolean;
     hideHeader?: boolean;
     rightPanel?: React.ReactNode;
+    leftPanel?: React.ReactNode;
 };
 
-const Modal = ({ children, isOpen, onClose, name, headerRight, hideClose, hideHeader, rightPanel }: Props) => {
+const Modal = ({ children, isOpen, onClose, name, headerRight, hideClose, hideHeader, rightPanel, leftPanel }: Props) => {
     useEffect(() => {
         if (!isOpen) return;
 
@@ -38,7 +39,16 @@ const Modal = ({ children, isOpen, onClose, name, headerRight, hideClose, hideHe
             className="fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
             onClick={onClose}
         >
-            <div className={`flex items-start gap-3 ${rightPanel ? "max-w-4xl" : "max-w-2xl"} w-full max-h-[90vh]`}>
+            <div className={`flex items-start gap-3 ${rightPanel || leftPanel ? "max-w-5xl" : "max-w-2xl"} w-full max-h-[90vh]`}>
+                {/* Left floating panel */}
+                {leftPanel && (
+                    <div 
+                        className="w-48 flex-shrink-0 max-h-[90vh] animate-scale-in overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {leftPanel}
+                    </div>
+                )}
                 {/* Main modal */}
                 <div 
                     className="flex-1 min-w-0 flex flex-col max-h-[90vh] rounded-lg bg-white shadow-lg dark:bg-dark-secondary animate-scale-in"

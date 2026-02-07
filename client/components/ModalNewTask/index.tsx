@@ -1,7 +1,8 @@
 import Modal from "@/components/Modal";
-import { Priority, Status, useCreateTaskMutation, useGetTagsQuery } from "@/state/api";
-import { useState } from "react";
-import { formatISO } from "date-fns";
+import { Priority, Status, useCreateTaskMutation, useGetTagsQuery, useGetUsersQuery, useGetProjectsQuery, useGetAuthUserQuery, User, Project } from "@/state/api";
+import { useState, useEffect, useRef } from "react";
+import { formatISO, format } from "date-fns";
+import { X, ChevronDown } from "lucide-react";
 
 type Props = {
     isOpen: boolean;
@@ -12,6 +13,10 @@ type Props = {
 const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
     const [createTask, { isLoading }] = useCreateTaskMutation();
     const { data: availableTags } = useGetTagsQuery();
+    const { data: users = [] } = useGetUsersQuery();
+    const { data: projects = [] } = useGetProjectsQuery();
+    const { data: authData } = useGetAuthUserQuery({});
+    
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState<Status>(Status.InputQueue);
@@ -19,9 +24,51 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [startDate, setStartDate] = useState("");
     const [dueDate, setDueDate] = useState("");
-    const [authorUserId, setAuthorUserId] = useState("");
-    const [assignedUserId, setAssignedUserId] = useState("");
-    const [projectId, setProjectId] = useState("");
+    const [selectedAssignees, setSelectedAssignees] = useState<User[]>([]);
+    const [assigneeSearch, setAssigneeSearch] = useState("");
+    const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [projectSearch, setProjectSearch] = useState("");
+    const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+    
+    const assigneeInputRef = useRef<HTMLInputElement>(null);
+    const projectInputRef = useRef<HTMLInputElement>(null);
+    const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+    const projectDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Set defaults when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            // Set start date to today
+            setStartDate(format(new Date(), "yyyy-MM-dd"));
+            
+            // Reset form
+            setTitle("");
+            setDescription("");
+            setStatus(Status.InputQueue);
+            setPriority(Priority.Backlog);
+            setSelectedTagIds([]);
+            setDueDate("");
+            setSelectedAssignees([]);
+            setAssigneeSearch("");
+            setSelectedProject(null);
+            setProjectSearch("");
+        }
+    }, [isOpen]);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target as Node)) {
+                setShowAssigneeDropdown(false);
+            }
+            if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+                setShowProjectDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const toggleTag = (tagId: number) => {
         setSelectedTagIds((prev) =>
@@ -29,15 +76,47 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
         );
     };
 
-    const handleSubmit = async () => {
-        if (!title || !authorUserId || !(id !== null || projectId)) return;
+    const filteredUsers = users.filter(user => {
+        const searchLower = assigneeSearch.toLowerCase().replace("@", "");
+        const matchesSearch = user.username.toLowerCase().includes(searchLower) ||
+            (user.email?.toLowerCase().includes(searchLower) ?? false);
+        const notAlreadySelected = !selectedAssignees.some(a => a.userId === user.userId);
+        return matchesSearch && notAlreadySelected;
+    });
 
-        const formattedStartDate = formatISO(new Date(startDate), {
+    const filteredProjects = projects.filter(project => {
+        const searchLower = projectSearch.toLowerCase();
+        return project.name.toLowerCase().includes(searchLower);
+    });
+
+    const addAssignee = (user: User) => {
+        setSelectedAssignees(prev => [...prev, user]);
+        setAssigneeSearch("");
+        setShowAssigneeDropdown(false);
+    };
+
+    const removeAssignee = (userId: number | undefined) => {
+        setSelectedAssignees(prev => prev.filter(a => a.userId !== userId));
+    };
+
+    const selectProject = (project: Project) => {
+        setSelectedProject(project);
+        setProjectSearch("");
+        setShowProjectDropdown(false);
+    };
+
+    const handleSubmit = async () => {
+        const authorUserId = authData?.userDetails?.userId;
+        const projectId = id !== null ? Number(id) : selectedProject?.id;
+        
+        if (!title || !authorUserId || !projectId) return;
+
+        const formattedStartDate = startDate ? formatISO(new Date(startDate), {
             representation: "complete",
-        });
-        const formattedDueDate = formatISO(new Date(dueDate), {
+        }) : undefined;
+        const formattedDueDate = dueDate ? formatISO(new Date(dueDate), {
             representation: "complete",
-        });
+        }) : undefined;
 
         await createTask({
             title,
@@ -46,9 +125,9 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
             priority,
             startDate: formattedStartDate,
             dueDate: formattedDueDate,
-            authorUserId: parseInt(authorUserId),
-            assignedUserId: parseInt(assignedUserId),
-            projectId: id !== null ? Number(id) : Number(projectId),
+            authorUserId,
+            assignedUserId: selectedAssignees[0]?.userId, // Primary assignee
+            projectId,
             tagIds: selectedTagIds,
         });
 
@@ -56,7 +135,9 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
     };
 
     const isFormValid = () => {
-        return title && authorUserId && (id !== null || projectId);
+        const authorUserId = authData?.userDetails?.userId;
+        const projectId = id !== null ? Number(id) : selectedProject?.id;
+        return title && authorUserId && projectId;
     };
 
     const inputStyles =
@@ -84,6 +165,7 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                 />
+                
                 {/* Status */}
                 <div>
                     <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-neutral-300">
@@ -159,43 +241,176 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
                     </div>
                 </div>
 
+                {/* Dates */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-2">
-                    <input
-                        type="date"
-                        className={inputStyles}
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                    />
-                    <input
-                        type="date"
-                        className={inputStyles}
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                    />
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                            Start Date
+                        </label>
+                        <input
+                            type="date"
+                            className={inputStyles}
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                            Due Date
+                        </label>
+                        <input
+                            type="date"
+                            className={inputStyles}
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                        />
+                    </div>
                 </div>
-                <input
-                    type="text"
-                    className={inputStyles}
-                    placeholder="Author User ID"
-                    value={authorUserId}
-                    onChange={(e) => setAuthorUserId(e.target.value)}
-                />
-                <input
-                    type="text"
-                    className={inputStyles}
-                    placeholder="Assigned User ID"
-                    value={assignedUserId}
-                    onChange={(e) => setAssignedUserId(e.target.value)}
-                />
+
+                {/* Author (read-only, auto-filled) */}
+                <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                        Author
+                    </label>
+                    <div className={`${inputStyles} bg-gray-50 dark:bg-dark-tertiary/50 cursor-not-allowed`}>
+                        {authData?.userDetails?.username || "Loading..."}
+                    </div>
+                </div>
+
+                {/* Assignees with tag-like selection */}
+                <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                        Assignees
+                    </label>
+                    <div className="relative" ref={assigneeDropdownRef}>
+                        <div className={`${inputStyles} flex flex-wrap gap-2 min-h-[42px] items-center`}>
+                            {selectedAssignees.map((user) => (
+                                <span
+                                    key={user.userId}
+                                    className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                                >
+                                    @{user.username}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeAssignee(user.userId)}
+                                        className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-200"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </span>
+                            ))}
+                            <input
+                                ref={assigneeInputRef}
+                                type="text"
+                                className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
+                                placeholder={selectedAssignees.length === 0 ? "Type @ to search users..." : "Add more..."}
+                                value={assigneeSearch}
+                                onChange={(e) => {
+                                    setAssigneeSearch(e.target.value);
+                                    setShowAssigneeDropdown(true);
+                                }}
+                                onFocus={() => setShowAssigneeDropdown(true)}
+                            />
+                        </div>
+                        {showAssigneeDropdown && (
+                            <div
+                                className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary"
+                            >
+                                {filteredUsers.length > 0 ? (
+                                    filteredUsers.slice(0, 8).map((user) => (
+                                        <button
+                                            key={user.userId}
+                                            type="button"
+                                            onClick={() => addAssignee(user)}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                                        >
+                                            <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
+                                            {user.email && <span className="text-gray-500 dark:text-gray-400">{user.email}</span>}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                        No users found
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Project selection (only if not passed via id prop) */}
                 {id === null && (
-                    <input
-                        type="text"
-                        className={inputStyles}
-                        placeholder="ProjectId"
-                        value={projectId}
-                        onChange={(e) => setProjectId(e.target.value)}
-                    />
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                            Project
+                        </label>
+                        <div className="relative" ref={projectDropdownRef}>
+                            {selectedProject ? (
+                                <div className={`${inputStyles} flex items-center justify-between`}>
+                                    <span>{selectedProject.name}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedProject(null)}
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="relative">
+                                        <input
+                                            ref={projectInputRef}
+                                            type="text"
+                                            className={inputStyles}
+                                            placeholder="Search projects..."
+                                            value={projectSearch}
+                                            onChange={(e) => {
+                                                setProjectSearch(e.target.value);
+                                                setShowProjectDropdown(true);
+                                            }}
+                                            onFocus={() => setShowProjectDropdown(true)}
+                                        />
+                                        <ChevronDown
+                                            size={16}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        />
+                                    </div>
+                                    {showProjectDropdown && (
+                                        <div
+                                            className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary"
+                                        >
+                                            {filteredProjects.length > 0 ? (
+                                                filteredProjects.map((project) => (
+                                                    <button
+                                                        key={project.id}
+                                                        type="button"
+                                                        onClick={() => selectProject(project)}
+                                                        className="flex w-full flex-col px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                                                    >
+                                                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                            {project.name}
+                                                        </span>
+                                                        {project.description && (
+                                                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                                {project.description}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    No projects found
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
                 )}
+
                 <button
                     type="submit"
                     className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${

@@ -1,10 +1,11 @@
 "use client";
 
-import { use } from "react";
-import { useGetUserByIdQuery, useGetTasksByUserQuery } from "@/state/api";
+import { use, useState } from "react";
+import { useGetUserByIdQuery, useGetTasksByUserQuery, Task } from "@/state/api";
 import Header from "@/components/Header";
 import S3Image from "@/components/S3Image";
 import TaskCard from "@/components/TaskCard";
+import TaskDetailModal from "@/components/TaskDetailModal";
 import { User as UserIcon, Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -19,10 +20,25 @@ const UserProfilePage = ({ params }: Props) => {
     const { data: user, isLoading, isError } = useGetUserByIdQuery(userId);
     const { data: tasks } = useGetTasksByUserQuery(userId);
 
-    if (isLoading) return <div className="p-8">Loading...</div>;
-    if (isError || !user) return <div className="p-8">User not found</div>;
+    const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
     const assignedTasks = tasks || [];
+    const totalPoints = assignedTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    const selectedTask = assignedTasks.find((t) => t.id === selectedTaskId) || null;
+
+    const handleTaskClick = (task: Task) => {
+        setSelectedTaskId(task.id);
+        setIsTaskDetailModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsTaskDetailModalOpen(false);
+        setSelectedTaskId(null);
+    };
+
+    if (isLoading) return <div className="p-8">Loading...</div>;
+    if (isError || !user) return <div className="p-8">User not found</div>;
 
     return (
         <div className="flex w-full flex-col p-8">
@@ -61,18 +77,29 @@ const UserProfilePage = ({ params }: Props) => {
 
             <div>
                 <h2 className="mb-4 text-lg font-semibold dark:text-white">
-                    Assigned Tasks ({assignedTasks.length})
+                    Assigned Tasks ({assignedTasks.length} tasks, {totalPoints} points)
                 </h2>
                 {assignedTasks.length === 0 ? (
                     <p className="text-gray-500 dark:text-neutral-400">No tasks assigned</p>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {assignedTasks.map((task) => (
-                            <TaskCard key={task.id} task={task} />
+                            <TaskCard 
+                                key={task.id} 
+                                task={task} 
+                                onClick={() => handleTaskClick(task)}
+                            />
                         ))}
                     </div>
                 )}
             </div>
+
+            <TaskDetailModal
+                isOpen={isTaskDetailModalOpen}
+                onClose={handleCloseModal}
+                task={selectedTask}
+                tasks={assignedTasks}
+            />
         </div>
     );
 };

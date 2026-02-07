@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { useAppSelector } from "@/app/redux";
 import { dataGridClassNames, dataGridSxStyles } from "@/lib/utils";
-import { useGetTasksQuery } from "@/state/api";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import { applyFilters } from "@/lib/filterUtils";
 import { FilterState } from "@/lib/filterTypes";
+import { Task } from "@/state/api";
 
 type Props = {
-  id: string;
+  sprintId: number;
+  tasks: Task[];
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   filterState: FilterState;
 };
@@ -122,9 +123,8 @@ const columns: GridColDef[] = [
   },
 ];
 
-const TableView = ({ id, filterState }: Props) => {
+const TableView = ({ tasks, filterState }: Props) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
-  const { data: tasks, error, isLoading } = useGetTasksQuery({ projectId: Number(id) });
 
   const filteredTasks = applyFilters(tasks ?? [], filterState);
 
@@ -143,8 +143,13 @@ const TableView = ({ id, filterState }: Props) => {
     setSelectedTaskId(null);
   };
 
-  if (isLoading) return <div className="flex h-96 items-center justify-center text-gray-500">Loading...</div>;
-  if (error || !tasks) return <div className="flex h-96 items-center justify-center text-red-500">An error occurred while fetching tasks</div>;
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className="flex h-96 items-center justify-center px-4 pb-8 xl:px-6">
+        <p className="text-gray-500 dark:text-gray-400">No tasks in this sprint</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[540px] w-full px-4 pb-8 xl:px-6">

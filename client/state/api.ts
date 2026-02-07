@@ -74,6 +74,11 @@ export interface ParentTaskSummary {
     title: string;
 }
 
+export interface SprintSummary {
+    id: number;
+    title: string;
+}
+
 export interface Task {
     id: number;
     title: string;
@@ -94,6 +99,7 @@ export interface Task {
     taskTags?: TaskTag[];
     subtasks?: SubtaskSummary[];
     parentTask?: ParentTaskSummary | null;
+    sprints?: SprintSummary[];
 }
 
 export interface SearchResults {
@@ -106,6 +112,15 @@ export interface Tag {
     id: number;
     name: string;
     color?: string;
+}
+
+export interface Sprint {
+    id: number;
+    title: string;
+    startDate?: string;
+    dueDate?: string;
+    tasks?: Task[];
+    _count?: { sprintTasks: number };
 }
 
 export const api = createApi({
@@ -121,7 +136,7 @@ export const api = createApi({
         },
     }),
     reducerPath: "api",
-    tagTypes: ["Projects", "Tasks", "Users", "Tags"],
+    tagTypes: ["Projects", "Tasks", "Users", "Tags", "Sprints"],
     endpoints: (build) => ({
         // projects
         getProjects: build.query<Project[], void>({
@@ -271,6 +286,74 @@ export const api = createApi({
             invalidatesTags: ["Tags"],
         }),
 
+        // sprints
+        getSprints: build.query<Sprint[], void>({
+            query: () => "sprints",
+            providesTags: (result) =>
+                result
+                    ? [
+                          ...result.map(({ id }) => ({ type: "Sprints" as const, id })),
+                          { type: "Sprints" as const },
+                      ]
+                    : [{ type: "Sprints" as const }],
+        }),
+
+        getSprint: build.query<Sprint, number>({
+            query: (sprintId) => `sprints/${sprintId}`,
+            providesTags: (result, error, sprintId) => [{ type: "Sprints", id: sprintId }],
+        }),
+
+        createSprint: build.mutation<Sprint, { title: string; startDate?: string; dueDate?: string }>({
+            query: (body) => ({
+                url: "sprints",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Sprints"],
+        }),
+
+        updateSprint: build.mutation<Sprint, { sprintId: number; title?: string; startDate?: string; dueDate?: string }>({
+            query: ({ sprintId, ...body }) => ({
+                url: `sprints/${sprintId}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: (result, error, { sprintId }) => [
+                { type: "Sprints", id: sprintId },
+                "Sprints",
+            ],
+        }),
+
+        deleteSprint: build.mutation<void, number>({
+            query: (sprintId) => ({
+                url: `sprints/${sprintId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Sprints"],
+        }),
+
+        addTaskToSprint: build.mutation<void, { sprintId: number; taskId: number }>({
+            query: ({ sprintId, taskId }) => ({
+                url: `sprints/${sprintId}/tasks/${taskId}`,
+                method: "POST",
+            }),
+            invalidatesTags: (result, error, { sprintId }) => [
+                { type: "Sprints", id: sprintId },
+                "Sprints",
+            ],
+        }),
+
+        removeTaskFromSprint: build.mutation<void, { sprintId: number; taskId: number }>({
+            query: ({ sprintId, taskId }) => ({
+                url: `sprints/${sprintId}/tasks/${taskId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: (result, error, { sprintId }) => [
+                { type: "Sprints", id: sprintId },
+                "Sprints",
+            ],
+        }),
+
         // comments
         createComment: build.mutation<Comment, { taskId: number; userId: number; text: string }>({
             query: (body) => ({
@@ -318,4 +401,11 @@ export const {
     useCreateCommentMutation,
     useGetPresignedUrlQuery,
     useGetPresignedUploadUrlMutation,
+    useGetSprintsQuery,
+    useGetSprintQuery,
+    useCreateSprintMutation,
+    useUpdateSprintMutation,
+    useDeleteSprintMutation,
+    useAddTaskToSprintMutation,
+    useRemoveTaskFromSprintMutation,
 } = api;

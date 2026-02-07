@@ -39,6 +39,8 @@ async function resetSequences() {
         { table: 'TaskAssignment', column: 'id' },
         { table: 'Attachment', column: 'id' },
         { table: 'Comment', column: 'id' },
+        { table: 'Sprint', column: 'id' },
+        { table: 'SprintTask', column: 'id' },
     ];
 
     for (const { table, column } of sequences) {
@@ -61,6 +63,8 @@ async function main() {
         "project.json",
         "user.json",
         "task.json",
+        "sprint.json",
+        "sprintTask.json",
         "attachment.json",
         "comment.json",
         "taskAssignment.json",

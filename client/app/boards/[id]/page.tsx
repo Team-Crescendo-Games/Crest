@@ -5,7 +5,7 @@ import BoardHeader from "@/app/boards/BoardHeader";
 import Board from "../BoardView";
 import Table from "../TableView";
 import ModalNewTask from "@/components/ModalNewTask";
-import { useGetProjectsQuery, useGetTagsQuery } from "@/state/api";
+import { useGetProjectsQuery, useGetTagsQuery, useGetTasksQuery } from "@/state/api";
 import { FilterState, initialFilterState } from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
 
@@ -21,7 +21,11 @@ const BoardPage = ({ params }: Props) => {
     
     const { data: projects } = useGetProjectsQuery();
     const { data: tags = [] } = useGetTagsQuery();
+    const { data: tasks = [] } = useGetTasksQuery({ projectId: Number(id) });
     const project = projects?.find((p) => p.id === Number(id));
+    
+    const totalTasks = tasks.length;
+    const totalPoints = tasks.reduce((sum, task) => sum + (task.points || 0), 0);
     
     const handleFilterChange = (newState: FilterState) => setFilterState(newState);
 
@@ -42,6 +46,8 @@ const BoardPage = ({ params }: Props) => {
                 onFilterChange={handleFilterChange}
                 tags={tags}
                 isFilterActive={isFilterActive(filterState)}
+                totalTasks={totalTasks}
+                totalPoints={totalPoints}
             />
             {activeTab === "Board" && (
                 <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} />

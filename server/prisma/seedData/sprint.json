@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "title": "Sprint 1 - Foundation",
+    "startDate": "2023-01-01T00:00:00Z",
+    "dueDate": "2023-01-14T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "title": "Sprint 2 - Core Features",
+    "startDate": "2023-01-15T00:00:00Z",
+    "dueDate": "2023-01-28T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "title": "Sprint 3 - Enhancements",
+    "startDate": "2023-01-29T00:00:00Z",
+    "dueDate": "2023-02-11T00:00:00Z"
+  }
+]

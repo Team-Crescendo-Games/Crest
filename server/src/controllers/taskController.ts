@@ -66,6 +66,13 @@ export const getTasks = async (_req: Request, res: Response) => {
                     parentTask: {
                         select: { id: true, title: true },
                     },
+                    sprintTasks: {
+                        include: {
+                            sprint: {
+                                select: { id: true, title: true },
+                            },
+                        },
+                    },
                 }
             }
         );
@@ -78,6 +85,7 @@ export const getTasks = async (_req: Request, res: Response) => {
                 ...subtask,
                 status: statusIntToString(subtask.status),
             })),
+            sprints: task.sprintTasks?.map(st => st.sprint),
         }));
         
         res.json(tasksWithStringStatus);
@@ -254,6 +262,13 @@ export const updateTask = async (
                 parentTask: {
                     select: { id: true, title: true },
                 },
+                sprintTasks: {
+                    include: {
+                        sprint: {
+                            select: { id: true, title: true },
+                        },
+                    },
+                },
             },
         });
         
@@ -265,6 +280,7 @@ export const updateTask = async (
                 ...subtask,
                 status: statusIntToString(subtask.status),
             })),
+            sprints: updatedTask.sprintTasks?.map(st => st.sprint),
         };
         
         res.json(taskWithStringStatus);
@@ -289,6 +305,32 @@ export const getUserTasks = async (
             include: {
                 author: true,
                 assignee: true,
+                comments: {
+                    include: {
+                        user: true,
+                    },
+                },
+                attachments: true,
+                taskTags: { include: { tag: true } },
+                subtasks: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        priority: true,
+                        assignee: { select: { userId: true, username: true, profilePictureExt: true } },
+                    },
+                },
+                parentTask: {
+                    select: { id: true, title: true },
+                },
+                sprintTasks: {
+                    include: {
+                        sprint: {
+                            select: { id: true, title: true },
+                        },
+                    },
+                },
             },
         });
         
@@ -296,6 +338,11 @@ export const getUserTasks = async (
         const tasksWithStringStatus = tasks.map(task => ({
             ...task,
             status: statusIntToString(task.status),
+            subtasks: task.subtasks?.map(subtask => ({
+                ...subtask,
+                status: statusIntToString(subtask.status),
+            })),
+            sprints: task.sprintTasks?.map(st => st.sprint),
         }));
         
         res.json(tasksWithStringStatus);

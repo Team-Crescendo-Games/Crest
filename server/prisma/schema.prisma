@@ -17,6 +17,7 @@ model User {
   userId            Int     @id @default(autoincrement())
   cognitoId         String  @unique
   username          String  @unique
+  email             String?
   profilePictureExt String?
 
   authoredTasks   Task[]           @relation("TaskAuthor")
@@ -56,6 +57,7 @@ model Task {
   attachments     Attachment[]
   comments        Comment[]
   taskTags        TaskTag[]
+  sprintTasks     SprintTask[]
 }
 
 model Tag {
@@ -104,4 +106,23 @@ model Comment {
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [userId])
+}
+
+model Sprint {
+  id          Int          @id @default(autoincrement())
+  title       String
+  startDate   DateTime?
+  dueDate     DateTime?
+  sprintTasks SprintTask[]
+}
+
+model SprintTask {
+  id       Int @id @default(autoincrement())
+  sprintId Int
+  taskId   Int
+
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([sprintId, taskId])
 }

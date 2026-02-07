@@ -1,26 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Filter,
-  Settings,
-  Table,
-} from "lucide-react";
+import { Calendar, Filter, Table } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
-import Link from "next/link";
-import React from "react";
 import { FilterState } from "@/lib/filterTypes";
 import { Tag } from "@/state/api";
 import FilterDropdown from "@/components/FilterDropdown";
 
 type Props = {
-  activeTab: string;
-  setActiveTab: (tabName: string) => void;
-  boardName: string;
-  boardDescription?: string;
-  boardId: string;
+  activeTab: "Board" | "Table";
+  setActiveTab: (tab: "Board" | "Table") => void;
+  sprintTitle: string;
+  sprintStartDate?: string;
+  sprintDueDate?: string;
+  sprintId: number;
   filterState: FilterState;
-  onFilterChange: (newState: FilterState) => void;
+  onFilterChange: (state: FilterState) => void;
   tags: Tag[];
   isFilterActive: boolean;
   totalTasks: number;
@@ -28,15 +23,16 @@ type Props = {
 };
 
 /**
- * BoardHeader component with filter support.
- * Validates: Requirements 1.1, 1.3, 6.1
+ * SprintHeader component with filter support.
+ * Displays sprint title, dates, view tabs, and filter controls.
+ * Validates: Requirements 5.2, 5.3, 9.1, 9.3
  */
-const BoardHeader = ({
+const SprintHeader = ({
   activeTab,
   setActiveTab,
-  boardName,
-  boardDescription,
-  boardId,
+  sprintTitle,
+  sprintStartDate,
+  sprintDueDate,
   filterState,
   onFilterChange,
   tags,
@@ -46,32 +42,51 @@ const BoardHeader = ({
 }: Props) => {
   // State for filter dropdown visibility
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+
+  /**
+   * Format date string to a readable format
+   * @param dateString - ISO date string
+   * @returns Formatted date string (e.g., "Jan 15, 2024")
+   */
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="px-4 xl:px-6">
+      {/* Sprint Title and Dates - Validates: Requirement 5.2 */}
       <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold dark:text-white">
-            {boardName}
+        <div className="flex flex-col gap-2">
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-800 dark:text-white">
+            {sprintTitle}
+            <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+              {totalTasks} / {totalPoints}pts
+            </span>
           </h1>
-          <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
-            {totalTasks} / {totalPoints}pts
-          </span>
-          <Link
-            href={`/boards/${boardId}/settings`}
-            className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
+          {/* Date display with calendar icon */}
+          <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            {sprintStartDate && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                <span>Start: {formatDate(sprintStartDate)}</span>
+              </div>
+            )}
+            {sprintDueDate && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                <span>Due: {formatDate(sprintDueDate)}</span>
+              </div>
+            )}
+          </div>
         </div>
-        {boardDescription && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-            {boardDescription}
-          </p>
-        )}
       </div>
 
-      {/* TABS */}
+      {/* TABS - Validates: Requirement 5.3 */}
       <div className="flex flex-wrap-reverse gap-2 border-y border-gray-200 pb-[8px] pt-2 dark:border-stroke-dark md:items-center">
         <div className="flex flex-1 items-center gap-2 md:gap-4">
           <TabButton
@@ -88,7 +103,7 @@ const BoardHeader = ({
           />
         </div>
         <div className="flex items-center gap-2">
-          {/* Filter button with dropdown - Validates: Requirements 1.1, 1.3, 6.1 */}
+          {/* Filter button with dropdown - Validates: Requirements 9.1, 9.3 */}
           <div className="relative">
             <button
               className="relative text-gray-500 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300"
@@ -97,12 +112,12 @@ const BoardHeader = ({
               aria-expanded={isFilterDropdownOpen}
             >
               <Filter className="h-5 w-5" />
-              {/* Visual indicator when filters are active - Validates: Requirement 6.1 */}
+              {/* Visual indicator when filters are active - Validates: Requirement 9.3 */}
               {isFilterActive && (
                 <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
               )}
             </button>
-            {/* Filter dropdown - Validates: Requirements 1.1, 1.2, 1.3, 1.4 */}
+            {/* Filter dropdown - Validates: Requirement 9.1 */}
             <FilterDropdown
               isOpen={isFilterDropdownOpen}
               onClose={() => setIsFilterDropdownOpen(false)}
@@ -118,12 +133,16 @@ const BoardHeader = ({
 };
 
 type TabButtonProps = {
-  name: string;
+  name: "Board" | "Table";
   icon: React.ReactNode;
-  setActiveTab: (tabName: string) => void;
+  setActiveTab: (tabName: "Board" | "Table") => void;
   activeTab: string;
 };
 
+/**
+ * TabButton component for switching between Board and Table views.
+ * Validates: Requirement 5.3
+ */
 const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
   const isActive = activeTab === name;
 
@@ -143,4 +162,4 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
   );
 };
 
-export default BoardHeader;
+export default SprintHeader;
