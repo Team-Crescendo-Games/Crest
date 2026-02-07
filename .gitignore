@@ -68,3 +68,8 @@ pnpm-debug.log*
 *.swo
 Thumbs.db
 .kiro/
+
+# -----------------------------
+# PRISMA MIGRATIONS (dev only)
+# -----------------------------
+server/prisma/migrations/

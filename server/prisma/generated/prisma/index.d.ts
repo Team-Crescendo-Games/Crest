@@ -1718,21 +1718,21 @@ export namespace Prisma {
     userId: number | null
     cognitoId: string | null
     username: string | null
-    profilePictureUrl: string | null
+    profilePictureExt: string | null
   }
 
   export type UserMaxAggregateOutputType = {
     userId: number | null
     cognitoId: string | null
     username: string | null
-    profilePictureUrl: string | null
+    profilePictureExt: string | null
   }
 
   export type UserCountAggregateOutputType = {
     userId: number
     cognitoId: number
     username: number
-    profilePictureUrl: number
+    profilePictureExt: number
     _all: number
   }
 
@@ -1749,21 +1749,21 @@ export namespace Prisma {
     userId?: true
     cognitoId?: true
     username?: true
-    profilePictureUrl?: true
+    profilePictureExt?: true
   }
 
   export type UserMaxAggregateInputType = {
     userId?: true
     cognitoId?: true
     username?: true
-    profilePictureUrl?: true
+    profilePictureExt?: true
   }
 
   export type UserCountAggregateInputType = {
     userId?: true
     cognitoId?: true
     username?: true
-    profilePictureUrl?: true
+    profilePictureExt?: true
     _all?: true
   }
 
@@ -1857,7 +1857,7 @@ export namespace Prisma {
     userId: number
     cognitoId: string
     username: string
-    profilePictureUrl: string | null
+    profilePictureExt: string | null
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -1883,7 +1883,7 @@ export namespace Prisma {
     userId?: boolean
     cognitoId?: boolean
     username?: boolean
-    profilePictureUrl?: boolean
+    profilePictureExt?: boolean
     authoredTasks?: boolean | User$authoredTasksArgs<ExtArgs>
     assignedTasks?: boolean | User$assignedTasksArgs<ExtArgs>
     taskAssignments?: boolean | User$taskAssignmentsArgs<ExtArgs>
@@ -1896,24 +1896,24 @@ export namespace Prisma {
     userId?: boolean
     cognitoId?: boolean
     username?: boolean
-    profilePictureUrl?: boolean
+    profilePictureExt?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     userId?: boolean
     cognitoId?: boolean
     username?: boolean
-    profilePictureUrl?: boolean
+    profilePictureExt?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
     userId?: boolean
     cognitoId?: boolean
     username?: boolean
-    profilePictureUrl?: boolean
+    profilePictureExt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "cognitoId" | "username" | "profilePictureUrl", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "cognitoId" | "username" | "profilePictureExt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     authoredTasks?: boolean | User$authoredTasksArgs<ExtArgs>
     assignedTasks?: boolean | User$assignedTasksArgs<ExtArgs>
@@ -1938,7 +1938,7 @@ export namespace Prisma {
       userId: number
       cognitoId: string
       username: string
-      profilePictureUrl: string | null
+      profilePictureExt: string | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -2370,7 +2370,7 @@ export namespace Prisma {
     readonly userId: FieldRef<"User", 'Int'>
     readonly cognitoId: FieldRef<"User", 'String'>
     readonly username: FieldRef<"User", 'String'>
-    readonly profilePictureUrl: FieldRef<"User", 'String'>
+    readonly profilePictureExt: FieldRef<"User", 'String'>
   }
     
 
@@ -8654,24 +8654,24 @@ export namespace Prisma {
 
   export type AttachmentMinAggregateOutputType = {
     id: number | null
-    fileURL: string | null
     fileName: string | null
+    fileExt: string | null
     taskId: number | null
     uploadedById: number | null
   }
 
   export type AttachmentMaxAggregateOutputType = {
     id: number | null
-    fileURL: string | null
     fileName: string | null
+    fileExt: string | null
     taskId: number | null
     uploadedById: number | null
   }
 
   export type AttachmentCountAggregateOutputType = {
     id: number
-    fileURL: number
     fileName: number
+    fileExt: number
     taskId: number
     uploadedById: number
     _all: number
@@ -8692,24 +8692,24 @@ export namespace Prisma {
 
   export type AttachmentMinAggregateInputType = {
     id?: true
-    fileURL?: true
     fileName?: true
+    fileExt?: true
     taskId?: true
     uploadedById?: true
   }
 
   export type AttachmentMaxAggregateInputType = {
     id?: true
-    fileURL?: true
     fileName?: true
+    fileExt?: true
     taskId?: true
     uploadedById?: true
   }
 
   export type AttachmentCountAggregateInputType = {
     id?: true
-    fileURL?: true
     fileName?: true
+    fileExt?: true
     taskId?: true
     uploadedById?: true
     _all?: true
@@ -8803,8 +8803,8 @@ export namespace Prisma {
 
   export type AttachmentGroupByOutputType = {
     id: number
-    fileURL: string
     fileName: string | null
+    fileExt: string
     taskId: number
     uploadedById: number
     _count: AttachmentCountAggregateOutputType | null
@@ -8830,8 +8830,8 @@ export namespace Prisma {
 
   export type AttachmentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    fileURL?: boolean
     fileName?: boolean
+    fileExt?: boolean
     taskId?: boolean
     uploadedById?: boolean
     task?: boolean | TaskDefaultArgs<ExtArgs>
@@ -8840,8 +8840,8 @@ export namespace Prisma {
 
   export type AttachmentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    fileURL?: boolean
     fileName?: boolean
+    fileExt?: boolean
     taskId?: boolean
     uploadedById?: boolean
     task?: boolean | TaskDefaultArgs<ExtArgs>
@@ -8850,8 +8850,8 @@ export namespace Prisma {
 
   export type AttachmentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    fileURL?: boolean
     fileName?: boolean
+    fileExt?: boolean
     taskId?: boolean
     uploadedById?: boolean
     task?: boolean | TaskDefaultArgs<ExtArgs>
@@ -8860,13 +8860,13 @@ export namespace Prisma {
 
   export type AttachmentSelectScalar = {
     id?: boolean
-    fileURL?: boolean
     fileName?: boolean
+    fileExt?: boolean
     taskId?: boolean
     uploadedById?: boolean
   }
 
-  export type AttachmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fileURL" | "fileName" | "taskId" | "uploadedById", ExtArgs["result"]["attachment"]>
+  export type AttachmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fileName" | "fileExt" | "taskId" | "uploadedById", ExtArgs["result"]["attachment"]>
   export type AttachmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     task?: boolean | TaskDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
@@ -8888,8 +8888,8 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
-      fileURL: string
       fileName: string | null
+      fileExt: string
       taskId: number
       uploadedById: number
     }, ExtArgs["result"]["attachment"]>
@@ -9318,8 +9318,8 @@ export namespace Prisma {
    */
   interface AttachmentFieldRefs {
     readonly id: FieldRef<"Attachment", 'Int'>
-    readonly fileURL: FieldRef<"Attachment", 'String'>
     readonly fileName: FieldRef<"Attachment", 'String'>
+    readonly fileExt: FieldRef<"Attachment", 'String'>
     readonly taskId: FieldRef<"Attachment", 'Int'>
     readonly uploadedById: FieldRef<"Attachment", 'Int'>
   }
@@ -10849,7 +10849,7 @@ export namespace Prisma {
     userId: 'userId',
     cognitoId: 'cognitoId',
     username: 'username',
-    profilePictureUrl: 'profilePictureUrl'
+    profilePictureExt: 'profilePictureExt'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -10911,8 +10911,8 @@ export namespace Prisma {
 
   export const AttachmentScalarFieldEnum: {
     id: 'id',
-    fileURL: 'fileURL',
     fileName: 'fileName',
+    fileExt: 'fileExt',
     taskId: 'taskId',
     uploadedById: 'uploadedById'
   };
@@ -11025,7 +11025,7 @@ export namespace Prisma {
     userId?: IntFilter<"User"> | number
     cognitoId?: StringFilter<"User"> | string
     username?: StringFilter<"User"> | string
-    profilePictureUrl?: StringNullableFilter<"User"> | string | null
+    profilePictureExt?: StringNullableFilter<"User"> | string | null
     authoredTasks?: TaskListRelationFilter
     assignedTasks?: TaskListRelationFilter
     taskAssignments?: TaskAssignmentListRelationFilter
@@ -11037,7 +11037,7 @@ export namespace Prisma {
     userId?: SortOrder
     cognitoId?: SortOrder
     username?: SortOrder
-    profilePictureUrl?: SortOrderInput | SortOrder
+    profilePictureExt?: SortOrderInput | SortOrder
     authoredTasks?: TaskOrderByRelationAggregateInput
     assignedTasks?: TaskOrderByRelationAggregateInput
     taskAssignments?: TaskAssignmentOrderByRelationAggregateInput
@@ -11052,7 +11052,7 @@ export namespace Prisma {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    profilePictureUrl?: StringNullableFilter<"User"> | string | null
+    profilePictureExt?: StringNullableFilter<"User"> | string | null
     authoredTasks?: TaskListRelationFilter
     assignedTasks?: TaskListRelationFilter
     taskAssignments?: TaskAssignmentListRelationFilter
@@ -11064,7 +11064,7 @@ export namespace Prisma {
     userId?: SortOrder
     cognitoId?: SortOrder
     username?: SortOrder
-    profilePictureUrl?: SortOrderInput | SortOrder
+    profilePictureExt?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -11079,7 +11079,7 @@ export namespace Prisma {
     userId?: IntWithAggregatesFilter<"User"> | number
     cognitoId?: StringWithAggregatesFilter<"User"> | string
     username?: StringWithAggregatesFilter<"User"> | string
-    profilePictureUrl?: StringNullableWithAggregatesFilter<"User"> | string | null
+    profilePictureExt?: StringNullableWithAggregatesFilter<"User"> | string | null
   }
 
   export type ProjectWhereInput = {
@@ -11398,8 +11398,8 @@ export namespace Prisma {
     OR?: AttachmentWhereInput[]
     NOT?: AttachmentWhereInput | AttachmentWhereInput[]
     id?: IntFilter<"Attachment"> | number
-    fileURL?: StringFilter<"Attachment"> | string
     fileName?: StringNullableFilter<"Attachment"> | string | null
+    fileExt?: StringFilter<"Attachment"> | string
     taskId?: IntFilter<"Attachment"> | number
     uploadedById?: IntFilter<"Attachment"> | number
     task?: XOR<TaskScalarRelationFilter, TaskWhereInput>
@@ -11408,8 +11408,8 @@ export namespace Prisma {
 
   export type AttachmentOrderByWithRelationInput = {
     id?: SortOrder
-    fileURL?: SortOrder
     fileName?: SortOrderInput | SortOrder
+    fileExt?: SortOrder
     taskId?: SortOrder
     uploadedById?: SortOrder
     task?: TaskOrderByWithRelationInput
@@ -11421,8 +11421,8 @@ export namespace Prisma {
     AND?: AttachmentWhereInput | AttachmentWhereInput[]
     OR?: AttachmentWhereInput[]
     NOT?: AttachmentWhereInput | AttachmentWhereInput[]
-    fileURL?: StringFilter<"Attachment"> | string
     fileName?: StringNullableFilter<"Attachment"> | string | null
+    fileExt?: StringFilter<"Attachment"> | string
     taskId?: IntFilter<"Attachment"> | number
     uploadedById?: IntFilter<"Attachment"> | number
     task?: XOR<TaskScalarRelationFilter, TaskWhereInput>
@@ -11431,8 +11431,8 @@ export namespace Prisma {
 
   export type AttachmentOrderByWithAggregationInput = {
     id?: SortOrder
-    fileURL?: SortOrder
     fileName?: SortOrderInput | SortOrder
+    fileExt?: SortOrder
     taskId?: SortOrder
     uploadedById?: SortOrder
     _count?: AttachmentCountOrderByAggregateInput
@@ -11447,8 +11447,8 @@ export namespace Prisma {
     OR?: AttachmentScalarWhereWithAggregatesInput[]
     NOT?: AttachmentScalarWhereWithAggregatesInput | AttachmentScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Attachment"> | number
-    fileURL?: StringWithAggregatesFilter<"Attachment"> | string
     fileName?: StringNullableWithAggregatesFilter<"Attachment"> | string | null
+    fileExt?: StringWithAggregatesFilter<"Attachment"> | string
     taskId?: IntWithAggregatesFilter<"Attachment"> | number
     uploadedById?: IntWithAggregatesFilter<"Attachment"> | number
   }
@@ -11511,7 +11511,7 @@ export namespace Prisma {
   export type UserCreateInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentCreateNestedManyWithoutUserInput
@@ -11523,7 +11523,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskUncheckedCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskUncheckedCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -11534,7 +11534,7 @@ export namespace Prisma {
   export type UserUpdateInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUpdateManyWithoutUserNestedInput
@@ -11546,7 +11546,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUncheckedUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUncheckedUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -11558,20 +11558,20 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
   }
 
   export type UserUpdateManyMutationInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProjectCreateInput = {
@@ -11855,52 +11855,52 @@ export namespace Prisma {
   }
 
   export type AttachmentCreateInput = {
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     task: TaskCreateNestedOneWithoutAttachmentsInput
     uploadedBy: UserCreateNestedOneWithoutAttachmentsInput
   }
 
   export type AttachmentUncheckedCreateInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     taskId: number
     uploadedById: number
   }
 
   export type AttachmentUpdateInput = {
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     task?: TaskUpdateOneRequiredWithoutAttachmentsNestedInput
     uploadedBy?: UserUpdateOneRequiredWithoutAttachmentsNestedInput
   }
 
   export type AttachmentUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     taskId?: IntFieldUpdateOperationsInput | number
     uploadedById?: IntFieldUpdateOperationsInput | number
   }
 
   export type AttachmentCreateManyInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     taskId: number
     uploadedById: number
   }
 
   export type AttachmentUpdateManyMutationInput = {
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
   }
 
   export type AttachmentUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     taskId?: IntFieldUpdateOperationsInput | number
     uploadedById?: IntFieldUpdateOperationsInput | number
   }
@@ -12039,7 +12039,7 @@ export namespace Prisma {
     userId?: SortOrder
     cognitoId?: SortOrder
     username?: SortOrder
-    profilePictureUrl?: SortOrder
+    profilePictureExt?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
@@ -12050,14 +12050,14 @@ export namespace Prisma {
     userId?: SortOrder
     cognitoId?: SortOrder
     username?: SortOrder
-    profilePictureUrl?: SortOrder
+    profilePictureExt?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
     userId?: SortOrder
     cognitoId?: SortOrder
     username?: SortOrder
-    profilePictureUrl?: SortOrder
+    profilePictureExt?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
@@ -12392,8 +12392,8 @@ export namespace Prisma {
 
   export type AttachmentCountOrderByAggregateInput = {
     id?: SortOrder
-    fileURL?: SortOrder
     fileName?: SortOrder
+    fileExt?: SortOrder
     taskId?: SortOrder
     uploadedById?: SortOrder
   }
@@ -12406,16 +12406,16 @@ export namespace Prisma {
 
   export type AttachmentMaxOrderByAggregateInput = {
     id?: SortOrder
-    fileURL?: SortOrder
     fileName?: SortOrder
+    fileExt?: SortOrder
     taskId?: SortOrder
     uploadedById?: SortOrder
   }
 
   export type AttachmentMinOrderByAggregateInput = {
     id?: SortOrder
-    fileURL?: SortOrder
     fileName?: SortOrder
+    fileExt?: SortOrder
     taskId?: SortOrder
     uploadedById?: SortOrder
   }
@@ -13440,15 +13440,15 @@ export namespace Prisma {
   }
 
   export type AttachmentCreateWithoutUploadedByInput = {
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     task: TaskCreateNestedOneWithoutAttachmentsInput
   }
 
   export type AttachmentUncheckedCreateWithoutUploadedByInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     taskId: number
   }
 
@@ -13579,8 +13579,8 @@ export namespace Prisma {
     OR?: AttachmentScalarWhereInput[]
     NOT?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
     id?: IntFilter<"Attachment"> | number
-    fileURL?: StringFilter<"Attachment"> | string
     fileName?: StringNullableFilter<"Attachment"> | string | null
+    fileExt?: StringFilter<"Attachment"> | string
     taskId?: IntFilter<"Attachment"> | number
     uploadedById?: IntFilter<"Attachment"> | number
   }
@@ -13693,7 +13693,7 @@ export namespace Prisma {
   export type UserCreateWithoutAuthoredTasksInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     assignedTasks?: TaskCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentCreateNestedManyWithoutUserInput
     attachments?: AttachmentCreateNestedManyWithoutUploadedByInput
@@ -13704,7 +13704,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     assignedTasks?: TaskUncheckedCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentUncheckedCreateNestedManyWithoutUserInput
     attachments?: AttachmentUncheckedCreateNestedManyWithoutUploadedByInput
@@ -13719,7 +13719,7 @@ export namespace Prisma {
   export type UserCreateWithoutAssignedTasksInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskCreateNestedManyWithoutAuthorInput
     taskAssignments?: TaskAssignmentCreateNestedManyWithoutUserInput
     attachments?: AttachmentCreateNestedManyWithoutUploadedByInput
@@ -13730,7 +13730,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskUncheckedCreateNestedManyWithoutAuthorInput
     taskAssignments?: TaskAssignmentUncheckedCreateNestedManyWithoutUserInput
     attachments?: AttachmentUncheckedCreateNestedManyWithoutUploadedByInput
@@ -13851,15 +13851,15 @@ export namespace Prisma {
   }
 
   export type AttachmentCreateWithoutTaskInput = {
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     uploadedBy: UserCreateNestedOneWithoutAttachmentsInput
   }
 
   export type AttachmentUncheckedCreateWithoutTaskInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     uploadedById: number
   }
 
@@ -13949,7 +13949,7 @@ export namespace Prisma {
   export type UserUpdateWithoutAuthoredTasksInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     assignedTasks?: TaskUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUpdateManyWithoutUserNestedInput
     attachments?: AttachmentUpdateManyWithoutUploadedByNestedInput
@@ -13960,7 +13960,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     assignedTasks?: TaskUncheckedUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUncheckedUpdateManyWithoutUserNestedInput
     attachments?: AttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
@@ -13981,7 +13981,7 @@ export namespace Prisma {
   export type UserUpdateWithoutAssignedTasksInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUpdateManyWithoutAuthorNestedInput
     taskAssignments?: TaskAssignmentUpdateManyWithoutUserNestedInput
     attachments?: AttachmentUpdateManyWithoutUploadedByNestedInput
@@ -13992,7 +13992,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUncheckedUpdateManyWithoutAuthorNestedInput
     taskAssignments?: TaskAssignmentUncheckedUpdateManyWithoutUserNestedInput
     attachments?: AttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
@@ -14302,7 +14302,7 @@ export namespace Prisma {
   export type UserCreateWithoutTaskAssignmentsInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskCreateNestedManyWithoutAssigneeInput
     attachments?: AttachmentCreateNestedManyWithoutUploadedByInput
@@ -14313,7 +14313,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskUncheckedCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskUncheckedCreateNestedManyWithoutAssigneeInput
     attachments?: AttachmentUncheckedCreateNestedManyWithoutUploadedByInput
@@ -14381,7 +14381,7 @@ export namespace Prisma {
   export type UserUpdateWithoutTaskAssignmentsInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUpdateManyWithoutAssigneeNestedInput
     attachments?: AttachmentUpdateManyWithoutUploadedByNestedInput
@@ -14392,7 +14392,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUncheckedUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUncheckedUpdateManyWithoutAssigneeNestedInput
     attachments?: AttachmentUncheckedUpdateManyWithoutUploadedByNestedInput
@@ -14492,7 +14492,7 @@ export namespace Prisma {
   export type UserCreateWithoutAttachmentsInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentCreateNestedManyWithoutUserInput
@@ -14503,7 +14503,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskUncheckedCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskUncheckedCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -14577,7 +14577,7 @@ export namespace Prisma {
   export type UserUpdateWithoutAttachmentsInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUpdateManyWithoutUserNestedInput
@@ -14588,7 +14588,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUncheckedUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUncheckedUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -14640,7 +14640,7 @@ export namespace Prisma {
   export type UserCreateWithoutCommentsInput = {
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentCreateNestedManyWithoutUserInput
@@ -14651,7 +14651,7 @@ export namespace Prisma {
     userId?: number
     cognitoId: string
     username: string
-    profilePictureUrl?: string | null
+    profilePictureExt?: string | null
     authoredTasks?: TaskUncheckedCreateNestedManyWithoutAuthorInput
     assignedTasks?: TaskUncheckedCreateNestedManyWithoutAssigneeInput
     taskAssignments?: TaskAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -14725,7 +14725,7 @@ export namespace Prisma {
   export type UserUpdateWithoutCommentsInput = {
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUpdateManyWithoutUserNestedInput
@@ -14736,7 +14736,7 @@ export namespace Prisma {
     userId?: IntFieldUpdateOperationsInput | number
     cognitoId?: StringFieldUpdateOperationsInput | string
     username?: StringFieldUpdateOperationsInput | string
-    profilePictureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    profilePictureExt?: NullableStringFieldUpdateOperationsInput | string | null
     authoredTasks?: TaskUncheckedUpdateManyWithoutAuthorNestedInput
     assignedTasks?: TaskUncheckedUpdateManyWithoutAssigneeNestedInput
     taskAssignments?: TaskAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -14778,8 +14778,8 @@ export namespace Prisma {
 
   export type AttachmentCreateManyUploadedByInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     taskId: number
   }
 
@@ -14906,22 +14906,22 @@ export namespace Prisma {
   }
 
   export type AttachmentUpdateWithoutUploadedByInput = {
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     task?: TaskUpdateOneRequiredWithoutAttachmentsNestedInput
   }
 
   export type AttachmentUncheckedUpdateWithoutUploadedByInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     taskId?: IntFieldUpdateOperationsInput | number
   }
 
   export type AttachmentUncheckedUpdateManyWithoutUploadedByInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     taskId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -15028,8 +15028,8 @@ export namespace Prisma {
 
   export type AttachmentCreateManyTaskInput = {
     id?: number
-    fileURL: string
     fileName?: string | null
+    fileExt: string
     uploadedById: number
   }
 
@@ -15110,22 +15110,22 @@ export namespace Prisma {
   }
 
   export type AttachmentUpdateWithoutTaskInput = {
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     uploadedBy?: UserUpdateOneRequiredWithoutAttachmentsNestedInput
   }
 
   export type AttachmentUncheckedUpdateWithoutTaskInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     uploadedById?: IntFieldUpdateOperationsInput | number
   }
 
   export type AttachmentUncheckedUpdateManyWithoutTaskInput = {
     id?: IntFieldUpdateOperationsInput | number
-    fileURL?: StringFieldUpdateOperationsInput | string
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileExt?: StringFieldUpdateOperationsInput | string
     uploadedById?: IntFieldUpdateOperationsInput | number
   }
 

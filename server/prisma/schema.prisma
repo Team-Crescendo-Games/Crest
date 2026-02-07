@@ -17,7 +17,7 @@ model User {
   userId            Int     @id @default(autoincrement())
   cognitoId         String  @unique
   username          String  @unique
-  profilePictureUrl String?
+  profilePictureExt String?
 
   authoredTasks   Task[]           @relation("TaskAuthor")
   assignedTasks   Task[]           @relation("TaskAssignee")
@@ -87,8 +87,8 @@ model TaskAssignment {
 
 model Attachment {
   id           Int     @id @default(autoincrement())
-  fileURL      String
   fileName     String?
+  fileExt      String
   taskId       Int
   uploadedById Int
 

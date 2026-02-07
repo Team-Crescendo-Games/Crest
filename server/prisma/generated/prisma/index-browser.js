@@ -124,7 +124,7 @@ exports.Prisma.UserScalarFieldEnum = {
   userId: 'userId',
   cognitoId: 'cognitoId',
   username: 'username',
-  profilePictureUrl: 'profilePictureUrl'
+  profilePictureExt: 'profilePictureExt'
 };
 
 exports.Prisma.ProjectScalarFieldEnum = {
@@ -168,8 +168,8 @@ exports.Prisma.TaskAssignmentScalarFieldEnum = {
 
 exports.Prisma.AttachmentScalarFieldEnum = {
   id: 'id',
-  fileURL: 'fileURL',
   fileName: 'fileName',
+  fileExt: 'fileExt',
   taskId: 'taskId',
   uploadedById: 'uploadedById'
 };

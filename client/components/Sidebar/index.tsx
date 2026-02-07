@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ModalNewBoard from "@/app/boards/ModalNewBoard";
+import S3Image from "@/components/S3Image";
 
 const Sidebar = () => {
     const [showBoards, setShowBoards] = useState(true);
@@ -137,9 +138,9 @@ const Sidebar = () => {
             <div className="z-10 mt-32 flex w-full flex-col items-center gap-4 bg-white px-8 py-4 dark:bg-dark-secondary md:hidden">
                 <div className="flex w-full items-center">
                     <div className="align-center flex h-9 w-9 justify-center">
-                        {!!currentUserDetails?.profilePictureUrl ? (
-                            <Image
-                                src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
+                        {currentUserDetails?.userId && currentUserDetails?.profilePictureExt ? (
+                            <S3Image
+                                s3Key={`users/${currentUserDetails.userId}/profile.${currentUserDetails.profilePictureExt}`}
                                 alt={currentUserDetails?.username || "User Profile Picture"}
                                 width={100}
                                 height={50}

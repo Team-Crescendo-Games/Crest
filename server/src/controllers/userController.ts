@@ -46,7 +46,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
                 data: {
                     cognitoId: cognitoId,
                     username: `user_${cognitoId.substring(0, 8)}`,
-                    profilePictureUrl: "i1.jpg",
+                    profilePictureExt: "jpg",
                 },
             });
         }
@@ -64,19 +64,18 @@ export const postUser = async (req: Request, res: Response) => {
         const {
             username,
             cognitoId,
-            profilePictureUrl = "i1.jpg",
         } = req.body;
         const newUser = await getPrismaClient().user.create({
             data: {
                 username,
                 cognitoId,
-                profilePictureUrl,
+                profilePictureExt: "jpg",
             },
         });
         res.json({ message: "User Created Successfully", newUser });
     } catch (error: any) {
         res
             .status(500)
-            .json({ message: `Error retrieving users: ${error.message}` });
+            .json({ message: `Error creating user: ${error.message}` });
     }
 };

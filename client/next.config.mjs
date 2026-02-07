@@ -3,7 +3,7 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: "https",
-                hostname: "ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com",
+                hostname: process.env.S3_DEFAULT_BUCKET,
                 port: "",
                 pathname: "/**",
             }

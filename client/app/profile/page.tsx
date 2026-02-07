@@ -2,8 +2,8 @@
 
 import { useGetAuthUserQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
-import Image from "next/image";
 import { User, Mail, Shield, Calendar } from "lucide-react";
+import S3Image from "@/components/S3Image";
 
 const ProfilePage = () => {
   const { data: authData, isLoading } = useGetAuthUserQuery({});
@@ -41,9 +41,9 @@ const ProfilePage = () => {
       <div className="rounded-lg bg-white p-6 shadow dark:bg-dark-secondary">
         {/* Profile Header */}
         <div className="mb-6 flex items-center gap-4">
-          {userDetails?.profilePictureUrl ? (
-            <Image
-              src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${userDetails.profilePictureUrl}`}
+          {userDetails?.userId && userDetails?.profilePictureExt ? (
+            <S3Image
+              s3Key={`users/${userDetails.userId}/profile.${userDetails.profilePictureExt}`}
               alt={userDetails.username || "Profile"}
               width={80}
               height={80}

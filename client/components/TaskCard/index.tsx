@@ -6,7 +6,7 @@ import RadialProgress from "@/components/RadialProgress";
 import { format } from "date-fns";
 import { MessageSquareMore, X, Plus } from "lucide-react";
 import { Paperclip } from "lucide-react";
-import Image from "next/image";
+import S3Image from "@/components/S3Image";
 
 type Props = {
   task: Task;
@@ -149,9 +149,9 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
 
         <div className="mt-2 flex items-center justify-between">
           <div className="flex -space-x-1 overflow-hidden">
-            {task.assignee?.profilePictureUrl && (
-              <Image
-                src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${task.assignee.profilePictureUrl}`}
+            {task.assignee?.userId && task.assignee?.profilePictureExt && (
+              <S3Image
+                s3Key={`users/${task.assignee.userId}/profile.${task.assignee.profilePictureExt}`}
                 alt={task.assignee.username}
                 width={24}
                 height={24}

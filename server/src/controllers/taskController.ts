@@ -60,7 +60,7 @@ export const getTasks = async (_req: Request, res: Response) => {
                             title: true,
                             status: true,
                             priority: true,
-                            assignee: { select: { userId: true, username: true, profilePictureUrl: true } },
+                            assignee: { select: { userId: true, username: true, profilePictureExt: true } },
                         },
                     },
                     parentTask: {
@@ -248,7 +248,7 @@ export const updateTask = async (
                         title: true,
                         status: true,
                         priority: true,
-                        assignee: { select: { userId: true, username: true, profilePictureUrl: true } },
+                        assignee: { select: { userId: true, username: true, profilePictureExt: true } },
                     },
                 },
                 parentTask: {

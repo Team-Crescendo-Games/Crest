@@ -1,6 +1,6 @@
 import { User } from "@/state/api";
-import Image from "next/image";
 import { User as UserIcon, Mail } from "lucide-react";
+import S3Image from "@/components/S3Image";
 
 type Props = {
   user: User;
@@ -9,9 +9,9 @@ type Props = {
 const UserCard = ({ user }: Props) => {
   return (
     <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-md dark:bg-dark-secondary">
-      {user.profilePictureUrl ? (
-        <Image
-          src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${user.profilePictureUrl}`}
+      {user.userId && user.profilePictureExt ? (
+        <S3Image
+          s3Key={`users/${user.userId}/profile.${user.profilePictureExt}`}
           alt={user.username}
           width={48}
           height={48}

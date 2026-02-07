@@ -9,9 +9,10 @@ import {
     GridToolbarContainer,
     GridToolbarExport,
     GridToolbarFilterButton,
+    GridRenderCellParams,
 } from "@mui/x-data-grid";
-import Image from "next/image";
 import { dataGridClassNames, dataGridSxStyles } from "@/lib/utils";
+import S3Image from "@/components/S3Image";
 
 const CustomToolbar = () => (
     <GridToolbarContainer className="toolbar flex gap-2">
@@ -20,26 +21,36 @@ const CustomToolbar = () => (
     </GridToolbarContainer>
 );
 
+const ProfilePictureCell = ({ row }: GridRenderCellParams) => {
+    const s3Key = row.userId && row.profilePictureExt
+        ? `users/${row.userId}/profile.${row.profilePictureExt}`
+        : null;
+    
+    if (!s3Key) return null;
+    
+    return (
+        <div className="flex h-full w-full items-center justify-center">
+            <div className="h-9 w-9">
+                <S3Image
+                    s3Key={s3Key}
+                    alt={row.username}
+                    width={100}
+                    height={50}
+                    className="h-full rounded-full object-cover"
+                />
+            </div>
+        </div>
+    );
+};
+
 const columns: GridColDef[] = [
     { field: "userId", headerName: "ID", width: 100 },
     { field: "username", headerName: "Username", width: 150 },
     {
-        field: "profilePictureUrl",
+        field: "profilePictureExt",
         headerName: "Profile Picture",
         width: 100,
-        renderCell: (params) => (
-            <div className="flex h-full w-full items-center justify-center">
-                <div className="h-9 w-9">
-                    <Image
-                        src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${params.value}`}
-                        alt={params.row.username}
-                        width={100}
-                        height={50}
-                        className="h-full rounded-full object-cover"
-                    />
-                </div>
-            </div>
-        ),
+        renderCell: (params) => <ProfilePictureCell {...params} />,
     },
 ];
 

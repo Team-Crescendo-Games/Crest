@@ -26,17 +26,25 @@ export interface User {
     userId?: number;
     username: string;
     email: string;
-    profilePictureUrl?: string;
+    profilePictureExt?: string;
     cognitoId?: string;
 }
 
+// Helper to construct S3 key for user profile pictures
+export const getUserProfileS3Key = (userId: number, ext: string) =>
+    `users/${userId}/profile.${ext}`;
+
 export interface Attachment {
     id: number;
-    fileURL: string;
     fileName: string;
+    fileExt: string;
     taskId: number;
     uploadedById: number;
 }
+
+// Helper to construct S3 key for attachments
+export const getAttachmentS3Key = (taskId: number, attachmentId: number, fileExt: string) =>
+    `tasks/${taskId}/attachments/${attachmentId}.${fileExt}`;
 
 export interface Comment {
     id: number;
@@ -58,7 +66,7 @@ export interface SubtaskSummary {
     title: string;
     status?: string;
     priority?: string;
-    assignee?: { userId: number; username: string; profilePictureUrl?: string };
+    assignee?: { userId: number; username: string; profilePictureExt?: string };
 }
 
 export interface ParentTaskSummary {
@@ -267,6 +275,20 @@ export const api = createApi({
             }),
             invalidatesTags: ["Tasks"],
         }),
+
+        // s3 presigned urls
+        getPresignedUrl: build.query<{ url: string }, string>({
+            query: (key) => `s3/presigned?key=${encodeURIComponent(key)}`,
+            keepUnusedDataFor: 3500, // Cache for ~1 hour (slightly less than URL expiry)
+        }),
+
+        getPresignedUploadUrl: build.mutation<{ url: string }, { key: string; contentType: string }>({
+            query: (body) => ({
+                url: "s3/presigned/upload",
+                method: "POST",
+                body,
+            }),
+        }),
     }),
 });
 
@@ -288,4 +310,6 @@ export const {
     useUpdateTagMutation,
     useDeleteTagMutation,
     useCreateCommentMutation,
+    useGetPresignedUrlQuery,
+    useGetPresignedUploadUrlMutation,
 } = api;

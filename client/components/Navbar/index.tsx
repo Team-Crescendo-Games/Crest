@@ -3,8 +3,8 @@ import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
 import { useGetAuthUserQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
-import Image from "next/image";
 import Link from "next/link";
+import S3Image from "@/components/S3Image";
 
 const Navbar = () => {
     const dispatch = useAppDispatch();
@@ -57,9 +57,9 @@ const Navbar = () => {
                 <div className="ml-2 mr-5 hidden min-h-[2em] w-[0.1rem] bg-gray-200 md:inline-block"></div>
                 <div className="hidden items-center justify-between md:flex">
                     <Link href="/profile" className="align-center flex h-7 w-7 justify-center hover:opacity-80">
-                        {!!currentUserDetails?.profilePictureUrl ? (
-                            <Image
-                                src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
+                        {currentUserDetails?.userId && currentUserDetails?.profilePictureExt ? (
+                            <S3Image
+                                s3Key={`users/${currentUserDetails.userId}/profile.${currentUserDetails.profilePictureExt}`}
                                 alt={currentUserDetails?.username || "User Profile Picture"}
                                 width={100}
                                 height={50}

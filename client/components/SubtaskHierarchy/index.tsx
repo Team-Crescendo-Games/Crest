@@ -2,7 +2,7 @@
 
 import { SubtaskSummary, ParentTaskSummary } from "@/state/api";
 import { CornerLeftUp, ListTree, User } from "lucide-react";
-import Image from "next/image";
+import S3Image from "@/components/S3Image";
 
 interface SubtaskHierarchyProps {
   parentTask?: ParentTaskSummary | null;
@@ -79,9 +79,9 @@ const SubtaskHierarchy = ({
                   </span>
 
                   {/* Assignee Avatar */}
-                  {subtask.assignee?.profilePictureUrl ? (
-                    <Image
-                      src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${subtask.assignee.profilePictureUrl}`}
+                  {subtask.assignee?.userId && subtask.assignee?.profilePictureExt ? (
+                    <S3Image
+                      s3Key={`users/${subtask.assignee.userId}/profile.${subtask.assignee.profilePictureExt}`}
                       alt={subtask.assignee.username}
                       width={20}
                       height={20}

@@ -14,7 +14,7 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
     const { data: availableTags } = useGetTagsQuery();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [status, setStatus] = useState<Status>(Status.ToDo);
+    const [status, setStatus] = useState<Status>(Status.InputQueue);
     const [priority, setPriority] = useState<Priority>(Priority.Backlog);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [startDate, setStartDate] = useState("");

@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Modal from "../Modal";
 import SubtaskHierarchy from "@/components/SubtaskHierarchy";
-import { Task, Priority, Status, useUpdateTaskMutation, useGetUsersQuery, useGetTagsQuery, useCreateCommentMutation, useGetAuthUserQuery } from "@/state/api";
+import { Task, Priority, Status, useUpdateTaskMutation, useGetUsersQuery, useGetTagsQuery, useCreateCommentMutation, useGetAuthUserQuery, getAttachmentS3Key, getUserProfileS3Key } from "@/state/api";
 import { format } from "date-fns";
 import { Calendar, MessageSquareMore, User, Users, Tag, Award, Pencil, X, Plus, Paperclip } from "lucide-react";
-import Image from "next/image";
+import S3Image from "@/components/S3Image";
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -203,9 +203,9 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                 currentTask.comments.map((comment) => (
                   <div key={comment.id} className="group">
                     <div className="flex gap-2">
-                      {comment.user?.profilePictureUrl ? (
-                        <Image
-                          src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${comment.user.profilePictureUrl}`}
+                      {comment.user?.profilePictureExt && comment.user?.userId ? (
+                        <S3Image
+                          s3Key={getUserProfileS3Key(comment.user.userId, comment.user.profilePictureExt)}
                           alt={comment.user.username}
                           width={28}
                           height={28}
@@ -241,9 +241,9 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
             {/* Add comment input - Google style */}
             <div className="border-t border-gray-200 p-3 dark:border-stroke-dark">
               <div className="flex gap-2">
-                {authData?.userDetails?.profilePictureUrl ? (
-                  <Image
-                    src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${authData.userDetails.profilePictureUrl}`}
+                {authData?.userDetails?.profilePictureExt && authData?.userDetails?.userId ? (
+                  <S3Image
+                    s3Key={getUserProfileS3Key(authData.userDetails.userId, authData.userDetails.profilePictureExt)}
                     alt="You"
                     width={28}
                     height={28}
@@ -572,9 +572,9 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Author</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {currentTask.author?.profilePictureUrl ? (
-                    <Image
-                      src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${currentTask.author.profilePictureUrl}`}
+                  {currentTask.author?.profilePictureExt && currentTask.author?.userId ? (
+                    <S3Image
+                      s3Key={getUserProfileS3Key(currentTask.author.userId, currentTask.author.profilePictureExt)}
                       alt={currentTask.author.username}
                       width={32}
                       height={32}
@@ -596,9 +596,9 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Assignee</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {currentTask.assignee?.profilePictureUrl ? (
-                    <Image
-                      src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${currentTask.assignee.profilePictureUrl}`}
+                  {currentTask.assignee?.profilePictureExt && currentTask.assignee?.userId ? (
+                    <S3Image
+                      s3Key={getUserProfileS3Key(currentTask.assignee.userId, currentTask.assignee.profilePictureExt)}
                       alt={currentTask.assignee.username}
                       width={32}
                       height={32}
@@ -643,8 +643,8 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks }: TaskDetailModalProps)
                   </div>
                   {previewAttachmentId === attachment.id && (
                     <div className="p-2">
-                      <Image
-                        src={`https://ninghuax-tm-demo-bucket-us-west-2.s3.us-east-1.amazonaws.com/${attachment.fileURL}`}
+                      <S3Image
+                        s3Key={getAttachmentS3Key(attachment.taskId, attachment.id, attachment.fileExt)}
                         alt={attachment.fileName}
                         width={600}
                         height={400}
