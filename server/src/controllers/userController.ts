@@ -43,10 +43,22 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
         // Auto-create user if they don't exist (for local dev without Lambda trigger)
         if (!user) {
             if (process.env.NODE_ENV === 'development') {
+                // Use configured dev account details from environment
+                const devUsername = process.env.DEV_ACCOUNT_NAME;
+                const devEmail = process.env.DEV_ACCOUNT_EMAIL;
+                
+                if (!devUsername || !devEmail) {
+                    res.status(500).json({ 
+                        message: 'Dev account not configured. Set DEV_ACCOUNT_NAME and DEV_ACCOUNT_EMAIL in .env' 
+                    });
+                    return;
+                }
+                
                 user = await getPrismaClient().user.create({
                     data: {
                         cognitoId: cognitoId,
-                        username: `user_${cognitoId.substring(0, 8)}`,
+                        username: devUsername,
+                        email: devEmail,
                         profilePictureExt: "jpg",
                     },
                 });
@@ -109,5 +121,30 @@ export const postUser = async (req: Request, res: Response) => {
         res
             .status(500)
             .json({ message: `Error creating user: ${error.message}` });
+    }
+};
+
+export const updateUserProfilePicture = async (req: Request, res: Response): Promise<void> => {
+    const { cognitoId } = req.params;
+    const { profilePictureExt } = req.body;
+    
+    if (!cognitoId || typeof cognitoId !== 'string') {
+        res.status(400).json({ message: 'Invalid cognitoId parameter' });
+        return;
+    }
+    
+    if (!profilePictureExt || typeof profilePictureExt !== 'string') {
+        res.status(400).json({ message: 'Invalid profilePictureExt parameter' });
+        return;
+    }
+    
+    try {
+        const user = await getPrismaClient().user.update({
+            where: { cognitoId },
+            data: { profilePictureExt },
+        });
+        res.json(user);
+    } catch (error: any) {
+        res.status(500).json({ message: `Error updating profile picture: ${error.message}` });
     }
 };

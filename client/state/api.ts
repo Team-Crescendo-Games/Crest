@@ -336,6 +336,15 @@ export const api = createApi({
             },
         }),
 
+        updateUserProfilePicture: build.mutation<User, { cognitoId: string; profilePictureExt: string }>({
+            query: ({ cognitoId, profilePictureExt }) => ({
+                url: `users/${cognitoId}/profile-picture`,
+                method: "PATCH",
+                body: { profilePictureExt },
+            }),
+            invalidatesTags: ["Users"],
+        }),
+
         // search
         search: build.query<SearchResults, { query: string; categories?: string[] }>({
             query: ({ query, categories }) => {
@@ -542,6 +551,7 @@ export const {
     useGetTasksAssignedToUserQuery,
     useGetTasksAuthoredByUserQuery,
     useGetAuthUserQuery,
+    useUpdateUserProfilePictureMutation,
     useGetTagsQuery,
     useCreateTagMutation,
     useUpdateTagMutation,
