@@ -69,6 +69,7 @@ export const getSprint = async (req: Request, res: Response) => {
                 author: true,
                 assignee: true,
                 comments: {
+                  orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                   include: {
                     user: true,
                     reactions: {
@@ -81,6 +82,14 @@ export const getSprint = async (req: Request, res: Response) => {
                   },
                 },
                 attachments: true,
+                activities: {
+                  include: {
+                    user: {
+                      select: { userId: true, username: true, profilePictureExt: true },
+                    },
+                  },
+                  orderBy: { createdAt: 'desc' },
+                },
                 taskTags: {
                   include: {
                     tag: true

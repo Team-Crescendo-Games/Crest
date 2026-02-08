@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Task as TaskType, useUpdateTaskStatusMutation } from "@/state/api";
+import { Task as TaskType, useUpdateTaskStatusMutation, useGetAuthUserQuery } from "@/state/api";
 import { Plus } from "lucide-react";
 import type { DropTargetMonitor, DragSourceMonitor } from "react-dnd";
 import TaskDetailModal from "@/components/TaskDetailModal";
@@ -23,6 +23,7 @@ const taskStatus = ["Input Queue", "Work In Progress", "Review", "Done"];
 
 const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = initialSortState }: BoardViewProps) => {
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
+  const { data: authData } = useGetAuthUserQuery({});
 
   // Apply filters then sorting to tasks
   const filteredTasks = applyFilters(tasks, filterState);
@@ -47,7 +48,8 @@ const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = init
 
   const moveTask = async (taskId: number, toStatus: string) => {
     try {
-      await updateTaskStatus({ taskId, status: toStatus }).unwrap();
+      const userId = authData?.userDetails?.userId;
+      await updateTaskStatus({ taskId, status: toStatus, userId }).unwrap();
     } catch (error) {
       console.error("Failed to update task status:", error);
       // Optionally show an error message to the user

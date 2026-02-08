@@ -16,6 +16,7 @@ import commentRoutes from "./routes/commentRoutes.ts";
 import s3Routes from "./routes/s3Routes.ts";
 import sprintRoutes from "./routes/sprintRoutes.ts";
 import reactionRoutes from "./routes/reactionRoutes.ts";
+import activityRoutes from "./routes/activityRoutes.ts";
 
 const app = express();
 app.use(express.json());
@@ -38,6 +39,7 @@ app.use("/comments", commentRoutes);
 app.use("/s3", s3Routes);
 app.use("/sprints", sprintRoutes);
 app.use("/reactions", reactionRoutes);
+app.use("/activities", activityRoutes);
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, "0.0.0.0", () => {

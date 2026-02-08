@@ -5,7 +5,7 @@ import { Task, Priority, useUpdateTaskMutation, useGetTagsQuery } from "@/state/
 import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
 import RadialProgress from "@/components/RadialProgress";
 import { format } from "date-fns";
-import { MessageSquareMore, X, Plus } from "lucide-react";
+import { MessageSquareMore, X, Plus, Diamond } from "lucide-react";
 import { Paperclip } from "lucide-react";
 import UserIcon from "@/components/UserIcon";
 
@@ -134,7 +134,10 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-sm dark:text-white">{task.title}</h4>
           {typeof task.points === "number" && (
-            <div className="text-xs font-semibold dark:text-white">{task.points} pts</div>
+            <div className="flex items-center gap-0.5 text-xs text-gray-400 dark:text-neutral-500">
+              {task.points}
+              <Diamond size={10} className="fill-current" />
+            </div>
           )}
         </div>
 

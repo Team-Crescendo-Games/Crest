@@ -26,6 +26,7 @@ model User {
   attachments      Attachment[]
   comments         Comment[]
   commentReactions CommentReaction[]
+  activities       Activity[]
 }
 
 model Project {
@@ -59,6 +60,7 @@ model Task {
   comments        Comment[]
   taskTags        TaskTag[]
   sprintTasks     SprintTask[]
+  activities      Activity[]
 }
 
 model Tag {
@@ -100,10 +102,12 @@ model Attachment {
 }
 
 model Comment {
-  id     Int    @id @default(autoincrement())
-  text   String
-  taskId Int
-  userId Int
+  id         Int      @id @default(autoincrement())
+  text       String
+  taskId     Int
+  userId     Int
+  createdAt  DateTime @default(now())
+  isResolved Boolean  @default(false)
 
   task      Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user      User              @relation(fields: [userId], references: [userId])
@@ -140,4 +144,22 @@ model SprintTask {
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@unique([sprintId, taskId])
+}
+
+
+model Activity {
+  id             Int       @id @default(autoincrement())
+  taskId         Int
+  userId         Int
+  activityType   Int       // 0: Create, 1: Move, 2: Edit
+  previousStatus String?   // For Move activities
+  newStatus      String?   // For Move activities
+  editField      String?   // For Edit activities (e.g., "description", "label Feature")
+  createdAt      DateTime  @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [userId])
+
+  @@index([taskId])
+  @@index([userId])
 }

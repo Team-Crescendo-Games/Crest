@@ -60,3 +60,42 @@ export const createComment = async (
         res.status(500).json({ error: `Error creating comment: ${error.message}` });
     }
 };
+
+export const toggleCommentResolved = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const { commentId } = req.params;
+    const numericCommentId = Number(commentId);
+    
+    if (isNaN(numericCommentId)) {
+        res.status(400).json({ error: `Invalid comment id: ${commentId}` });
+        return;
+    }
+    
+    try {
+        const comment = await getPrismaClient().comment.findUnique({
+            where: { id: numericCommentId },
+        });
+        
+        if (!comment) {
+            res.status(404).json({ error: `Comment with id ${numericCommentId} not found` });
+            return;
+        }
+        
+        const updatedComment = await getPrismaClient().comment.update({
+            where: { id: numericCommentId },
+            data: { isResolved: !comment.isResolved },
+            include: {
+                user: true,
+                reactions: {
+                    include: { user: true },
+                },
+            },
+        });
+        
+        res.json(updatedComment);
+    } catch (error: any) {
+        res.status(500).json({ error: `Error toggling comment resolved: ${error.message}` });
+    }
+};

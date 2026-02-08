@@ -96,7 +96,6 @@ const lightTheme: Theme = {
             },
             fieldcontrol: {
                 borderRadius: { value: "0.5rem" },
-                backgroundColor: { value: "{colors.background.primary}" },
                 borderColor: { value: "#d1d5db" },
                 color: { value: "{colors.font.primary}" },
                 _focus: {
@@ -163,7 +162,6 @@ const darkTheme: Theme = {
             },
             fieldcontrol: {
                 borderRadius: { value: "0.5rem" },
-                backgroundColor: { value: "{colors.background.secondary}" },
                 borderColor: { value: "#323235" },
                 color: { value: "{colors.font.primary}" },
                 _focus: {

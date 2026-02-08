@@ -15,6 +15,27 @@ export enum Priority {
     Backlog = "Backlog",
 }
 
+export enum ActivityType {
+    CREATE_TASK = 0,
+    MOVE_TASK = 1,
+    EDIT_TASK = 2,
+}
+
+export interface Activity {
+    id: number;
+    taskId: number;
+    userId: number;
+    activityType: number;
+    previousStatus?: string | null;
+    newStatus?: string | null;
+    editField?: string | null;
+    createdAt: string;
+    user: {
+        userId: number;
+        username: string;
+    };
+}
+
 export enum Status {
     InputQueue = "Input Queue",
     WorkInProgress = "Work In Progress",
@@ -51,6 +72,8 @@ export interface Comment {
     text: string;
     taskId: number;
     userId: number;
+    createdAt?: string;
+    isResolved?: boolean;
     user?: User;
     reactions?: CommentReaction[];
 }
@@ -116,6 +139,7 @@ export interface Task {
     subtasks?: SubtaskSummary[];
     parentTask?: ParentTaskSummary | null;
     sprints?: SprintSummary[];
+    activities?: Activity[];
 }
 
 export interface SearchResults {
@@ -153,7 +177,7 @@ export const api = createApi({
         },
     }),
     reducerPath: "api",
-    tagTypes: ["Projects", "Tasks", "Users", "Tags", "Sprints"],
+    tagTypes: ["Projects", "Tasks", "Users", "Tags", "Sprints", "Activities"],
     endpoints: (build) => ({
         // projects
         getProjects: build.query<Project[], void>({
@@ -217,11 +241,11 @@ export const api = createApi({
             invalidatesTags: ["Tasks", "Sprints"],
         }),
 
-        updateTaskStatus: build.mutation<Task, { taskId: number; status: string }>({
-            query: ({ taskId, status }) => ({
+        updateTaskStatus: build.mutation<Task, { taskId: number; status: string; userId?: number }>({
+            query: ({ taskId, status, userId }) => ({
                 url: `tasks/${taskId}/status`,
                 method: "PATCH",
-                body: { status },
+                body: { status, userId },
             }),
             invalidatesTags: (result, error, { taskId }) => [
                 { type: "Tasks", id: taskId },
@@ -230,7 +254,7 @@ export const api = createApi({
             ],
         }),
 
-        updateTask: build.mutation<Task, Partial<Task> & { id: number; tagIds?: number[]; subtaskIds?: number[]; sprintIds?: number[] }>({
+        updateTask: build.mutation<Task, Partial<Task> & { id: number; tagIds?: number[]; subtaskIds?: number[]; sprintIds?: number[]; userId?: number }>({
             query: ({ id, ...body }) => ({
                 url: `tasks/${id}`,
                 method: "PATCH",
@@ -414,6 +438,14 @@ export const api = createApi({
             invalidatesTags: ["Tasks", "Sprints"],
         }),
 
+        toggleCommentResolved: build.mutation<Comment, { commentId: number }>({
+            query: ({ commentId }) => ({
+                url: `comments/${commentId}/resolved`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["Tasks", "Sprints"],
+        }),
+
         // reactions
         toggleReaction: build.mutation<CommentReaction | null, { commentId: number; userId: number; emoji: string }>({
             query: (body) => ({
@@ -436,6 +468,15 @@ export const api = createApi({
                 method: "POST",
                 body,
             }),
+        }),
+
+        // activities
+        getActivitiesByTask: build.query<Activity[], number>({
+            query: (taskId) => `activities?taskId=${taskId}`,
+            providesTags: (result, error, taskId) => [
+                { type: "Activities", id: taskId },
+                "Activities",
+            ],
         }),
     }),
 });
@@ -460,6 +501,7 @@ export const {
     useUpdateTagMutation,
     useDeleteTagMutation,
     useCreateCommentMutation,
+    useToggleCommentResolvedMutation,
     useToggleReactionMutation,
     useGetPresignedUrlQuery,
     useGetPresignedUploadUrlMutation,
@@ -471,4 +513,5 @@ export const {
     useAddTaskToSprintMutation,
     useRemoveTaskFromSprintMutation,
     useDuplicateSprintMutation,
+    useGetActivitiesByTaskQuery,
 } = api;

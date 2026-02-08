@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { PrismaClient } from '../../prisma/generated/prisma/client.js';
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { createActivity, ActivityType } from "./activityController.ts";
 
 let prisma: PrismaClient;
 
@@ -48,6 +49,7 @@ export const getTasks = async (_req: Request, res: Response) => {
                     author: true,
                     assignee: true,
                     comments: {
+                        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                         include: {
                             user: true,
                             reactions: {
@@ -78,6 +80,16 @@ export const getTasks = async (_req: Request, res: Response) => {
                             sprint: {
                                 select: { id: true, title: true },
                             },
+                        },
+                    },
+                    activities: {
+                        include: {
+                            user: {
+                                select: { userId: true, username: true },
+                            },
+                        },
+                        orderBy: {
+                            createdAt: 'desc',
                         },
                     },
                 }
@@ -156,6 +168,18 @@ export const createTask = async (
             },
         });
         
+        // Create a Create Task activity (Requirement 2.1)
+        try {
+            await createActivity({
+                taskId: newTask.id,
+                userId: authorUserId,
+                activityType: ActivityType.CREATE_TASK,
+            });
+        } catch (activityError: any) {
+            console.error("Error creating activity for new task:", activityError.message);
+            // Don't fail the task creation if activity creation fails
+        }
+        
         // Map integer status to string for frontend
         const taskWithStringStatus = {
             ...newTask,
@@ -174,8 +198,16 @@ export const updateTaskStatus = async (
     res: Response
 ): Promise<void> => {
     const { taskId } = req.params;
-    const { status } = req.body;
+    const { status, userId } = req.body;
     try {
+        // Fetch the current task to get the previous status (Requirement 2.2)
+        const currentTask = await getPrismaClient().task.findUnique({
+            where: { id: Number(taskId) },
+            select: { status: true },
+        });
+        
+        const previousStatus = currentTask ? statusIntToString(currentTask.status) : null;
+        
         const updatedTask = await getPrismaClient().task.update({
             where: {
                 id: Number(taskId),
@@ -184,6 +216,22 @@ export const updateTaskStatus = async (
                 status: statusStringToInt(status),
             },
         });
+        
+        // Create a Move Task activity if status actually changed (Requirement 2.2)
+        if (previousStatus && previousStatus !== status && userId) {
+            try {
+                await createActivity({
+                    taskId: Number(taskId),
+                    userId: userId,
+                    activityType: ActivityType.MOVE_TASK,
+                    previousStatus: previousStatus,
+                    newStatus: status,
+                });
+            } catch (activityError: any) {
+                console.error("Error creating activity for status update:", activityError.message);
+                // Don't fail the status update if activity creation fails
+            }
+        }
         
         // Map integer status to string for frontend
         const taskWithStringStatus = {
@@ -202,21 +250,112 @@ export const updateTask = async (
     res: Response
 ): Promise<void> => {
     const { taskId } = req.params;
-    const { title, description, status, priority, startDate, dueDate, points, assignedUserId, tagIds, subtaskIds, projectId, sprintIds } = req.body;
+    const { title, description, status, priority, startDate, dueDate, points, assignedUserId, tagIds, subtaskIds, projectId, sprintIds, userId } = req.body;
     try {
+        // Fetch the current task to track changes (Requirement 2.3)
+        const currentTask = await getPrismaClient().task.findUnique({
+            where: { id: Number(taskId) },
+            include: {
+                assignee: { select: { username: true } },
+                taskTags: { include: { tag: true } },
+            },
+        });
+        
         const data: Record<string, any> = {};
-        if (title !== undefined) data.title = title;
-        if (description !== undefined) data.description = description;
-        if (status !== undefined) data.status = statusStringToInt(status);
-        if (priority !== undefined) data.priority = priority || null;
-        if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
-        if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
-        if (points !== undefined) data.points = points !== null && points !== "" ? Number(points) : null;
-        if (assignedUserId !== undefined) data.assignedUserId = assignedUserId ? Number(assignedUserId) : null;
+        const editActivities: string[] = [];
+        
+        if (title !== undefined) {
+            data.title = title;
+            if (currentTask && currentTask.title !== title) {
+                editActivities.push("updated the title");
+            }
+        }
+        if (description !== undefined) {
+            data.description = description;
+            if (currentTask && currentTask.description !== description) {
+                editActivities.push("updated the description");
+            }
+        }
+        if (status !== undefined) {
+            data.status = statusStringToInt(status);
+            const currentStatusString = statusIntToString(currentTask?.status ?? null);
+            if (currentTask && currentStatusString !== status) {
+                editActivities.push(`changed the status to ${status}`);
+            }
+        }
+        if (priority !== undefined) {
+            data.priority = priority || null;
+            if (currentTask && currentTask.priority !== (priority || null)) {
+                if (priority) {
+                    editActivities.push(`changed the priority to ${priority}`);
+                } else {
+                    editActivities.push("removed the priority");
+                }
+            }
+        }
+        if (startDate !== undefined) {
+            data.startDate = startDate ? new Date(startDate) : null;
+            const currentStartDate = currentTask?.startDate?.toISOString().split('T')[0] || null;
+            const newStartDate = startDate ? new Date(startDate).toISOString().split('T')[0] : null;
+            if (currentStartDate !== newStartDate) {
+                if (startDate) {
+                    editActivities.push("set the start date");
+                } else {
+                    editActivities.push("removed the start date");
+                }
+            }
+        }
+        if (dueDate !== undefined) {
+            data.dueDate = dueDate ? new Date(dueDate) : null;
+            const currentDueDate = currentTask?.dueDate?.toISOString().split('T')[0] || null;
+            const newDueDate = dueDate ? new Date(dueDate).toISOString().split('T')[0] : null;
+            if (currentDueDate !== newDueDate) {
+                if (dueDate) {
+                    editActivities.push("set the due date");
+                } else {
+                    editActivities.push("removed the due date");
+                }
+            }
+        }
+        if (points !== undefined) {
+            data.points = points !== null && points !== "" ? Number(points) : null;
+            const currentPoints = currentTask?.points ?? null;
+            const newPoints = points !== null && points !== "" ? Number(points) : null;
+            if (currentPoints !== newPoints) {
+                if (newPoints !== null) {
+                    editActivities.push(`updated the points to ${newPoints}`);
+                } else {
+                    editActivities.push("removed the points");
+                }
+            }
+        }
+        if (assignedUserId !== undefined) {
+            data.assignedUserId = assignedUserId ? Number(assignedUserId) : null;
+            const currentAssigneeId = currentTask?.assignedUserId ?? null;
+            const newAssigneeId = assignedUserId ? Number(assignedUserId) : null;
+            if (currentAssigneeId !== newAssigneeId) {
+                if (newAssigneeId !== null) {
+                    editActivities.push("assigned someone to the card");
+                } else {
+                    editActivities.push("unassigned the card");
+                }
+            }
+        }
         if (projectId !== undefined) data.projectId = projectId ? Number(projectId) : null;
 
         // Handle tag updates: delete existing and create new associations
         if (tagIds !== undefined) {
+            const currentTagIds = currentTask?.taskTags?.map(tt => tt.tagId) || [];
+            const newTagIds = tagIds as number[];
+            
+            // Check for added tags
+            const addedTags = newTagIds.filter(id => !currentTagIds.includes(id));
+            const removedTags = currentTagIds.filter(id => !newTagIds.includes(id));
+            
+            if (addedTags.length > 0 || removedTags.length > 0) {
+                editActivities.push("updated the tags");
+            }
+            
             await getPrismaClient().taskTag.deleteMany({
                 where: { taskId: Number(taskId) },
             });
@@ -232,6 +371,22 @@ export const updateTask = async (
 
         // Handle sprint updates: delete existing and create new associations
         if (sprintIds !== undefined) {
+            // Get current sprint IDs to track changes
+            const currentSprintTask = await getPrismaClient().sprintTask.findMany({
+                where: { taskId: Number(taskId) },
+                select: { sprintId: true },
+            });
+            const currentSprintIds = currentSprintTask.map(st => st.sprintId);
+            const newSprintIds = sprintIds as number[];
+            
+            // Check for added or removed sprints
+            const addedSprints = newSprintIds.filter(id => !currentSprintIds.includes(id));
+            const removedSprints = currentSprintIds.filter(id => !newSprintIds.includes(id));
+            
+            if (addedSprints.length > 0 || removedSprints.length > 0) {
+                editActivities.push("updated the sprints");
+            }
+            
             await getPrismaClient().sprintTask.deleteMany({
                 where: { taskId: Number(taskId) },
             });
@@ -247,12 +402,12 @@ export const updateTask = async (
 
         // Handle subtask updates: set parentTaskId for new subtasks, clear for removed ones
         if (subtaskIds !== undefined) {
-            const currentTask = await getPrismaClient().task.findUnique({
+            const currentSubtaskTask = await getPrismaClient().task.findUnique({
                 where: { id: Number(taskId) },
                 include: { subtasks: { select: { id: true } } },
             });
             
-            const currentSubtaskIds = currentTask?.subtasks.map(s => s.id) || [];
+            const currentSubtaskIds = currentSubtaskTask?.subtasks.map(s => s.id) || [];
             const newSubtaskIds = subtaskIds as number[];
             
             // Tasks to add as subtasks (set parentTaskId)
@@ -281,6 +436,7 @@ export const updateTask = async (
                 author: true,
                 assignee: true,
                 comments: {
+                    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                     include: {
                         user: true,
                         reactions: {
@@ -313,8 +469,35 @@ export const updateTask = async (
                         },
                     },
                 },
+                activities: {
+                    include: {
+                        user: {
+                            select: { userId: true, username: true },
+                        },
+                    },
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                },
             },
         });
+        
+        // Create Edit Task activities for each changed field (Requirement 2.3)
+        if (userId && editActivities.length > 0) {
+            for (const editField of editActivities) {
+                try {
+                    await createActivity({
+                        taskId: Number(taskId),
+                        userId: userId,
+                        activityType: ActivityType.EDIT_TASK,
+                        editField: editField,
+                    });
+                } catch (activityError: any) {
+                    console.error("Error creating activity for task edit:", activityError.message);
+                    // Don't fail the task update if activity creation fails
+                }
+            }
+        }
         
         // Map integer status to string for frontend
         const taskWithStringStatus = {
@@ -350,6 +533,7 @@ export const getUserTasks = async (
                 author: true,
                 assignee: true,
                 comments: {
+                    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                     include: {
                         user: true,
                         reactions: {
@@ -380,6 +564,16 @@ export const getUserTasks = async (
                         sprint: {
                             select: { id: true, title: true },
                         },
+                    },
+                },
+                activities: {
+                    include: {
+                        user: {
+                            select: { userId: true, username: true },
+                        },
+                    },
+                    orderBy: {
+                        createdAt: 'desc',
                     },
                 },
             },

@@ -99,7 +99,7 @@ const Modal = ({ children, isOpen, onClose, name, headerRight, hideClose, hideHe
                     {/* Right floating panel */}
                     {rightPanel && (
                         <div 
-                            className="w-72 flex-shrink-0 max-h-full rounded-lg bg-white shadow-lg dark:bg-dark-secondary animate-scale-in overflow-hidden"
+                            className="w-80 flex-shrink-0 max-h-[70vh] rounded-lg bg-white shadow-lg dark:bg-dark-secondary animate-scale-in overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {rightPanel}
