@@ -405,14 +405,12 @@ export const removeTaskFromSprint = async (req: Request, res: Response) => {
 };
 
 /**
- * Duplicate a sprint with all its tasks
- * POST /sprints/:sprintId/duplicate
- * Body: { title?: string } - optional new title, defaults to "Copy of {original title}"
+ * Archive/unarchive a sprint (toggle isActive)
+ * PATCH /sprints/:sprintId/archive
  */
-export const duplicateSprint = async (req: Request, res: Response) => {
+export const archiveSprint = async (req: Request, res: Response) => {
   try {
     const { sprintId } = req.params;
-    const { title } = req.body;
     const id = Number(sprintId);
 
     if (isNaN(id)) {
@@ -420,11 +418,57 @@ export const duplicateSprint = async (req: Request, res: Response) => {
       return;
     }
 
-    // Get the original sprint with its tasks
+    // Get current sprint
+    const existingSprint = await getPrismaClient().sprint.findUnique({
+      where: { id }
+    });
+
+    if (!existingSprint) {
+      res.status(404).json({ error: "Sprint not found" });
+      return;
+    }
+
+    // Toggle isActive
+    const sprint = await getPrismaClient().sprint.update({
+      where: { id },
+      data: { isActive: !existingSprint.isActive }
+    });
+
+    res.json(sprint);
+  } catch (error: any) {
+    console.error("Error archiving sprint:", error.message);
+    res.status(500).json({ error: "Failed to archive sprint: " + error.message });
+  }
+};
+
+/**
+ * Duplicate a sprint with all its tasks
+ * POST /sprints/:sprintId/duplicate
+ * Body: { title?: string, includeFinishedTasks?: boolean } - optional new title, defaults to "Copy of {original title}"
+ * includeFinishedTasks defaults to false (only migrate non-Done tasks)
+ */
+export const duplicateSprint = async (req: Request, res: Response) => {
+  try {
+    const { sprintId } = req.params;
+    const { title, includeFinishedTasks = false } = req.body;
+    const id = Number(sprintId);
+
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid sprint ID" });
+      return;
+    }
+
+    // Get the original sprint with its tasks (including task status)
     const originalSprint = await getPrismaClient().sprint.findUnique({
       where: { id },
       include: {
-        sprintTasks: true
+        sprintTasks: {
+          include: {
+            task: {
+              select: { id: true, status: true }
+            }
+          }
+        }
       }
     });
 
@@ -443,10 +487,16 @@ export const duplicateSprint = async (req: Request, res: Response) => {
       }
     });
 
-    // Copy all task associations to the new sprint
-    if (originalSprint.sprintTasks.length > 0) {
+    // Filter tasks based on includeFinishedTasks flag
+    // Status 3 = Done
+    const tasksToMigrate = includeFinishedTasks
+      ? originalSprint.sprintTasks
+      : originalSprint.sprintTasks.filter(st => st.task.status !== 3);
+
+    // Copy task associations to the new sprint
+    if (tasksToMigrate.length > 0) {
       await getPrismaClient().sprintTask.createMany({
-        data: originalSprint.sprintTasks.map(st => ({
+        data: tasksToMigrate.map(st => ({
           sprintId: newSprint.id,
           taskId: st.taskId
         }))

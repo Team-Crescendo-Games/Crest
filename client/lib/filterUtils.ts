@@ -15,7 +15,8 @@ export function isFilterActive(filterState: FilterState): boolean {
   return (
     filterState.selectedTagIds.length > 0 ||
     filterState.selectedPriorities.length > 0 ||
-    filterState.selectedDueDateOptions.length > 0
+    filterState.selectedDueDateOptions.length > 0 ||
+    filterState.selectedAssigneeIds.length > 0
   );
 }
 
@@ -213,6 +214,32 @@ export function matchesDueDateFilter(
 }
 
 /**
+ * Checks if a task matches the assignee filter criteria.
+ * Task passes if its assignee's userId is in selectedAssigneeIds (OR logic).
+ * If selectedAssigneeIds is empty, all tasks pass.
+ *
+ * @param task - The task to check
+ * @param selectedAssigneeIds - Array of selected user IDs
+ * @returns true if task matches the assignee filter or no assignees are selected
+ */
+export function matchesAssigneeFilter(
+  task: Task,
+  selectedAssigneeIds: number[]
+): boolean {
+  // If no assignees selected, all tasks pass
+  if (selectedAssigneeIds.length === 0) {
+    return true;
+  }
+
+  // Task must have an assignee that matches one of the selected user IDs
+  if (!task.assignee?.userId) {
+    return false;
+  }
+
+  return selectedAssigneeIds.includes(task.assignee.userId);
+}
+
+/**
  * Applies all active filters to an array of tasks.
  * Uses AND logic between categories - task must pass ALL active category filters.
  * Uses OR logic within categories - task must match at least one selected option.
@@ -236,8 +263,12 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
       task,
       filterState.selectedDueDateOptions
     );
+    const passesAssigneeFilter = matchesAssigneeFilter(
+      task,
+      filterState.selectedAssigneeIds
+    );
 
-    return passesTagFilter && passesPriorityFilter && passesDueDateFilter;
+    return passesTagFilter && passesPriorityFilter && passesDueDateFilter && passesAssigneeFilter;
   });
 }
 

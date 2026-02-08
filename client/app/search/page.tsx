@@ -17,7 +17,9 @@ import {
   Users,
   CheckSquare,
 } from "lucide-react";
+import { BiColumns } from "react-icons/bi";
 import Link from "next/link";
+import { BOARD_MAIN_COLOR, SPRINT_MAIN_COLOR } from "@/lib/entityColors";
 
 const RECENT_SEARCHES_KEY = "recentSearches";
 const MAX_RECENT_SEARCHES = 5;
@@ -26,9 +28,9 @@ type Category = "tasks" | "boards" | "users" | "sprints";
 
 const CATEGORIES: { id: Category; label: string; icon: React.ReactNode }[] = [
   { id: "tasks", label: "Tasks", icon: <CheckSquare className="h-4 w-4" /> },
-  { id: "boards", label: "Boards", icon: <LayoutGrid className="h-4 w-4" /> },
+  { id: "boards", label: "Boards", icon: <BiColumns className="h-4 w-4" style={{ color: BOARD_MAIN_COLOR }} /> },
   { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
-  { id: "sprints", label: "Sprints", icon: <Zap className="h-4 w-4" /> },
+  { id: "sprints", label: "Sprints", icon: <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} /> },
 ];
 
 // Helper functions for localStorage
@@ -444,10 +446,10 @@ const Search = () => {
                       <Link
                         key={sprint.id}
                         href={`/sprints/${sprint.id}`}
-                        className="rounded-md bg-white p-4 shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600"
+                        className="rounded-md bg-white p-4 shadow transition-all hover:outline hover:outline-2 hover:outline-purple-300 dark:bg-dark-secondary dark:hover:outline-purple-600"
                       >
                         <div className="flex items-center gap-2">
-                          <Zap className="h-5 w-5 text-purple-500" />
+                          <Zap className="h-5 w-5" style={{ color: SPRINT_MAIN_COLOR }} />
                           <h3 className="font-medium text-gray-900 dark:text-white">
                             {sprint.title}
                           </h3>

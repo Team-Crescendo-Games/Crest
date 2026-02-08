@@ -7,7 +7,8 @@ import {
   deleteSprint,
   addTaskToSprint,
   removeTaskFromSprint,
-  duplicateSprint
+  duplicateSprint,
+  archiveSprint
 } from "../controllers/sprintController.ts";
 
 const router = Router();
@@ -21,6 +22,9 @@ router.delete("/:sprintId", deleteSprint);
 
 // Sprint duplication
 router.post("/:sprintId/duplicate", duplicateSprint);
+
+// Sprint archive
+router.patch("/:sprintId/archive", archiveSprint);
 
 // Sprint-Task association routes
 router.post("/:sprintId/tasks/:taskId", addTaskToSprint);

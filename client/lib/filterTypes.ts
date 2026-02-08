@@ -39,7 +39,7 @@ export const initialSortState: SortState = {
 
 /**
  * Interface representing the current state of all active filters.
- * Used to track user selections across tag, priority, and due date filters.
+ * Used to track user selections across tag, priority, due date, and assignee filters.
  */
 export interface FilterState {
   /** Array of selected tag IDs for filtering tasks by labels */
@@ -48,6 +48,8 @@ export interface FilterState {
   selectedPriorities: Priority[];
   /** Array of selected due date options for filtering tasks by deadline */
   selectedDueDateOptions: DueDateOption[];
+  /** Array of selected user IDs for filtering tasks by assignee */
+  selectedAssigneeIds: number[];
 }
 
 /**
@@ -58,4 +60,5 @@ export const initialFilterState: FilterState = {
   selectedTagIds: [],
   selectedPriorities: [],
   selectedDueDateOptions: [],
+  selectedAssigneeIds: [],
 };

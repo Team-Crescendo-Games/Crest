@@ -16,6 +16,7 @@ type Props = {
   cancelLabel?: string;
   isLoading?: boolean;
   variant?: ConfirmationVariant;
+  children?: React.ReactNode;
 };
 
 const variantStyles: Record<ConfirmationVariant, { icon: React.ReactNode; buttonClass: string }> = {
@@ -43,6 +44,7 @@ const ConfirmationMenu = ({
   cancelLabel = "Cancel",
   isLoading = false,
   variant = "info",
+  children,
 }: Props) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -79,6 +81,7 @@ const ConfirmationMenu = ({
             <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
               {message}
             </p>
+            {children && <div className="mt-3">{children}</div>}
           </div>
           <button
             onClick={onClose}

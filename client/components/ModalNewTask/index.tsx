@@ -9,9 +9,10 @@ type Props = {
     onClose: () => void;
     projectId?: number | null;
     sprintId?: number | null;
+    defaultAssigneeId?: number | null;
 };
 
-const ModalNewTask = ({ isOpen, onClose, projectId = null, sprintId = null }: Props) => {
+const ModalNewTask = ({ isOpen, onClose, projectId = null, sprintId = null, defaultAssigneeId = null }: Props) => {
     const [createTask, { isLoading }] = useCreateTaskMutation();
     const { data: availableTags } = useGetTagsQuery();
     const { data: users = [] } = useGetUsersQuery();
@@ -56,10 +57,21 @@ const ModalNewTask = ({ isOpen, onClose, projectId = null, sprintId = null }: Pr
             setPriority(Priority.Backlog);
             setSelectedTagIds([]);
             setDueDate("");
-            setSelectedAssignees([]);
             setAssigneeSearch("");
             setProjectSearch("");
             setSprintSearch("");
+            
+            // Pre-fill assignee if defaultAssigneeId is provided
+            if (defaultAssigneeId && users.length > 0) {
+                const defaultUser = users.find(u => u.userId === defaultAssigneeId);
+                if (defaultUser) {
+                    setSelectedAssignees([defaultUser]);
+                } else {
+                    setSelectedAssignees([]);
+                }
+            } else {
+                setSelectedAssignees([]);
+            }
             
             // Pre-fill project if projectId is provided
             if (projectId && projects.length > 0) {
@@ -88,7 +100,7 @@ const ModalNewTask = ({ isOpen, onClose, projectId = null, sprintId = null }: Pr
                 setSelectedSprintIds([]);
             }
         }
-    }, [isOpen, projectId, sprintId, projects, sprints]);
+    }, [isOpen, projectId, sprintId, defaultAssigneeId, projects, sprints, users]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {

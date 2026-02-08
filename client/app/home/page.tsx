@@ -3,21 +3,29 @@
 import Header from "@/components/Header";
 import TaskCard from "@/components/TaskCard";
 import TaskDetailModal from "@/components/TaskDetailModal";
-import { Task, Status, useGetAuthUserQuery, useGetTasksByUserQuery } from "@/state/api";
+import { Task, Status, useGetAuthUserQuery, useGetTasksAssignedToUserQuery, useGetTasksAuthoredByUserQuery } from "@/state/api";
 import { useState } from "react";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, UserCheck, FilePlus } from "lucide-react";
+
+type TabType = "assigned" | "created";
 
 const HomePage = () => {
   const { data: authData, isLoading: authLoading } = useGetAuthUserQuery({});
   const userId = authData?.userDetails?.userId;
 
-  const { data: tasks, isLoading: tasksLoading } = useGetTasksByUserQuery(
+  const { data: assignedTasks, isLoading: assignedLoading } = useGetTasksAssignedToUserQuery(
+    userId!,
+    { skip: !userId }
+  );
+
+  const { data: authoredTasks, isLoading: authoredLoading } = useGetTasksAuthoredByUserQuery(
     userId!,
     { skip: !userId }
   );
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("assigned");
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -30,14 +38,17 @@ const HomePage = () => {
   };
 
   // Filter for open tasks (not Done)
-  const openTasks = tasks?.filter((task) => task.status !== Status.Done) || [];
+  const openAssignedTasks = assignedTasks?.filter((task) => task.status !== Status.Done) || [];
+  const openAuthoredTasks = authoredTasks?.filter((task) => task.status !== Status.Done) || [];
 
-  // Group by status
-  const todoTasks = openTasks.filter((t) => t.status === Status.InputQueue);
-  const wipTasks = openTasks.filter((t) => t.status === Status.WorkInProgress);
-  const reviewTasks = openTasks.filter((t) => t.status === Status.Review);
+  const currentTasks = activeTab === "assigned" ? openAssignedTasks : openAuthoredTasks;
 
-  const isLoading = authLoading || tasksLoading;
+  // Group by status (for assigned tasks stats)
+  const todoTasks = openAssignedTasks.filter((t) => t.status === Status.InputQueue);
+  const wipTasks = openAssignedTasks.filter((t) => t.status === Status.WorkInProgress);
+  const reviewTasks = openAssignedTasks.filter((t) => t.status === Status.Review);
+
+  const isLoading = authLoading || assignedLoading || authoredLoading;
 
   if (isLoading) {
     return (
@@ -100,22 +111,46 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* My Open Tasks */}
-      <section>
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          My Open Tasks ({openTasks.length})
-        </h2>
+      {/* Tabs */}
+      <div className="mb-4 flex gap-2 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab("assigned")}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "assigned"
+              ? "border-b-2 border-gray-800 text-gray-900 dark:border-white dark:text-white"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          }`}
+        >
+          <UserCheck className="h-4 w-4" />
+          Assigned to Me ({openAssignedTasks.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("created")}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "created"
+              ? "border-b-2 border-gray-800 text-gray-900 dark:border-white dark:text-white"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          }`}
+        >
+          <FilePlus className="h-4 w-4" />
+          Created by Me ({openAuthoredTasks.length})
+        </button>
+      </div>
 
-        {openTasks.length === 0 ? (
+      {/* Task List */}
+      <section>
+        {currentTasks.length === 0 ? (
           <div className="rounded-lg bg-white p-8 text-center shadow dark:bg-dark-secondary">
             <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
             <p className="text-gray-600 dark:text-neutral-300">
-              You&apos;re all caught up! No open tasks assigned to you.
+              {activeTab === "assigned"
+                ? "You're all caught up! No open tasks assigned to you."
+                : "No open tasks created by you."}
             </p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {openTasks.map((task) => (
+            {currentTasks.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -131,7 +166,7 @@ const HomePage = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         task={selectedTask}
-        tasks={openTasks}
+        tasks={currentTasks}
       />
     </div>
   );

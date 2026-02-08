@@ -33,6 +33,7 @@ model Project {
   id          Int       @id @default(autoincrement())
   name        String
   description String?
+  isActive    Boolean   @default(true)
   tasks       Task[]
 }
 
@@ -132,6 +133,7 @@ model Sprint {
   title       String
   startDate   DateTime?
   dueDate     DateTime?
+  isActive    Boolean      @default(true)
   sprintTasks SprintTask[]
 }
 

@@ -44,6 +44,7 @@ const BoardPage = ({ params }: Props) => {
                 boardName={project?.name || "Board"}
                 boardDescription={project?.description}
                 boardId={id}
+                isActive={project?.isActive !== false}
                 filterState={filterState}
                 onFilterChange={handleFilterChange}
                 tags={tags}

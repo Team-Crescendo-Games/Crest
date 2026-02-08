@@ -41,10 +41,19 @@ const TaskPage = ({ params }: Props) => {
     );
   }
 
+  const handleClose = () => {
+    // Redirect to the board this task belongs to
+    if (task.projectId) {
+      router.push(`/boards/${task.projectId}`);
+    } else {
+      router.push("/");
+    }
+  };
+
   return (
     <TaskDetailModal
       isOpen={true}
-      onClose={() => router.back()}
+      onClose={handleClose}
       task={task}
       onTaskNavigate={(taskId) => router.push(`/tasks/${taskId}`)}
     />

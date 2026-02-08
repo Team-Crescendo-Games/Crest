@@ -62,6 +62,7 @@ const SprintPage = () => {
                 sprintStartDate={sprint.startDate}
                 sprintDueDate={sprint.dueDate}
                 sprintId={sprintId}
+                isActive={sprint.isActive !== false}
                 filterState={filterState}
                 onFilterChange={handleFilterChange}
                 tags={tags}

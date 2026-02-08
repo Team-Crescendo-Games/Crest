@@ -83,7 +83,7 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
   return (
     <div
       onClick={onClick}
-      className={`relative flex overflow-hidden rounded-md bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
+      className={`relative flex rounded-md bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={avgColor ? { backgroundColor: avgColor } : undefined}
     >
       {/* Priority bar on left side */}

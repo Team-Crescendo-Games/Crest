@@ -1,31 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Archive,
-  ArrowUpDown,
-  Filter,
-  Settings,
-  Table,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Filter, Table, X } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import Link from "next/link";
 import React from "react";
 import { FilterState, DueDateOption, SortState, SortField } from "@/lib/filterTypes";
 import { PRIORITY_COLORS } from "@/lib/priorityColors";
-import { BOARD_MAIN_COLOR } from "@/lib/entityColors";
-import { Tag, Priority, useArchiveProjectMutation } from "@/state/api";
+import { USER_MAIN_COLOR } from "@/lib/entityColors";
+import { Tag, Priority, User } from "@/state/api";
 import FilterDropdown from "@/components/FilterDropdown";
-import ConfirmationMenu from "@/components/ConfirmationMenu";
+import S3Image from "@/components/S3Image";
+import { User as UserIcon } from "lucide-react";
 
 type Props = {
   activeTab: string;
   setActiveTab: (tabName: string) => void;
-  boardName: string;
-  boardDescription?: string;
-  boardId: string;
-  isActive?: boolean;
+  user: User;
   filterState: FilterState;
   onFilterChange: (newState: FilterState) => void;
   tags: Tag[];
@@ -37,17 +28,10 @@ type Props = {
   isSortActive: boolean;
 };
 
-/**
- * BoardHeader component with filter support.
- * Validates: Requirements 1.1, 1.3, 6.1
- */
-const BoardHeader = ({
+const UserHeader = ({
   activeTab,
   setActiveTab,
-  boardName,
-  boardDescription,
-  boardId,
-  isActive = true,
+  user,
   filterState,
   onFilterChange,
   tags,
@@ -58,13 +42,9 @@ const BoardHeader = ({
   onSortChange,
   isSortActive,
 }: Props) => {
-  // State for filter dropdown visibility
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [archiveProject, { isLoading: isArchiving }] = useArchiveProjectMutation();
 
-  // Sort field labels
   const sortFieldLabels: Record<SortField, string> = {
     none: "None",
     dueDate: "Due Date",
@@ -72,7 +52,6 @@ const BoardHeader = ({
     points: "Points",
   };
 
-  // Due date option labels
   const dueDateLabels: Record<DueDateOption, string> = {
     overdue: "Overdue",
     dueToday: "Due Today",
@@ -81,7 +60,6 @@ const BoardHeader = ({
     noDueDate: "No Due Date",
   };
 
-  // Remove a tag filter
   const removeTagFilter = (tagId: number) => {
     onFilterChange({
       ...filterState,
@@ -89,7 +67,6 @@ const BoardHeader = ({
     });
   };
 
-  // Remove a priority filter
   const removePriorityFilter = (priority: Priority) => {
     onFilterChange({
       ...filterState,
@@ -97,7 +74,6 @@ const BoardHeader = ({
     });
   };
 
-  // Remove a due date filter
   const removeDueDateFilter = (option: DueDateOption) => {
     onFilterChange({
       ...filterState,
@@ -105,67 +81,49 @@ const BoardHeader = ({
     });
   };
 
-  const handleArchive = async () => {
-    try {
-      await archiveProject(Number(boardId)).unwrap();
-      setShowArchiveConfirm(false);
-    } catch (error) {
-      console.error("Failed to archive board:", error);
-    }
-  };
-
   return (
     <div className="px-4 xl:px-6">
-      {/* Inactive Board Banner */}
-      {!isActive && (
-        <div className="mt-4 rounded-lg bg-orange-100 px-4 py-2 text-sm text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
-          This board is inactive
+      <div className="pt-4">
+        <Link
+          href="/users"
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Users
+        </Link>
+      </div>
+
+      <div className="pb-6 pt-4 lg:pb-4">
+        <div className="flex items-center gap-4">
+          {user.userId && user.profilePictureExt ? (
+            <S3Image
+              s3Key={`users/${user.userId}/profile.${user.profilePictureExt}`}
+              alt={user.username}
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-tertiary">
+              <UserIcon className="h-6 w-6 text-gray-500 dark:text-neutral-400" />
+            </div>
+          )}
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold dark:text-white">
+                {user.username}
+              </h1>
+              <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+                {totalTasks} tasks · {totalPoints} pts
+              </span>
+            </div>
+            {user.email && (
+              <p className="text-sm text-gray-500 dark:text-neutral-400">
+                {user.email}
+              </p>
+            )}
+          </div>
         </div>
-      )}
-      
-      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold dark:text-white">
-            {boardName}
-          </h1>
-          <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
-            {totalTasks} tasks · {totalPoints} pts
-          </span>
-          <button
-            onClick={() => setShowArchiveConfirm(true)}
-            disabled={isArchiving}
-            className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 disabled:opacity-50"
-            aria-label={isActive ? "Archive board" : "Unarchive board"}
-            title={isActive ? "Archive board" : "Unarchive board"}
-          >
-            <Archive className="h-5 w-5" />
-          </button>
-          <ConfirmationMenu
-            isOpen={showArchiveConfirm}
-            onClose={() => setShowArchiveConfirm(false)}
-            onConfirm={handleArchive}
-            title={isActive ? "Archive Board" : "Unarchive Board"}
-            message={isActive 
-              ? `Archive "${boardName}"? It will be hidden from the sidebar by default.`
-              : `Unarchive "${boardName}"? It will be visible in the sidebar again.`
-            }
-            confirmLabel={isActive ? "Archive" : "Unarchive"}
-            isLoading={isArchiving}
-            variant="warning"
-          />
-          <Link
-            href={`/boards/${boardId}/settings`}
-            className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
-        </div>
-        {boardDescription && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-            {boardDescription}
-          </p>
-        )}
       </div>
 
       {/* TABS */}
@@ -207,24 +165,22 @@ const BoardHeader = ({
                 </span>
               );
             })}
-            {filterState.selectedPriorities.map((priority) => {
-              return (
-                <span
-                  key={`priority-${priority}`}
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-                  style={{ backgroundColor: PRIORITY_COLORS[priority] }}
+            {filterState.selectedPriorities.map((priority) => (
+              <span
+                key={`priority-${priority}`}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: PRIORITY_COLORS[priority] }}
+              >
+                {priority}
+                <button
+                  onClick={() => removePriorityFilter(priority)}
+                  className="ml-0.5 hover:opacity-70"
+                  aria-label={`Remove ${priority} filter`}
                 >
-                  {priority}
-                  <button
-                    onClick={() => removePriorityFilter(priority)}
-                    className="ml-0.5 hover:opacity-70"
-                    aria-label={`Remove ${priority} filter`}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              );
-            })}
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
             {filterState.selectedDueDateOptions.map((option) => (
               <span
                 key={`duedate-${option}`}
@@ -241,14 +197,13 @@ const BoardHeader = ({
               </span>
             ))}
           </div>
-          
-          {/* Sort button with dropdown */}
+
+          {/* Sort button */}
           <div className="relative">
             <button
               className="relative text-gray-500 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300"
               onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
               aria-label="Toggle sort dropdown"
-              aria-expanded={isSortDropdownOpen}
             >
               <ArrowUpDown className="h-5 w-5" />
               {isSortActive && (
@@ -265,7 +220,6 @@ const BoardHeader = ({
                     key={field}
                     onClick={() => {
                       if (sortState.field === field) {
-                        // Toggle direction or clear
                         if (sortState.direction === "asc") {
                           onSortChange({ field, direction: "desc" });
                         } else {
@@ -301,22 +255,19 @@ const BoardHeader = ({
               </div>
             )}
           </div>
-          
-          {/* Filter button with dropdown - Validates: Requirements 1.1, 1.3, 6.1 */}
+
+          {/* Filter button */}
           <div className="relative">
             <button
               className="relative text-gray-500 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300"
               onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
               aria-label="Toggle filter dropdown"
-              aria-expanded={isFilterDropdownOpen}
             >
               <Filter className="h-5 w-5" />
-              {/* Visual indicator when filters are active - Validates: Requirement 6.1 */}
               {isFilterActive && (
                 <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
               )}
             </button>
-            {/* Filter dropdown - Validates: Requirements 1.1, 1.2, 1.3, 1.4 */}
             <FilterDropdown
               isOpen={isFilterDropdownOpen}
               onClose={() => setIsFilterDropdownOpen(false)}
@@ -346,17 +297,17 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
       className={`relative flex items-center gap-2 px-1 py-2 
       after:absolute after:-bottom-2.25 after:left-0 after:h-px after:w-full 
       sm:px-2 lg:px-4 ${
-        isActive 
-          ? "" 
+        isActive
+          ? ""
           : "text-gray-500 hover:text-blue-500 dark:text-neutral-500 dark:hover:text-blue-400"
       }`}
-      style={isActive ? { color: BOARD_MAIN_COLOR } : undefined}
+      style={isActive ? { color: USER_MAIN_COLOR } : undefined}
       onClick={() => setActiveTab(name)}
     >
       {isActive && (
-        <span 
-          className="absolute -bottom-2.25 left-0 h-px w-full" 
-          style={{ backgroundColor: BOARD_MAIN_COLOR }}
+        <span
+          className="absolute -bottom-2.25 left-0 h-px w-full"
+          style={{ backgroundColor: USER_MAIN_COLOR }}
         />
       )}
       {icon}
@@ -365,4 +316,4 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
   );
 };
 
-export default BoardHeader;
+export default UserHeader;

@@ -489,6 +489,46 @@ export const getUserTasks = async (
     }
 };
 
+export const getTasksAssignedToUser = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const { userId } = req.params;
+    try {
+        const tasks = await getPrismaClient().task.findMany({
+            where: {
+                assignedUserId: Number(userId),
+            },
+            include: taskInclude,
+        });
+        
+        const tasksWithStringStatus = tasks.map(transformTask);
+        res.json(tasksWithStringStatus);
+    } catch (error: any) {
+        res.status(500).json({ error: `Error retrieving assigned tasks: ${error.message}` });
+    }
+};
+
+export const getTasksAuthoredByUser = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const { userId } = req.params;
+    try {
+        const tasks = await getPrismaClient().task.findMany({
+            where: {
+                authorUserId: Number(userId),
+            },
+            include: taskInclude,
+        });
+        
+        const tasksWithStringStatus = tasks.map(transformTask);
+        res.json(tasksWithStringStatus);
+    } catch (error: any) {
+        res.status(500).json({ error: `Error retrieving authored tasks: ${error.message}` });
+    }
+};
+
 export const deleteTask = async (
     req: Request,
     res: Response

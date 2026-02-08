@@ -5,6 +5,7 @@ export interface Project {
     id: number;
     name: string;
     description?: string;
+    isActive?: boolean;
 }
 
 export enum Priority {
@@ -160,6 +161,7 @@ export interface Sprint {
     title: string;
     startDate?: string;
     dueDate?: string;
+    isActive?: boolean;
     tasks?: Task[];
     _count?: { sprintTasks: number };
 }
@@ -211,6 +213,14 @@ export const api = createApi({
             invalidatesTags: ["Projects"],
         }),
 
+        archiveProject: build.mutation<Project, number>({
+            query: (projectId) => ({
+                url: `projects/${projectId}/archive`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["Projects"],
+        }),
+
         // tasks
         getTasks: build.query<Task[], { projectId: number }>({
             query: ({ projectId }) => `tasks?projectId=${projectId}`,
@@ -235,6 +245,22 @@ export const api = createApi({
                 result
                     ? result.map(({ id }) => ({ type: "Tasks", id }))
                     : [{ type: "Tasks", id: userId }],
+        }),
+
+        getTasksAssignedToUser: build.query<Task[], number>({
+            query: (userId) => `tasks/user/${userId}/assigned`,
+            providesTags: (result) =>
+                result
+                    ? result.map(({ id }) => ({ type: "Tasks", id }))
+                    : ["Tasks"],
+        }),
+
+        getTasksAuthoredByUser: build.query<Task[], number>({
+            query: (userId) => `tasks/user/${userId}/authored`,
+            providesTags: (result) =>
+                result
+                    ? result.map(({ id }) => ({ type: "Tasks", id }))
+                    : ["Tasks"],
         }),
 
         createTask: build.mutation<Task, Partial<Task> & { tagIds?: number[]; sprintIds?: number[] }>({
@@ -424,13 +450,24 @@ export const api = createApi({
             ],
         }),
 
-        duplicateSprint: build.mutation<Sprint, { sprintId: number; title?: string }>({
-            query: ({ sprintId, title }) => ({
+        duplicateSprint: build.mutation<Sprint, { sprintId: number; title?: string; includeFinishedTasks?: boolean }>({
+            query: ({ sprintId, title, includeFinishedTasks }) => ({
                 url: `sprints/${sprintId}/duplicate`,
                 method: "POST",
-                body: title ? { title } : {},
+                body: { title, includeFinishedTasks },
             }),
             invalidatesTags: ["Sprints"],
+        }),
+
+        archiveSprint: build.mutation<Sprint, number>({
+            query: (sprintId) => ({
+                url: `sprints/${sprintId}/archive`,
+                method: "PATCH",
+            }),
+            invalidatesTags: (result, error, sprintId) => [
+                { type: "Sprints", id: sprintId },
+                "Sprints",
+            ],
         }),
 
         // comments
@@ -490,6 +527,7 @@ export const {
     useGetProjectsQuery,
     useCreateProjectMutation,
     useDeleteProjectMutation,
+    useArchiveProjectMutation,
     useUpdateProjectMutation,
     useGetTasksQuery,
     useGetTaskByIdQuery,
@@ -501,6 +539,8 @@ export const {
     useGetUsersQuery,
     useGetUserByIdQuery,
     useGetTasksByUserQuery,
+    useGetTasksAssignedToUserQuery,
+    useGetTasksAuthoredByUserQuery,
     useGetAuthUserQuery,
     useGetTagsQuery,
     useCreateTagMutation,
@@ -519,5 +559,6 @@ export const {
     useAddTaskToSprintMutation,
     useRemoveTaskFromSprintMutation,
     useDuplicateSprintMutation,
+    useArchiveSprintMutation,
     useGetActivitiesByTaskQuery,
 } = api;
