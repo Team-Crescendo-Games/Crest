@@ -10,7 +10,7 @@
     "start": "tsx src/index.ts",
     "dev": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\"",
     "pm2:dev": "pm2 start ecosystem.config.cjs --only crest-dev",
-    "pm2:prod": "pm2 start ecosystem.config.cjs --only crest-prod",
+    "pm2:prod": "pm2 start ecosystem.config.cjs --only crest-prod"
   },
   "keywords": [],
   "author": "",
