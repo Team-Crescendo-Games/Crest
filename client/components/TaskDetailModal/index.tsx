@@ -215,10 +215,10 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
     (currentTask.subtasks != null && currentTask.subtasks.length > 0);
 
   const formattedStartDate = currentTask.startDate
-    ? format(new Date(currentTask.startDate), "PPP")
+    ? format(new Date(currentTask.startDate), "MM/dd/yyyy")
     : "Not set";
   const formattedDueDate = currentTask.dueDate
-    ? format(new Date(currentTask.dueDate), "PPP")
+    ? format(new Date(currentTask.dueDate), "MM/dd/yyyy")
     : "Not set";
 
   const handleEditClick = () => {
@@ -390,6 +390,13 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
       onClose={onClose}
       name={
         <div className="flex items-center gap-2">
+          {/* Green diamond with checkmark for completed tasks */}
+          {currentTask.status === "Done" && (
+            <div className="relative flex-shrink-0">
+              <div className="h-5 w-5 rotate-45 bg-green-500" />
+              <Check size={14} className="absolute inset-0 m-auto text-white" />
+            </div>
+          )}
           <span>{currentTask.title}</span>
           {!isEditing && typeof currentTask.points === "number" && (
             <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-200">

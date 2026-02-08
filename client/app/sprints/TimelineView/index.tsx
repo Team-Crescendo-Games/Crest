@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Task } from "@/state/api";
 import { FilterState } from "@/lib/filterTypes";
 import { PRIORITY_BG_CLASSES } from "@/lib/priorityColors";
@@ -23,6 +23,20 @@ const statusColors = STATUS_BG_CLASSES;
 const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Props) => {
   const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure container width
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   const filteredTasks = applyFilters(tasks ?? [], filterState);
   
@@ -159,12 +173,13 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
     );
   }
 
-  const DAY_WIDTH = 40;
+  const DAY_WIDTH = containerWidth > 0 && totalDays > 0 
+    ? Math.max(40, containerWidth / (totalDays + 1)) 
+    : 40;
 
   return (
-    <div className="px-4 pb-8 xl:px-6">
-      <div className="overflow-x-auto">
-        <div style={{ minWidth: `${totalDays * DAY_WIDTH}px` }}>
+    <div className="h-full px-4 pt-4 pb-4 xl:px-6">
+      <div ref={containerRef} style={{ width: "100%" }}>
           {/* Week Headers */}
           <div className="mb-2 flex border-b border-gray-300 dark:border-gray-600">
             <div className="relative flex">
@@ -219,7 +234,7 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
                 return (
                   <div key={task.id}>
                     {/* Shaded Timeline Bar */}
-                    <div className="relative" style={{ width: `${totalDays * DAY_WIDTH}px` }}>
+                    <div className="relative" style={{ width: `${(totalDays + 1) * DAY_WIDTH}px` }}>
                       <div className="relative h-8">
                         {/* Grid lines */}
                         {dateHeaders.map((_, index) => (
@@ -252,7 +267,9 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
               
               const startPos = calculatePosition(startDate);
               const endPos = calculatePosition(dueDate);
-              const width = endPos - startPos;
+              // Add one day's width so the task bar extends through the end date (not just to its start)
+              const oneDayPercent = (1 / totalDays) * 100;
+              const width = endPos - startPos + oneDayPercent;
 
               // Check if task extends beyond sprint boundaries
               const startsBeforeSprint = taskStartDate < minDate;
@@ -261,7 +278,7 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
               return (
                 <div key={task.id}>
                   {/* Timeline Bar */}
-                  <div className="relative" style={{ width: `${totalDays * DAY_WIDTH}px` }}>
+                  <div className="relative" style={{ width: `${(totalDays + 1) * DAY_WIDTH}px` }}>
                     <div className="relative h-8">
                       {/* Grid lines */}
                       {dateHeaders.map((_, index) => (
@@ -311,7 +328,6 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
             })}
           </div>
         </div>
-      </div>
 
       <TaskDetailModal
         isOpen={isTaskDetailModalOpen}

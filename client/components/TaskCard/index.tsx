@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import { Task, Priority, useUpdateTaskMutation, useGetTagsQuery } from "@/state/api";
 import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
@@ -19,9 +19,27 @@ type Props = {
   highlighted?: boolean;
 };
 
-// Portal wrapper for dropdowns
-const DropdownPortal = ({ children, anchorRef, isOpen }: { children: React.ReactNode; anchorRef: React.RefObject<HTMLElement | null>; isOpen: boolean }) => {
+// Portal wrapper for dropdowns with ref to content and animation
+type DropdownPortalProps = {
+  children: React.ReactNode;
+  anchorRef: React.RefObject<HTMLElement | null>;
+  isOpen: boolean;
+  animate?: boolean;
+};
+
+type DropdownPortalHandle = {
+  contains: (target: Node) => boolean;
+};
+
+const DropdownPortal = forwardRef<DropdownPortalHandle, DropdownPortalProps>(({ children, anchorRef, isOpen, animate = false }, ref) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    contains: (target: Node) => contentRef.current?.contains(target) ?? false,
+  }));
 
   useEffect(() => {
     if (isOpen && anchorRef.current) {
@@ -33,13 +51,81 @@ const DropdownPortal = ({ children, anchorRef, isOpen }: { children: React.React
     }
   }, [isOpen, anchorRef]);
 
-  if (!isOpen || typeof document === "undefined") return null;
+  // Handle animation states
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Small delay to trigger CSS transition
+      const timer = setTimeout(() => setIsVisible(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
+      // Wait for exit animation before unmounting
+      const timer = setTimeout(() => setShouldRender(false), animate ? 150 : 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, animate]);
+
+  if (!shouldRender || typeof document === "undefined") return null;
+
+  const animationStyle = animate ? {
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? "scale(1) translateY(0)" : "scale(0.9) translateY(-4px)",
+    transformOrigin: "top left",
+    transition: "opacity 0.15s ease-out, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+  } : {};
 
   return createPortal(
-    <div style={{ position: "absolute", top: position.top, left: position.left, zIndex: 50 }}>
+    <div 
+      ref={contentRef} 
+      style={{ 
+        position: "absolute", 
+        top: position.top, 
+        left: position.left, 
+        zIndex: 50,
+        ...animationStyle,
+      }}
+    >
       {children}
     </div>,
     document.body
+  );
+});
+
+// Animated tag pill component with enter/exit animations
+type AnimatedTagPillProps = {
+  tag: { id: number; name: string; color?: string | null };
+  onRemove: (tagId: number) => void;
+  isRemoving?: boolean;
+};
+
+const AnimatedTagPill = ({ tag, onRemove, isRemoving = false }: AnimatedTagPillProps) => {
+  const [hasAppeared, setHasAppeared] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setHasAppeared(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div
+      className="group flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs"
+      style={{
+        backgroundColor: tag.color ? `${tag.color}30` : "#e5e7eb",
+        color: tag.color || "#374151",
+        opacity: hasAppeared && !isRemoving ? 1 : 0,
+        transform: hasAppeared && !isRemoving ? "scale(1)" : "scale(0.5)",
+        transition: "opacity 0.2s ease-out, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      }}
+    >
+      <span>{tag.name}</span>
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove(tag.id); }}
+        className="ml-0.5 rounded-full p-0.5 opacity-60 transition-all hover:opacity-100 hover:ring-1 hover:ring-gray-400 dark:hover:ring-gray-500"
+      >
+        <X size={10} />
+      </button>
+    </div>
   );
 };
 
@@ -72,9 +158,12 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [isHoveringDueDate, setIsHoveringDueDate] = useState(false);
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [removingTagIds, setRemovingTagIds] = useState<Set<number>>(new Set());
   const priorityRef = useRef<HTMLDivElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
   const dueDateRef = useRef<HTMLDivElement>(null);
+  const priorityPortalRef = useRef<DropdownPortalHandle>(null);
+  const tagPortalRef = useRef<DropdownPortalHandle>(null);
 
   const tags = task.taskTags?.map((tt) => tt.tag) || [];
   const tagIds = tags.map((t) => t.id);
@@ -89,8 +178,15 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (priorityRef.current && !priorityRef.current.contains(e.target as Node)) setShowPriorityMenu(false);
-      if (tagRef.current && !tagRef.current.contains(e.target as Node)) setShowTagMenu(false);
+      const target = e.target as Node;
+      // Check both anchor ref and portal content for priority menu
+      if (priorityRef.current && !priorityRef.current.contains(target) && !priorityPortalRef.current?.contains(target)) {
+        setShowPriorityMenu(false);
+      }
+      // Check both anchor ref and portal content for tag menu
+      if (tagRef.current && !tagRef.current.contains(target) && !tagPortalRef.current?.contains(target)) {
+        setShowTagMenu(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -102,7 +198,17 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
   };
 
   const handleRemoveTag = async (tagId: number) => {
-    await updateTask({ id: task.id, tagIds: tagIds.filter((id) => id !== tagId) });
+    // Start exit animation
+    setRemovingTagIds((prev) => new Set(prev).add(tagId));
+    // Wait for animation then update
+    setTimeout(async () => {
+      await updateTask({ id: task.id, tagIds: tagIds.filter((id) => id !== tagId) });
+      setRemovingTagIds((prev) => {
+        const next = new Set(prev);
+        next.delete(tagId);
+        return next;
+      });
+    }, 200);
   };
 
   const handleAddTag = async (tagId: number) => {
@@ -120,7 +226,7 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
   return (
     <div
       onClick={onClick}
-      className={`relative flex rounded-md overflow-hidden bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
+      className={`relative flex rounded-md overflow-hidden bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-tertiary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={{
         ...(avgColor ? { backgroundColor: avgColor } : {}),
         ...(highlighted ? { outline: `2px solid ${APP_ACCENT_LIGHT}`, outlineOffset: "-1px" } : {}),
@@ -134,7 +240,7 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
         onClick={(e) => { e.stopPropagation(); setShowPriorityMenu(!showPriorityMenu); }}
         title={task.priority || "Set priority"}
       />
-      <DropdownPortal anchorRef={priorityRef} isOpen={showPriorityMenu}>
+      <DropdownPortal ref={priorityPortalRef} anchorRef={priorityRef} isOpen={showPriorityMenu} animate>
         <div className="ml-1 rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
           {Object.values(Priority).map((p) => (
             <button
@@ -190,19 +296,12 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
         {/* Tags with inline edit */}
         <div className="mt-1 flex flex-wrap items-center gap-1">
           {tags.map((tag) => (
-            <div
+            <AnimatedTagPill
               key={tag.id}
-              className="group flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs"
-              style={{ backgroundColor: tag.color ? `${tag.color}30` : "#e5e7eb", color: tag.color || "#374151" }}
-            >
-              <span>{tag.name}</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleRemoveTag(tag.id); }}
-                className="ml-0.5 rounded-full p-0.5 opacity-60 transition-all hover:opacity-100 hover:ring-1 hover:ring-gray-400 dark:hover:ring-gray-500"
-              >
-                <X size={10} />
-              </button>
-            </div>
+              tag={tag}
+              onRemove={handleRemoveTag}
+              isRemoving={removingTagIds.has(tag.id)}
+            />
           ))}
           <div ref={tagRef} className="relative">
             <button
@@ -212,7 +311,7 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
               <Plus size={12} />
             </button>
           </div>
-          <DropdownPortal anchorRef={tagRef} isOpen={showTagMenu && availableTags.length > 0}>
+          <DropdownPortal ref={tagPortalRef} anchorRef={tagRef} isOpen={showTagMenu && availableTags.length > 0} animate>
             <div className="mt-1 max-h-32 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
               {availableTags.map((tag) => (
                 <button
@@ -240,12 +339,12 @@ const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props)
                   username={ta.user.username}
                   profilePictureExt={ta.user.profilePictureExt}
                   size={24}
-                  className="ring-2 ring-white dark:ring-dark-secondary"
+                  className="ring-2 ring-white dark:ring-dark-tertiary"
                   tooltipLabel="Assignee"
                 />
               ))}
               {(task.taskAssignments?.length ?? 0) > 3 && (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-xs font-medium text-gray-600 dark:border-dark-secondary dark:bg-dark-tertiary dark:text-gray-300">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-xs font-medium text-gray-600 dark:border-dark-tertiary dark:bg-dark-surface dark:text-gray-300">
                   +{(task.taskAssignments?.length ?? 0) - 3}
                 </div>
               )}

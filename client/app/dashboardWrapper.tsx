@@ -17,7 +17,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex min-h-screen w-full bg-gray-50 text-gray-900">
             <Sidebar />
             <main
-                className={`relative flex w-full flex-col bg-gray-50 dark:bg-dark-bg ${
+                className={`relative flex h-screen w-full flex-col bg-gray-50 dark:bg-dark-bg ${
                     isSidebarCollapsed ? "" : "md:pl-64"
                 }`}
             >
@@ -29,7 +29,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                         backgroundSize: '20px 20px'
                     }}
                 />
-                <div className="relative z-10">
+                <div className="relative z-10 flex h-full flex-col overflow-hidden">
                     {children}
                 </div>
             </main>

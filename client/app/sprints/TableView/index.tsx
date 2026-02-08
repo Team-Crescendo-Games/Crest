@@ -144,7 +144,7 @@ const TableView = ({ tasks, filterState, sortState = initialSortState }: Props) 
   }
 
   return (
-    <div className="h-[540px] w-full px-4 pb-8 xl:px-6">
+    <div className="h-[540px] w-full px-4 pt-4 pb-8 xl:px-6">
       <DataGrid
         rows={sortedTasks}
         columns={columns}

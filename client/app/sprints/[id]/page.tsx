@@ -50,7 +50,7 @@ const SprintPage = () => {
     }
 
     return (
-        <div>
+        <div className="flex h-full flex-col overflow-hidden">
             <ModalNewTask
                 isOpen={isModalNewTaskOpen}
                 onClose={() => setIsModalNewTaskOpen(false)}
@@ -76,34 +76,36 @@ const SprintPage = () => {
                 showMyTasks={showMyTasks}
                 onShowMyTasksChange={setShowMyTasks}
             />
-            {activeTab === "Board" && (
-                <BoardView
-                    sprintId={sprintId}
-                    tasks={sprint.tasks || []}
-                    setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-                    filterState={filterState}
-                    sortState={sortState}
-                    showMyTasks={showMyTasks}
-                />
-            )}
-            {activeTab === "Table" && (
-                <TableView
-                    sprintId={sprintId}
-                    tasks={sprint.tasks || []}
-                    setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-                    filterState={filterState}
-                />
-            )}
-            {activeTab === "Timeline" && (
-                <TimelineView
-                    sprintId={sprintId}
-                    tasks={sprint.tasks || []}
-                    setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-                    filterState={filterState}
-                    sprintStartDate={sprint.startDate}
-                    sprintDueDate={sprint.dueDate}
-                />
-            )}
+            <div className="flex-1 overflow-auto">
+                {activeTab === "Board" && (
+                    <BoardView
+                        sprintId={sprintId}
+                        tasks={sprint.tasks || []}
+                        setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+                        filterState={filterState}
+                        sortState={sortState}
+                        showMyTasks={showMyTasks}
+                    />
+                )}
+                {activeTab === "Table" && (
+                    <TableView
+                        sprintId={sprintId}
+                        tasks={sprint.tasks || []}
+                        setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+                        filterState={filterState}
+                    />
+                )}
+                {activeTab === "Timeline" && (
+                    <TimelineView
+                        sprintId={sprintId}
+                        tasks={sprint.tasks || []}
+                        setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+                        filterState={filterState}
+                        sprintStartDate={sprint.startDate}
+                        sprintDueDate={sprint.dueDate}
+                    />
+                )}
+            </div>
         </div>
     );
 };
