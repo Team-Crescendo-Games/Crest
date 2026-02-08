@@ -67,7 +67,6 @@ export const getSprint = async (req: Request, res: Response) => {
             task: {
               include: {
                 author: true,
-                assignee: true,
                 comments: {
                   orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                   include: {
@@ -101,7 +100,11 @@ export const getSprint = async (req: Request, res: Response) => {
                     title: true,
                     status: true,
                     priority: true,
-                    assignee: { select: { userId: true, username: true, profilePictureExt: true } },
+                    taskAssignments: {
+                      include: {
+                        user: { select: { userId: true, username: true, profilePictureExt: true } },
+                      },
+                    },
                   },
                 },
                 parentTask: {
@@ -113,7 +116,14 @@ export const getSprint = async (req: Request, res: Response) => {
                       select: { id: true, title: true }
                     }
                   }
-                }
+                },
+                taskAssignments: {
+                  include: {
+                    user: {
+                      select: { userId: true, username: true, profilePictureExt: true },
+                    },
+                  },
+                },
               }
             }
           }

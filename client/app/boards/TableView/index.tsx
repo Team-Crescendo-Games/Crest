@@ -6,8 +6,8 @@ import { dataGridClassNames, dataGridSxStyles } from "@/lib/utils";
 import { useGetTasksQuery } from "@/state/api";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import TaskDetailModal from "@/components/TaskDetailModal";
-import { applyFilters } from "@/lib/filterUtils";
-import { FilterState } from "@/lib/filterTypes";
+import { applyFilters, applySorting } from "@/lib/filterUtils";
+import { FilterState, SortState, initialSortState } from "@/lib/filterTypes";
 import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
 
@@ -15,6 +15,7 @@ type Props = {
   id: string;
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   filterState: FilterState;
+  sortState?: SortState;
 };
 
 const formatDate = (dateString: string | null | undefined): string => {
@@ -112,11 +113,12 @@ const columns: GridColDef[] = [
   },
 ];
 
-const TableView = ({ id, filterState }: Props) => {
+const TableView = ({ id, filterState, sortState = initialSortState }: Props) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const { data: tasks, error, isLoading } = useGetTasksQuery({ projectId: Number(id) });
 
   const filteredTasks = applyFilters(tasks ?? [], filterState);
+  const sortedTasks = applySorting(filteredTasks, sortState);
 
   const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
@@ -139,7 +141,7 @@ const TableView = ({ id, filterState }: Props) => {
   return (
     <div className="h-[540px] w-full px-4 pb-8 xl:px-6">
       <DataGrid
-        rows={filteredTasks}
+        rows={sortedTasks}
         columns={columns}
         className={dataGridClassNames}
         sx={dataGridSxStyles(isDarkMode)}

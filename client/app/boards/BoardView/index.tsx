@@ -9,9 +9,10 @@ type BoardProps = {
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   filterState: FilterState;
   sortState: SortState;
+  showMyTasks?: boolean;
 };
 
-const BoardViewWrapper = ({ id, setIsModalNewTaskOpen, filterState, sortState }: BoardProps) => {
+const BoardViewWrapper = ({ id, setIsModalNewTaskOpen, filterState, sortState, showMyTasks = false }: BoardProps) => {
   const { data: tasks, isLoading, error } = useGetTasksQuery({ projectId: Number(id) });
 
   if (isLoading) return <div>Loading...</div>;
@@ -23,6 +24,7 @@ const BoardViewWrapper = ({ id, setIsModalNewTaskOpen, filterState, sortState }:
       setIsModalNewTaskOpen={setIsModalNewTaskOpen}
       filterState={filterState}
       sortState={sortState}
+      showMyTasks={showMyTasks}
     />
   );
 };

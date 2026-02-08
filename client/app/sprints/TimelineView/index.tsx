@@ -237,7 +237,7 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
                           title={`${task.title} - Starts after sprint (${taskStartDate.toLocaleDateString()})`}
                         >
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {task.title} ({task.assignee?.username || "Unassigned"}) - Starts after sprint
+                            {task.title} ({task.taskAssignments?.[0]?.user.username || "Unassigned"}) - Starts after sprint
                           </span>
                         </button>
                       </div>
@@ -289,14 +289,14 @@ const TimelineView = ({ tasks, filterState, sprintStartDate, sprintDueDate }: Pr
                           width: `${(width / 100) * totalDays * DAY_WIDTH}px`,
                           minWidth: '40px',
                         }}
-                        title={`${task.title} - ${task.assignee?.username || "Unassigned"} (${taskStartDate.toLocaleDateString()} - ${taskDueDate.toLocaleDateString()})${startsBeforeSprint ? ' - Starts before sprint' : ''}${endsAfterSprint ? ' - Extends beyond sprint' : ''}`}
+                        title={`${task.title} - ${task.taskAssignments?.[0]?.user.username || "Unassigned"} (${taskStartDate.toLocaleDateString()} - ${taskDueDate.toLocaleDateString()})${startsBeforeSprint ? ' - Starts before sprint' : ''}${endsAfterSprint ? ' - Extends beyond sprint' : ''}`}
                       >
                         <div
                           className={`h-full rounded px-2 text-xs font-medium text-white flex items-center justify-between ${
                             statusColors[task.status || "Input Queue"]
                           } ${startsBeforeSprint ? 'rounded-l-none' : ''} ${endsAfterSprint ? 'rounded-r-none' : ''}`}
                         >
-                          <span className="truncate">{task.title} ({task.assignee?.username || "Unassigned"})</span>
+                          <span className="truncate">{task.title} ({task.taskAssignments?.[0]?.user.username || "Unassigned"})</span>
                           <span
                             className={`ml-1 h-2 w-2 rounded-full flex-shrink-0 ${
                               priorityColors[task.priority || "Medium"]

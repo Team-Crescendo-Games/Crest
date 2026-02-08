@@ -39,7 +39,6 @@ const statusStringToInt = (status: string | null | undefined): number | null => 
 // Common include object for task queries
 const taskInclude = {
     author: true,
-    assignee: true,
     comments: {
         orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
         include: {
@@ -61,7 +60,11 @@ const taskInclude = {
             title: true,
             status: true,
             priority: true,
-            assignee: { select: { userId: true, username: true, profilePictureExt: true } },
+            taskAssignments: {
+                include: {
+                    user: { select: { userId: true, username: true, profilePictureExt: true } },
+                },
+            },
         },
     },
     parentTask: {
@@ -84,6 +87,17 @@ const taskInclude = {
             createdAt: 'desc' as const,
         },
     },
+    taskAssignments: {
+        include: {
+            user: {
+                select: {
+                    userId: true,
+                    username: true,
+                    profilePictureExt: true,
+                },
+            },
+        },
+    },
 };
 
 // Helper to transform task for frontend
@@ -95,6 +109,7 @@ const transformTask = (task: any) => ({
         status: statusIntToString(subtask.status),
     })),
     sprints: task.sprintTasks?.map((st: any) => st.sprint),
+    taskAssignments: task.taskAssignments ?? [],
 });
 
 export const getTasks = async (_req: Request, res: Response) => {
@@ -153,9 +168,9 @@ export const createTask = async (
         points,
         projectId,
         authorUserId,
-        assignedUserId,
         tagIds,
         sprintIds,
+        assigneeIds,
     } = req.body;
     try {
         const newTask = await getPrismaClient().task.create({
@@ -169,7 +184,6 @@ export const createTask = async (
                 points,
                 projectId,
                 authorUserId,
-                assignedUserId,
                 ...(tagIds?.length && {
                     taskTags: {
                         create: tagIds.map((tagId: number) => ({ tagId })),
@@ -180,17 +194,13 @@ export const createTask = async (
                         create: sprintIds.map((sprintId: number) => ({ sprintId })),
                     },
                 }),
-            },
-            include: {
-                taskTags: { include: { tag: true } },
-                sprintTasks: {
-                    include: {
-                        sprint: {
-                            select: { id: true, title: true },
-                        },
+                ...(assigneeIds?.length && {
+                    taskAssignments: {
+                        create: assigneeIds.map((userId: number) => ({ userId })),
                     },
-                },
+                }),
             },
+            include: taskInclude,
         });
         
         // Create a Create Task activity (Requirement 2.1)
@@ -204,13 +214,7 @@ export const createTask = async (
             console.error("Error creating activity for new task:", activityError.message);
         }
         
-        const taskWithStringStatus = {
-            ...newTask,
-            status: statusIntToString(newTask.status),
-            sprints: newTask.sprintTasks?.map(st => st.sprint),
-        };
-        
-        res.status(201).json(taskWithStringStatus);
+        res.status(201).json(transformTask(newTask));
     } catch (error: any) {
         res.status(500).json({ error: `Error creating a task: ${error.message}` });
     }
@@ -269,12 +273,11 @@ export const updateTask = async (
     res: Response
 ): Promise<void> => {
     const { taskId } = req.params;
-    const { title, description, status, priority, startDate, dueDate, points, assignedUserId, tagIds, subtaskIds, projectId, sprintIds, userId } = req.body;
+    const { title, description, status, priority, startDate, dueDate, points, tagIds, subtaskIds, projectId, sprintIds, userId, assigneeIds } = req.body;
     try {
         const currentTask = await getPrismaClient().task.findUnique({
             where: { id: Number(taskId) },
             include: {
-                assignee: { select: { username: true } },
                 taskTags: { include: { tag: true } },
             },
         });
@@ -347,18 +350,6 @@ export const updateTask = async (
                 }
             }
         }
-        if (assignedUserId !== undefined) {
-            data.assignedUserId = assignedUserId ? Number(assignedUserId) : null;
-            const currentAssigneeId = currentTask?.assignedUserId ?? null;
-            const newAssigneeId = assignedUserId ? Number(assignedUserId) : null;
-            if (currentAssigneeId !== newAssigneeId) {
-                if (newAssigneeId !== null) {
-                    editActivities.push("assigned someone to the card");
-                } else {
-                    editActivities.push("unassigned the card");
-                }
-            }
-        }
         if (projectId !== undefined) data.projectId = projectId ? Number(projectId) : null;
 
         if (tagIds !== undefined) {
@@ -408,6 +399,39 @@ export const updateTask = async (
                     data: sprintIds.map((sprintId: number) => ({
                         taskId: Number(taskId),
                         sprintId,
+                    })),
+                });
+            }
+        }
+
+        if (assigneeIds !== undefined) {
+            // Get current task assignments to track changes
+            const currentTaskAssignments = await getPrismaClient().taskAssignment.findMany({
+                where: { taskId: Number(taskId) },
+                select: { userId: true },
+            });
+            const currentAssigneeIds = currentTaskAssignments.map(ta => ta.userId);
+            const newAssigneeIds = assigneeIds as number[];
+            
+            // Track assignee changes for activity logging
+            const addedAssignees = newAssigneeIds.filter(id => !currentAssigneeIds.includes(id));
+            const removedAssignees = currentAssigneeIds.filter(id => !newAssigneeIds.includes(id));
+            
+            if (addedAssignees.length > 0 || removedAssignees.length > 0) {
+                editActivities.push("updated the assignees");
+            }
+            
+            // Delete existing TaskAssignment records for the task
+            await getPrismaClient().taskAssignment.deleteMany({
+                where: { taskId: Number(taskId) },
+            });
+            
+            // Create new TaskAssignment records for the provided userIds
+            if (newAssigneeIds.length > 0) {
+                await getPrismaClient().taskAssignment.createMany({
+                    data: newAssigneeIds.map((userId: number) => ({
+                        taskId: Number(taskId),
+                        userId,
                     })),
                 });
             }
@@ -476,7 +500,7 @@ export const getUserTasks = async (
             where: {
                 OR: [
                     { authorUserId: Number(userId) },
-                    { assignedUserId: Number(userId) },
+                    { taskAssignments: { some: { userId: Number(userId) } } },
                 ],
             },
             include: taskInclude,
@@ -497,7 +521,7 @@ export const getTasksAssignedToUser = async (
     try {
         const tasks = await getPrismaClient().task.findMany({
             where: {
-                assignedUserId: Number(userId),
+                taskAssignments: { some: { userId: Number(userId) } },
             },
             include: taskInclude,
         });

@@ -12,12 +12,44 @@ import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
 import { format } from "date-fns";
 import { Calendar, User, Users, Tag, Award, Pencil, X, Plus, Zap, Flag, Trash2, ChevronDown, ChevronRight, Copy, Check, ArrowLeft, Link2 } from "lucide-react";
 import UserIcon from "@/components/UserIcon";
+import AssigneeAvatarGroup from "@/components/AssigneeAvatarGroup";
 import S3Image from "@/components/S3Image";
 import { BiColumns } from "react-icons/bi";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 
 // Left panel edit mode section container styles
 const LEFT_PANEL_SECTION_CLASS = "flex flex-wrap gap-1 justify-end max-w-[400px]";
+
+// URL regex pattern for auto-linking
+const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,;:!?"'\])>])/g;
+
+// Helper to render text with auto-linked URLs
+const LinkifiedText = ({ text }: { text: string }) => {
+  const parts = text.split(URL_REGEX);
+  
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (URL_REGEX.test(part)) {
+          // Reset regex lastIndex since we're reusing it
+          URL_REGEX.lastIndex = 0;
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {part}
+            </a>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+};
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -50,9 +82,11 @@ const StatusBadge = ({ status }: { status: Task["status"] }) => {
 const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskDetailModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [displayedTaskId, setDisplayedTaskId] = useState<number | null>(null);
+  const [localTaskOverride, setLocalTaskOverride] = useState<Task | null>(null);
   const [saveMessage, setSaveMessage] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [updateTask, { isLoading: isUpdating }] = useUpdateTaskMutation();
   const [deleteTask, { isLoading: isDeleting }] = useDeleteTaskMutation();
@@ -76,7 +110,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   const [editSubtaskIds, setEditSubtaskIds] = useState<number[]>([]);
 
   // Autofill dropdown states
-  const [selectedAssignee, setSelectedAssignee] = useState<UserType | null>(null);
+  const [selectedAssignees, setSelectedAssignees] = useState<UserType[]>([]);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -96,6 +130,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   useEffect(() => {
     if (task) {
       setDisplayedTaskId(task.id);
+      setLocalTaskOverride(null); // Clear local override when switching tasks
       setIsEditing(false);
     }
   }, [task]);
@@ -130,10 +165,16 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   if (!task) return null;
 
   // Look up the currently displayed task from the tasks list, falling back to the original task prop
-  const currentTask =
+  // Use localTaskOverride if available (set after save to show updated data immediately)
+  const baseTask =
     displayedTaskId && tasks
       ? tasks.find((t) => t.id === displayedTaskId) ?? task
       : task;
+  
+  // Use local override if it matches the current task (for immediate display after save)
+  const currentTask = (localTaskOverride && localTaskOverride.id === baseTask.id) 
+    ? localTaskOverride 
+    : baseTask;
 
   const tags = currentTask.taskTags?.map((tt) => tt.tag.name) || [];
 
@@ -159,9 +200,17 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
     setEditTagIds(currentTask.taskTags?.map((tt) => tt.tag.id) || []);
     setEditSubtaskIds(currentTask.subtasks?.map((s) => s.id) || []);
     
-    // Initialize autofill states
-    const assignee = users?.find(u => u.userId === currentTask.assignedUserId);
-    setSelectedAssignee(assignee || null);
+    // Initialize selectedAssignees from taskAssignments
+    if (currentTask.taskAssignments && currentTask.taskAssignments.length > 0) {
+      const assignees = currentTask.taskAssignments.map(ta => ({
+        userId: ta.user.userId,
+        username: ta.user.username,
+        profilePictureExt: ta.user.profilePictureExt,
+      })) as UserType[];
+      setSelectedAssignees(assignees);
+    } else {
+      setSelectedAssignees([]);
+    }
     setAssigneeSearch("");
     
     const project = projects?.find(p => p.id === currentTask.projectId);
@@ -176,7 +225,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   };
 
   const handleSave = async () => {
-    await updateTask({
+    const updatedTask = await updateTask({
       id: currentTask.id,
       title: editTitle,
       description: editDescription,
@@ -185,13 +234,15 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
       startDate: editStartDate || undefined,
       dueDate: editDueDate || undefined,
       points: editPoints ? Number(editPoints) : undefined,
-      assignedUserId: selectedAssignee?.userId || undefined,
+      assigneeIds: selectedAssignees.map(a => a.userId).filter((id): id is number => id !== undefined),
       tagIds: editTagIds,
       subtaskIds: editSubtaskIds,
       projectId: selectedProject?.id || undefined,
       sprintIds: selectedSprints.map(s => s.id),
       userId: authData?.userDetails?.userId,
     }).unwrap();
+    // Store the mutation result to display immediately while cache updates
+    setLocalTaskOverride(updatedTask);
     setIsEditing(false);
     setSaveMessage(true);
     setTimeout(() => setSaveMessage(false), 2000);
@@ -229,7 +280,10 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   }) || [];
 
   const selectAssignee = (user: UserType) => {
-    setSelectedAssignee(user);
+    // Add user to selectedAssignees if not already present
+    if (!selectedAssignees.some(a => a.userId === user.userId)) {
+      setSelectedAssignees(prev => [...prev, user]);
+    }
     setAssigneeSearch("");
     setShowAssigneeDropdown(false);
   };
@@ -262,9 +316,11 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
       return;
     }
     
+    const title = newTaskTitle.trim() || `${currentTask.title} (Copy)`;
+    
     try {
       await createTask({
-        title: `${currentTask.title} (Copy)`,
+        title,
         description: currentTask.description || undefined,
         status: currentTask.status || undefined,
         priority: currentTask.priority || undefined,
@@ -273,10 +329,11 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         points: currentTask.points ?? undefined,
         projectId: currentTask.projectId,
         authorUserId: authorId,
-        assignedUserId: currentTask.assignedUserId ?? undefined,
         tagIds: currentTask.taskTags?.map((tt) => tt.tag.id),
         sprintIds: currentTask.sprints?.map((s) => s.id),
+        assigneeIds: currentTask.taskAssignments?.map((ta) => ta.user.userId),
       }).unwrap();
+      setNewTaskTitle("");
       onClose();
     } catch (error) {
       console.error("Failed to duplicate task:", error);
@@ -587,8 +644,12 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
               rows={3}
             />
           ) : (
-            <p className="text-gray-600 dark:text-neutral-400">
-              {currentTask.description || "No description provided"}
+            <p className="text-gray-600 dark:text-neutral-400 break-words whitespace-pre-wrap">
+              {currentTask.description ? (
+                <LinkifiedText text={currentTask.description} />
+              ) : (
+                "No description provided"
+              )}
             </p>
           )}
         </div>
@@ -618,15 +679,20 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         {/* People Section - Assignee and Author */}
         {!isEditing && (
           <div className="flex items-center gap-4">
-            {/* Assignee */}
+            {/* Assignees */}
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <UserIcon
-                userId={currentTask.assignee?.userId}
-                username={currentTask.assignee?.username}
-                profilePictureExt={currentTask.assignee?.profilePictureExt}
+              <AssigneeAvatarGroup
+                assignees={
+                  currentTask.taskAssignments && currentTask.taskAssignments.length > 0
+                    ? currentTask.taskAssignments.map(ta => ({
+                        userId: ta.user.userId,
+                        username: ta.user.username,
+                        profilePictureExt: ta.user.profilePictureExt,
+                      }))
+                    : []
+                }
                 size={32}
-                tooltipLabel="Assignee"
               />
             </div>
             
@@ -731,67 +797,66 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
               </div>
             </div>
 
-            {/* Assignee Autofill */}
+            {/* Assignee Autofill - Multi-select */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
                 <span className="flex items-center gap-1.5">
                   <Users className="h-4 w-4" />
-                  Assignee
+                  Assignees
                 </span>
               </label>
               <div className="relative" ref={assigneeDropdownRef}>
-                {selectedAssignee ? (
-                  <div className={`${inputClass} flex items-center justify-between`}>
-                    <span>@{selectedAssignee.username}</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedAssignee(null)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                <div className={`${inputClass} flex flex-wrap gap-2 min-h-[42px] items-center`}>
+                  {selectedAssignees.map((assignee) => (
+                    <span
+                      key={assignee.userId}
+                      className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
                     >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        className={inputClass}
-                        placeholder="Type @ to search users..."
-                        value={assigneeSearch}
-                        onChange={(e) => {
-                          setAssigneeSearch(e.target.value);
-                          setShowAssigneeDropdown(true);
-                        }}
-                        onFocus={() => setShowAssigneeDropdown(true)}
-                      />
-                      <ChevronDown
-                        size={16}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      />
-                    </div>
-                    {showAssigneeDropdown && (
-                      <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
-                        {filteredUsers.length > 0 ? (
-                          filteredUsers.slice(0, 8).map((user) => (
-                            <button
-                              key={user.userId}
-                              type="button"
-                              onClick={() => selectAssignee(user)}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-                            >
-                              <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
-                              {user.email && <span className="text-gray-500 dark:text-gray-400">{user.email}</span>}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            No users found
-                          </div>
-                        )}
+                      @{assignee.username}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAssignees(prev => prev.filter(a => a.userId !== assignee.userId))}
+                        className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-200"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
+                    placeholder={selectedAssignees.length === 0 ? "Type @ to search users..." : "Add more..."}
+                    value={assigneeSearch}
+                    onChange={(e) => {
+                      setAssigneeSearch(e.target.value);
+                      setShowAssigneeDropdown(true);
+                    }}
+                    onFocus={() => setShowAssigneeDropdown(true)}
+                  />
+                </div>
+                {showAssigneeDropdown && (
+                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+                    {filteredUsers.filter(user => !selectedAssignees.some(a => a.userId === user.userId)).length > 0 ? (
+                      filteredUsers
+                        .filter(user => !selectedAssignees.some(a => a.userId === user.userId))
+                        .slice(0, 8)
+                        .map((user) => (
+                          <button
+                            key={user.userId}
+                            type="button"
+                            onClick={() => selectAssignee(user)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                          >
+                            <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
+                            {user.email && <span className="text-gray-500 dark:text-gray-400">{user.email}</span>}
+                          </button>
+                        ))
+                    ) : (
+                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        {selectedAssignees.length > 0 && filteredUsers.length > 0 ? "All matching users already selected" : "No users found"}
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -952,7 +1017,10 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         {/* Duplicate Confirmation */}
         <ConfirmationMenu
           isOpen={showDuplicateConfirm}
-          onClose={() => setShowDuplicateConfirm(false)}
+          onClose={() => {
+            setShowDuplicateConfirm(false);
+            setNewTaskTitle("");
+          }}
           onConfirm={async () => {
             await handleDuplicate();
             setShowDuplicateConfirm(false);
@@ -962,7 +1030,20 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
           confirmLabel="Duplicate"
           isLoading={isDuplicating}
           variant="info"
-        />
+        >
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              New Task Name
+            </label>
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder={`${currentTask.title} (Copy)`}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
+            />
+          </div>
+        </ConfirmationMenu>
 
         {/* Attachments */}
         {!isEditing && currentTask.attachments && currentTask.attachments.length > 0 && (

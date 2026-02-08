@@ -51,12 +51,22 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         },
         include: {
           author: true,
-          assignee: true,
           comments: true,
           attachments: true,
           taskTags: {
             include: {
               tag: true,
+            },
+          },
+          taskAssignments: {
+            include: {
+              user: {
+                select: {
+                  userId: true,
+                  username: true,
+                  profilePictureExt: true,
+                },
+              },
             },
           },
         },

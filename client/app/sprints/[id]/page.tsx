@@ -19,6 +19,7 @@ const SprintPage = () => {
     const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
     const [filterState, setFilterState] = useState<FilterState>(initialFilterState);
     const [sortState, setSortState] = useState<SortState>(initialSortState);
+    const [showMyTasks, setShowMyTasks] = useState(false);
     
     const { data: sprint, isLoading, error } = useGetSprintQuery(sprintId);
     const { data: tags = [] } = useGetTagsQuery();
@@ -72,6 +73,8 @@ const SprintPage = () => {
                 sortState={sortState}
                 onSortChange={handleSortChange}
                 isSortActive={isSortActive(sortState)}
+                showMyTasks={showMyTasks}
+                onShowMyTasksChange={setShowMyTasks}
             />
             {activeTab === "Board" && (
                 <BoardView
@@ -80,6 +83,7 @@ const SprintPage = () => {
                     setIsModalNewTaskOpen={setIsModalNewTaskOpen}
                     filterState={filterState}
                     sortState={sortState}
+                    showMyTasks={showMyTasks}
                 />
             )}
             {activeTab === "Table" && (

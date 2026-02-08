@@ -16,6 +16,7 @@ type Props = {
   fallbackClassName?: string;
   fallbackType?: FallbackType;
   version?: number; // Cache buster - change to force refetch
+  style?: React.CSSProperties;
 };
 
 const S3Image = ({ 
@@ -27,10 +28,9 @@ const S3Image = ({
   fallbackClassName, 
   fallbackType = "user",
   version = 0,
+  style,
 }: Props) => {
   const [hasError, setHasError] = useState(false);
-  // Add version to key to bust cache when image is updated
-  const cacheKey = s3Key ? `${s3Key}?v=${version}` : undefined;
   const { data, isLoading, error } = useGetPresignedUrlQuery(s3Key!, {
     skip: !s3Key,
     // Refetch when version changes
@@ -85,6 +85,7 @@ const S3Image = ({
       width={width}
       height={height}
       className={className}
+      style={{ width, height, ...style }}
       unoptimized
       onError={() => setHasError(true)}
     />

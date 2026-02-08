@@ -19,6 +19,7 @@ const BoardPage = ({ params }: Props) => {
     const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
     const [filterState, setFilterState] = useState<FilterState>(initialFilterState);
     const [sortState, setSortState] = useState<SortState>(initialSortState);
+    const [showMyTasks, setShowMyTasks] = useState(false);
     
     const { data: projects } = useGetProjectsQuery();
     const { data: tags = [] } = useGetTagsQuery();
@@ -54,9 +55,11 @@ const BoardPage = ({ params }: Props) => {
                 sortState={sortState}
                 onSortChange={handleSortChange}
                 isSortActive={isSortActive(sortState)}
+                showMyTasks={showMyTasks}
+                onShowMyTasksChange={setShowMyTasks}
             />
             {activeTab === "Board" && (
-                <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} sortState={sortState} />
+                <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} sortState={sortState} showMyTasks={showMyTasks} />
             )}
             {activeTab === "Table" && (
                 <Table id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} />

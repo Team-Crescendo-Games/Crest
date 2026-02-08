@@ -17,13 +17,16 @@ type BoardViewProps = {
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   filterState: FilterState;
   sortState?: SortState;
+  showMyTasks?: boolean;
 };
 
 const taskStatus = ["Input Queue", "Work In Progress", "Review", "Done"];
 
-const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = initialSortState }: BoardViewProps) => {
+const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = initialSortState, showMyTasks = false }: BoardViewProps) => {
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
   const { data: authData } = useGetAuthUserQuery({});
+
+  const currentUserId = authData?.userDetails?.userId;
 
   // Apply filters then sorting to tasks
   const filteredTasks = applyFilters(tasks, filterState);
@@ -67,6 +70,8 @@ const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = init
             moveTask={moveTask}
             setIsModalNewTaskOpen={setIsModalNewTaskOpen}
             onTaskClick={handleTaskClick}
+            showMyTasks={showMyTasks}
+            currentUserId={currentUserId}
           />
         ))}
       </div>
@@ -86,6 +91,8 @@ type TaskColumnProps = {
   moveTask: (taskId: number, toStatus: string) => void;
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   onTaskClick: (task: TaskType) => void;
+  showMyTasks: boolean;
+  currentUserId?: number;
 };
 
 const TaskColumn = ({
@@ -94,6 +101,8 @@ const TaskColumn = ({
   moveTask,
   setIsModalNewTaskOpen,
   onTaskClick,
+  showMyTasks,
+  currentUserId,
 }: TaskColumnProps) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "task",
@@ -149,7 +158,12 @@ const TaskColumn = ({
       )}
 
       {statusTasks.map((task) => (
-          <DraggableTask key={task.id} task={task} onClick={onTaskClick} />
+          <DraggableTask
+            key={task.id}
+            task={task}
+            onClick={onTaskClick}
+            highlighted={showMyTasks && !!currentUserId && task.taskAssignments?.some((ta) => ta.userId === currentUserId)}
+          />
         ))}
     </div>
   );
@@ -158,9 +172,10 @@ const TaskColumn = ({
 type DraggableTaskProps = {
   task: TaskType;
   onClick?: (task: TaskType) => void;
+  highlighted?: boolean;
 };
 
-const DraggableTask = ({ task, onClick }: DraggableTaskProps) => {
+const DraggableTask = ({ task, onClick, highlighted }: DraggableTaskProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
     item: { id: task.id },
@@ -182,7 +197,7 @@ const DraggableTask = ({ task, onClick }: DraggableTaskProps) => {
       }}
       className={`mb-2 ${isDragging ? "opacity-50" : "opacity-100"}`}
     >
-      <TaskCard task={task} onClick={handleClick} />
+      <TaskCard task={task} onClick={handleClick} highlighted={highlighted} />
     </div>
   );
 };

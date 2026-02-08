@@ -10,6 +10,7 @@ type Props = {
     setIsModalNewTaskOpen: (isOpen: boolean) => void;
     filterState: FilterState;
     sortState: SortState;
+    showMyTasks?: boolean;
 };
 
 /**
@@ -18,13 +19,14 @@ type Props = {
  * 
  * Validates: Requirements 5.4, 6.1, 6.2, 6.3, 6.4, 9.2
  */
-const SprintBoardView = ({ sprintId: _sprintId, tasks, setIsModalNewTaskOpen, filterState, sortState }: Props) => {
+const SprintBoardView = ({ sprintId: _sprintId, tasks, setIsModalNewTaskOpen, filterState, sortState, showMyTasks = false }: Props) => {
     return (
         <BoardView
             tasks={tasks}
             setIsModalNewTaskOpen={setIsModalNewTaskOpen}
             filterState={filterState}
             sortState={sortState}
+            showMyTasks={showMyTasks}
         />
     );
 };

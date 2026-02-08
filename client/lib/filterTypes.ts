@@ -30,10 +30,10 @@ export interface SortState {
 }
 
 /**
- * Initial sort state with no sorting applied.
+ * Initial sort state - sort by due date ascending by default.
  */
 export const initialSortState: SortState = {
-  field: "none",
+  field: "dueDate",
   direction: "asc",
 };
 

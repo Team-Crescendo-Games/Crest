@@ -4,14 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "seed": "prisma db seed",
-    "reset-db": "prisma migrate reset --force",
     "build": "rimraf dist && npx tsc",
     "start": "tsx src/index.ts",
     "dev": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\"",
-    "pm2:dev": "pm2 start ecosystem.config.cjs --only crest-dev",
-    "pm2:prod": "pm2 start ecosystem.config.cjs --only crest-prod",
-    "aws": "tsx scripts/aws-setup.ts"
+
+    "db-seed": "prisma db seed",
+    "db-rs": "prisma migrate reset --force",
+    "db-gen": "npx prisma generate",
+    "db-rs-full": "prisma migrate reset --force && prisma db seed && npx prisma generate",
+    "drf": "npm run db-rs-full",
+    
+    "aws": "tsx scripts/aws-setup.ts",
+
+    "deploy-dev": "pm2 start ecosystem.config.cjs --only crest-dev",
+    "deploy-prod": "pm2 start ecosystem.config.cjs --only crest-prod"
   },
   "keywords": [],
   "author": "",

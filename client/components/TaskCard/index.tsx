@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Task, Priority, useUpdateTaskMutation, useGetTagsQuery } from "@/state/api";
 import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
+import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 import RadialProgress from "@/components/RadialProgress";
 import { format } from "date-fns";
 import { MessageSquareMore, X, Plus, Diamond } from "lucide-react";
@@ -13,6 +14,7 @@ type Props = {
   task: Task;
   onClick?: () => void;
   className?: string;
+  highlighted?: boolean;
 };
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
@@ -37,7 +39,7 @@ const getAverageTagColor = (task: Task): string | null => {
   return `rgba(${avg.r}, ${avg.g}, ${avg.b}, 0.15)`;
 };
 
-const TaskCard = ({ task, onClick, className = "" }: Props) => {
+const TaskCard = ({ task, onClick, className = "", highlighted = false }: Props) => {
   const [updateTask] = useUpdateTaskMutation();
   const { data: allTags } = useGetTagsQuery();
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
@@ -83,8 +85,11 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
   return (
     <div
       onClick={onClick}
-      className={`relative flex rounded-md bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
-      style={avgColor ? { backgroundColor: avgColor } : undefined}
+      className={`relative flex rounded-md overflow-hidden bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:bg-dark-secondary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
+      style={{
+        ...(avgColor ? { backgroundColor: avgColor } : {}),
+        ...(highlighted ? { outline: `2px solid ${APP_ACCENT_LIGHT}`, outlineOffset: "-1px" } : {}),
+      }}
     >
       {/* Priority bar on left side */}
       <div
@@ -130,9 +135,9 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
         />
       )}
 
-      <div className="flex-1 p-2 md:p-2.5">
+      <div className="min-w-0 flex-1 overflow-hidden p-2 md:p-2.5">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm dark:text-white">{task.title}</h4>
+          <h4 className="truncate text-sm dark:text-white">{task.title}</h4>
           {typeof task.points === "number" && (
             <div className="flex items-center gap-0.5 text-xs text-gray-400 dark:text-neutral-500">
               {task.points}
@@ -140,6 +145,13 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
             </div>
           )}
         </div>
+
+        {/* Description preview */}
+        {task.description && (
+          <p className="mt-0.5 truncate text-xs text-gray-500/70 dark:text-neutral-500/70">
+            {task.description}
+          </p>
+        )}
 
         {/* Tags with inline edit */}
         <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -186,16 +198,22 @@ const TaskCard = ({ task, onClick, className = "" }: Props) => {
 
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex -space-x-1 overflow-hidden">
-              {task.assignee?.userId && (
+            <div className="flex -space-x-1">
+              {task.taskAssignments?.slice(0, 3).map((ta) => (
                 <UserIcon
-                  userId={task.assignee.userId}
-                  username={task.assignee.username}
-                  profilePictureExt={task.assignee.profilePictureExt}
+                  key={ta.userId}
+                  userId={ta.user.userId}
+                  username={ta.user.username}
+                  profilePictureExt={ta.user.profilePictureExt}
                   size={24}
-                  className="border-2 border-white dark:border-dark-secondary"
+                  className="ring-2 ring-white dark:ring-dark-secondary"
                   tooltipLabel="Assignee"
                 />
+              ))}
+              {(task.taskAssignments?.length ?? 0) > 3 && (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-xs font-medium text-gray-600 dark:border-dark-secondary dark:bg-dark-tertiary dark:text-gray-300">
+                  +{(task.taskAssignments?.length ?? 0) - 3}
+                </div>
               )}
             </div>
             {formattedDueDate && (

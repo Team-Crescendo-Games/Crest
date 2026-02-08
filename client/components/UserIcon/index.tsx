@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
 import S3Image from "@/components/S3Image";
 import { getUserProfileS3Key } from "@/state/api";
+import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 
 type UserIconProps = {
   userId?: number;
@@ -24,18 +26,29 @@ const UserIcon = ({
   tooltipLabel = "User",
   opacity = "opacity-100"
 }: UserIconProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverRingStyle = isHovered ? `0 0 0 2px ${APP_ACCENT_LIGHT}` : "none";
+  
   const content = (
-    <div className={`relative group ${opacity}`}>
+    <div 
+      className={`relative group ${opacity}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {profilePictureExt && userId ? (
         <S3Image
           s3Key={getUserProfileS3Key(userId, profilePictureExt)}
           alt={username || "User"}
           width={size}
           height={size}
-          className={`rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all duration-200 ${className}`}
+          className={`rounded-full object-cover cursor-pointer transition-all duration-200 ${className}`}
+          style={{ boxShadow: hoverRingStyle }}
         />
       ) : (
-        <div className={`flex items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all duration-200 ${className}`} style={{ width: size, height: size }}>
+        <div 
+          className={`flex items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary cursor-pointer transition-all duration-200 ${className}`} 
+          style={{ width: size, height: size, boxShadow: hoverRingStyle }}
+        >
           <User className="text-gray-500 dark:text-gray-400" size={size * 0.6} />
         </div>
       )}

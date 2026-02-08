@@ -75,10 +75,10 @@ const SubtaskHierarchy = ({
                   })()}
 
                   {/* Assignee Avatar */}
-                  {subtask.assignee?.userId && subtask.assignee?.profilePictureExt ? (
+                  {subtask.taskAssignments && subtask.taskAssignments.length > 0 && subtask.taskAssignments[0].user.profilePictureExt ? (
                     <S3Image
-                      s3Key={`users/${subtask.assignee.userId}/profile.${subtask.assignee.profilePictureExt}`}
-                      alt={subtask.assignee.username}
+                      s3Key={`users/${subtask.taskAssignments[0].user.userId}/profile.${subtask.taskAssignments[0].user.profilePictureExt}`}
+                      alt={subtask.taskAssignments[0].user.username}
                       width={20}
                       height={20}
                       className="h-5 w-5 shrink-0 rounded-full object-cover"

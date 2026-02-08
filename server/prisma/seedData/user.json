@@ -11,12 +11,5 @@
   { "username": "JohnDoe", "email": "john.doe@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174010" },
   { "username": "LauraAdams", "email": "laura.adams@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174011" },
   { "username": "NormanBates", "email": "norman.bates@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174012" },
-  { "username": "OliviaPace", "email": "olivia.pace@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174013" },
-  { "username": "PeterQuill", "email": "peter.quill@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174014" },
-  { "username": "QuincyAdams", "email": "quincy.adams@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174015" },
-  { "username": "RachelGreen", "email": "rachel.green@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174016" },
-  { "username": "SteveJobs", "email": "steve.jobs@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174017" },
-  { "username": "TinaFey", "email": "tina.fey@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174018" },
-  { "username": "UrsulaMonroe", "email": "ursula.monroe@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174019" },
-  { "username": "VictorHugo", "email": "victor.hugo@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174020" }
+  { "username": "OliviaPace", "email": "olivia.pace@example.com", "profilePictureExt": "jpeg", "cognitoId": "123e4567-e89b-12d3-a456-426614174013" }
 ]

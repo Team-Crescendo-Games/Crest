@@ -101,12 +101,23 @@ export interface TaskTag {
     tag: Tag;
 }
 
+export interface TaskAssignmentWithUser {
+    id: number;
+    userId: number;
+    taskId: number;
+    user: {
+        userId: number;
+        username: string;
+        profilePictureExt?: string;
+    };
+}
+
 export interface SubtaskSummary {
     id: number;
     title: string;
     status?: string;
     priority?: string;
-    assignee?: { userId: number; username: string; profilePictureExt?: string };
+    taskAssignments?: TaskAssignmentWithUser[];
 }
 
 export interface ParentTaskSummary {
@@ -130,13 +141,12 @@ export interface Task {
     points?: number;
     projectId: number;
     authorUserId?: number;
-    assignedUserId?: number;
 
     author?: User;
-    assignee?: User;
     comments?: Comment[];
     attachments?: Attachment[];
     taskTags?: TaskTag[];
+    taskAssignments?: TaskAssignmentWithUser[];
     subtasks?: SubtaskSummary[];
     parentTask?: ParentTaskSummary | null;
     sprints?: SprintSummary[];
@@ -263,7 +273,7 @@ export const api = createApi({
                     : ["Tasks"],
         }),
 
-        createTask: build.mutation<Task, Partial<Task> & { tagIds?: number[]; sprintIds?: number[] }>({
+        createTask: build.mutation<Task, Partial<Task> & { tagIds?: number[]; sprintIds?: number[]; assigneeIds?: number[] }>({
             query: (task) => ({
                 url: "tasks",
                 method: "POST",
@@ -285,7 +295,7 @@ export const api = createApi({
             ],
         }),
 
-        updateTask: build.mutation<Task, Partial<Task> & { id: number; tagIds?: number[]; subtaskIds?: number[]; sprintIds?: number[]; userId?: number }>({
+        updateTask: build.mutation<Task, Partial<Task> & { id: number; tagIds?: number[]; subtaskIds?: number[]; sprintIds?: number[]; assigneeIds?: number[]; userId?: number }>({
             query: ({ id, ...body }) => ({
                 url: `tasks/${id}`,
                 method: "PATCH",

@@ -194,10 +194,10 @@ const ModalNewTask = ({ isOpen, onClose, projectId = null, sprintId = null, defa
             startDate: formattedStartDate,
             dueDate: formattedDueDate,
             authorUserId,
-            assignedUserId: selectedAssignees[0]?.userId, // Primary assignee
             projectId: finalProjectId,
             tagIds: selectedTagIds,
             sprintIds: selectedSprintIds,
+            assigneeIds: selectedAssignees.map(a => a.userId).filter((id): id is number => id !== undefined),
         });
 
         onClose();
