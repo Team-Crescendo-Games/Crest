@@ -12,8 +12,7 @@ module.exports = {
       name: 'crest-prod',
       script: 'tsx',
       args: 'src/index.ts',
-      instances: 'max',
-      exec_mode: 'cluster',
+      instances: '1',
       env: {
         NODE_ENV: 'production',
       },
