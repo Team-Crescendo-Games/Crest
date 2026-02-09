@@ -14,13 +14,6 @@ interface FilterDropdownProps {
   tags: Tag[];
 }
 
-/**
- * FilterDropdown component that displays filter options for tasks.
- * Renders three collapsible sections: Labels, Priority, and Due Date.
- * Handles click-outside detection to close the dropdown.
- * 
- * Requirements: 1.1, 1.2, 1.3, 1.4
- */
 const FilterDropdown = ({
   isOpen,
   onClose,
@@ -35,8 +28,6 @@ const FilterDropdown = ({
   const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
   const [isDueDateExpanded, setIsDueDateExpanded] = useState(false);
 
-  // Priority options for the filter
-  // Validates: Requirement 3.1
   const priorityOptions: Priority[] = [
     Priority.Urgent,
     Priority.High,
@@ -45,8 +36,6 @@ const FilterDropdown = ({
     Priority.Backlog,
   ];
 
-  // Due date options for the filter
-  // Validates: Requirement 4.1
   const dueDateOptions: DueDateOption[] = [
     "overdue",
     "dueToday",
@@ -65,7 +54,6 @@ const FilterDropdown = ({
   };
 
   // Click-outside detection to close dropdown
-  // Validates: Requirement 1.2
   useEffect(() => {
     if (!isOpen) return;
 
@@ -109,10 +97,6 @@ const FilterDropdown = ({
   // Don't render if not open
   if (!isOpen) return null;
 
-  /**
-   * Handle tag checkbox toggle
-   * Validates: Requirements 2.1, 2.2
-   */
   const handleTagToggle = (tagId: number, checked: boolean) => {
     const newSelectedTagIds = checked
       ? [...filterState.selectedTagIds, tagId]
@@ -124,10 +108,6 @@ const FilterDropdown = ({
     });
   };
 
-  /**
-   * Handle priority checkbox toggle
-   * Validates: Requirements 3.1, 3.2
-   */
   const handlePriorityToggle = (priority: Priority, checked: boolean) => {
     const newSelectedPriorities = checked
       ? [...filterState.selectedPriorities, priority]
@@ -139,10 +119,6 @@ const FilterDropdown = ({
     });
   };
 
-  /**
-   * Handle due date option checkbox toggle
-   * Validates: Requirements 4.1, 4.2
-   */
   const handleDueDateToggle = (option: DueDateOption, checked: boolean) => {
     const newSelectedDueDateOptions = checked
       ? [...filterState.selectedDueDateOptions, option]
@@ -170,7 +146,7 @@ const FilterDropdown = ({
 
       {/* Filter Sections Container */}
       <div className="max-h-80 overflow-y-auto">
-        {/* Labels Section - Validates: Requirements 2.1, 2.2 */}
+        {/* Labels Section */}
         <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
@@ -212,7 +188,7 @@ const FilterDropdown = ({
           )}
         </div>
 
-        {/* Priority Section - Validates: Requirements 3.1, 3.2 */}
+        {/* Priority Section */}
         <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
@@ -248,7 +224,7 @@ const FilterDropdown = ({
           )}
         </div>
 
-        {/* Due Date Section - Validates: Requirements 4.1, 4.2 */}
+        {/* Due Date Section */}
         <div className="px-4 py-3">
           <button
             type="button"
@@ -285,7 +261,7 @@ const FilterDropdown = ({
         </div>
       </div>
 
-      {/* Clear All Button - Validates: Requirements 6.2, 6.3 */}
+      {/* Clear All Button */}
       {isFilterActive(filterState) && (
         <div className="border-t border-gray-200 px-4 py-3 dark:border-dark-tertiary">
           <button

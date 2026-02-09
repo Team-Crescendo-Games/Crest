@@ -46,7 +46,6 @@ export const createComment = async (
 
         // Create mention notifications for users mentioned in the comment
         // Wrapped in try-catch to not fail comment creation on notification error
-        // Requirements: 2.1, 2.4
         try {
             await createMentionNotifications(newComment.id, text, numericTaskId, numericUserId);
         } catch (error) {

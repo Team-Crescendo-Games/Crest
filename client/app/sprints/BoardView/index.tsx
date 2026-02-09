@@ -16,8 +16,6 @@ type Props = {
 /**
  * Sprint BoardView wrapper component
  * Uses the shared BoardView component with sprint tasks
- * 
- * Validates: Requirements 5.4, 6.1, 6.2, 6.3, 6.4, 9.2
  */
 const SprintBoardView = ({ sprintId: _sprintId, tasks, setIsModalNewTaskOpen, filterState, sortState, showMyTasks = false }: Props) => {
     return (

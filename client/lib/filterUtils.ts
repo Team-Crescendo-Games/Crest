@@ -3,13 +3,6 @@ import { FilterState, DueDateOption } from "@/lib/filterTypes";
 
 /**
  * Checks if any filters are currently active.
- * Returns true if at least one of selectedTagIds, selectedPriorities,
- * or selectedDueDateOptions is non-empty.
- *
- * @param filterState - The current filter state
- * @returns true if any filter category has selections
- *
- * Validates: Requirements 6.1
  */
 export function isFilterActive(filterState: FilterState): boolean {
   return (
@@ -22,15 +15,7 @@ export function isFilterActive(filterState: FilterState): boolean {
 }
 
 /**
- * Checks if a task matches the tag filter criteria.
- * Task passes if it has at least one tag whose ID is in selectedTagIds (OR logic).
- * If selectedTagIds is empty, all tasks pass.
- *
- * @param task - The task to check
- * @param selectedTagIds - Array of selected tag IDs
- * @returns true if task matches the tag filter or no tags are selected
- *
- * Validates: Requirements 2.3, 2.4
+ * Checks if a task matches the tag filter criteria (OR logic within tags).
  */
 export function matchesTagFilter(
   task: Task,
@@ -47,15 +32,7 @@ export function matchesTagFilter(
 }
 
 /**
- * Checks if a task matches the priority filter criteria.
- * Task passes if its priority is in selectedPriorities (OR logic).
- * If selectedPriorities is empty, all tasks pass.
- *
- * @param task - The task to check
- * @param selectedPriorities - Array of selected priorities
- * @returns true if task matches the priority filter or no priorities are selected
- *
- * Validates: Requirements 3.3, 3.4
+ * Checks if a task matches the priority filter criteria (OR logic within priorities).
  */
 export function matchesPriorityFilter(
   task: Task,
@@ -76,11 +53,6 @@ export function matchesPriorityFilter(
 
 /**
  * Checks if a date string represents an overdue date (before today).
- *
- * @param dueDate - The due date string to check
- * @returns true if the date is before today
- *
- * Validates: Requirements 4.3
  */
 export function isOverdue(dueDate: string): boolean {
   const due = new Date(dueDate);
@@ -93,11 +65,6 @@ export function isOverdue(dueDate: string): boolean {
 
 /**
  * Checks if a date string represents today's date.
- *
- * @param dueDate - The due date string to check
- * @returns true if the date is today
- *
- * Validates: Requirements 4.4
  */
 export function isDueToday(dueDate: string): boolean {
   const due = new Date(dueDate);
@@ -111,11 +78,6 @@ export function isDueToday(dueDate: string): boolean {
 
 /**
  * Checks if a date string falls within the current week (Monday through Sunday).
- *
- * @param dueDate - The due date string to check
- * @returns true if the date is within the current week
- *
- * Validates: Requirements 4.5
  */
 export function isDueThisWeek(dueDate: string): boolean {
   const due = new Date(dueDate);
@@ -142,11 +104,6 @@ export function isDueThisWeek(dueDate: string): boolean {
 
 /**
  * Checks if a date string falls within the current month.
- *
- * @param dueDate - The due date string to check
- * @returns true if the date is within the current month
- *
- * Validates: Requirements 4.6
  */
 export function isDueThisMonth(dueDate: string): boolean {
   const due = new Date(dueDate);
@@ -158,15 +115,7 @@ export function isDueThisMonth(dueDate: string): boolean {
 }
 
 /**
- * Checks if a task matches the due date filter criteria.
- * Task passes if it matches any of the selected due date options (OR logic).
- * If selectedDueDateOptions is empty, all tasks pass.
- *
- * @param task - The task to check
- * @param selectedDueDateOptions - Array of selected due date options
- * @returns true if task matches the due date filter or no options are selected
- *
- * Validates: Requirements 4.3-4.8
+ * Checks if a task matches the due date filter criteria (OR logic within options).
  */
 export function matchesDueDateFilter(
   task: Task,
@@ -265,15 +214,7 @@ export function matchesSearchText(task: Task, searchText: string): boolean {
 
 /**
  * Applies all active filters to an array of tasks.
- * Uses AND logic between categories - task must pass ALL active category filters.
- * Uses OR logic within categories - task must match at least one selected option.
- * If a filter category has no selections, that category passes all tasks.
- *
- * @param tasks - Array of tasks to filter
- * @param filterState - The current filter state
- * @returns Array of tasks that pass all active filters
- *
- * Validates: Requirements 2.3, 2.4, 3.3, 3.4, 4.3-4.8, 5.1, 5.2
+ * Uses AND logic between categories, OR logic within categories.
  */
 export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
   return tasks.filter((task) => {

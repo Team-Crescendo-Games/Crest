@@ -20,8 +20,6 @@ import { Activity, ActivityType } from "@/state/api";
  * formatRelativeTime(new Date(Date.now() - 5 * 60 * 1000)) // "5 minutes ago"
  * formatRelativeTime(new Date(Date.now() - 2 * 60 * 60 * 1000)) // "2 hours ago"
  * formatRelativeTime(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)) // "3 days ago"
- * 
- * **Validates: Requirements 5.4**
  */
 export function formatRelativeTime(dateInput: string | Date): string {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;

@@ -24,7 +24,6 @@ export interface CreateActivityInput {
  * Get all activities for a task
  * GET /activities?taskId=:taskId
  * 
- * Requirements: 3.1, 3.2
  * - Returns all activities sorted by timestamp in descending order (newest first)
  * - Includes user information (username) for each activity
  */
@@ -84,7 +83,6 @@ export const getActivitiesByTask = async (
 /**
  * Create a new activity (internal use by other controllers)
  * 
- * Requirements: 2.1, 2.2, 2.3, 2.4
  * - Creates activities when tasks are created, moved, or edited
  * - Sets the activity timestamp to the current server time
  */

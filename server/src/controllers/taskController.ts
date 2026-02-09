@@ -80,6 +80,245 @@ const transformTask = (task: any) => ({
     taskAssignments: task.taskAssignments ?? [],
 });
 
+// Types for update task handlers
+interface UpdateContext {
+    taskId: number;
+    currentTask: any;
+    data: Record<string, any>;
+    editActivities: string[];
+}
+
+// Field update handlers for updateTask
+// Helper to clamp string length for activity messages
+function clampString(str: string, maxLength: number = 50): string {
+    return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
+}
+
+function handleTitleUpdate(ctx: UpdateContext, title: string | undefined): void {
+    if (title === undefined) return;
+    ctx.data.title = title;
+    if (ctx.currentTask && ctx.currentTask.title !== title) {
+        ctx.editActivities.push(`updated the title to "${clampString(title)}"`);
+    }
+}
+
+function handleDescriptionUpdate(ctx: UpdateContext, description: string | undefined): void {
+    if (description === undefined) return;
+    ctx.data.description = description;
+    if (ctx.currentTask && ctx.currentTask.description !== description) {
+        ctx.editActivities.push("updated the description");
+    }
+}
+
+function handleStatusUpdate(ctx: UpdateContext, status: string | undefined): void {
+    if (status === undefined) return;
+    ctx.data.status = statusStringToInt(status);
+    const currentStatusString = statusIntToString(ctx.currentTask?.status ?? null);
+    if (ctx.currentTask && currentStatusString !== status) {
+        ctx.editActivities.push(`changed the status to ${status}`);
+    }
+}
+
+function handlePriorityUpdate(ctx: UpdateContext, priority: string | undefined): void {
+    if (priority === undefined) return;
+    ctx.data.priority = priority || null;
+    if (ctx.currentTask && ctx.currentTask.priority !== (priority || null)) {
+        if (priority) {
+            ctx.editActivities.push(`changed the priority to ${priority}`);
+        } else {
+            ctx.editActivities.push("removed the priority");
+        }
+    }
+}
+
+function handleStartDateUpdate(ctx: UpdateContext, startDate: string | undefined): void {
+    if (startDate === undefined) return;
+    ctx.data.startDate = startDate ? new Date(startDate) : null;
+    const currentStartDate = ctx.currentTask?.startDate?.toISOString().split('T')[0] || null;
+    const newStartDate = startDate ? new Date(startDate).toISOString().split('T')[0] : null;
+    if (currentStartDate !== newStartDate) {
+        ctx.editActivities.push(startDate ? "set the start date" : "removed the start date");
+    }
+}
+
+function handleDueDateUpdate(ctx: UpdateContext, dueDate: string | undefined): void {
+    if (dueDate === undefined) return;
+    ctx.data.dueDate = dueDate ? new Date(dueDate) : null;
+    const currentDueDate = ctx.currentTask?.dueDate?.toISOString().split('T')[0] || null;
+    const newDueDate = dueDate ? new Date(dueDate).toISOString().split('T')[0] : null;
+    if (currentDueDate !== newDueDate) {
+        ctx.editActivities.push(dueDate ? "set the due date" : "removed the due date");
+    }
+}
+
+function handlePointsUpdate(ctx: UpdateContext, points: number | string | null | undefined): void {
+    if (points === undefined) return;
+    ctx.data.points = points !== null && points !== "" ? Number(points) : null;
+    const currentPoints = ctx.currentTask?.points ?? null;
+    const newPoints = points !== null && points !== "" ? Number(points) : null;
+    if (currentPoints !== newPoints) {
+        ctx.editActivities.push(newPoints !== null ? `updated the points to ${newPoints}` : "removed the points");
+    }
+}
+
+function handleProjectIdUpdate(ctx: UpdateContext, projectId: number | undefined): void {
+    if (projectId === undefined) return;
+    ctx.data.projectId = projectId ? Number(projectId) : null;
+}
+
+async function handleTagsUpdate(ctx: UpdateContext, tagIds: number[] | undefined): Promise<void> {
+    if (tagIds === undefined) return;
+    
+    const currentTagIds = ctx.currentTask?.taskTags?.map((tt: any) => tt.tagId) || [];
+    const addedTags = tagIds.filter(id => !currentTagIds.includes(id));
+    const removedTags = currentTagIds.filter((id: number) => !tagIds.includes(id));
+    
+    if (addedTags.length > 0 || removedTags.length > 0) {
+        ctx.editActivities.push("updated the tags");
+    }
+    
+    await getPrismaClient().taskTag.deleteMany({ where: { taskId: ctx.taskId } });
+    if (tagIds.length > 0) {
+        await getPrismaClient().taskTag.createMany({
+            data: tagIds.map((tagId: number) => ({ taskId: ctx.taskId, tagId })),
+        });
+    }
+}
+
+async function handleSprintsUpdate(ctx: UpdateContext, sprintIds: number[] | undefined): Promise<void> {
+    if (sprintIds === undefined) return;
+    
+    const currentSprintTasks = await getPrismaClient().sprintTask.findMany({
+        where: { taskId: ctx.taskId },
+        select: { sprintId: true, sprint: { select: { title: true } } },
+    });
+    const currentSprintIds = currentSprintTasks.map(st => st.sprintId);
+    
+    const addedSprintIds = sprintIds.filter(id => !currentSprintIds.includes(id));
+    const removedSprintIds = currentSprintIds.filter(id => !sprintIds.includes(id));
+    
+    if (addedSprintIds.length > 0 || removedSprintIds.length > 0) {
+        // Fetch sprint names for added sprints
+        const addedSprints = addedSprintIds.length > 0
+            ? await getPrismaClient().sprint.findMany({
+                where: { id: { in: addedSprintIds } },
+                select: { title: true },
+            })
+            : [];
+        
+        // Get removed sprint names from current data
+        const removedSprintNames = currentSprintTasks
+            .filter(st => removedSprintIds.includes(st.sprintId))
+            .map(st => st.sprint.title);
+        
+        if (addedSprints.length > 0) {
+            const names = addedSprints.map(s => clampString(s.title, 30)).join(", ");
+            ctx.editActivities.push(`added to sprint${addedSprints.length > 1 ? "s" : ""}: ${names}`);
+        }
+        if (removedSprintNames.length > 0) {
+            const names = removedSprintNames.map(n => clampString(n, 30)).join(", ");
+            ctx.editActivities.push(`removed from sprint${removedSprintNames.length > 1 ? "s" : ""}: ${names}`);
+        }
+    }
+    
+    await getPrismaClient().sprintTask.deleteMany({ where: { taskId: ctx.taskId } });
+    if (sprintIds.length > 0) {
+        await getPrismaClient().sprintTask.createMany({
+            data: sprintIds.map((sprintId: number) => ({ taskId: ctx.taskId, sprintId })),
+        });
+    }
+}
+
+async function handleAssigneesUpdate(
+    ctx: UpdateContext,
+    assigneeIds: number[] | undefined,
+    userId: number
+): Promise<void> {
+    if (assigneeIds === undefined) return;
+    
+    const currentTaskAssignments = await getPrismaClient().taskAssignment.findMany({
+        where: { taskId: ctx.taskId },
+        select: { userId: true },
+    });
+    const currentAssigneeIds = currentTaskAssignments.map(ta => ta.userId);
+    
+    const addedAssignees = assigneeIds.filter(id => !currentAssigneeIds.includes(id));
+    const removedAssignees = currentAssigneeIds.filter(id => !assigneeIds.includes(id));
+    
+    if (addedAssignees.length > 0 || removedAssignees.length > 0) {
+        ctx.editActivities.push("updated the assignees");
+        
+        try {
+            await createReassignmentNotifications(ctx.taskId, addedAssignees, removedAssignees, userId);
+        } catch (error) {
+            console.error("Failed to create reassignment notifications:", error);
+        }
+    }
+    
+    await getPrismaClient().taskAssignment.deleteMany({ where: { taskId: ctx.taskId } });
+    if (assigneeIds.length > 0) {
+        await getPrismaClient().taskAssignment.createMany({
+            data: assigneeIds.map((userId: number) => ({ taskId: ctx.taskId, userId })),
+        });
+    }
+}
+
+async function handleSubtasksUpdate(ctx: UpdateContext, subtaskIds: number[] | undefined): Promise<void> {
+    if (subtaskIds === undefined) return;
+    
+    const currentSubtaskTask = await getPrismaClient().task.findUnique({
+        where: { id: ctx.taskId },
+        include: { subtasks: { select: { id: true } } },
+    });
+    
+    const currentSubtaskIds = currentSubtaskTask?.subtasks.map(s => s.id) || [];
+    
+    const toAdd = subtaskIds.filter(id => !currentSubtaskIds.includes(id));
+    if (toAdd.length > 0) {
+        await getPrismaClient().task.updateMany({
+            where: { id: { in: toAdd } },
+            data: { parentTaskId: ctx.taskId },
+        });
+    }
+    
+    const toRemove = currentSubtaskIds.filter(id => !subtaskIds.includes(id));
+    if (toRemove.length > 0) {
+        await getPrismaClient().task.updateMany({
+            where: { id: { in: toRemove } },
+            data: { parentTaskId: null },
+        });
+    }
+}
+
+async function handleEditActivities(ctx: UpdateContext, userId: number): Promise<void> {
+    if (!userId || ctx.editActivities.length === 0) return;
+    
+    for (const editField of ctx.editActivities) {
+        try {
+            await createActivity({
+                taskId: ctx.taskId,
+                userId: userId,
+                activityType: ActivityType.EDIT_TASK,
+                editField: editField,
+            });
+        } catch (activityError: any) {
+            console.error("Error creating activity for task edit:", activityError.message);
+        }
+    }
+    
+    try {
+        const latestActivity = await getPrismaClient().activity.findFirst({
+            where: { taskId: ctx.taskId },
+            orderBy: { createdAt: 'desc' },
+        });
+        if (latestActivity) {
+            await createTaskEditNotifications(ctx.taskId, latestActivity.id, userId);
+        }
+    } catch (error) {
+        console.error("Failed to create task edit notifications:", error);
+    }
+}
+
 export const getTasks = async (_req: Request, res: Response) => {
     const {projectId} = _req.query;
 
@@ -171,7 +410,7 @@ export const createTask = async (
             include: taskInclude,
         });
         
-        // Create a Create Task activity (Requirement 2.1)
+        // Create activity for new task
         try {
             await createActivity({
                 taskId: newTask.id,
@@ -244,8 +483,6 @@ export const updateTaskStatus = async (
                 console.error("Error creating activity for status update:", activityError.message);
             }
             
-            // Create task edit notifications for assignees (excluding the editor)
-            // Requirements: 5.1, 5.2
             try {
                 const latestActivity = await getPrismaClient().activity.findFirst({
                     where: { taskId: Number(taskId) },
@@ -276,245 +513,44 @@ export const updateTask = async (
 ): Promise<void> => {
     const { taskId } = req.params;
     const { title, description, status, priority, startDate, dueDate, points, tagIds, subtaskIds, projectId, sprintIds, userId, assigneeIds } = req.body;
+    
     try {
         const currentTask = await getPrismaClient().task.findUnique({
             where: { id: Number(taskId) },
-            include: {
-                taskTags: { include: { tag: true } },
-            },
+            include: { taskTags: { include: { tag: true } } },
         });
         
-        const data: Record<string, any> = {};
-        const editActivities: string[] = [];
+        const ctx: UpdateContext = {
+            taskId: Number(taskId),
+            currentTask,
+            data: {},
+            editActivities: [],
+        };
         
-        if (title !== undefined) {
-            data.title = title;
-            if (currentTask && currentTask.title !== title) {
-                editActivities.push("updated the title");
-            }
-        }
-        if (description !== undefined) {
-            data.description = description;
-            if (currentTask && currentTask.description !== description) {
-                editActivities.push("updated the description");
-            }
-        }
-        if (status !== undefined) {
-            data.status = statusStringToInt(status);
-            const currentStatusString = statusIntToString(currentTask?.status ?? null);
-            if (currentTask && currentStatusString !== status) {
-                editActivities.push(`changed the status to ${status}`);
-            }
-        }
-        if (priority !== undefined) {
-            data.priority = priority || null;
-            if (currentTask && currentTask.priority !== (priority || null)) {
-                if (priority) {
-                    editActivities.push(`changed the priority to ${priority}`);
-                } else {
-                    editActivities.push("removed the priority");
-                }
-            }
-        }
-        if (startDate !== undefined) {
-            data.startDate = startDate ? new Date(startDate) : null;
-            const currentStartDate = currentTask?.startDate?.toISOString().split('T')[0] || null;
-            const newStartDate = startDate ? new Date(startDate).toISOString().split('T')[0] : null;
-            if (currentStartDate !== newStartDate) {
-                if (startDate) {
-                    editActivities.push("set the start date");
-                } else {
-                    editActivities.push("removed the start date");
-                }
-            }
-        }
-        if (dueDate !== undefined) {
-            data.dueDate = dueDate ? new Date(dueDate) : null;
-            const currentDueDate = currentTask?.dueDate?.toISOString().split('T')[0] || null;
-            const newDueDate = dueDate ? new Date(dueDate).toISOString().split('T')[0] : null;
-            if (currentDueDate !== newDueDate) {
-                if (dueDate) {
-                    editActivities.push("set the due date");
-                } else {
-                    editActivities.push("removed the due date");
-                }
-            }
-        }
-        if (points !== undefined) {
-            data.points = points !== null && points !== "" ? Number(points) : null;
-            const currentPoints = currentTask?.points ?? null;
-            const newPoints = points !== null && points !== "" ? Number(points) : null;
-            if (currentPoints !== newPoints) {
-                if (newPoints !== null) {
-                    editActivities.push(`updated the points to ${newPoints}`);
-                } else {
-                    editActivities.push("removed the points");
-                }
-            }
-        }
-        if (projectId !== undefined) data.projectId = projectId ? Number(projectId) : null;
-
-        if (tagIds !== undefined) {
-            const currentTagIds = currentTask?.taskTags?.map(tt => tt.tagId) || [];
-            const newTagIds = tagIds as number[];
-            
-            const addedTags = newTagIds.filter(id => !currentTagIds.includes(id));
-            const removedTags = currentTagIds.filter(id => !newTagIds.includes(id));
-            
-            if (addedTags.length > 0 || removedTags.length > 0) {
-                editActivities.push("updated the tags");
-            }
-            
-            await getPrismaClient().taskTag.deleteMany({
-                where: { taskId: Number(taskId) },
-            });
-            if (tagIds.length > 0) {
-                await getPrismaClient().taskTag.createMany({
-                    data: tagIds.map((tagId: number) => ({
-                        taskId: Number(taskId),
-                        tagId,
-                    })),
-                });
-            }
-        }
-
-        if (sprintIds !== undefined) {
-            const currentSprintTask = await getPrismaClient().sprintTask.findMany({
-                where: { taskId: Number(taskId) },
-                select: { sprintId: true },
-            });
-            const currentSprintIds = currentSprintTask.map(st => st.sprintId);
-            const newSprintIds = sprintIds as number[];
-            
-            const addedSprints = newSprintIds.filter(id => !currentSprintIds.includes(id));
-            const removedSprints = currentSprintIds.filter(id => !newSprintIds.includes(id));
-            
-            if (addedSprints.length > 0 || removedSprints.length > 0) {
-                editActivities.push("updated the sprints");
-            }
-            
-            await getPrismaClient().sprintTask.deleteMany({
-                where: { taskId: Number(taskId) },
-            });
-            if (sprintIds.length > 0) {
-                await getPrismaClient().sprintTask.createMany({
-                    data: sprintIds.map((sprintId: number) => ({
-                        taskId: Number(taskId),
-                        sprintId,
-                    })),
-                });
-            }
-        }
-
-        if (assigneeIds !== undefined) {
-            // Get current task assignments to track changes
-            const currentTaskAssignments = await getPrismaClient().taskAssignment.findMany({
-                where: { taskId: Number(taskId) },
-                select: { userId: true },
-            });
-            const currentAssigneeIds = currentTaskAssignments.map(ta => ta.userId);
-            const newAssigneeIds = assigneeIds as number[];
-            
-            // Track assignee changes for activity logging
-            const addedAssignees = newAssigneeIds.filter(id => !currentAssigneeIds.includes(id));
-            const removedAssignees = currentAssigneeIds.filter(id => !newAssigneeIds.includes(id));
-            
-            if (addedAssignees.length > 0 || removedAssignees.length > 0) {
-                editActivities.push("updated the assignees");
-            }
-            
-            // Create reassignment notifications for added/removed assignees
-            // Requirements: 6.1, 6.2, 6.4
-            if (addedAssignees.length > 0 || removedAssignees.length > 0) {
-                try {
-                    await createReassignmentNotifications(
-                        Number(taskId),
-                        addedAssignees,
-                        removedAssignees,
-                        userId
-                    );
-                } catch (error) {
-                    console.error("Failed to create reassignment notifications:", error);
-                }
-            }
-            
-            // Delete existing TaskAssignment records for the task
-            await getPrismaClient().taskAssignment.deleteMany({
-                where: { taskId: Number(taskId) },
-            });
-            
-            // Create new TaskAssignment records for the provided userIds
-            if (newAssigneeIds.length > 0) {
-                await getPrismaClient().taskAssignment.createMany({
-                    data: newAssigneeIds.map((userId: number) => ({
-                        taskId: Number(taskId),
-                        userId,
-                    })),
-                });
-            }
-        }
-
-        if (subtaskIds !== undefined) {
-            const currentSubtaskTask = await getPrismaClient().task.findUnique({
-                where: { id: Number(taskId) },
-                include: { subtasks: { select: { id: true } } },
-            });
-            
-            const currentSubtaskIds = currentSubtaskTask?.subtasks.map(s => s.id) || [];
-            const newSubtaskIds = subtaskIds as number[];
-            
-            const toAdd = newSubtaskIds.filter(id => !currentSubtaskIds.includes(id));
-            if (toAdd.length > 0) {
-                await getPrismaClient().task.updateMany({
-                    where: { id: { in: toAdd } },
-                    data: { parentTaskId: Number(taskId) },
-                });
-            }
-            
-            const toRemove = currentSubtaskIds.filter(id => !newSubtaskIds.includes(id));
-            if (toRemove.length > 0) {
-                await getPrismaClient().task.updateMany({
-                    where: { id: { in: toRemove } },
-                    data: { parentTaskId: null },
-                });
-            }
-        }
-
+        // Handle scalar field updates
+        handleTitleUpdate(ctx, title);
+        handleDescriptionUpdate(ctx, description);
+        handleStatusUpdate(ctx, status);
+        handlePriorityUpdate(ctx, priority);
+        handleStartDateUpdate(ctx, startDate);
+        handleDueDateUpdate(ctx, dueDate);
+        handlePointsUpdate(ctx, points);
+        handleProjectIdUpdate(ctx, projectId);
+        
+        // Handle relation updates
+        await handleTagsUpdate(ctx, tagIds);
+        await handleSprintsUpdate(ctx, sprintIds);
+        await handleAssigneesUpdate(ctx, assigneeIds, userId);
+        await handleSubtasksUpdate(ctx, subtaskIds);
+        
         const updatedTask = await getPrismaClient().task.update({
-            where: { id: Number(taskId) },
-            data,
+            where: { id: ctx.taskId },
+            data: ctx.data,
             include: taskInclude,
         });
         
-        if (userId && editActivities.length > 0) {
-            for (const editField of editActivities) {
-                try {
-                    await createActivity({
-                        taskId: Number(taskId),
-                        userId: userId,
-                        activityType: ActivityType.EDIT_TASK,
-                        editField: editField,
-                    });
-                } catch (activityError: any) {
-                    console.error("Error creating activity for task edit:", activityError.message);
-                }
-            }
-            
-            // Create task edit notifications for assignees (excluding the editor)
-            // Requirements: 5.1, 5.2
-            try {
-                // Get the most recent activity for this task edit
-                const latestActivity = await getPrismaClient().activity.findFirst({
-                    where: { taskId: Number(taskId) },
-                    orderBy: { createdAt: 'desc' },
-                });
-                if (latestActivity) {
-                    await createTaskEditNotifications(Number(taskId), latestActivity.id, userId);
-                }
-            } catch (error) {
-                console.error("Failed to create task edit notifications:", error);
-            }
-        }
+        // Create activity records and notifications
+        await handleEditActivities(ctx, userId);
         
         res.json(transformTask(updatedTask));
     } catch (error: any) {

@@ -1,5 +1,4 @@
 // Custom emojis from public/emojis library
-// Requirement 1.5: Support predefined emoji set from public/emojis library
 
 export interface EmojiDefinition {
   id: string;
@@ -43,7 +42,6 @@ export const EMOJI_MAP: Record<string, { src: string; label: string }> =
 
 export const VALID_EMOJI_IDS = AVAILABLE_EMOJIS.map(e => e.id);
 
-// Requirement 1.6: Default emoji for double-click
 export const DEFAULT_QUICK_REACTION = "FeelingYes";
 
 export function isValidEmoji(emojiId: string): boolean {
