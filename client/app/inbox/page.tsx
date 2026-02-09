@@ -25,6 +25,8 @@ import {
   type Notification,
 } from "@/state/api";
 
+import Header from "@/components/Header";
+
 // Helper function to get relative time string
 const getRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
@@ -226,20 +228,20 @@ const InboxPage = () => {
   const isAllSelected = notificationCount > 0 && selectedCount === notificationCount;
 
   return (
-    <div className="flex h-full w-full flex-col bg-gray-50 dark:bg-dark-bg">
+    <div className="flex h-full w-full flex-col p-8">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-dark-secondary">
-        <div className="flex items-center justify-between">
+      <Header
+        name={
           <div className="flex items-center gap-3">
-            <Bell className="h-6 w-6 text-gray-700 dark:text-gray-200" />
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Inbox</h1>
+            <span>Inbox</span>
             {unreadCount > 0 && (
               <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-sm font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                 {unreadCount} unread
               </span>
             )}
           </div>
-
+        }
+        buttonComponent={
           <div className="flex items-center gap-2">
             {selectedCount > 0 && (
               <button
@@ -262,12 +264,12 @@ const InboxPage = () => {
               </button>
             )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Select all bar */}
       {notificationCount > 0 && (
-        <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-2 dark:border-gray-700 dark:bg-dark-secondary">
+        <div className="flex items-center gap-4 rounded-t-lg border-b border-gray-200 bg-white px-6 py-2 dark:border-gray-700 dark:bg-dark-secondary">
           <input
             type="checkbox"
             checked={isAllSelected}
@@ -281,7 +283,7 @@ const InboxPage = () => {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto rounded-b-lg bg-white dark:bg-dark-secondary">
         {isLoading && (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -297,7 +299,7 @@ const InboxPage = () => {
         )}
 
         {!isLoading && !isError && notifications?.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex h-full flex-col items-center justify-center text-center">
             <Bell className="mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
             <p className="text-lg text-gray-500 dark:text-gray-400">No notifications yet</p>
             <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
@@ -307,7 +309,7 @@ const InboxPage = () => {
         )}
 
         {!isLoading && !isError && notifications && notifications.length > 0 && userId && (
-          <div className="divide-y divide-gray-100 bg-white dark:divide-gray-700 dark:bg-dark-secondary">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {notifications.map((notification) => (
               <NotificationRow
                 key={notification.id}

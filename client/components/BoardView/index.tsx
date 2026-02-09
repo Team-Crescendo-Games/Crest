@@ -61,7 +61,7 @@ const BoardView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState = init
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid h-full grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
         {taskStatus.map((status) => (
           <TaskColumn
             key={status}
@@ -122,6 +122,7 @@ const TaskColumn = ({
         drop(instance);
       }}
       className={`
+        flex min-h-0 flex-col
         rounded-lg py-4 px-3 xl:px-3 backdrop-blur-sm shadow-sm transition-all duration-200
         bg-gray-100/80 dark:bg-dark-secondary/80
         border border-gray-200/50 dark:border-stroke-dark/50
@@ -131,7 +132,7 @@ const TaskColumn = ({
         }
       `}
     >
-      <div className="mb-4 flex w-full flex-col">
+      <div className="mb-4 flex w-full flex-shrink-0 flex-col">
         <h3 className="flex items-center text-base font-semibold text-gray-800 dark:text-white">
           <span
             className="mr-2 h-3 w-3 rounded-full shadow-sm"
@@ -145,7 +146,8 @@ const TaskColumn = ({
         <div className="mt-3 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-stroke-dark dark:via-gray-600 dark:to-stroke-dark" />
       </div>
 
-      {status === "Input Queue" && (
+      <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1">
+        {status === "Input Queue" && (
         <button
           onClick={() => setIsModalNewTaskOpen(true)}
           className="mb-2 flex w-full items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 p-3 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:border-stroke-dark dark:bg-dark-secondary/50 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
@@ -165,6 +167,7 @@ const TaskColumn = ({
             highlighted={showMyTasks && !!currentUserId && task.taskAssignments?.some((ta) => ta.userId === currentUserId)}
           />
         ))}
+      </div>
     </div>
   );
 };

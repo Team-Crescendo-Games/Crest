@@ -6,7 +6,6 @@ import StoreProvider, {useAppSelector} from "@/app/redux";
 import AuthProvider from "@/app/authProvider";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-    const isSidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
     const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
 
     useEffect(() => {
@@ -17,9 +16,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex min-h-screen w-full bg-gray-50 text-gray-900">
             <Sidebar />
             <main
-                className={`relative flex h-screen w-full flex-col bg-gray-50 dark:bg-dark-bg ${
-                    isSidebarCollapsed ? "" : "md:pl-64"
-                }`}
+                className="relative flex h-screen w-full flex-col bg-gray-50 dark:bg-dark-bg md:pl-64"
             >
                 {/* Dot background pattern */}
                 <div 

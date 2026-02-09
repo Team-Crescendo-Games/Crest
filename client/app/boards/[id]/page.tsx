@@ -33,7 +33,7 @@ const BoardPage = ({ params }: Props) => {
     const handleSortChange = (newState: SortState) => setSortState(newState);
 
     return (
-        <div>
+        <div className="flex h-full flex-col">
             <ModalNewTask
                 isOpen={isModalNewTaskOpen}
                 onClose={() => setIsModalNewTaskOpen(false)}
@@ -58,12 +58,14 @@ const BoardPage = ({ params }: Props) => {
                 showMyTasks={showMyTasks}
                 onShowMyTasksChange={setShowMyTasks}
             />
-            {activeTab === "Board" && (
-                <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} sortState={sortState} showMyTasks={showMyTasks} />
-            )}
-            {activeTab === "Table" && (
-                <Table id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} />
-            )}
+            <div className="min-h-0 flex-1">
+                {activeTab === "Board" && (
+                    <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} sortState={sortState} showMyTasks={showMyTasks} />
+                )}
+                {activeTab === "Table" && (
+                    <Table id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} filterState={filterState} />
+                )}
+            </div>
         </div>
     );
 };

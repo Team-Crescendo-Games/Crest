@@ -37,7 +37,7 @@ const UserBoardPage = ({ params }: Props) => {
   if (isError || !user) return <div className="p-8">User not found</div>;
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <ModalNewTask
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
@@ -59,21 +59,23 @@ const UserBoardPage = ({ params }: Props) => {
         showMyTasks={showMyTasks}
         onShowMyTasksChange={setShowMyTasks}
       />
-      {activeTab === "Board" && (
-        <UserBoardView
-          userId={userId}
-          setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-          filterState={filterState}
-          sortState={sortState}
-        />
-      )}
-      {activeTab === "Table" && (
-        <UserTableView
-          userId={userId}
-          setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-          filterState={filterState}
-        />
-      )}
+      <div className="min-h-0 flex-1">
+        {activeTab === "Board" && (
+          <UserBoardView
+            userId={userId}
+            setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+            filterState={filterState}
+            sortState={sortState}
+          />
+        )}
+        {activeTab === "Table" && (
+          <UserTableView
+            userId={userId}
+            setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+            filterState={filterState}
+          />
+        )}
+      </div>
     </div>
   );
 };

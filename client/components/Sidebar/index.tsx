@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/app/redux";
-import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
+import { setIsDarkMode } from "@/state";
 import { useGetAuthUserQuery, useGetProjectsQuery, useGetSprintsQuery, useGetUnreadCountQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
 import {
@@ -13,7 +13,6 @@ import {
     Folder,
     Home,
     LucideIcon,
-    Menu,
     Moon,
     Plus,
     Search,
@@ -21,7 +20,6 @@ import {
     Tag,
     User,
     Users,
-    X,
     Zap,
 } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
@@ -48,9 +46,6 @@ const Sidebar = () => {
     const createMenuRef = useRef<HTMLDivElement>(null);
     const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
     const dispatch = useAppDispatch();
-    const isSidebarCollapsed = useAppSelector(
-        (state) => state.global.isSidebarCollapsed,
-    );
 
     const { data: projects } = useGetProjectsQuery();
     const { data: sprints } = useGetSprintsQuery();
@@ -102,22 +97,8 @@ const Sidebar = () => {
     if (!currentUser) return null;
     const currentUserDetails = currentUser?.userDetails;
 
-    // Collapsed sidebar - just show menu button
-    if (isSidebarCollapsed) {
-        return (
-            <div className="fixed left-0 top-0 z-40 p-4">
-                <button
-                    onClick={() => dispatch(setIsSidebarCollapsed(false))}
-                    className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-tertiary"
-                >
-                    <Menu className="h-6 w-6" />
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="fixed flex h-full w-64 flex-col justify-between overflow-y-auto bg-white shadow-xl transition-all duration-300 dark:bg-dark-secondary z-40">
+        <div className="fixed z-20 flex h-full w-64 flex-col justify-between overflow-y-auto bg-white shadow-xl transition-all duration-300 dark:bg-dark-secondary">
             <ModalNewBoard
                 isOpen={isModalNewBoardOpen}
                 onClose={() => setIsModalNewBoardOpen(false)}
@@ -143,18 +124,10 @@ const Sidebar = () => {
                             height={32}
                             className="h-8 w-8 object-contain"
                         />
-                        <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        <span className="text-xl font-semibold text-gray-900 dark:text-white">
                             Crest
                         </span>
                     </div>
-
-                    {/* Collapse Button */}
-                    <button
-                        className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                        onClick={() => dispatch(setIsSidebarCollapsed(true))}
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
                 </div>
 
                 {/* CREATE BUTTON */}
