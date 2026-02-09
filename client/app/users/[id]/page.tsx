@@ -73,6 +73,7 @@ const UserBoardPage = ({ params }: Props) => {
             userId={userId}
             setIsModalNewTaskOpen={setIsModalNewTaskOpen}
             filterState={filterState}
+            sortState={sortState}
           />
         )}
       </div>
