@@ -22,6 +22,50 @@ export enum ActivityType {
     EDIT_TASK = 2,
 }
 
+export enum NotificationType {
+    MENTION = 0,
+    NEAR_OVERDUE = 1,
+    OVERDUE = 2,
+    TASK_EDITED = 3,
+    TASK_REASSIGNED = 4,
+}
+
+export enum NotificationSeverity {
+    INFO = 0,
+    MEDIUM = 1,
+    CRITICAL = 2,
+}
+
+export interface Notification {
+    id: number;
+    userId: number;
+    type: NotificationType;
+    severity: NotificationSeverity;
+    message?: string;
+    isRead: boolean;
+    createdAt: string;
+    taskId?: number;
+    commentId?: number;
+    activityId?: number;
+    task?: {
+        id: number;
+        title: string;
+    };
+    comment?: {
+        id: number;
+        text: string;
+    };
+    activity?: {
+        id: number;
+        activityType: number;
+        editField?: string;
+    };
+}
+
+export interface UnreadCountResponse {
+    count: number;
+}
+
 export interface Activity {
     id: number;
     taskId: number;
@@ -190,7 +234,7 @@ export const api = createApi({
         },
     }),
     reducerPath: "api",
-    tagTypes: ["Projects", "Tasks", "Users", "Tags", "Sprints", "Activities"],
+    tagTypes: ["Projects", "Tasks", "Users", "Tags", "Sprints", "Activities", "Notifications"],
     endpoints: (build) => ({
         // projects
         getProjects: build.query<Project[], void>({
@@ -550,6 +594,50 @@ export const api = createApi({
             ],
         }),
 
+        // notifications
+        getNotifications: build.query<Notification[], number>({
+            query: (userId) => `notifications?userId=${userId}`,
+            providesTags: ["Notifications"],
+        }),
+
+        getUnreadCount: build.query<UnreadCountResponse, number>({
+            query: (userId) => `notifications/unread-count?userId=${userId}`,
+            providesTags: ["Notifications"],
+        }),
+
+        markNotificationAsRead: build.mutation<Notification, { notificationId: number; userId: number }>({
+            query: ({ notificationId, userId }) => ({
+                url: `notifications/${notificationId}/read?userId=${userId}`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["Notifications"],
+        }),
+
+        markAllNotificationsAsRead: build.mutation<{ message: string; count: number }, number>({
+            query: (userId) => ({
+                url: `notifications/mark-all-read?userId=${userId}`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["Notifications"],
+        }),
+
+        deleteNotification: build.mutation<{ message: string }, { notificationId: number; userId: number }>({
+            query: ({ notificationId, userId }) => ({
+                url: `notifications/${notificationId}?userId=${userId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Notifications"],
+        }),
+
+        batchDeleteNotifications: build.mutation<{ message: string; count: number }, { ids: number[]; userId: number }>({
+            query: ({ ids, userId }) => ({
+                url: `notifications/batch?userId=${userId}`,
+                method: "DELETE",
+                body: { ids },
+            }),
+            invalidatesTags: ["Notifications"],
+        }),
+
         // attachments
         createAttachment: build.mutation<Attachment, { taskId: number; uploadedById: number; fileName: string; fileExt: string }>({
             query: (body) => ({
@@ -610,6 +698,12 @@ export const {
     useDuplicateSprintMutation,
     useArchiveSprintMutation,
     useGetActivitiesByTaskQuery,
+    useGetNotificationsQuery,
+    useGetUnreadCountQuery,
+    useMarkNotificationAsReadMutation,
+    useMarkAllNotificationsAsReadMutation,
+    useDeleteNotificationMutation,
+    useBatchDeleteNotificationsMutation,
     useCreateAttachmentMutation,
     useDeleteAttachmentMutation,
 } = api;

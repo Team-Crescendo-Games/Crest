@@ -27,6 +27,7 @@ model User {
   comments         Comment[]
   commentReactions CommentReaction[]
   activities       Activity[]
+  notifications    Notification[]
 }
 
 model Project {
@@ -60,6 +61,7 @@ model Task {
   taskTags        TaskTag[]
   sprintTasks     SprintTask[]
   activities      Activity[]
+  notifications   Notification[]
 }
 
 model Tag {
@@ -108,9 +110,10 @@ model Comment {
   createdAt  DateTime @default(now())
   isResolved Boolean  @default(false)
 
-  task      Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User              @relation(fields: [userId], references: [userId])
-  reactions CommentReaction[]
+  task          Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [userId])
+  reactions     CommentReaction[]
+  notifications Notification[]
 }
 
 model CommentReaction {
@@ -157,9 +160,33 @@ model Activity {
   editField      String?   // For Edit activities (e.g., "description", "label Feature")
   createdAt      DateTime  @default(now())
 
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [userId])
+  task          Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [userId])
+  notifications Notification[]
 
   @@index([taskId])
   @@index([userId])
+}
+
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  type       Int      // 0=Mention, 1=NearOverdue, 2=Overdue, 3=TaskEdited, 4=TaskReassigned
+  severity   Int      @default(0) // 0=Info, 1=Medium, 2=Critical
+  message    String?  // Optional custom message
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  taskId     Int?
+  commentId  Int?
+  activityId Int?
+
+  user     User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  task     Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  comment  Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([taskId])
 }

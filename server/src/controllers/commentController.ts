@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { PrismaClient } from '../../prisma/generated/prisma/client.js';
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { createMentionNotifications } from "../services/notificationService.ts";
 
 let prisma: PrismaClient;
 
@@ -55,6 +56,17 @@ export const createComment = async (
                 user: true,
             },
         });
+
+        // Create mention notifications for users mentioned in the comment
+        // Wrapped in try-catch to not fail comment creation on notification error
+        // Requirements: 2.1, 2.4
+        try {
+            await createMentionNotifications(newComment.id, text, numericTaskId, numericUserId);
+        } catch (error) {
+            console.error("Failed to create mention notifications:", error);
+            // Continue - don't fail the comment creation on notification error
+        }
+
         res.status(201).json(newComment);
     } catch (error: any) {
         res.status(500).json({ error: `Error creating comment: ${error.message}` });

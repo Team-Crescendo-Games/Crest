@@ -3,6 +3,7 @@ import { PrismaClient } from '../../prisma/generated/prisma/client.js';
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { createActivity, ActivityType } from "./activityController.ts";
+import { createTaskEditNotifications, createReassignmentNotifications, createNotification, NotificationType, NotificationSeverity } from "../services/notificationService.ts";
 
 let prisma: PrismaClient;
 
@@ -214,6 +215,26 @@ export const createTask = async (
             console.error("Error creating activity for new task:", activityError.message);
         }
         
+        // Create notifications for assignees when task is created (excluding the author)
+        if (assigneeIds?.length) {
+            try {
+                for (const assigneeId of assigneeIds) {
+                    // Don't notify the author if they assigned themselves
+                    if (assigneeId === authorUserId) continue;
+                    
+                    await createNotification({
+                        userId: assigneeId,
+                        type: NotificationType.TASK_REASSIGNED,
+                        severity: NotificationSeverity.INFO,
+                        taskId: newTask.id,
+                        message: "You have been assigned to a new task",
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to create assignment notifications:", error);
+            }
+        }
+        
         res.status(201).json(transformTask(newTask));
     } catch (error: any) {
         res.status(500).json({ error: `Error creating a task: ${error.message}` });
@@ -254,6 +275,20 @@ export const updateTaskStatus = async (
                 });
             } catch (activityError: any) {
                 console.error("Error creating activity for status update:", activityError.message);
+            }
+            
+            // Create task edit notifications for assignees (excluding the editor)
+            // Requirements: 5.1, 5.2
+            try {
+                const latestActivity = await getPrismaClient().activity.findFirst({
+                    where: { taskId: Number(taskId) },
+                    orderBy: { createdAt: 'desc' },
+                });
+                if (latestActivity) {
+                    await createTaskEditNotifications(Number(taskId), latestActivity.id, userId);
+                }
+            } catch (error) {
+                console.error("Failed to create task edit notifications:", error);
             }
         }
         
@@ -421,6 +456,21 @@ export const updateTask = async (
                 editActivities.push("updated the assignees");
             }
             
+            // Create reassignment notifications for added/removed assignees
+            // Requirements: 6.1, 6.2, 6.4
+            if (addedAssignees.length > 0 || removedAssignees.length > 0) {
+                try {
+                    await createReassignmentNotifications(
+                        Number(taskId),
+                        addedAssignees,
+                        removedAssignees,
+                        userId
+                    );
+                } catch (error) {
+                    console.error("Failed to create reassignment notifications:", error);
+                }
+            }
+            
             // Delete existing TaskAssignment records for the task
             await getPrismaClient().taskAssignment.deleteMany({
                 where: { taskId: Number(taskId) },
@@ -481,6 +531,21 @@ export const updateTask = async (
                 } catch (activityError: any) {
                     console.error("Error creating activity for task edit:", activityError.message);
                 }
+            }
+            
+            // Create task edit notifications for assignees (excluding the editor)
+            // Requirements: 5.1, 5.2
+            try {
+                // Get the most recent activity for this task edit
+                const latestActivity = await getPrismaClient().activity.findFirst({
+                    where: { taskId: Number(taskId) },
+                    orderBy: { createdAt: 'desc' },
+                });
+                if (latestActivity) {
+                    await createTaskEditNotifications(Number(taskId), latestActivity.id, userId);
+                }
+            } catch (error) {
+                console.error("Failed to create task edit notifications:", error);
             }
         }
         

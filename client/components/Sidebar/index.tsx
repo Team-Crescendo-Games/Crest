@@ -2,9 +2,10 @@
 
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
-import { useGetAuthUserQuery, useGetProjectsQuery, useGetSprintsQuery } from "@/state/api";
+import { useGetAuthUserQuery, useGetProjectsQuery, useGetSprintsQuery, useGetUnreadCountQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
 import {
+    Bell,
     ChevronDown,
     ClipboardList,
     Eye,
@@ -65,6 +66,13 @@ const Sidebar = () => {
     );
 
     const { data: currentUser } = useGetAuthUserQuery({});
+    const userId = currentUser?.userDetails?.userId;
+    
+    // Fetch unread notification count
+    const { data: unreadCountData } = useGetUnreadCountQuery(userId!, {
+        skip: !userId,
+    });
+    const unreadCount = unreadCountData?.count ?? 0;
     const handleSignOut = async () => {
         try {
             await signOut();
@@ -192,6 +200,7 @@ const Sidebar = () => {
                 {/* NAVBAR LINKS */}
                 <nav className="flex w-full flex-col gap-y-1">
                     <SidebarLink icon={Home} label="Overview" href="/" isDarkMode={isDarkMode} />
+                    <SidebarLink icon={Bell} label="Inbox" href="/inbox" isDarkMode={isDarkMode} badge={unreadCount > 0 ? unreadCount : undefined} />
                 </nav>
 
                 {/* WORKSPACE HEADER */}
@@ -374,25 +383,26 @@ const Sidebar = () => {
                             <User className="h-5 w-5" />
                         )}
                     </Link>
-                        {/* Dark mode toggle */}
-                        <button
-                            onClick={() => dispatch(setIsDarkMode(!isDarkMode))}
-                            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
-                        >
-                            {isDarkMode ? (
-                                <Sun className="h-5 w-5" />
-                            ) : (
-                                <Moon className="h-5 w-5" />
-                            )}
-                        </button>
+                    
+                    {/* Dark mode toggle */}
+                    <button
+                        onClick={() => dispatch(setIsDarkMode(!isDarkMode))}
+                        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+                    >
+                        {isDarkMode ? (
+                            <Sun className="h-5 w-5" />
+                        ) : (
+                            <Moon className="h-5 w-5" />
+                        )}
+                    </button>
 
-                        {/* Sign out */}
-                        <button
-                            onClick={handleSignOut}
-                            className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
-                        >
-                            Sign out
-                        </button>
+                    {/* Sign out */}
+                    <button
+                        onClick={handleSignOut}
+                        className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
+                    >
+                        Sign out
+                    </button>
                 </div>
             </div>
         </div>
@@ -404,9 +414,10 @@ interface SidebarLinkProps {
     icon: LucideIcon;
     label: string;
     isDarkMode: boolean;
+    badge?: number;
 }
 
-const SidebarLink = ({ href, icon: Icon, label, isDarkMode }: SidebarLinkProps) => {
+const SidebarLink = ({ href, icon: Icon, label, isDarkMode, badge }: SidebarLinkProps) => {
     const pathname = usePathname();
     const isActive =
         pathname === href || (pathname === "/" && href === "/dashboard");
@@ -431,6 +442,11 @@ const SidebarLink = ({ href, icon: Icon, label, isDarkMode }: SidebarLinkProps) 
                 <span className={`text-sm font-medium text-gray-800 dark:text-gray-100`}>
                     {label}
                 </span>
+                {badge !== undefined && badge > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                        {badge > 99 ? "99+" : badge}
+                    </span>
+                )}
             </div>
         </Link>
     );
