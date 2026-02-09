@@ -1,41 +1,8 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from '../../prisma/generated/prisma/client.js';
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { getPrismaClient } from "../lib/prisma.ts";
+import { statusIntToString, statusStringToInt } from "../lib/statusUtils.ts";
 import { createActivity, ActivityType } from "./activityController.ts";
 import { createTaskEditNotifications, createReassignmentNotifications, createNotification, NotificationType, NotificationSeverity } from "../services/notificationService.ts";
-
-let prisma: PrismaClient;
-
-function getPrismaClient() {
-    if (!prisma) {
-        const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-        const adapter = new PrismaPg(pool);
-        prisma = new PrismaClient({ adapter });
-    }
-    return prisma;
-}
-
-// Status mapping: 0=Input Queue, 1=Work In Progress, 2=Review, 3=Done
-const statusIntToString = (status: number | null): string | null => {
-    const statusMap: Record<number, string> = {
-        0: "Input Queue",
-        1: "Work In Progress",
-        2: "Review",
-        3: "Done",
-    };
-    return status !== null ? statusMap[status] || null : null;
-};
-
-const statusStringToInt = (status: string | null | undefined): number | null => {
-    const statusMap: Record<string, number> = {
-        "Input Queue": 0,
-        "Work In Progress": 1,
-        "Review": 2,
-        "Done": 3,
-    };
-    return status ? statusMap[status] ?? null : null;
-};
 
 // Common include object for task queries
 const taskInclude = {

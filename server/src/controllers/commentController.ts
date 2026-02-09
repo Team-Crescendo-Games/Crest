@@ -1,19 +1,6 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from '../../prisma/generated/prisma/client.js';
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { getPrismaClient } from "../lib/prisma.ts";
 import { createMentionNotifications } from "../services/notificationService.ts";
-
-let prisma: PrismaClient;
-
-function getPrismaClient() {
-    if (!prisma) {
-        const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-        const adapter = new PrismaPg(pool);
-        prisma = new PrismaClient({ adapter });
-    }
-    return prisma;
-}
 
 export const createComment = async (
     req: Request,

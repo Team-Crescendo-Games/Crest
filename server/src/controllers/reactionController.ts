@@ -1,7 +1,5 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from "../../prisma/generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { getPrismaClient } from "../lib/prisma.ts";
 
 // Valid emoji IDs from public/emojis library (Requirement 1.5)
 const VALID_EMOJI_IDS = [
@@ -34,17 +32,6 @@ const VALID_EMOJI_IDS = [
   "FeelingSubmissive",
   "FeelingYappy",
 ];
-
-let prisma: PrismaClient;
-
-function getPrismaClient() {
-  if (!prisma) {
-    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-    const adapter = new PrismaPg(pool);
-    prisma = new PrismaClient({ adapter });
-  }
-  return prisma;
-}
 
 export const toggleReaction = async (req: Request, res: Response) => {
   try {

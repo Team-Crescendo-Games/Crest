@@ -1,29 +1,6 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from '../../prisma/generated/prisma/client.js';
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-let prisma: PrismaClient;
-
-function getPrismaClient() {
-  if (!prisma) {
-    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-    const adapter = new PrismaPg(pool);
-    prisma = new PrismaClient({ adapter });
-  }
-  return prisma;
-}
-
-// Status mapping: 0=Input Queue, 1=Work In Progress, 2=Review, 3=Done
-const statusIntToString = (status: number | null): string | null => {
-  const statusMap: Record<number, string> = {
-    0: "Input Queue",
-    1: "Work In Progress",
-    2: "Review",
-    3: "Done",
-  };
-  return status !== null ? statusMap[status] || null : null;
-};
+import { getPrismaClient } from "../lib/prisma.ts";
+import { statusIntToString } from "../lib/statusUtils.ts";
 
 /**
  * Get all sprints with task counts
