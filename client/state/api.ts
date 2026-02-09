@@ -47,6 +47,7 @@ export enum Status {
 export interface User {
     userId?: number;
     username: string;
+    fullName?: string;
     email: string;
     profilePictureExt?: string;
     cognitoId?: string;
@@ -355,6 +356,15 @@ export const api = createApi({
             invalidatesTags: ["Users"],
         }),
 
+        updateUserProfile: build.mutation<User, { cognitoId: string; fullName?: string }>({
+            query: ({ cognitoId, ...body }) => ({
+                url: `users/${cognitoId}/profile`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Users"],
+        }),
+
         // search
         search: build.query<SearchResults, { query: string; categories?: string[] }>({
             query: ({ query, categories }) => {
@@ -580,6 +590,7 @@ export const {
     useGetTasksAuthoredByUserQuery,
     useGetAuthUserQuery,
     useUpdateUserProfilePictureMutation,
+    useUpdateUserProfileMutation,
     useGetTagsQuery,
     useCreateTagMutation,
     useUpdateTagMutation,

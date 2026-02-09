@@ -5,7 +5,6 @@ import { setIsDarkMode, setIsSidebarCollapsed } from "@/state";
 import { useGetAuthUserQuery, useGetProjectsQuery, useGetSprintsQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
 import {
-    Calendar,
     ChevronDown,
     ClipboardList,
     Eye,
@@ -22,6 +21,7 @@ import {
     User,
     Users,
     X,
+    Zap,
 } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import Image from "next/image";
@@ -175,7 +175,7 @@ const Sidebar = () => {
                                 onClick={() => handleCreateOption("sprint")}
                                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 dark:text-gray-200 dark:hover:bg-purple-900/20"
                             >
-                                <Calendar className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
+                                <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
                                 Sprint
                             </button>
                             <button
@@ -298,7 +298,7 @@ const Sidebar = () => {
                     className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
                 >
                     <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
+                        <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
                         <span>Sprints</span>
                     </div>
                     <div className="flex items-center gap-1">

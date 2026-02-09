@@ -44,20 +44,23 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
         if (!user) {
             if (process.env.NODE_ENV === 'development') {
                 // Use configured dev account details from environment
+                const devCognitoId = process.env.DEV_COGNITO_ID;
                 const devUsername = process.env.DEV_ACCOUNT_NAME;
                 const devEmail = process.env.DEV_ACCOUNT_EMAIL;
+                const devFullName = process.env.DEV_FULL_NAME;
                 
-                if (!devUsername || !devEmail) {
+                if (!devCognitoId || !devUsername || !devEmail) {
                     res.status(500).json({ 
-                        message: 'Dev account not configured. Set DEV_ACCOUNT_NAME and DEV_ACCOUNT_EMAIL in .env' 
+                        message: 'Dev account not configured. Set DEV_COGNITO_ID, DEV_ACCOUNT_NAME and DEV_ACCOUNT_EMAIL in .env' 
                     });
                     return;
                 }
                 
                 user = await getPrismaClient().user.create({
                     data: {
-                        cognitoId: cognitoId,
+                        cognitoId: devCognitoId,
                         username: devUsername,
+                        fullName: devFullName || null,
                         email: devEmail,
                         profilePictureExt: "jpg",
                     },
@@ -146,5 +149,31 @@ export const updateUserProfilePicture = async (req: Request, res: Response): Pro
         res.json(user);
     } catch (error: any) {
         res.status(500).json({ message: `Error updating profile picture: ${error.message}` });
+    }
+};
+
+export const updateUserProfile = async (req: Request, res: Response): Promise<void> => {
+    const { cognitoId } = req.params;
+    const { fullName } = req.body;
+    
+    if (!cognitoId || typeof cognitoId !== 'string') {
+        res.status(400).json({ message: 'Invalid cognitoId parameter' });
+        return;
+    }
+    
+    // Only fullName is editable (username and email are synced from Cognito)
+    if (fullName === undefined) {
+        res.status(400).json({ message: 'No fields to update' });
+        return;
+    }
+    
+    try {
+        const user = await getPrismaClient().user.update({
+            where: { cognitoId },
+            data: { fullName },
+        });
+        res.json(user);
+    } catch (error: any) {
+        res.status(500).json({ message: `Error updating profile: ${error.message}` });
     }
 };
