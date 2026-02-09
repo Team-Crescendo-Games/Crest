@@ -7,16 +7,13 @@
     "build": "rimraf dist && npx tsc",
     "start": "tsx src/index.ts",
     "dev": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\"",
-
     "db-seed": "prisma db seed",
     "db-rs": "prisma migrate reset --force",
     "db-gen": "npx prisma generate",
     "db-rs-full": "rm -rf prisma/migrations && prisma migrate reset -f && npx prisma migrate dev --name init && prisma db seed && npx prisma generate",
     "drf": "npm run db-rs-full",
     "db-rs-prod": "npm run db-rs && npx prisma migrate dev --name init && npx prisma generate",
-    
     "aws": "tsx scripts/aws-setup.ts",
-
     "deploy-dev": "pm2 start ecosystem.config.cjs --only crest-dev",
     "deploy-prod": "pm2 start ecosystem.config.cjs --only crest-prod"
   },
@@ -30,6 +27,8 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.2.0",
     "@types/pg": "^8.16.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
     "prisma": "^7.3.0",
@@ -49,7 +48,9 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "overrides": {
     "gantt-task-react": {

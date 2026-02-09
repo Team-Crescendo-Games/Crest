@@ -6,6 +6,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./swagger.ts";
 
 import projectRoutes from "./routes/projectRoutes.ts";
 import taskRoutes from "./routes/taskRoutes.ts";
@@ -30,7 +32,10 @@ app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(cors());
 
-app.get("/", (req, res) => {
+// Swagger API docs
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.get("/", (_req, res) => {
   res.send("This is the home route");
 });
 

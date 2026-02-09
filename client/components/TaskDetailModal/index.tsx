@@ -49,6 +49,48 @@ const DropdownPortal = ({ children, anchorRef, isOpen }: { children: React.React
 // Left panel edit mode section container styles
 const LEFT_PANEL_SECTION_CLASS = "flex flex-wrap gap-1 justify-end max-w-[400px]";
 
+// Floating action button component
+type FloatingButtonVariant = "default" | "success" | "danger";
+
+type TaskDetailsFloatingButtonProps = {
+  icon: React.ReactNode;
+  onClick: () => void;
+  title: string;
+  variant?: FloatingButtonVariant;
+  disabled?: boolean;
+  active?: boolean;
+};
+
+const TaskDetailsFloatingButton = ({
+  icon,
+  onClick,
+  title,
+  variant = "default",
+  disabled = false,
+  active = false,
+}: TaskDetailsFloatingButtonProps) => {
+  const baseClasses = "flex h-9 w-9 items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100";
+  
+  const variantClasses: Record<FloatingButtonVariant, string> = {
+    default: "bg-white text-gray-600 hover:bg-gray-100 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary",
+    success: "bg-green-500 text-white hover:bg-green-600",
+    danger: "bg-white text-red-500 hover:bg-red-50 dark:bg-dark-secondary dark:hover:bg-red-900/20",
+  };
+
+  const activeClasses = active ? "bg-green-500 text-white" : variantClasses[variant];
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${activeClasses}`}
+      title={title}
+    >
+      {icon}
+    </button>
+  );
+};
+
 // URL regex pattern for auto-linking
 const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,;:!?"'\])>])/g;
 
@@ -483,7 +525,407 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   const selectClass =
     "rounded border border-gray-300 p-2 text-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white";
 
+  // Render helper: People Section (Assignee and Author) - view mode only
+  const renderPeopleSection = () => (
+    <div className="flex items-center gap-4">
+      {/* Assignees */}
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+        <AssigneeAvatarGroup
+          assignees={
+            currentTask.taskAssignments && currentTask.taskAssignments.length > 0
+              ? currentTask.taskAssignments.map(ta => ({
+                  userId: ta.user.userId,
+                  username: ta.user.username,
+                  profilePictureExt: ta.user.profilePictureExt,
+                }))
+              : []
+          }
+          size={32}
+        />
+      </div>
+      
+      {/* Author */}
+      <div className="flex items-center gap-2">
+        <User className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+        <UserIcon
+          userId={currentTask.author?.userId}
+          username={currentTask.author?.username}
+          profilePictureExt={currentTask.author?.profilePictureExt}
+          size={32}
+          tooltipLabel="Author"
+          opacity="opacity-75"
+        />
+      </div>
+    </div>
+  );
+
+  // Render helper: Edit mode metadata (Points, Board, Assignees, Sprints)
+  const renderEditModeMetadata = () => (
+    <div className="space-y-4">
+      {/* Points */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+          <span className="text-sm text-gray-600 dark:text-neutral-400">Points:</span>
+          <input
+            type="number"
+            min="0"
+            className={`${selectClass} w-20`}
+            value={editPoints}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "" || Number(val) >= 0) {
+                setEditPoints(val);
+              }
+            }}
+          />
+        </div>
+        {editPoints && Number(editPoints) < 0 && (
+          <p className="text-xs text-red-500 dark:text-red-400">Points cannot be negative</p>
+        )}
+      </div>
+
+      {/* Board/Project Autofill */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+          <span className="flex items-center gap-1.5">
+            <BiColumns className="h-4 w-4" />
+            Board
+          </span>
+        </label>
+        <div className="relative" ref={projectDropdownRef}>
+          <div className="relative">
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="Search boards..."
+              value={projectSearch || selectedProject?.name || ""}
+              onChange={(e) => {
+                setProjectSearch(e.target.value);
+                if (selectedProject && e.target.value !== selectedProject.name) {
+                  setSelectedProject(null);
+                }
+                setShowProjectDropdown(true);
+              }}
+              onFocus={() => setShowProjectDropdown(true)}
+            />
+            {selectedProject ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProject(null);
+                  setProjectSearch("");
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={16} />
+              </button>
+            ) : (
+              <ChevronDown
+                size={16}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+            )}
+          </div>
+          {showProjectDropdown && (
+            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map((project) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => selectProject(project)}
+                    className="flex w-full flex-col px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                  >
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {project.name}
+                    </span>
+                    {project.description && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {project.description}
+                      </span>
+                    )}
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  No boards found
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Assignee Autofill - Multi-select */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+          <span className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
+            Assignees
+          </span>
+        </label>
+        <div className="relative" ref={assigneeDropdownRef}>
+          <div className={`${inputClass} flex flex-wrap gap-2 min-h-[42px] items-center`}>
+            {selectedAssignees.map((assignee) => (
+              <span
+                key={assignee.userId}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+              >
+                @{assignee.username}
+                <button
+                  type="button"
+                  onClick={() => setSelectedAssignees(prev => prev.filter(a => a.userId !== assignee.userId))}
+                  className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-200"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
+              placeholder={selectedAssignees.length === 0 ? "Type @ to search users..." : "Add more..."}
+              value={assigneeSearch}
+              onChange={(e) => {
+                setAssigneeSearch(e.target.value);
+                setShowAssigneeDropdown(true);
+              }}
+              onFocus={() => setShowAssigneeDropdown(true)}
+            />
+          </div>
+          {showAssigneeDropdown && (
+            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+              {filteredUsers.filter(user => !selectedAssignees.some(a => a.userId === user.userId)).length > 0 ? (
+                filteredUsers
+                  .filter(user => !selectedAssignees.some(a => a.userId === user.userId))
+                  .slice(0, 8)
+                  .map((user) => (
+                    <button
+                      key={user.userId}
+                      type="button"
+                      onClick={() => selectAssignee(user)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                    >
+                      <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
+                      {user.email && <span className="text-gray-500 dark:text-gray-400">{user.email}</span>}
+                    </button>
+                  ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  {selectedAssignees.length > 0 && filteredUsers.length > 0 ? "All matching users already selected" : "No users found"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sprints Autofill */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
+          <span className="flex items-center gap-1.5">
+            <Zap className="h-4 w-4" />
+            Sprints
+          </span>
+        </label>
+        <div className="relative" ref={sprintDropdownRef}>
+          <div className={`${inputClass} flex flex-wrap gap-2 min-h-[42px] items-center`}>
+            {selectedSprints.map((sprint) => (
+              <span
+                key={sprint.id}
+                className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+              >
+                {sprint.title}
+                <button
+                  type="button"
+                  onClick={() => removeSprint(sprint.id)}
+                  className="ml-0.5 hover:text-purple-600 dark:hover:text-purple-200"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
+              placeholder={selectedSprints.length === 0 ? "Search sprints..." : "Add more..."}
+              value={sprintSearch}
+              onChange={(e) => {
+                setSprintSearch(e.target.value);
+                setShowSprintDropdown(true);
+              }}
+              onFocus={() => setShowSprintDropdown(true)}
+            />
+          </div>
+          {showSprintDropdown && (
+            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+              {filteredSprints.length > 0 ? (
+                filteredSprints.slice(0, 8).map((sprint) => (
+                  <button
+                    key={sprint.id}
+                    type="button"
+                    onClick={() => addSprint(sprint)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                  >
+                    <Zap size={14} className="text-purple-500" />
+                    <span className="font-medium text-gray-900 dark:text-white">{sprint.title}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  {sprints?.length === 0 ? "No sprints available" : "No matching sprints"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render helper: Subtasks Management (edit mode only)
+  const renderSubtasksManagement = () => (
+    <div>
+      <button
+        type="button"
+        onClick={() => setSubtasksExpanded(!subtasksExpanded)}
+        className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+      >
+        <div className="flex items-center gap-2">
+          {subtasksExpanded ? (
+            <ChevronDown className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+          )}
+          <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Subtasks</h3>
+          {editSubtaskIds.length > 0 && (
+            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-tertiary dark:text-gray-400">
+              {editSubtaskIds.length}
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-gray-500 dark:text-neutral-400">
+          Click to add/remove
+        </span>
+      </button>
+      {subtasksExpanded && (
+        <div className="space-y-2 pl-2">
+          {/* Show currently selected subtasks first */}
+          {editSubtaskIds.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Current Subtasks:</p>
+              {tasks!
+                .filter((t) => editSubtaskIds.includes(t.id))
+                .map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => handleSubtaskToggle(task.id)}
+                    className="flex w-full items-center justify-between rounded-lg border border-blue-500 bg-blue-50 px-3 py-2 text-left text-sm transition-colors hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50"
+                  >
+                    <span className="font-medium dark:text-white">{task.title}</span>
+                    <X size={16} className="text-blue-500 dark:text-blue-400" />
+                  </button>
+                ))}
+            </div>
+          )}
+          {/* Show available tasks to add as subtasks */}
+          {tasks!.filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId && !editSubtaskIds.includes(t.id)).length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Available Tasks:</p>
+              {tasks!
+                .filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId && !editSubtaskIds.includes(t.id))
+                .map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => handleSubtaskToggle(task.id)}
+                    className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:border-stroke-dark dark:bg-dark-tertiary dark:hover:bg-gray-700"
+                  >
+                    <span className="font-medium dark:text-white">{task.title}</span>
+                    <Plus size={16} className="text-gray-400" />
+                  </button>
+                ))}
+            </div>
+          )}
+          {tasks!.filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId).length === 0 && (
+            <span className="text-sm text-gray-500 dark:text-neutral-400">No available tasks to add as subtasks</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render helper: File Upload (edit mode only)
+  const renderFileUpload = () => (
+    <div className="border-t border-gray-200 pt-4 dark:border-stroke-dark">
+      <div className="flex items-center gap-2 mb-3">
+        <Paperclip className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Attachments</h3>
+      </div>
+      
+      {/* Upload button */}
+      <div className="mb-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileUpload}
+          className="hidden"
+          accept={FILE_INPUT_ACCEPT}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="flex items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 dark:border-stroke-dark dark:text-neutral-400 dark:hover:border-gray-500 dark:hover:bg-dark-tertiary"
+        >
+          {isUploading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload size={16} />
+              Upload file (max {MAX_FILE_SIZE_MB}MB)
+            </>
+          )}
+        </button>
+        {uploadError && (
+          <p className="mt-2 text-xs text-red-500 dark:text-red-400">{uploadError}</p>
+        )}
+      </div>
+
+      {/* Existing attachments with delete option */}
+      {currentTask.attachments && currentTask.attachments.length > 0 && (
+        <div className="space-y-2">
+          {currentTask.attachments.map((attachment) => (
+            <div
+              key={attachment.id}
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-stroke-dark dark:bg-dark-tertiary"
+            >
+              <span className="truncate text-sm text-gray-700 dark:text-neutral-300">
+                {attachment.fileName}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDeleteAttachment(attachment.id)}
+                className="ml-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 dark:hover:text-red-400"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
@@ -510,71 +952,49 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
       floatingActions={
         isEditing ? (
           <div className="flex items-center gap-2">
-            {/* Back button */}
-            <button
+            <TaskDetailsFloatingButton
+              icon={<ArrowLeft size={18} />}
               onClick={handleCancel}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 hover:bg-gray-100 hover:scale-110 active:scale-95 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
               title="Back"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            {/* Save button */}
-            <button
+            />
+            <TaskDetailsFloatingButton
+              icon={<Check size={18} />}
               onClick={handleSave}
               disabled={isUpdating}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all duration-200 hover:bg-green-600 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
               title={isUpdating ? "Saving..." : "Save"}
-            >
-              <Check size={18} />
-            </button>
+              variant="success"
+            />
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            {/* Close button */}
-            <button
+            <TaskDetailsFloatingButton
+              icon={<X size={18} />}
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 hover:bg-gray-100 hover:scale-110 active:scale-95 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
               title="Close"
-            >
-              <X size={18} />
-            </button>
-            {/* Share link button */}
-            <button
+            />
+            <TaskDetailsFloatingButton
+              icon={linkCopied ? <Check size={18} /> : <Link2 size={18} />}
               onClick={handleCopyLink}
-              className={`flex h-9 w-9 items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 ${
-                linkCopied
-                  ? "bg-green-500 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
-              }`}
               title={linkCopied ? "Link copied!" : "Copy link"}
-            >
-              {linkCopied ? <Check size={18} /> : <Link2 size={18} />}
-            </button>
-            {/* Duplicate button */}
-            <button
+              active={linkCopied}
+            />
+            <TaskDetailsFloatingButton
+              icon={<Copy size={18} />}
               onClick={() => setShowDuplicateConfirm(true)}
               disabled={isDuplicating}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 hover:bg-gray-100 hover:scale-110 active:scale-95 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary disabled:opacity-50 disabled:hover:scale-100"
               title="Duplicate task"
-            >
-              <Copy size={18} />
-            </button>
-            {/* Edit button */}
-            <button
+            />
+            <TaskDetailsFloatingButton
+              icon={<Pencil size={18} />}
               onClick={handleEditClick}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 hover:bg-gray-100 hover:scale-110 active:scale-95 dark:bg-dark-secondary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
               title="Edit task"
-            >
-              <Pencil size={18} />
-            </button>
-            {/* Delete button */}
-            <button
+            />
+            <TaskDetailsFloatingButton
+              icon={<Trash2 size={18} />}
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-red-500 shadow-lg transition-all duration-200 hover:bg-red-50 hover:scale-110 active:scale-95 dark:bg-dark-secondary dark:hover:bg-red-900/20"
               title="Delete task"
-            >
-              <Trash2 size={18} />
-            </button>
+              variant="danger"
+            />
           </div>
         )
       }
@@ -866,452 +1286,16 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         </div>
 
         {/* People Section - Assignee and Author */}
-        {!isEditing && (
-          <div className="flex items-center gap-4">
-            {/* Assignees */}
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <AssigneeAvatarGroup
-                assignees={
-                  currentTask.taskAssignments && currentTask.taskAssignments.length > 0
-                    ? currentTask.taskAssignments.map(ta => ({
-                        userId: ta.user.userId,
-                        username: ta.user.username,
-                        profilePictureExt: ta.user.profilePictureExt,
-                      }))
-                    : []
-                }
-                size={32}
-              />
-            </div>
-            
-            {/* Author */}
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <UserIcon
-                userId={currentTask.author?.userId}
-                username={currentTask.author?.username}
-                profilePictureExt={currentTask.author?.profilePictureExt}
-                size={32}
-                tooltipLabel="Author"
-                opacity="opacity-75"
-              />
-            </div>
-          </div>
-        )}
+        {!isEditing && renderPeopleSection()}
 
         {/* Edit mode metadata */}
-        {isEditing && (
-          <div className="space-y-4">
-            {/* Points */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                <span className="text-sm text-gray-600 dark:text-neutral-400">Points:</span>
-                <input
-                  type="number"
-                  min="0"
-                  className={`${selectClass} w-20`}
-                  value={editPoints}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    // Allow empty or non-negative values only
-                    if (val === "" || Number(val) >= 0) {
-                      setEditPoints(val);
-                    }
-                  }}
-                />
-              </div>
-              {editPoints && Number(editPoints) < 0 && (
-                <p className="text-xs text-red-500 dark:text-red-400">Points cannot be negative</p>
-              )}
-            </div>
-
-            {/* Board/Project Autofill */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
-                <span className="flex items-center gap-1.5">
-                  <BiColumns className="h-4 w-4" />
-                  Board
-                </span>
-              </label>
-              <div className="relative" ref={projectDropdownRef}>
-                <div className="relative">
-                  <input
-                    type="text"
-                    className={inputClass}
-                    placeholder="Search boards..."
-                    value={projectSearch || selectedProject?.name || ""}
-                    onChange={(e) => {
-                      setProjectSearch(e.target.value);
-                      // Clear selection when user starts typing something different
-                      if (selectedProject && e.target.value !== selectedProject.name) {
-                        setSelectedProject(null);
-                      }
-                      setShowProjectDropdown(true);
-                    }}
-                    onFocus={() => setShowProjectDropdown(true)}
-                  />
-                  {selectedProject ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedProject(null);
-                        setProjectSearch("");
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    >
-                      <X size={16} />
-                    </button>
-                  ) : (
-                    <ChevronDown
-                      size={16}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                  )}
-                </div>
-                {showProjectDropdown && (
-                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
-                    {filteredProjects.length > 0 ? (
-                      filteredProjects.map((project) => (
-                        <button
-                          key={project.id}
-                          type="button"
-                          onClick={() => selectProject(project)}
-                          className="flex w-full flex-col px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-                        >
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {project.name}
-                          </span>
-                          {project.description && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {project.description}
-                            </span>
-                          )}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        No boards found
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Assignee Autofill - Multi-select */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
-                <span className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4" />
-                  Assignees
-                </span>
-              </label>
-              <div className="relative" ref={assigneeDropdownRef}>
-                <div className={`${inputClass} flex flex-wrap gap-2 min-h-[42px] items-center`}>
-                  {selectedAssignees.map((assignee) => (
-                    <span
-                      key={assignee.userId}
-                      className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                    >
-                      @{assignee.username}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAssignees(prev => prev.filter(a => a.userId !== assignee.userId))}
-                        className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-200"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
-                    placeholder={selectedAssignees.length === 0 ? "Type @ to search users..." : "Add more..."}
-                    value={assigneeSearch}
-                    onChange={(e) => {
-                      setAssigneeSearch(e.target.value);
-                      setShowAssigneeDropdown(true);
-                    }}
-                    onFocus={() => setShowAssigneeDropdown(true)}
-                  />
-                </div>
-                {showAssigneeDropdown && (
-                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
-                    {filteredUsers.filter(user => !selectedAssignees.some(a => a.userId === user.userId)).length > 0 ? (
-                      filteredUsers
-                        .filter(user => !selectedAssignees.some(a => a.userId === user.userId))
-                        .slice(0, 8)
-                        .map((user) => (
-                          <button
-                            key={user.userId}
-                            type="button"
-                            onClick={() => selectAssignee(user)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-                          >
-                            <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
-                            {user.email && <span className="text-gray-500 dark:text-gray-400">{user.email}</span>}
-                          </button>
-                        ))
-                    ) : (
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        {selectedAssignees.length > 0 && filteredUsers.length > 0 ? "All matching users already selected" : "No users found"}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sprints Autofill */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
-                <span className="flex items-center gap-1.5">
-                  <Zap className="h-4 w-4" />
-                  Sprints
-                </span>
-              </label>
-              <div className="relative" ref={sprintDropdownRef}>
-                <div className={`${inputClass} flex flex-wrap gap-2 min-h-[42px] items-center`}>
-                  {selectedSprints.map((sprint) => (
-                    <span
-                      key={sprint.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                    >
-                      {sprint.title}
-                      <button
-                        type="button"
-                        onClick={() => removeSprint(sprint.id)}
-                        className="ml-0.5 hover:text-purple-600 dark:hover:text-purple-200"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    className="flex-1 min-w-[120px] border-none bg-transparent p-0 text-sm focus:outline-none focus:ring-0 dark:text-white"
-                    placeholder={selectedSprints.length === 0 ? "Search sprints..." : "Add more..."}
-                    value={sprintSearch}
-                    onChange={(e) => {
-                      setSprintSearch(e.target.value);
-                      setShowSprintDropdown(true);
-                    }}
-                    onFocus={() => setShowSprintDropdown(true)}
-                  />
-                </div>
-                {showSprintDropdown && (
-                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
-                    {filteredSprints.length > 0 ? (
-                      filteredSprints.slice(0, 8).map((sprint) => (
-                        <button
-                          key={sprint.id}
-                          type="button"
-                          onClick={() => addSprint(sprint)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-                        >
-                          <Zap size={14} className="text-purple-500" />
-                          <span className="font-medium text-gray-900 dark:text-white">{sprint.title}</span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        {sprints?.length === 0 ? "No sprints available" : "No matching sprints"}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {isEditing && renderEditModeMetadata()}
 
         {/* Subtasks Management (edit mode only) */}
-        {isEditing && tasks && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setSubtasksExpanded(!subtasksExpanded)}
-              className="mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-            >
-              <div className="flex items-center gap-2">
-                {subtasksExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                )}
-                <Award className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Subtasks</h3>
-                {editSubtaskIds.length > 0 && (
-                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600 dark:bg-dark-tertiary dark:text-gray-400">
-                    {editSubtaskIds.length}
-                  </span>
-                )}
-              </div>
-              <span className="text-xs text-gray-500 dark:text-neutral-400">
-                Click to add/remove
-              </span>
-            </button>
-            {subtasksExpanded && (
-              <div className="space-y-2 pl-2">
-                {/* Show currently selected subtasks first */}
-                {editSubtaskIds.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Current Subtasks:</p>
-                    {tasks
-                      .filter((t) => editSubtaskIds.includes(t.id))
-                      .map((task) => (
-                        <button
-                          key={task.id}
-                          type="button"
-                          onClick={() => handleSubtaskToggle(task.id)}
-                          className="flex w-full items-center justify-between rounded-lg border border-blue-500 bg-blue-50 px-3 py-2 text-left text-sm transition-colors hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50"
-                        >
-                          <span className="font-medium dark:text-white">{task.title}</span>
-                          <X size={16} className="text-blue-500 dark:text-blue-400" />
-                        </button>
-                      ))}
-                  </div>
-                )}
-                {/* Show available tasks to add as subtasks */}
-                {tasks.filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId && !editSubtaskIds.includes(t.id)).length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Available Tasks:</p>
-                    {tasks
-                      .filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId && !editSubtaskIds.includes(t.id))
-                      .map((task) => (
-                        <button
-                          key={task.id}
-                          type="button"
-                          onClick={() => handleSubtaskToggle(task.id)}
-                          className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:border-stroke-dark dark:bg-dark-tertiary dark:hover:bg-gray-700"
-                        >
-                          <span className="font-medium dark:text-white">{task.title}</span>
-                          <Plus size={16} className="text-gray-400" />
-                        </button>
-                      ))}
-                  </div>
-                )}
-                {tasks.filter((t) => t.id !== currentTask.id && t.id !== currentTask.parentTask?.id && !t.parentTask && t.projectId === currentTask.projectId).length === 0 && (
-                  <span className="text-sm text-gray-500 dark:text-neutral-400">No available tasks to add as subtasks</span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {isEditing && tasks && renderSubtasksManagement()}
 
         {/* File Upload (edit mode only) */}
-        {isEditing && (
-          <div className="border-t border-gray-200 pt-4 dark:border-stroke-dark">
-            <div className="flex items-center gap-2 mb-3">
-              <Paperclip className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Attachments</h3>
-            </div>
-            
-            {/* Upload button */}
-            <div className="mb-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileUpload}
-                className="hidden"
-                accept={FILE_INPUT_ACCEPT}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="flex items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 dark:border-stroke-dark dark:text-neutral-400 dark:hover:border-gray-500 dark:hover:bg-dark-tertiary"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    Upload file (max {MAX_FILE_SIZE_MB}MB)
-                  </>
-                )}
-              </button>
-              {uploadError && (
-                <p className="mt-2 text-xs text-red-500 dark:text-red-400">{uploadError}</p>
-              )}
-            </div>
-
-            {/* Existing attachments with delete option */}
-            {currentTask.attachments && currentTask.attachments.length > 0 && (
-              <div className="space-y-2">
-                {currentTask.attachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-stroke-dark dark:bg-dark-tertiary"
-                  >
-                    <span className="truncate text-sm text-gray-700 dark:text-neutral-300">
-                      {attachment.fileName}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteAttachment(attachment.id)}
-                      className="ml-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 dark:hover:text-red-400"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Delete Confirmation */}
-        <ConfirmationMenu
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={async () => {
-            await deleteTask(currentTask.id);
-            setShowDeleteConfirm(false);
-            onClose();
-          }}
-          title="Delete Task"
-          message={`Are you sure you want to delete "${currentTask.title}"? This action cannot be undone.`}
-          confirmLabel="Delete"
-          isLoading={isDeleting}
-          variant="danger"
-        />
-
-        {/* Duplicate Confirmation */}
-        <ConfirmationMenu
-          isOpen={showDuplicateConfirm}
-          onClose={() => {
-            setShowDuplicateConfirm(false);
-            setNewTaskTitle("");
-          }}
-          onConfirm={async () => {
-            await handleDuplicate();
-            setShowDuplicateConfirm(false);
-          }}
-          title="Duplicate Task"
-          message={`Create a copy of "${currentTask.title}"?`}
-          confirmLabel="Duplicate"
-          isLoading={isDuplicating}
-          variant="info"
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              New Task Name
-            </label>
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder={`${currentTask.title} (Copy)`}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
-            />
-          </div>
-        </ConfirmationMenu>
+        {isEditing && renderFileUpload()}
 
         {/* Attachments, Subtasks, and Activity — visible in view mode only */}
         {!isEditing && (
@@ -1372,6 +1356,54 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         )}
       </div>
     </Modal>
+
+    {/* Delete Confirmation */}
+    <ConfirmationMenu
+      isOpen={showDeleteConfirm}
+      onClose={() => setShowDeleteConfirm(false)}
+      onConfirm={async () => {
+        await deleteTask(currentTask.id);
+        setShowDeleteConfirm(false);
+        onClose();
+      }}
+      title="Delete Task"
+      message={`Are you sure you want to delete "${currentTask.title}"? This action cannot be undone.`}
+      confirmLabel="Delete"
+      isLoading={isDeleting}
+      variant="danger"
+    />
+
+    {/* Duplicate Confirmation */}
+    <ConfirmationMenu
+      isOpen={showDuplicateConfirm}
+      onClose={() => {
+        setShowDuplicateConfirm(false);
+        setNewTaskTitle("");
+      }}
+      onConfirm={async () => {
+        await handleDuplicate();
+        setShowDuplicateConfirm(false);
+      }}
+      title="Duplicate Task"
+      message={`Create a copy of "${currentTask.title}"?`}
+      confirmLabel="Duplicate"
+      isLoading={isDuplicating}
+      variant="info"
+    >
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          New Task Name
+        </label>
+        <input
+          type="text"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+          placeholder={`${currentTask.title} (Copy)`}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
+        />
+      </div>
+    </ConfirmationMenu>
+  </>
   );
 };
 
