@@ -6,6 +6,7 @@ export interface Project {
   name: string;
   description?: string;
   isActive?: boolean;
+  displayOrder?: number;
 }
 
 export enum Priority {
@@ -300,6 +301,15 @@ export const api = createApi({
       query: (projectId) => ({
         url: `projects/${projectId}/archive`,
         method: "PATCH",
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+
+    reorderProjects: build.mutation<Project[], number[]>({
+      query: (orderedIds) => ({
+        url: "projects/reorder",
+        method: "PATCH",
+        body: { orderedIds },
       }),
       invalidatesTags: ["Projects"],
     }),
@@ -808,6 +818,7 @@ export const {
   useDeleteProjectMutation,
   useArchiveProjectMutation,
   useUpdateProjectMutation,
+  useReorderProjectsMutation,
   useGetTasksQuery,
   useGetTaskByIdQuery,
   useCreateTaskMutation,

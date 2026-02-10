@@ -31,11 +31,12 @@ model User {
 }
 
 model Project {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  isActive    Boolean   @default(true)
-  tasks       Task[]
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  isActive     Boolean   @default(true)
+  displayOrder Int       @default(0)
+  tasks        Task[]
 }
 
 model Task {

@@ -8,8 +8,123 @@ import {
   useDeleteTagMutation,
   Tag,
 } from "@/state/api";
-import { Pencil, Plus, Trash2, X, Check } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Plus, Trash2, X, Check, ChevronDown, Pipette } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+
+const TAG_COLORS = [
+  "#ef4444", // red
+  "#f97316", // orange
+  "#f59e0b", // amber
+  "#eab308", // yellow
+  "#84cc16", // lime
+  "#22c55e", // green
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#6366f1", // indigo
+  "#8b5cf6", // violet
+  "#a855f7", // purple
+  "#d946ef", // fuchsia
+  "#ec4899", // pink
+  "#64748b", // slate
+  "#78716c", // stone
+];
+
+type ColorPickerProps = {
+  value: string;
+  onChange: (color: string) => void;
+  size?: "sm" | "md";
+};
+
+const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
+  const isUsingColorPicker = useRef(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Don't close if currently using the native color picker
+      if (isUsingColorPicker.current) return;
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const sizeClasses = size === "sm" ? "h-8 w-8" : "h-10 w-10";
+
+  const handleCustomColorClick = () => {
+    isUsingColorPicker.current = true;
+    customInputRef.current?.click();
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`${sizeClasses} dark:border-dark-tertiary flex cursor-pointer items-center justify-center rounded border border-gray-300 transition-colors hover:border-gray-400`}
+        style={{ backgroundColor: value }}
+        title="Select color"
+      >
+        <ChevronDown
+          size={12}
+          className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
+        />
+      </button>
+      {isOpen && (
+        <div className="dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full left-0 z-50 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+          <div className="grid grid-cols-4 gap-4">
+            {TAG_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => {
+                  onChange(color);
+                  setIsOpen(false);
+                }}
+                className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
+                  value === color
+                    ? "ring-2 ring-gray-800 ring-offset-2 dark:ring-white"
+                    : ""
+                }`}
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+          {/* Custom color picker */}
+          <div className="dark:border-dark-tertiary mt-3 border-t border-gray-200 pt-3">
+            <button
+              type="button"
+              onClick={handleCustomColorClick}
+              className="dark:hover:bg-dark-tertiary flex w-full items-center justify-center gap-2 rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400"
+            >
+              <Pipette size={14} />
+              <span>Custom color</span>
+            </button>
+            <input
+              ref={customInputRef}
+              type="color"
+              value={value}
+              onChange={(e) => {
+                onChange(e.target.value);
+              }}
+              onBlur={() => {
+                isUsingColorPicker.current = false;
+                setIsOpen(false);
+              }}
+              className="invisible absolute h-0 w-0"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TagsPage = () => {
   const { data: tags, isLoading } = useGetTagsQuery();
@@ -75,13 +190,7 @@ const TagsPage = () => {
           onChange={(e) => setNewTagName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
         />
-        <input
-          type="color"
-          value={newTagColor}
-          onChange={(e) => setNewTagColor(e.target.value)}
-          className="dark:border-dark-tertiary h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
-          title="Tag color"
-        />
+        <ColorPicker value={newTagColor} onChange={setNewTagColor} />
         <button
           onClick={handleCreate}
           disabled={!newTagName.trim()}
@@ -116,11 +225,10 @@ const TagsPage = () => {
                   }}
                   autoFocus
                 />
-                <input
-                  type="color"
+                <ColorPicker
                   value={editingColor}
-                  onChange={(e) => setEditingColor(e.target.value)}
-                  className="dark:border-dark-tertiary h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5"
+                  onChange={setEditingColor}
+                  size="sm"
                 />
                 <button
                   onClick={handleSaveEdit}

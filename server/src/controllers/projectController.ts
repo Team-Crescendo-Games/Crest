@@ -3,7 +3,9 @@ import { getPrismaClient } from "../lib/prisma.ts";
 
 export const getProjects = async (_req: Request, res: Response) => {
     try {
-        const projects = await getPrismaClient().project.findMany();
+        const projects = await getPrismaClient().project.findMany({
+            orderBy: { displayOrder: "asc" },
+        });
         res.json(projects);
     } catch (error: any) {
         console.error("Error fetching projects:", error.message);
@@ -84,5 +86,40 @@ export const archiveProject = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error("Error archiving project:", error.message);
         res.status(500).json({ error: "Failed to archive project: " + error.message });
+    }
+};
+
+
+/**
+ * Reorder projects
+ * PATCH /projects/reorder
+ */
+export const reorderProjects = async (req: Request, res: Response) => {
+    try {
+        const { orderedIds } = req.body;
+
+        if (!Array.isArray(orderedIds)) {
+            res.status(400).json({ error: "orderedIds must be an array" });
+            return;
+        }
+
+        // Update each project's displayOrder based on its position in the array
+        await getPrismaClient().$transaction(
+            orderedIds.map((id: number, index: number) =>
+                getPrismaClient().project.update({
+                    where: { id },
+                    data: { displayOrder: index },
+                })
+            )
+        );
+
+        const projects = await getPrismaClient().project.findMany({
+            orderBy: { displayOrder: "asc" },
+        });
+
+        res.json(projects);
+    } catch (error: any) {
+        console.error("Error reordering projects:", error.message);
+        res.status(500).json({ error: "Failed to reorder projects: " + error.message });
     }
 };

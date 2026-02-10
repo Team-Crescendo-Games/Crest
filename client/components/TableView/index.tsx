@@ -5,7 +5,7 @@ import { Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { Task } from "@/state/api";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import UserIcon from "@/components/UserIcon";
-import { applyFilters, applySorting } from "@/lib/filterUtils";
+import { applyFilters, applySorting, priorityOrder, statusOrder } from "@/lib/filterUtils";
 import { FilterState, SortState, initialSortState } from "@/lib/filterTypes";
 import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
@@ -110,6 +110,18 @@ const TableView = ({
           bVal = bVal ? new Date(bVal).getTime() : 0;
         }
 
+        if (localSortField === "priority") {
+          aVal = aVal ? priorityOrder[aVal as keyof typeof priorityOrder] ?? 99 : 99;
+          bVal = bVal ? priorityOrder[bVal as keyof typeof priorityOrder] ?? 99 : 99;
+          return localSortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        }
+
+        if (localSortField === "status") {
+          aVal = aVal ? statusOrder[aVal] ?? 99 : 99;
+          bVal = bVal ? statusOrder[bVal] ?? 99 : 99;
+          return localSortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        }
+
         if (aVal === null || aVal === undefined) return 1;
         if (bVal === null || bVal === undefined) return -1;
 
@@ -168,10 +180,10 @@ const TableView = ({
           <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="dark:border-stroke-dark dark:bg-dark-secondary overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+        <div className="dark:border-stroke-dark dark:bg-dark-secondary rounded border border-gray-200 bg-white shadow-sm">
+          <div className="max-h-[calc(100vh-280px)] overflow-auto">
             <table className="dark:divide-stroke-dark min-w-full divide-y divide-gray-200">
-              <thead className="dark:bg-dark-tertiary bg-gray-50">
+              <thead className="dark:bg-dark-tertiary sticky top-0 z-10 bg-gray-50">
                 <tr>
                   <th
                     className={`${headerClass} max-w-[400px] min-w-[200px]`}

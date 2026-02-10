@@ -6,10 +6,12 @@ import { format } from "date-fns";
 import {
   FilterState,
   DueDateOption,
+  TaskStatus,
   SortState,
   SortField,
 } from "@/lib/filterTypes";
 import { PRIORITY_COLORS } from "@/lib/priorityColors";
+import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
 import { APP_ACCENT_LIGHT, APP_ACCENT_DARK } from "@/lib/entityColors";
 import { Tag, Priority, useGetUsersQuery, User as UserType } from "@/state/api";
 import FilterDropdown from "@/components/FilterDropdown";
@@ -210,6 +212,15 @@ const HeaderToolbar = ({
       ...filterState,
       selectedDueDateOptions: filterState.selectedDueDateOptions.filter(
         (o) => o !== option,
+      ),
+    });
+  };
+
+  const removeStatusFilter = (status: TaskStatus) => {
+    onFilterChange({
+      ...filterState,
+      selectedStatuses: filterState.selectedStatuses.filter(
+        (s) => s !== status,
       ),
     });
   };
@@ -587,6 +598,24 @@ const HeaderToolbar = ({
             </button>
           </span>
         ))}
+        {filterState.selectedStatuses.map((status) => {
+          const colors = STATUS_BADGE_STYLES[status] || STATUS_BADGE_STYLES["Input Queue"];
+          return (
+            <span
+              key={`status-${status}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${colors.bg} ${colors.text} ${colors.darkBg} ${colors.darkText}`}
+            >
+              {status}
+              <button
+                onClick={() => removeStatusFilter(status)}
+                className="ml-0.5 hover:opacity-70"
+                aria-label={`Remove ${status} filter`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          );
+        })}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   useGetUnreadCountQuery,
   useUpdateTaskMutation,
   useAddTaskToSprintMutation,
+  useReorderProjectsMutation,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { signOut } from "aws-amplify/auth";
@@ -37,7 +38,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import ModalNewBoard from "@/app/boards/ModalNewBoard";
 import ModalNewSprint from "@/app/sprints/ModalNewSprint";
 import ModalNewTask from "@/components/ModalNewTask";
@@ -48,7 +49,7 @@ import {
   APP_ACCENT_LIGHT,
   APP_ACCENT_DARK,
 } from "@/lib/entityColors";
-import { DND_ITEM_TYPES, DraggedTask } from "@/lib/dndTypes";
+import { DND_ITEM_TYPES, DraggedTask, DraggedSidebarBoard } from "@/lib/dndTypes";
 import { isAdminUser } from "@/lib/adminAllowlist";
 
 const Sidebar = () => {
@@ -75,6 +76,7 @@ const Sidebar = () => {
   const { data: sprints } = useGetSprintsQuery();
   const [updateTask] = useUpdateTaskMutation();
   const [addTaskToSprint] = useAddTaskToSprintMutation();
+  const [reorderProjects] = useReorderProjectsMutation();
 
   // Filter sprints based on active toggle and sort by end date (dueDate)
   const filteredSprints = sprints
@@ -161,6 +163,20 @@ const Sidebar = () => {
       await addTaskToSprint({ sprintId, taskId }).unwrap();
     } catch (error) {
       console.error("Failed to add task to sprint:", error);
+    }
+  };
+
+  // Handler for reordering boards
+  const handleReorderBoards = async (dragIndex: number, hoverIndex: number) => {
+    if (!filteredBoards || dragIndex === hoverIndex) return;
+    const newOrder = [...filteredBoards];
+    const [removed] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(hoverIndex, 0, removed);
+    const orderedIds = newOrder.map((p) => p.id);
+    try {
+      await reorderProjects(orderedIds).unwrap();
+    } catch (error) {
+      console.error("Failed to reorder boards:", error);
     }
   };
 
@@ -283,26 +299,32 @@ const Sidebar = () => {
         {/* OVERVIEW LIST */}
         {showOverview && (
           <div className="overflow-hidden">
-            <SidebarSubLinkWithIcon
-              icon={BarChart3}
-              label="Dashboard"
-              href="/dashboard"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={User}
-              label="My Tasks"
-              href={userId ? `/users/${userId}` : "/users"}
-              isDarkMode={isDarkMode}
-              isActiveOverride={userId ? pathname === `/users/${userId}` : false}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Bell}
-              label="Inbox"
-              href="/inbox"
-              isDarkMode={isDarkMode}
-              badge={unreadCount}
-            />
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "0ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={BarChart3}
+                label="Dashboard"
+                href="/dashboard"
+                isDarkMode={isDarkMode}
+              />
+            </div>
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "50ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={User}
+                label="My Tasks"
+                href={userId ? `/users/${userId}` : "/users"}
+                isDarkMode={isDarkMode}
+                isActiveOverride={userId ? pathname === `/users/${userId}` : false}
+              />
+            </div>
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "100ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={Bell}
+                label="Inbox"
+                href="/inbox"
+                isDarkMode={isDarkMode}
+                badge={unreadCount}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -324,24 +346,30 @@ const Sidebar = () => {
         {/* WORKSPACE LIST */}
         {showWorkspace && (
           <div className="overflow-hidden">
-            <SidebarSubLinkWithIcon
-              icon={Search}
-              label="Search"
-              href="/search"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Tag}
-              label="Tags"
-              href="/tags"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Users}
-              label="Team"
-              href="/users"
-              isDarkMode={isDarkMode}
-            />
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "0ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={Search}
+                label="Search"
+                href="/search"
+                isDarkMode={isDarkMode}
+              />
+            </div>
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "50ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={Tag}
+                label="Tags"
+                href="/tags"
+                isDarkMode={isDarkMode}
+              />
+            </div>
+            <div className="animate-slide-down opacity-0" style={{ animationDelay: "100ms" }}>
+              <SidebarSubLinkWithIcon
+                icon={Users}
+                label="Team"
+                href="/users"
+                isDarkMode={isDarkMode}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -369,16 +397,16 @@ const Sidebar = () => {
                   e.stopPropagation();
                   setShowActiveBoardsOnly((prev) => !prev);
                 }}
-                className="dark:hover:bg-dark-tertiary rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95"
-                title={
-                  showActiveBoardsOnly ? "Show all boards" : "Show active only"
-                }
+                className="group relative dark:hover:bg-dark-tertiary rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95"
               >
                 {showActiveBoardsOnly ? (
                   <Eye className="h-4 w-4" />
                 ) : (
                   <EyeOff className="h-4 w-4" />
                 )}
+                <span className="pointer-events-none absolute left-1/2 bottom-full z-[100] mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-950">
+                  {showActiveBoardsOnly ? "Show archived boards" : "Show active only"}
+                </span>
               </span>
               <span
                 role="button"
@@ -404,12 +432,14 @@ const Sidebar = () => {
                   className="animate-slide-down opacity-0"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <DroppableBoardLink
+                  <DraggableBoardLink
                     projectId={project.id}
+                    index={index}
                     label={project.name}
                     href={`/boards/${project.id}`}
                     isInactive={project.isActive === false}
                     onDropTask={handleMoveTaskToBoard}
+                    onReorder={handleReorderBoards}
                   />
                 </div>
               ))}
@@ -435,16 +465,16 @@ const Sidebar = () => {
                 e.stopPropagation();
                 setShowActiveSprintsOnly((prev) => !prev);
               }}
-              className="dark:hover:bg-dark-tertiary rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95"
-              title={
-                showActiveSprintsOnly ? "Show all sprints" : "Show active only"
-              }
+              className="group relative dark:hover:bg-dark-tertiary rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95"
             >
               {showActiveSprintsOnly ? (
                 <Eye className="h-4 w-4" />
               ) : (
                 <EyeOff className="h-4 w-4" />
               )}
+              <span className="pointer-events-none absolute left-1/2 bottom-full z-[100] mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-950">
+                {showActiveSprintsOnly ? "Show archived sprints" : "Show active only"}
+              </span>
             </span>
             <span
               role="button"
@@ -606,6 +636,7 @@ interface DroppableBoardLinkProps {
   ) => void;
 }
 
+// Keep for backwards compatibility but not used anymore
 const DroppableBoardLink = ({
   projectId,
   href,
@@ -660,6 +691,142 @@ const DroppableBoardLink = ({
           </span>
         </div>
       </Link>
+    </div>
+  );
+};
+
+interface DraggableBoardLinkProps {
+  projectId: number;
+  index: number;
+  href: string;
+  label: string;
+  isInactive?: boolean;
+  onDropTask: (taskId: number, projectId: number, currentProjectId: number) => void;
+  onReorder: (dragIndex: number, dropIndex: number) => void;
+}
+
+const DraggableBoardLink = ({
+  projectId,
+  index,
+  href,
+  label,
+  isInactive,
+  onDropTask,
+  onReorder,
+}: DraggableBoardLinkProps) => {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+  const ref = useRef<HTMLDivElement>(null);
+  const [dropPosition, setDropPosition] = useState<"above" | "below" | null>(null);
+
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: DND_ITEM_TYPES.SIDEBAR_BOARD,
+      item: { id: projectId, index },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+      end: () => {
+        setDropPosition(null);
+      },
+    }),
+    [projectId, index],
+  );
+
+  const [{ isOver: isOverTask, canDrop: canDropTask }, dropTask] = useDrop(
+    () => ({
+      accept: DND_ITEM_TYPES.TASK,
+      drop: (item: DraggedTask) => {
+        onDropTask(item.id, projectId, item.projectId);
+      },
+      canDrop: (item: DraggedTask) => item.projectId !== projectId,
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }),
+    [projectId, onDropTask],
+  );
+
+  const [{ isOver: isOverBoard }, dropBoard] = useDrop(
+    () => ({
+      accept: DND_ITEM_TYPES.SIDEBAR_BOARD,
+      hover: (item: DraggedSidebarBoard, monitor) => {
+        if (item.id === projectId) {
+          setDropPosition(null);
+          return;
+        }
+        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        if (!hoverBoundingRect) return;
+        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const clientOffset = monitor.getClientOffset();
+        if (!clientOffset) return;
+        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+        setDropPosition(hoverClientY < hoverMiddleY ? "above" : "below");
+      },
+      drop: (item: DraggedSidebarBoard) => {
+        if (item.id === projectId || dropPosition === null) return;
+        const targetIndex = dropPosition === "above" ? index : index + 1;
+        const adjustedIndex = item.index < index ? targetIndex - 1 : targetIndex;
+        if (item.index !== adjustedIndex) {
+          onReorder(item.index, adjustedIndex);
+        }
+        setDropPosition(null);
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+      }),
+    }),
+    [index, projectId, onReorder, dropPosition],
+  );
+
+  // Reset drop position when not hovering
+  useEffect(() => {
+    if (!isOverBoard) {
+      setDropPosition(null);
+    }
+  }, [isOverBoard]);
+
+  // Combine drag and drop refs
+  drag(dropTask(dropBoard(ref)));
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      {/* Drop indicator line - above */}
+      {dropPosition === "above" && (
+        <div className="absolute top-0 left-6 right-2 h-0.5 -translate-y-0.5 rounded-full bg-blue-500" />
+      )}
+      <Link href={href} className="w-full">
+        <div
+          className={`dark:hover:bg-dark-tertiary relative flex cursor-grab items-center transition-colors hover:bg-gray-100 ${
+            isActive ? "dark:bg-dark-tertiary bg-gray-100" : ""
+          } ${
+            isOverTask && canDropTask
+              ? "bg-blue-100 ring-2 ring-blue-400 ring-inset dark:bg-blue-900/30"
+              : ""
+          } justify-start px-6 py-2 pl-10`}
+        >
+          {isActive && (
+            <div
+              className="absolute top-0 left-0 h-[100%] w-[3px]"
+              style={{ backgroundColor: BOARD_MAIN_COLOR }}
+            />
+          )}
+          <span
+            className={`text-sm ${isInactive ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}
+          >
+            {label}
+          </span>
+        </div>
+      </Link>
+      {/* Drop indicator line - below */}
+      {dropPosition === "below" && (
+        <div className="absolute bottom-0 left-6 right-2 h-0.5 translate-y-0.5 rounded-full bg-blue-500" />
+      )}
     </div>
   );
 };

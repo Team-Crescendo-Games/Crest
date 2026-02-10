@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   FilterState,
   DueDateOption,
+  TaskStatus,
   initialFilterState,
 } from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
@@ -30,6 +31,7 @@ const FilterDropdown = ({
   // State for collapsible sections
   const [isLabelsExpanded, setIsLabelsExpanded] = useState(false);
   const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
+  const [isStatusExpanded, setIsStatusExpanded] = useState(false);
   const [isDueDateExpanded, setIsDueDateExpanded] = useState(false);
 
   const priorityOptions: Priority[] = [
@@ -38,6 +40,13 @@ const FilterDropdown = ({
     Priority.Medium,
     Priority.Low,
     Priority.Backlog,
+  ];
+
+  const statusOptions: TaskStatus[] = [
+    "Input Queue",
+    "Work In Progress",
+    "Review",
+    "Done",
   ];
 
   const dueDateOptions: DueDateOption[] = [
@@ -134,6 +143,17 @@ const FilterDropdown = ({
     });
   };
 
+  const handleStatusToggle = (status: TaskStatus, checked: boolean) => {
+    const newSelectedStatuses = checked
+      ? [...filterState.selectedStatuses, status]
+      : filterState.selectedStatuses.filter((s) => s !== status);
+
+    onFilterChange({
+      ...filterState,
+      selectedStatuses: newSelectedStatuses,
+    });
+  };
+
   return (
     <div
       ref={dropdownRef}
@@ -226,6 +246,44 @@ const FilterDropdown = ({
                     className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>{priority}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Status Section */}
+        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setIsStatusExpanded(!isStatusExpanded)}
+            className="flex w-full items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            aria-expanded={isStatusExpanded}
+          >
+            <span>Status</span>
+            {isStatusExpanded ? (
+              <ChevronUp size={16} />
+            ) : (
+              <ChevronDown size={16} />
+            )}
+          </button>
+
+          {isStatusExpanded && (
+            <div className="mt-2 space-y-2">
+              {statusOptions.map((status) => (
+                <label
+                  key={status}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filterState.selectedStatuses.includes(status)}
+                    onChange={(e) =>
+                      handleStatusToggle(status, e.target.checked)
+                    }
+                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>{status}</span>
                 </label>
               ))}
             </div>

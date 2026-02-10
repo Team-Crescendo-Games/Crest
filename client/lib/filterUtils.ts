@@ -1,5 +1,5 @@
 import { Task, Priority } from "@/state/api";
-import { FilterState, DueDateOption } from "@/lib/filterTypes";
+import { FilterState, DueDateOption, TaskStatus } from "@/lib/filterTypes";
 import { parseLocalDate } from "@/lib/dateUtils";
 
 /**
@@ -11,6 +11,7 @@ export function isFilterActive(filterState: FilterState): boolean {
     filterState.selectedPriorities.length > 0 ||
     filterState.selectedDueDateOptions.length > 0 ||
     filterState.selectedAssigneeIds.length > 0 ||
+    filterState.selectedStatuses.length > 0 ||
     filterState.searchText.trim().length > 0 ||
     !!(filterState.timeRange?.startDate || filterState.timeRange?.endDate)
   );
@@ -51,6 +52,26 @@ export function matchesPriorityFilter(
   }
 
   return selectedPriorities.includes(task.priority);
+}
+
+/**
+ * Checks if a task matches the status filter criteria (OR logic within statuses).
+ */
+export function matchesStatusFilter(
+  task: Task,
+  selectedStatuses: TaskStatus[],
+): boolean {
+  // If no statuses selected, all tasks pass
+  if (selectedStatuses.length === 0) {
+    return true;
+  }
+
+  // Task must have a status that matches one of the selected statuses
+  if (!task.status) {
+    return false;
+  }
+
+  return selectedStatuses.includes(task.status as TaskStatus);
 }
 
 /**
@@ -289,6 +310,10 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
       task,
       filterState.selectedPriorities,
     );
+    const passesStatusFilter = matchesStatusFilter(
+      task,
+      filterState.selectedStatuses,
+    );
     const passesDueDateFilter = matchesDueDateFilter(
       task,
       filterState.selectedDueDateOptions,
@@ -303,6 +328,7 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
     return (
       passesTagFilter &&
       passesPriorityFilter &&
+      passesStatusFilter &&
       passesDueDateFilter &&
       passesAssigneeFilter &&
       passesSearchText &&
@@ -316,12 +342,22 @@ import { SortState, SortField } from "@/lib/filterTypes";
 /**
  * Priority order for sorting (lower number = higher priority)
  */
-const priorityOrder: Record<Priority, number> = {
+export const priorityOrder: Record<Priority, number> = {
   [Priority.Urgent]: 1,
   [Priority.High]: 2,
   [Priority.Medium]: 3,
   [Priority.Low]: 4,
   [Priority.Backlog]: 5,
+};
+
+/**
+ * Status order for sorting (follows workflow: Input Queue → WIP → Review → Done)
+ */
+export const statusOrder: Record<string, number> = {
+  "Input Queue": 0,
+  "Work In Progress": 1,
+  Review: 2,
+  Done: 3,
 };
 
 /**

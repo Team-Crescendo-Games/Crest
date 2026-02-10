@@ -47,6 +47,15 @@ export interface TimeRange {
 }
 
 /**
+ * Type representing task status options.
+ */
+export type TaskStatus =
+  | "Input Queue"
+  | "Work In Progress"
+  | "Review"
+  | "Done";
+
+/**
  * Interface representing the current state of all active filters.
  * Used to track user selections across tag, priority, due date, and assignee filters.
  */
@@ -59,6 +68,8 @@ export interface FilterState {
   selectedDueDateOptions: DueDateOption[];
   /** Array of selected user IDs for filtering tasks by assignee */
   selectedAssigneeIds: number[];
+  /** Array of selected status values for filtering tasks by workflow state */
+  selectedStatuses: TaskStatus[];
   /** Text search filter for task title/description */
   searchText: string;
   /** Time range filter for tasks with startDate or dueDate in range */
@@ -74,5 +85,6 @@ export const initialFilterState: FilterState = {
   selectedPriorities: [],
   selectedDueDateOptions: [],
   selectedAssigneeIds: [],
+  selectedStatuses: [],
   searchText: "",
 };

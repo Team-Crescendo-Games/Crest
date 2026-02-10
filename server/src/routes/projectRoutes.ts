@@ -5,6 +5,7 @@ import {
     updateProject,
     deleteProject,
     archiveProject,
+    reorderProjects,
 } from "../controllers/projectController.ts";
 
 const router = Router();
@@ -62,6 +63,32 @@ router.get("/", getProjects);
  *         description: Server error
  */
 router.post("/", createProject);
+
+/**
+ * @openapi
+ * /projects/reorder:
+ *   patch:
+ *     tags: [Projects]
+ *     summary: Reorder projects
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [orderedIds]
+ *             properties:
+ *               orderedIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       200:
+ *         description: Projects reordered
+ *       500:
+ *         description: Server error
+ */
+router.patch("/reorder", reorderProjects);
 
 /**
  * @openapi
