@@ -60,6 +60,8 @@ import {
   validateFile,
   FILE_INPUT_ACCEPT,
   MAX_FILE_SIZE_MB,
+  isTextFile,
+  isImageFile,
 } from "@/lib/attachmentUtils";
 import UserIcon from "@/components/UserIcon";
 import AssigneeAvatarGroup from "@/components/AssigneeAvatarGroup";
@@ -258,6 +260,13 @@ const TaskDetailModal = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Text file preview state
+  const [textPreviewContent, setTextPreviewContent] = useState<string | null>(
+    null,
+  );
+  const [textPreviewLoading, setTextPreviewLoading] = useState(false);
+  const [textPreviewError, setTextPreviewError] = useState<string | null>(null);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState("");
@@ -641,6 +650,44 @@ const TaskDetailModal = ({
       }
     } catch (error: any) {
       console.error("Failed to download attachment:", error);
+    }
+  };
+
+  const handlePreviewTextFile = async (attachment: {
+    id: number;
+    taskId: number;
+    fileName: string;
+    fileExt: string;
+  }) => {
+    setTextPreviewLoading(true);
+    setTextPreviewError(null);
+    setTextPreviewContent(null);
+
+    try {
+      const s3Key = getAttachmentS3Key(
+        attachment.taskId,
+        attachment.id,
+        attachment.fileExt,
+      );
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const presignedResponse = await fetch(
+        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`,
+      );
+      const { url } = await presignedResponse.json();
+
+      if (url) {
+        const contentResponse = await fetch(url);
+        if (!contentResponse.ok) {
+          throw new Error("Failed to fetch file content");
+        }
+        const text = await contentResponse.text();
+        setTextPreviewContent(text);
+      }
+    } catch (error: any) {
+      console.error("Failed to preview text file:", error);
+      setTextPreviewError(error.message || "Failed to load file content");
+    } finally {
+      setTextPreviewLoading(false);
     }
   };
 
@@ -1518,36 +1565,64 @@ const TaskDetailModal = ({
                                 >
                                   <Download size={14} />
                                 </button>
-                                <button
-                                  onClick={() =>
-                                    setPreviewAttachmentId(
-                                      previewAttachmentId === attachment.id
-                                        ? null
-                                        : attachment.id,
-                                    )
-                                  }
-                                  className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                                >
-                                  {previewAttachmentId === attachment.id
-                                    ? "Hide"
-                                    : "Preview"}
-                                </button>
+                                {(isImageFile(attachment.fileExt) ||
+                                  isTextFile(attachment.fileExt)) && (
+                                  <button
+                                    onClick={() => {
+                                      if (
+                                        previewAttachmentId === attachment.id
+                                      ) {
+                                        setPreviewAttachmentId(null);
+                                        setTextPreviewContent(null);
+                                        setTextPreviewError(null);
+                                      } else {
+                                        setPreviewAttachmentId(attachment.id);
+                                        if (isTextFile(attachment.fileExt)) {
+                                          handlePreviewTextFile(attachment);
+                                        }
+                                      }
+                                    }}
+                                    className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                                  >
+                                    {previewAttachmentId === attachment.id
+                                      ? "Hide"
+                                      : "Preview"}
+                                  </button>
+                                )}
                               </div>
                             </div>
                             {previewAttachmentId === attachment.id && (
                               <div className="animate-slide-down p-2">
-                                <S3Image
-                                  s3Key={getAttachmentS3Key(
-                                    attachment.taskId,
-                                    attachment.id,
-                                    attachment.fileExt,
-                                  )}
-                                  alt={attachment.fileName}
-                                  width={600}
-                                  height={400}
-                                  className="h-auto w-full rounded object-contain"
-                                  fallbackType="image"
-                                />
+                                {isImageFile(attachment.fileExt) ? (
+                                  <S3Image
+                                    s3Key={getAttachmentS3Key(
+                                      attachment.taskId,
+                                      attachment.id,
+                                      attachment.fileExt,
+                                    )}
+                                    alt={attachment.fileName}
+                                    width={600}
+                                    height={400}
+                                    className="h-auto w-full rounded object-contain"
+                                    fallbackType="image"
+                                  />
+                                ) : isTextFile(attachment.fileExt) ? (
+                                  <div className="dark:bg-dark-bg max-h-96 overflow-auto rounded bg-gray-100 p-3">
+                                    {textPreviewLoading ? (
+                                      <p className="text-sm text-gray-500 dark:text-neutral-400">
+                                        Loading...
+                                      </p>
+                                    ) : textPreviewError ? (
+                                      <p className="text-sm text-red-500 dark:text-red-400">
+                                        {textPreviewError}
+                                      </p>
+                                    ) : (
+                                      <pre className="font-mono text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-neutral-200">
+                                        {textPreviewContent}
+                                      </pre>
+                                    )}
+                                  </div>
+                                ) : null}
                               </div>
                             )}
                           </div>

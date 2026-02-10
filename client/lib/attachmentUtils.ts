@@ -92,6 +92,16 @@ export interface FileValidationResult {
   error?: string;
 }
 
+// Check if a file extension is a text/code file that can be previewed
+export function isTextFile(ext: string): boolean {
+  return ALLOWED_EXTENSIONS.code.includes(ext.toLowerCase());
+}
+
+// Check if a file extension is an image
+export function isImageFile(ext: string): boolean {
+  return ALLOWED_EXTENSIONS.images.includes(ext.toLowerCase());
+}
+
 export function validateFile(file: File): FileValidationResult {
   // Check file size
   if (file.size > MAX_FILE_SIZE_BYTES) {
