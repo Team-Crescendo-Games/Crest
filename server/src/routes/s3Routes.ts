@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getPresignedViewUrl, getPresignedUploadUrl } from "../controllers/s3Controller.ts";
+import { getPresignedViewUrl, getPresignedDownloadUrl, getPresignedUploadUrl } from "../controllers/s3Controller.ts";
 
 const router = Router();
 
@@ -31,6 +31,41 @@ const router = Router();
  *         description: Server error
  */
 router.get("/presigned", getPresignedViewUrl);
+
+/**
+ * @openapi
+ * /s3/presigned/download:
+ *   get:
+ *     tags: [S3]
+ *     summary: Get a presigned URL for downloading a file with Content-Disposition header
+ *     parameters:
+ *       - in: query
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: S3 object key
+ *       - in: query
+ *         name: fileName
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Original filename for the download
+ *     responses:
+ *       200:
+ *         description: Presigned URL for downloading
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   description: Presigned URL with Content-Disposition attachment header
+ *       500:
+ *         description: Server error
+ */
+router.get("/presigned/download", getPresignedDownloadUrl);
 
 /**
  * @openapi

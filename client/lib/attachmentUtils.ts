@@ -1,5 +1,5 @@
 // Attachment upload constraints
-export const MAX_FILE_SIZE_MB = 5;
+export const MAX_FILE_SIZE_MB = 10;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 // Allowed file extensions by category

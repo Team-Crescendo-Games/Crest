@@ -16,7 +16,7 @@ import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
 import { parseLocalDate } from "@/lib/dateUtils";
 import { format } from "date-fns";
-import { Calendar, User, Users, Tag, Award, Pencil, X, Plus, Zap, Flag, Trash2, ChevronDown, ChevronRight, Copy, Check, ArrowLeft, Link2, Paperclip, Upload } from "lucide-react";
+import { Calendar, User, Users, Tag, Award, Pencil, X, Plus, Zap, Flag, Trash2, ChevronDown, ChevronRight, Copy, Check, ArrowLeft, Link2, Paperclip, Upload, Download } from "lucide-react";
 import { validateFile, FILE_INPUT_ACCEPT, MAX_FILE_SIZE_MB } from "@/lib/attachmentUtils";
 import UserIcon from "@/components/UserIcon";
 import AssigneeAvatarGroup from "@/components/AssigneeAvatarGroup";
@@ -159,6 +159,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
   const [saveMessage, setSaveMessage] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
+  const [attachmentToDelete, setAttachmentToDelete] = useState<{ id: number; fileName: string } | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [updateTask, { isLoading: isUpdating }] = useUpdateTaskMutation();
@@ -504,6 +505,23 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
     }
   };
 
+  const handleDownloadAttachment = async (attachment: { id: number; taskId: number; fileName: string; fileExt: string }) => {
+    try {
+      const s3Key = getAttachmentS3Key(attachment.taskId, attachment.id, attachment.fileExt);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const presignedResponse = await fetch(
+        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`
+      );
+      const { url } = await presignedResponse.json();
+      if (url) {
+        // Open the presigned URL directly - S3 will handle the download with Content-Disposition
+        window.open(url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Failed to download attachment:', error);
+    }
+  };
+
   const inputClass =
     "w-full rounded border border-gray-300 p-2 text-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white";
   const selectClass =
@@ -832,7 +850,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
               </span>
               <button
                 type="button"
-                onClick={() => handleDeleteAttachment(attachment.id)}
+                onClick={() => setAttachmentToDelete({ id: attachment.id, fileName: attachment.fileName })}
                 className="ml-2 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 dark:hover:text-red-400"
               >
                 <Trash2 size={14} />
@@ -1235,12 +1253,21 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
                         <p className="truncate text-sm text-gray-700 dark:text-neutral-300">
                           {attachment.fileName}
                         </p>
-                        <button
-                          onClick={() => setPreviewAttachmentId(previewAttachmentId === attachment.id ? null : attachment.id)}
-                          className="ml-2 rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                        >
-                          {previewAttachmentId === attachment.id ? "Hide" : "Preview"}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDownloadAttachment(attachment)}
+                            className="rounded bg-gray-200 p-1.5 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                            title="Download"
+                          >
+                            <Download size={14} />
+                          </button>
+                          <button
+                            onClick={() => setPreviewAttachmentId(previewAttachmentId === attachment.id ? null : attachment.id)}
+                            className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                          >
+                            {previewAttachmentId === attachment.id ? "Hide" : "Preview"}
+                          </button>
+                        </div>
                       </div>
                       {previewAttachmentId === attachment.id && (
                         <div className="p-2 animate-slide-down">
@@ -1324,6 +1351,22 @@ const TaskDetailModal = ({ isOpen, onClose, task, tasks, onTaskNavigate }: TaskD
         />
       </div>
     </ConfirmationMenu>
+
+    {/* Attachment Delete Confirmation */}
+    <ConfirmationMenu
+      isOpen={attachmentToDelete !== null}
+      onClose={() => setAttachmentToDelete(null)}
+      onConfirm={async () => {
+        if (attachmentToDelete) {
+          await handleDeleteAttachment(attachmentToDelete.id);
+          setAttachmentToDelete(null);
+        }
+      }}
+      title="Delete Attachment"
+      message={`Are you sure you want to delete "${attachmentToDelete?.fileName}"? This action cannot be undone.`}
+      confirmLabel="Delete"
+      variant="danger"
+    />
   </>
   );
 };

@@ -707,6 +707,7 @@ export const {
     useToggleCommentResolvedMutation,
     useToggleReactionMutation,
     useGetPresignedUrlQuery,
+    useLazyGetPresignedUrlQuery,
     useGetPresignedUploadUrlMutation,
     useGetSprintsQuery,
     useGetSprintQuery,

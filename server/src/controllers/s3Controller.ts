@@ -48,6 +48,41 @@ export const getPresignedViewUrl = async (req: Request, res: Response) => {
   }
 };
 
+export const getPresignedDownloadUrl = async (req: Request, res: Response) => {
+  try {
+    const key = req.query.key as string;
+    const fileName = req.query.fileName as string;
+    
+    if (!key) {
+      res.status(400).json({ error: "Missing key parameter" });
+      return;
+    }
+    
+    const bucketName = process.env.S3_BUCKET_NAME;
+    const s3Key = getS3Key(key);
+    
+    if (!bucketName) {
+      res.status(500).json({ error: "S3_BUCKET_NAME environment variable not set" });
+      return;
+    }
+    
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+      ResponseContentDisposition: fileName 
+        ? `attachment; filename="${fileName}"` 
+        : 'attachment',
+    });
+    
+    const url = await getSignedUrl(getS3Client(), command, { 
+      expiresIn: 3600,
+    });
+    res.json({ url });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const getPresignedUploadUrl = async (req: Request, res: Response) => {
   try {
     const { key, contentType } = req.body;
