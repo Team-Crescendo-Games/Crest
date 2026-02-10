@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useGetPresignedUploadUrlMutation, useUpdateUserProfilePictureMutation, useUpdateUserProfileMutation } from "@/state/api";
+import {
+  useGetPresignedUploadUrlMutation,
+  useUpdateUserProfilePictureMutation,
+  useUpdateUserProfileMutation,
+} from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useAppDispatch } from "@/app/redux";
 import { showNotification } from "@/state";
 import { signOut, updateUserAttributes } from "aws-amplify/auth";
-import { User, Mail, Camera, Loader2, LogOut, Pencil, Check, X } from "lucide-react";
+import {
+  User,
+  Mail,
+  Camera,
+  Loader2,
+  LogOut,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import Header from "@/components/Header";
 import S3Image from "@/components/S3Image";
 
@@ -48,7 +61,9 @@ const ProfilePage = () => {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setUploadError("Please select a valid image file (JPEG, PNG, GIF, or WebP)");
+      setUploadError(
+        "Please select a valid image file (JPEG, PNG, GIF, or WebP)",
+      );
       return;
     }
 
@@ -128,11 +143,20 @@ const ProfilePage = () => {
 
       refetch();
       setIsEditing(false);
-      dispatch(showNotification({ message: "Profile updated", type: "success" }));
+      dispatch(
+        showNotification({ message: "Profile updated", type: "success" }),
+      );
     } catch (error: any) {
       console.error("Save error:", error);
-      setSaveError(error.data?.message || error.message || "Failed to save profile");
-      dispatch(showNotification({ message: "Failed to update profile", type: "error" }));
+      setSaveError(
+        error.data?.message || error.message || "Failed to save profile",
+      );
+      dispatch(
+        showNotification({
+          message: "Failed to update profile",
+          type: "error",
+        }),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -149,7 +173,9 @@ const ProfilePage = () => {
   if (!authData) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-gray-500 dark:text-neutral-400">Not authenticated</div>
+        <div className="text-gray-500 dark:text-neutral-400">
+          Not authenticated
+        </div>
       </div>
     );
   }
@@ -163,7 +189,7 @@ const ProfilePage = () => {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-dark-secondary">
+          <div className="dark:bg-dark-secondary rounded-lg bg-white p-6 shadow">
             {/* Avatar with Upload */}
             <div className="mb-6 flex flex-col items-center">
               <div className="relative mb-4">
@@ -177,14 +203,14 @@ const ProfilePage = () => {
                     version={imageVersion}
                   />
                 ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-tertiary">
+                  <div className="dark:bg-dark-tertiary flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
                     <User className="h-12 w-12 text-gray-400 dark:text-neutral-500" />
                   </div>
                 )}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg ring-2 ring-white transition-colors hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:ring-dark-secondary dark:hover:bg-gray-200"
+                  className="dark:ring-dark-secondary absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg ring-2 ring-white transition-colors hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
                   title="Change profile picture"
                 >
                   {isUploading ? (
@@ -202,7 +228,9 @@ const ProfilePage = () => {
                 />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {userDetails?.fullName || userDetails?.username || "Unknown User"}
+                {userDetails?.fullName ||
+                  userDetails?.username ||
+                  "Unknown User"}
               </h2>
               <p className="text-sm text-gray-500 dark:text-neutral-400">
                 {userDetails?.email || "No email"}
@@ -215,7 +243,7 @@ const ProfilePage = () => {
             {/* Sign Out Button */}
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-dark-tertiary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
+              className="dark:border-dark-tertiary dark:hover:bg-dark-tertiary flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-neutral-300"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
@@ -225,7 +253,7 @@ const ProfilePage = () => {
 
         {/* Account Details */}
         <div className="lg:col-span-2">
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-dark-secondary">
+          <div className="dark:bg-dark-secondary rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Account Details
@@ -233,7 +261,7 @@ const ProfilePage = () => {
               {!isEditing ? (
                 <button
                   onClick={handleStartEdit}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
+                  className="dark:hover:bg-dark-tertiary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-neutral-400"
                 >
                   <Pencil className="h-4 w-4" />
                   Edit
@@ -243,7 +271,7 @@ const ProfilePage = () => {
                   <button
                     onClick={handleCancelEdit}
                     disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
+                    className="dark:hover:bg-dark-tertiary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-neutral-400"
                   >
                     <X className="h-4 w-4" />
                     Cancel
@@ -272,17 +300,19 @@ const ProfilePage = () => {
 
             <div className="space-y-4">
               {/* Full Name - editable */}
-              <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 dark:bg-dark-tertiary">
+              <div className="dark:bg-dark-tertiary flex items-center gap-3 rounded-lg bg-gray-50 p-4">
                 <User className="h-5 w-5 shrink-0 text-gray-500 dark:text-neutral-400" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-500 dark:text-neutral-400">Full Name</p>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400">
+                    Full Name
+                  </p>
                   {isEditing ? (
                     <input
                       type="text"
                       value={editFullName}
                       onChange={(e) => setEditFullName(e.target.value)}
                       placeholder="Enter your full name"
-                      className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
+                      className="dark:border-dark-secondary dark:bg-dark-secondary mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:text-white"
                     />
                   ) : (
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
@@ -293,10 +323,12 @@ const ProfilePage = () => {
               </div>
 
               {/* Username - read-only (synced from Cognito) */}
-              <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 dark:bg-dark-tertiary">
+              <div className="dark:bg-dark-tertiary flex items-center gap-3 rounded-lg bg-gray-50 p-4">
                 <User className="h-5 w-5 shrink-0 text-gray-500 dark:text-neutral-400" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-500 dark:text-neutral-400">Username</p>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400">
+                    Username
+                  </p>
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                     {userDetails?.username || "—"}
                   </p>
@@ -304,10 +336,12 @@ const ProfilePage = () => {
               </div>
 
               {/* Email - read-only (synced from Cognito) */}
-              <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 dark:bg-dark-tertiary">
+              <div className="dark:bg-dark-tertiary flex items-center gap-3 rounded-lg bg-gray-50 p-4">
                 <Mail className="h-5 w-5 shrink-0 text-gray-500 dark:text-neutral-400" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-500 dark:text-neutral-400">Email</p>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400">
+                    Email
+                  </p>
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                     {userDetails?.email || "—"}
                   </p>

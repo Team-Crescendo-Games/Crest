@@ -7,12 +7,13 @@ import { dismissNotification } from "@/state";
 
 const AppNotification = () => {
   const dispatch = useAppDispatch();
-  const notifications = useAppSelector((state) => state.global.notifications) ?? [];
+  const notifications =
+    useAppSelector((state) => state.global.notifications) ?? [];
 
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-2">
       {notifications.map((notification) => (
         <NotificationToast
           key={notification.id}
@@ -40,11 +41,11 @@ const NotificationToast = ({ message, type, onDismiss }: ToastProps) => {
   useEffect(() => {
     // Trigger fade in
     requestAnimationFrame(() => setIsVisible(true));
-    
+
     // Start fade out before dismiss
     const fadeOutTimer = setTimeout(() => setIsLeaving(true), 2000);
     const dismissTimer = setTimeout(onDismiss, 2300);
-    
+
     return () => {
       clearTimeout(fadeOutTimer);
       clearTimeout(dismissTimer);
@@ -61,8 +62,8 @@ const NotificationToast = ({ message, type, onDismiss }: ToastProps) => {
   return (
     <div
       className={`flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg transition-all duration-300 ${
-        isVisible && !isLeaving 
-          ? "translate-x-0 opacity-100" 
+        isVisible && !isLeaving
+          ? "translate-x-0 opacity-100"
           : "translate-x-4 opacity-0"
       } ${
         isSuccess

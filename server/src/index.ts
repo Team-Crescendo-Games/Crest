@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config({ override: true });
 
-import express from  "express";
+import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
@@ -36,7 +36,7 @@ app.use(cors());
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/", (_req, res) => {
-  res.send("This is the home route");
+    res.send("This is the home route");
 });
 
 app.use("/projects", projectRoutes);
@@ -56,5 +56,5 @@ app.post("/create-user", postUser);
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, "0.0.0.0", () => {
-  console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });

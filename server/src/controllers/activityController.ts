@@ -8,7 +8,7 @@ export const ActivityType = {
     EDIT_TASK: 2,
 } as const;
 
-export type ActivityType = typeof ActivityType[keyof typeof ActivityType];
+export type ActivityType = (typeof ActivityType)[keyof typeof ActivityType];
 
 // Interface for creating activities (internal use)
 export interface CreateActivityInput {
@@ -23,14 +23,11 @@ export interface CreateActivityInput {
 /**
  * Get all activities for a task
  * GET /activities?taskId=:taskId
- * 
+ *
  * - Returns all activities sorted by timestamp in descending order (newest first)
  * - Includes user information (username) for each activity
  */
-export const getActivitiesByTask = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getActivitiesByTask = async (req: Request, res: Response): Promise<void> => {
     const { taskId } = req.query;
 
     // Validate taskId is provided
@@ -69,7 +66,7 @@ export const getActivitiesByTask = async (
                 },
             },
             orderBy: {
-                createdAt: 'desc',
+                createdAt: "desc",
             },
         });
 
@@ -82,17 +79,27 @@ export const getActivitiesByTask = async (
 
 /**
  * Create a new activity (internal use by other controllers)
- * 
+ *
  * - Creates activities when tasks are created, moved, or edited
  * - Sets the activity timestamp to the current server time
  */
 export const createActivity = async (
     data: CreateActivityInput
-): Promise<ReturnType<typeof getPrismaClient>["activity"]["create"] extends (...args: any) => Promise<infer R> ? R : never> => {
+): Promise<
+    ReturnType<typeof getPrismaClient>["activity"]["create"] extends (
+        ...args: any
+    ) => Promise<infer R>
+        ? R
+        : never
+> => {
     const { taskId, userId, activityType, previousStatus, newStatus, editField } = data;
 
     // Validate activity type
-    if (![ActivityType.CREATE_TASK, ActivityType.MOVE_TASK, ActivityType.EDIT_TASK].includes(activityType)) {
+    if (
+        ![ActivityType.CREATE_TASK, ActivityType.MOVE_TASK, ActivityType.EDIT_TASK].includes(
+            activityType
+        )
+    ) {
         throw new Error("Invalid activity type");
     }
 
@@ -105,7 +112,7 @@ export const createActivity = async (
 
     // Validate Edit Task activity has editField
     if (activityType === ActivityType.EDIT_TASK) {
-        if (!editField || editField.trim() === '') {
+        if (!editField || editField.trim() === "") {
             throw new Error("Edit Task activity requires editField");
         }
     }

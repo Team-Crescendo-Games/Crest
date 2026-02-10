@@ -39,11 +39,44 @@ export const PRIORITY_BG_CLASSES: Record<string, string> = {
 /**
  * Priority colors with light/dark mode variants for badges
  */
-export const PRIORITY_BADGE_STYLES: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
-  Urgent: { bg: "bg-[#E11D48]", text: "text-white", darkBg: "dark:bg-[#E11D48]/30", darkText: "dark:text-[#fda4af]" },
-  High: { bg: "bg-[#EDA047]", text: "text-white", darkBg: "dark:bg-[#EDA047]/30", darkText: "dark:text-[#fcd34d]" },
-  Medium: { bg: "bg-[#5987EB]", text: "text-white", darkBg: "dark:bg-[#5987EB]/30", darkText: "dark:text-[#93c5fd]" },
-  Normal: { bg: "bg-[#5987EB]", text: "text-white", darkBg: "dark:bg-[#5987EB]/30", darkText: "dark:text-[#93c5fd]" },
-  Low: { bg: "bg-[#CBD5E1]", text: "text-white", darkBg: "dark:bg-[#CBD5E1]/30", darkText: "dark:text-[#e2e8f0]" },
-  Backlog: { bg: "bg-[#64748B]", text: "text-white", darkBg: "dark:bg-[#64748B]/30", darkText: "dark:text-[#cbd5e1]" },
+export const PRIORITY_BADGE_STYLES: Record<
+  string,
+  { bg: string; text: string; darkBg: string; darkText: string }
+> = {
+  Urgent: {
+    bg: "bg-[#E11D48]",
+    text: "text-white",
+    darkBg: "dark:bg-[#E11D48]/30",
+    darkText: "dark:text-[#fda4af]",
+  },
+  High: {
+    bg: "bg-[#EDA047]",
+    text: "text-white",
+    darkBg: "dark:bg-[#EDA047]/30",
+    darkText: "dark:text-[#fcd34d]",
+  },
+  Medium: {
+    bg: "bg-[#5987EB]",
+    text: "text-white",
+    darkBg: "dark:bg-[#5987EB]/30",
+    darkText: "dark:text-[#93c5fd]",
+  },
+  Normal: {
+    bg: "bg-[#5987EB]",
+    text: "text-white",
+    darkBg: "dark:bg-[#5987EB]/30",
+    darkText: "dark:text-[#93c5fd]",
+  },
+  Low: {
+    bg: "bg-[#CBD5E1]",
+    text: "text-white",
+    darkBg: "dark:bg-[#CBD5E1]/30",
+    darkText: "dark:text-[#e2e8f0]",
+  },
+  Backlog: {
+    bg: "bg-[#64748B]",
+    text: "text-white",
+    darkBg: "dark:bg-[#64748B]/30",
+    darkText: "dark:text-[#cbd5e1]",
+  },
 };

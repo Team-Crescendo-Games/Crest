@@ -7,7 +7,10 @@ import Link from "next/link";
 import React from "react";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { BOARD_MAIN_COLOR } from "@/lib/entityColors";
-import { TAB_BUTTON_BASE_STYLES, TAB_BUTTON_INDICATOR_STYLES } from "@/lib/styleConstants";
+import {
+  TAB_BUTTON_BASE_STYLES,
+  TAB_BUTTON_INDICATOR_STYLES,
+} from "@/lib/styleConstants";
 import { Tag, useArchiveProjectMutation } from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderToolbar from "@/components/HeaderToolbar";
@@ -55,7 +58,8 @@ const BoardHeader = ({
   onRefresh,
 }: Props) => {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [archiveProject, { isLoading: isArchiving }] = useArchiveProjectMutation();
+  const [archiveProject, { isLoading: isArchiving }] =
+    useArchiveProjectMutation();
 
   const handleArchive = async () => {
     try {
@@ -74,19 +78,19 @@ const BoardHeader = ({
           This board is inactive
         </div>
       )}
-      
-      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
+
+      <div className="pt-6 pb-6 lg:pt-8 lg:pb-4">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold dark:text-white">
             {boardName}
           </h1>
-          <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+          <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
             {totalTasks} tasks · {totalPoints} pts
           </span>
           <button
             onClick={() => setShowArchiveConfirm(true)}
             disabled={isArchiving}
-            className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 disabled:opacity-50"
+            className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
             aria-label={isActive ? "Archive board" : "Unarchive board"}
             title={isActive ? "Archive board" : "Unarchive board"}
           >
@@ -97,9 +101,10 @@ const BoardHeader = ({
             onClose={() => setShowArchiveConfirm(false)}
             onConfirm={handleArchive}
             title={isActive ? "Archive Board" : "Unarchive Board"}
-            message={isActive 
-              ? `Archive "${boardName}"? It will be hidden from the sidebar by default.`
-              : `Unarchive "${boardName}"? It will be visible in the sidebar again.`
+            message={
+              isActive
+                ? `Archive "${boardName}"? It will be hidden from the sidebar by default.`
+                : `Unarchive "${boardName}"? It will be visible in the sidebar again.`
             }
             confirmLabel={isActive ? "Archive" : "Unarchive"}
             isLoading={isArchiving}
@@ -123,7 +128,7 @@ const BoardHeader = ({
 
       {/* TABS */}
       <div className="flex flex-wrap items-end justify-between gap-1">
-        <div className="relative flex items-end gap-2 md:gap-4 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 dark:after:bg-stroke-dark">
+        <div className="dark:after:bg-stroke-dark relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 md:gap-4">
           <TabButton
             name="Board"
             icon={<BiColumns className="h-5 w-5" />}
@@ -167,15 +172,15 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
   return (
     <button
       className={`${TAB_BUTTON_BASE_STYLES} ${
-        isActive 
-          ? "font-bold text-gray-900 dark:text-white" 
+        isActive
+          ? "font-bold text-gray-900 dark:text-white"
           : "text-gray-500 hover:text-blue-500 dark:text-neutral-500 dark:hover:text-blue-400"
       }`}
       style={isActive ? { color: BOARD_MAIN_COLOR } : undefined}
       onClick={() => setActiveTab(name)}
     >
       {isActive && (
-        <span 
+        <span
           className={TAB_BUTTON_INDICATOR_STYLES}
           style={{ backgroundColor: BOARD_MAIN_COLOR }}
         />

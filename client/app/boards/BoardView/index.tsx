@@ -12,8 +12,18 @@ type BoardProps = {
   showMyTasks?: boolean;
 };
 
-const BoardViewWrapper = ({ id, setIsModalNewTaskOpen, filterState, sortState, showMyTasks = false }: BoardProps) => {
-  const { data: tasks, isLoading, error } = useGetTasksQuery({ projectId: Number(id) });
+const BoardViewWrapper = ({
+  id,
+  setIsModalNewTaskOpen,
+  filterState,
+  sortState,
+  showMyTasks = false,
+}: BoardProps) => {
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = useGetTasksQuery({ projectId: Number(id) });
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;

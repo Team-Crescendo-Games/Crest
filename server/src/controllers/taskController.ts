@@ -2,13 +2,19 @@ import type { Request, Response } from "express";
 import { getPrismaClient } from "../lib/prisma.ts";
 import { statusIntToString, statusStringToInt } from "../lib/statusUtils.ts";
 import { createActivity, ActivityType } from "./activityController.ts";
-import { createTaskEditNotifications, createReassignmentNotifications, createNotification, NotificationType, NotificationSeverity } from "../services/notificationService.ts";
+import {
+    createTaskEditNotifications,
+    createReassignmentNotifications,
+    createNotification,
+    NotificationType,
+    NotificationSeverity,
+} from "../services/notificationService.ts";
 
 // Common include object for task queries
 const taskInclude = {
     author: true,
     comments: {
-        orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
+        orderBy: [{ createdAt: "asc" as const }, { id: "asc" as const }],
         include: {
             user: true,
             reactions: {
@@ -52,7 +58,7 @@ const taskInclude = {
             },
         },
         orderBy: {
-            createdAt: 'desc' as const,
+            createdAt: "desc" as const,
         },
     },
     taskAssignments: {
@@ -134,8 +140,8 @@ function handlePriorityUpdate(ctx: UpdateContext, priority: string | undefined):
 function handleStartDateUpdate(ctx: UpdateContext, startDate: string | undefined): void {
     if (startDate === undefined) return;
     ctx.data.startDate = startDate ? new Date(startDate) : null;
-    const currentStartDate = ctx.currentTask?.startDate?.toISOString().split('T')[0] || null;
-    const newStartDate = startDate ? new Date(startDate).toISOString().split('T')[0] : null;
+    const currentStartDate = ctx.currentTask?.startDate?.toISOString().split("T")[0] || null;
+    const newStartDate = startDate ? new Date(startDate).toISOString().split("T")[0] : null;
     if (currentStartDate !== newStartDate) {
         ctx.editActivities.push(startDate ? "set the start date" : "removed the start date");
     }
@@ -144,8 +150,8 @@ function handleStartDateUpdate(ctx: UpdateContext, startDate: string | undefined
 function handleDueDateUpdate(ctx: UpdateContext, dueDate: string | undefined): void {
     if (dueDate === undefined) return;
     ctx.data.dueDate = dueDate ? new Date(dueDate) : null;
-    const currentDueDate = ctx.currentTask?.dueDate?.toISOString().split('T')[0] || null;
-    const newDueDate = dueDate ? new Date(dueDate).toISOString().split('T')[0] : null;
+    const currentDueDate = ctx.currentTask?.dueDate?.toISOString().split("T")[0] || null;
+    const newDueDate = dueDate ? new Date(dueDate).toISOString().split("T")[0] : null;
     if (currentDueDate !== newDueDate) {
         ctx.editActivities.push(dueDate ? "set the due date" : "removed the due date");
     }
@@ -157,7 +163,9 @@ function handlePointsUpdate(ctx: UpdateContext, points: number | string | null |
     const currentPoints = ctx.currentTask?.points ?? null;
     const newPoints = points !== null && points !== "" ? Number(points) : null;
     if (currentPoints !== newPoints) {
-        ctx.editActivities.push(newPoints !== null ? `updated the points to ${newPoints}` : "removed the points");
+        ctx.editActivities.push(
+            newPoints !== null ? `updated the points to ${newPoints}` : "removed the points"
+        );
     }
 }
 
@@ -168,15 +176,15 @@ function handleProjectIdUpdate(ctx: UpdateContext, projectId: number | undefined
 
 async function handleTagsUpdate(ctx: UpdateContext, tagIds: number[] | undefined): Promise<void> {
     if (tagIds === undefined) return;
-    
+
     const currentTagIds = ctx.currentTask?.taskTags?.map((tt: any) => tt.tagId) || [];
-    const addedTags = tagIds.filter(id => !currentTagIds.includes(id));
+    const addedTags = tagIds.filter((id) => !currentTagIds.includes(id));
     const removedTags = currentTagIds.filter((id: number) => !tagIds.includes(id));
-    
+
     if (addedTags.length > 0 || removedTags.length > 0) {
         ctx.editActivities.push("updated the tags");
     }
-    
+
     await getPrismaClient().taskTag.deleteMany({ where: { taskId: ctx.taskId } });
     if (tagIds.length > 0) {
         await getPrismaClient().taskTag.createMany({
@@ -185,42 +193,50 @@ async function handleTagsUpdate(ctx: UpdateContext, tagIds: number[] | undefined
     }
 }
 
-async function handleSprintsUpdate(ctx: UpdateContext, sprintIds: number[] | undefined): Promise<void> {
+async function handleSprintsUpdate(
+    ctx: UpdateContext,
+    sprintIds: number[] | undefined
+): Promise<void> {
     if (sprintIds === undefined) return;
-    
+
     const currentSprintTasks = await getPrismaClient().sprintTask.findMany({
         where: { taskId: ctx.taskId },
         select: { sprintId: true, sprint: { select: { title: true } } },
     });
-    const currentSprintIds = currentSprintTasks.map(st => st.sprintId);
-    
-    const addedSprintIds = sprintIds.filter(id => !currentSprintIds.includes(id));
-    const removedSprintIds = currentSprintIds.filter(id => !sprintIds.includes(id));
-    
+    const currentSprintIds = currentSprintTasks.map((st) => st.sprintId);
+
+    const addedSprintIds = sprintIds.filter((id) => !currentSprintIds.includes(id));
+    const removedSprintIds = currentSprintIds.filter((id) => !sprintIds.includes(id));
+
     if (addedSprintIds.length > 0 || removedSprintIds.length > 0) {
         // Fetch sprint names for added sprints
-        const addedSprints = addedSprintIds.length > 0
-            ? await getPrismaClient().sprint.findMany({
-                where: { id: { in: addedSprintIds } },
-                select: { title: true },
-            })
-            : [];
-        
+        const addedSprints =
+            addedSprintIds.length > 0
+                ? await getPrismaClient().sprint.findMany({
+                      where: { id: { in: addedSprintIds } },
+                      select: { title: true },
+                  })
+                : [];
+
         // Get removed sprint names from current data
         const removedSprintNames = currentSprintTasks
-            .filter(st => removedSprintIds.includes(st.sprintId))
-            .map(st => st.sprint.title);
-        
+            .filter((st) => removedSprintIds.includes(st.sprintId))
+            .map((st) => st.sprint.title);
+
         if (addedSprints.length > 0) {
-            const names = addedSprints.map(s => clampString(s.title, 30)).join(", ");
-            ctx.editActivities.push(`added to sprint${addedSprints.length > 1 ? "s" : ""}: ${names}`);
+            const names = addedSprints.map((s) => clampString(s.title, 30)).join(", ");
+            ctx.editActivities.push(
+                `added to sprint${addedSprints.length > 1 ? "s" : ""}: ${names}`
+            );
         }
         if (removedSprintNames.length > 0) {
-            const names = removedSprintNames.map(n => clampString(n, 30)).join(", ");
-            ctx.editActivities.push(`removed from sprint${removedSprintNames.length > 1 ? "s" : ""}: ${names}`);
+            const names = removedSprintNames.map((n) => clampString(n, 30)).join(", ");
+            ctx.editActivities.push(
+                `removed from sprint${removedSprintNames.length > 1 ? "s" : ""}: ${names}`
+            );
         }
     }
-    
+
     await getPrismaClient().sprintTask.deleteMany({ where: { taskId: ctx.taskId } });
     if (sprintIds.length > 0) {
         await getPrismaClient().sprintTask.createMany({
@@ -235,26 +251,31 @@ async function handleAssigneesUpdate(
     userId: number
 ): Promise<void> {
     if (assigneeIds === undefined) return;
-    
+
     const currentTaskAssignments = await getPrismaClient().taskAssignment.findMany({
         where: { taskId: ctx.taskId },
         select: { userId: true },
     });
-    const currentAssigneeIds = currentTaskAssignments.map(ta => ta.userId);
-    
-    const addedAssignees = assigneeIds.filter(id => !currentAssigneeIds.includes(id));
-    const removedAssignees = currentAssigneeIds.filter(id => !assigneeIds.includes(id));
-    
+    const currentAssigneeIds = currentTaskAssignments.map((ta) => ta.userId);
+
+    const addedAssignees = assigneeIds.filter((id) => !currentAssigneeIds.includes(id));
+    const removedAssignees = currentAssigneeIds.filter((id) => !assigneeIds.includes(id));
+
     if (addedAssignees.length > 0 || removedAssignees.length > 0) {
         ctx.editActivities.push("updated the assignees");
-        
+
         try {
-            await createReassignmentNotifications(ctx.taskId, addedAssignees, removedAssignees, userId);
+            await createReassignmentNotifications(
+                ctx.taskId,
+                addedAssignees,
+                removedAssignees,
+                userId
+            );
         } catch (error) {
             console.error("Failed to create reassignment notifications:", error);
         }
     }
-    
+
     await getPrismaClient().taskAssignment.deleteMany({ where: { taskId: ctx.taskId } });
     if (assigneeIds.length > 0) {
         await getPrismaClient().taskAssignment.createMany({
@@ -263,25 +284,28 @@ async function handleAssigneesUpdate(
     }
 }
 
-async function handleSubtasksUpdate(ctx: UpdateContext, subtaskIds: number[] | undefined): Promise<void> {
+async function handleSubtasksUpdate(
+    ctx: UpdateContext,
+    subtaskIds: number[] | undefined
+): Promise<void> {
     if (subtaskIds === undefined) return;
-    
+
     const currentSubtaskTask = await getPrismaClient().task.findUnique({
         where: { id: ctx.taskId },
         include: { subtasks: { select: { id: true } } },
     });
-    
-    const currentSubtaskIds = currentSubtaskTask?.subtasks.map(s => s.id) || [];
-    
-    const toAdd = subtaskIds.filter(id => !currentSubtaskIds.includes(id));
+
+    const currentSubtaskIds = currentSubtaskTask?.subtasks.map((s) => s.id) || [];
+
+    const toAdd = subtaskIds.filter((id) => !currentSubtaskIds.includes(id));
     if (toAdd.length > 0) {
         await getPrismaClient().task.updateMany({
             where: { id: { in: toAdd } },
             data: { parentTaskId: ctx.taskId },
         });
     }
-    
-    const toRemove = currentSubtaskIds.filter(id => !subtaskIds.includes(id));
+
+    const toRemove = currentSubtaskIds.filter((id) => !subtaskIds.includes(id));
     if (toRemove.length > 0) {
         await getPrismaClient().task.updateMany({
             where: { id: { in: toRemove } },
@@ -292,7 +316,7 @@ async function handleSubtasksUpdate(ctx: UpdateContext, subtaskIds: number[] | u
 
 async function handleEditActivities(ctx: UpdateContext, userId: number): Promise<void> {
     if (!userId || ctx.editActivities.length === 0) return;
-    
+
     for (const editField of ctx.editActivities) {
         try {
             await createActivity({
@@ -305,11 +329,11 @@ async function handleEditActivities(ctx: UpdateContext, userId: number): Promise
             console.error("Error creating activity for task edit:", activityError.message);
         }
     }
-    
+
     try {
         const latestActivity = await getPrismaClient().activity.findFirst({
             where: { taskId: ctx.taskId },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
         });
         if (latestActivity) {
             await createTaskEditNotifications(ctx.taskId, latestActivity.id, userId);
@@ -320,18 +344,16 @@ async function handleEditActivities(ctx: UpdateContext, userId: number): Promise
 }
 
 export const getTasks = async (_req: Request, res: Response) => {
-    const {projectId} = _req.query;
+    const { projectId } = _req.query;
 
     try {
-        const tasks = await getPrismaClient().task.findMany(
-            {
-                where: {
-                    projectId: Number(projectId)
-                },
-                include: taskInclude,
-            }
-        );
-        
+        const tasks = await getPrismaClient().task.findMany({
+            where: {
+                projectId: Number(projectId),
+            },
+            include: taskInclude,
+        });
+
         const tasksWithStringStatus = tasks.map(transformTask);
         res.json(tasksWithStringStatus);
     } catch (error: any) {
@@ -361,10 +383,7 @@ export const getTaskById = async (req: Request, res: Response) => {
     }
 };
 
-export const createTask = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const createTask = async (req: Request, res: Response): Promise<void> => {
     const {
         title,
         description,
@@ -409,7 +428,7 @@ export const createTask = async (
             },
             include: taskInclude,
         });
-        
+
         // Create activity for new task
         try {
             await createActivity({
@@ -420,14 +439,14 @@ export const createTask = async (
         } catch (activityError: any) {
             console.error("Error creating activity for new task:", activityError.message);
         }
-        
+
         // Create notifications for assignees when task is created (excluding the author)
         if (assigneeIds?.length) {
             try {
                 for (const assigneeId of assigneeIds) {
                     // Don't notify the author if they assigned themselves
                     if (assigneeId === authorUserId) continue;
-                    
+
                     await createNotification({
                         userId: assigneeId,
                         type: NotificationType.TASK_REASSIGNED,
@@ -440,17 +459,14 @@ export const createTask = async (
                 console.error("Failed to create assignment notifications:", error);
             }
         }
-        
+
         res.status(201).json(transformTask(newTask));
     } catch (error: any) {
         res.status(500).json({ error: `Error creating a task: ${error.message}` });
     }
 };
 
-export const updateTaskStatus = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const updateTaskStatus = async (req: Request, res: Response): Promise<void> => {
     const { taskId } = req.params;
     const { status, userId } = req.body;
     try {
@@ -458,9 +474,9 @@ export const updateTaskStatus = async (
             where: { id: Number(taskId) },
             select: { status: true },
         });
-        
+
         const previousStatus = currentTask ? statusIntToString(currentTask.status) : null;
-        
+
         const updatedTask = await getPrismaClient().task.update({
             where: {
                 id: Number(taskId),
@@ -469,7 +485,7 @@ export const updateTaskStatus = async (
                 status: statusStringToInt(status),
             },
         });
-        
+
         if (previousStatus && previousStatus !== status && userId) {
             try {
                 await createActivity({
@@ -482,11 +498,11 @@ export const updateTaskStatus = async (
             } catch (activityError: any) {
                 console.error("Error creating activity for status update:", activityError.message);
             }
-            
+
             try {
                 const latestActivity = await getPrismaClient().activity.findFirst({
                     where: { taskId: Number(taskId) },
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { createdAt: "desc" },
                 });
                 if (latestActivity) {
                     await createTaskEditNotifications(Number(taskId), latestActivity.id, userId);
@@ -495,38 +511,49 @@ export const updateTaskStatus = async (
                 console.error("Failed to create task edit notifications:", error);
             }
         }
-        
+
         const taskWithStringStatus = {
             ...updatedTask,
             status: statusIntToString(updatedTask.status),
         };
-        
+
         res.json(taskWithStringStatus);
     } catch (error: any) {
         res.status(500).json({ message: `Error updating task: ${error.message}` });
     }
 };
 
-export const updateTask = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const updateTask = async (req: Request, res: Response): Promise<void> => {
     const { taskId } = req.params;
-    const { title, description, status, priority, startDate, dueDate, points, tagIds, subtaskIds, projectId, sprintIds, userId, assigneeIds } = req.body;
-    
+    const {
+        title,
+        description,
+        status,
+        priority,
+        startDate,
+        dueDate,
+        points,
+        tagIds,
+        subtaskIds,
+        projectId,
+        sprintIds,
+        userId,
+        assigneeIds,
+    } = req.body;
+
     try {
         const currentTask = await getPrismaClient().task.findUnique({
             where: { id: Number(taskId) },
             include: { taskTags: { include: { tag: true } } },
         });
-        
+
         const ctx: UpdateContext = {
             taskId: Number(taskId),
             currentTask,
             data: {},
             editActivities: [],
         };
-        
+
         // Handle scalar field updates
         handleTitleUpdate(ctx, title);
         handleDescriptionUpdate(ctx, description);
@@ -536,32 +563,29 @@ export const updateTask = async (
         handleDueDateUpdate(ctx, dueDate);
         handlePointsUpdate(ctx, points);
         handleProjectIdUpdate(ctx, projectId);
-        
+
         // Handle relation updates
         await handleTagsUpdate(ctx, tagIds);
         await handleSprintsUpdate(ctx, sprintIds);
         await handleAssigneesUpdate(ctx, assigneeIds, userId);
         await handleSubtasksUpdate(ctx, subtaskIds);
-        
+
         const updatedTask = await getPrismaClient().task.update({
             where: { id: ctx.taskId },
             data: ctx.data,
             include: taskInclude,
         });
-        
+
         // Create activity records and notifications
         await handleEditActivities(ctx, userId);
-        
+
         res.json(transformTask(updatedTask));
     } catch (error: any) {
         res.status(500).json({ error: `Error updating task: ${error.message}` });
     }
 };
 
-export const getUserTasks = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getUserTasks = async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
     try {
         const tasks = await getPrismaClient().task.findMany({
@@ -573,7 +597,7 @@ export const getUserTasks = async (
             },
             include: taskInclude,
         });
-        
+
         const tasksWithStringStatus = tasks.map(transformTask);
         res.json(tasksWithStringStatus);
     } catch (error: any) {
@@ -581,10 +605,7 @@ export const getUserTasks = async (
     }
 };
 
-export const getTasksAssignedToUser = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getTasksAssignedToUser = async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
     try {
         const tasks = await getPrismaClient().task.findMany({
@@ -593,7 +614,7 @@ export const getTasksAssignedToUser = async (
             },
             include: taskInclude,
         });
-        
+
         const tasksWithStringStatus = tasks.map(transformTask);
         res.json(tasksWithStringStatus);
     } catch (error: any) {
@@ -601,10 +622,7 @@ export const getTasksAssignedToUser = async (
     }
 };
 
-export const getTasksAuthoredByUser = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getTasksAuthoredByUser = async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
     try {
         const tasks = await getPrismaClient().task.findMany({
@@ -613,7 +631,7 @@ export const getTasksAuthoredByUser = async (
             },
             include: taskInclude,
         });
-        
+
         const tasksWithStringStatus = tasks.map(transformTask);
         res.json(tasksWithStringStatus);
     } catch (error: any) {
@@ -621,10 +639,7 @@ export const getTasksAuthoredByUser = async (
     }
 };
 
-export const deleteTask = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const deleteTask = async (req: Request, res: Response): Promise<void> => {
     const { taskId } = req.params;
     try {
         await getPrismaClient().task.delete({

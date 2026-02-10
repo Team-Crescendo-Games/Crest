@@ -4,7 +4,6 @@ import "./globals.css";
 import DashboardWrapper from "./dashboardWrapper";
 import React from "react";
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

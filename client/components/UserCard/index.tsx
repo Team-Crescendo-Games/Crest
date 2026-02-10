@@ -10,7 +10,7 @@ type Props = {
 const UserCard = ({ user }: Props) => {
   return (
     <Link href={`/users/${user.userId}`}>
-      <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-md dark:bg-dark-secondary">
+      <div className="dark:bg-dark-secondary flex items-center gap-4 rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-md">
         {user.userId && user.profilePictureExt ? (
           <S3Image
             s3Key={`users/${user.userId}/profile.${user.profilePictureExt}`}
@@ -20,7 +20,7 @@ const UserCard = ({ user }: Props) => {
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-tertiary">
+          <div className="dark:bg-dark-tertiary flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
             <UserIcon className="h-6 w-6 text-gray-500 dark:text-neutral-400" />
           </div>
         )}

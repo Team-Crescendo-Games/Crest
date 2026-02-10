@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { getProjects, createProject, updateProject, deleteProject, archiveProject } from "../controllers/projectController.ts";
+import {
+    getProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+    archiveProject,
+} from "../controllers/projectController.ts";
 
 const router = Router();
 

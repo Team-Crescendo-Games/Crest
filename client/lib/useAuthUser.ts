@@ -8,9 +8,11 @@ import { useGetAuthUserQuery } from "@/state/api";
  * When an admin is impersonating another user, this returns the impersonated user's details.
  */
 export const useAuthUser = () => {
-  const impersonatedUser = useAppSelector((state) => state.global.impersonatedUser);
+  const impersonatedUser = useAppSelector(
+    (state) => state.global.impersonatedUser,
+  );
   // Use empty string instead of null to ensure consistent serialization
   const impersonatedCognitoId = impersonatedUser?.cognitoId || "";
-  
+
   return useGetAuthUserQuery({ impersonatedCognitoId });
 };

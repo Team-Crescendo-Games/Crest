@@ -2,7 +2,11 @@
 
 import { useRef, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { FilterState, DueDateOption, initialFilterState } from "@/lib/filterTypes";
+import {
+  FilterState,
+  DueDateOption,
+  initialFilterState,
+} from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
 import { Tag, Priority } from "@/state/api";
 
@@ -22,7 +26,7 @@ const FilterDropdown = ({
   tags,
 }: FilterDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // State for collapsible sections
   const [isLabelsExpanded, setIsLabelsExpanded] = useState(false);
   const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
@@ -133,12 +137,12 @@ const FilterDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-150 ease-out dark:border-dark-tertiary dark:bg-dark-secondary animate-dropdown"
+      className="dark:border-dark-tertiary dark:bg-dark-secondary animate-dropdown absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-150 ease-out"
       role="dialog"
       aria-label="Filter options"
     >
       {/* Header */}
-      <div className="border-b border-gray-200 px-4 py-3 dark:border-dark-tertiary">
+      <div className="dark:border-dark-tertiary border-b border-gray-200 px-4 py-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
           Filters
         </h3>
@@ -147,7 +151,7 @@ const FilterDropdown = ({
       {/* Filter Sections Container */}
       <div className="max-h-80 overflow-y-auto">
         {/* Labels Section */}
-        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
+        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
           <button
             type="button"
             onClick={() => setIsLabelsExpanded(!isLabelsExpanded)}
@@ -161,7 +165,7 @@ const FilterDropdown = ({
               <ChevronDown size={16} />
             )}
           </button>
-          
+
           {isLabelsExpanded && (
             <div className="mt-2 space-y-2">
               {tags.length === 0 ? (
@@ -177,8 +181,10 @@ const FilterDropdown = ({
                     <input
                       type="checkbox"
                       checked={filterState.selectedTagIds.includes(tag.id)}
-                      onChange={(e) => handleTagToggle(tag.id, e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
+                      onChange={(e) =>
+                        handleTagToggle(tag.id, e.target.checked)
+                      }
+                      className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="truncate">{tag.name}</span>
                   </label>
@@ -189,7 +195,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Priority Section */}
-        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
+        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
           <button
             type="button"
             onClick={() => setIsPriorityExpanded(!isPriorityExpanded)}
@@ -203,7 +209,7 @@ const FilterDropdown = ({
               <ChevronDown size={16} />
             )}
           </button>
-          
+
           {isPriorityExpanded && (
             <div className="mt-2 space-y-2">
               {priorityOptions.map((priority) => (
@@ -214,8 +220,10 @@ const FilterDropdown = ({
                   <input
                     type="checkbox"
                     checked={filterState.selectedPriorities.includes(priority)}
-                    onChange={(e) => handlePriorityToggle(priority, e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
+                    onChange={(e) =>
+                      handlePriorityToggle(priority, e.target.checked)
+                    }
+                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>{priority}</span>
                 </label>
@@ -239,7 +247,7 @@ const FilterDropdown = ({
               <ChevronDown size={16} />
             )}
           </button>
-          
+
           {isDueDateExpanded && (
             <div className="mt-2 space-y-2">
               {dueDateOptions.map((option) => (
@@ -249,9 +257,13 @@ const FilterDropdown = ({
                 >
                   <input
                     type="checkbox"
-                    checked={filterState.selectedDueDateOptions.includes(option)}
-                    onChange={(e) => handleDueDateToggle(option, e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
+                    checked={filterState.selectedDueDateOptions.includes(
+                      option,
+                    )}
+                    onChange={(e) =>
+                      handleDueDateToggle(option, e.target.checked)
+                    }
+                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>{dueDateOptionLabels[option]}</span>
                 </label>
@@ -263,7 +275,7 @@ const FilterDropdown = ({
 
       {/* Clear All Button */}
       {isFilterActive(filterState) && (
-        <div className="border-t border-gray-200 px-4 py-3 dark:border-dark-tertiary">
+        <div className="dark:border-dark-tertiary border-t border-gray-200 px-4 py-3">
           <button
             type="button"
             onClick={() => onFilterChange(initialFilterState)}

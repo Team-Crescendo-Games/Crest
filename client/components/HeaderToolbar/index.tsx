@@ -2,7 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ArrowUpDown, Filter, X, Search } from "lucide-react";
-import { FilterState, DueDateOption, SortState, SortField } from "@/lib/filterTypes";
+import {
+  FilterState,
+  DueDateOption,
+  SortState,
+  SortField,
+} from "@/lib/filterTypes";
 import { PRIORITY_COLORS } from "@/lib/priorityColors";
 import { APP_ACCENT_LIGHT, APP_ACCENT_DARK } from "@/lib/entityColors";
 import { Tag, Priority, useGetUsersQuery, User as UserType } from "@/state/api";
@@ -47,11 +52,11 @@ const HeaderToolbar = ({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Determine if user is typing @mention
   const isUserSearch = searchInput.startsWith("@");
   const userSearchTerm = isUserSearch ? searchInput.slice(1) : "";
-  
+
   const { data: users = [] } = useGetUsersQuery();
 
   // Sync local input with filter state searchText (for external changes like clear all)
@@ -64,7 +69,10 @@ const HeaderToolbar = ({
   // Close user dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowUserDropdown(false);
         setHighlightedIndex(0);
       }
@@ -74,13 +82,16 @@ const HeaderToolbar = ({
   }, []);
 
   // Filter users for @mention dropdown
-  const filteredUsers = users.filter((user) => {
-    if (!userSearchTerm) return true;
-    return (
-      user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ?? false)
-    );
-  }).slice(0, 8);
+  const filteredUsers = users
+    .filter((user) => {
+      if (!userSearchTerm) return true;
+      return (
+        user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+        (user.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ??
+          false)
+      );
+    })
+    .slice(0, 8);
 
   useEffect(() => {
     setHighlightedIndex(0);
@@ -89,7 +100,7 @@ const HeaderToolbar = ({
   // Handle search input change
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
-    
+
     if (value.startsWith("@")) {
       // User search mode - show dropdown
       setShowUserDropdown(true);
@@ -144,7 +155,9 @@ const HeaderToolbar = ({
   const removeUserFilter = (userId: number) => {
     onFilterChange({
       ...filterState,
-      selectedAssigneeIds: filterState.selectedAssigneeIds.filter((id) => id !== userId),
+      selectedAssigneeIds: filterState.selectedAssigneeIds.filter(
+        (id) => id !== userId,
+      ),
     });
   };
 
@@ -177,14 +190,18 @@ const HeaderToolbar = ({
   const removePriorityFilter = (priority: Priority) => {
     onFilterChange({
       ...filterState,
-      selectedPriorities: filterState.selectedPriorities.filter((p) => p !== priority),
+      selectedPriorities: filterState.selectedPriorities.filter(
+        (p) => p !== priority,
+      ),
     });
   };
 
   const removeDueDateFilter = (option: DueDateOption) => {
     onFilterChange({
       ...filterState,
-      selectedDueDateOptions: filterState.selectedDueDateOptions.filter((o) => o !== option),
+      selectedDueDateOptions: filterState.selectedDueDateOptions.filter(
+        (o) => o !== option,
+      ),
     });
   };
 
@@ -200,9 +217,13 @@ const HeaderToolbar = ({
         className={`flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors ${
           showMyTasks
             ? "bg-yellow-100 dark:bg-yellow-900/30"
-            : "text-gray-500 hover:bg-gray-100 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
+            : "dark:hover:bg-dark-tertiary text-gray-500 hover:bg-gray-100 dark:text-neutral-400"
         }`}
-        style={showMyTasks ? { color: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK } : undefined}
+        style={
+          showMyTasks
+            ? { color: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK }
+            : undefined
+        }
         title="Highlight my tasks"
       >
         <input
@@ -227,7 +248,7 @@ const HeaderToolbar = ({
         >
           <Filter className="h-5 w-5" />
           {isFilterActive && (
-            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
           )}
         </button>
         <FilterDropdown
@@ -252,11 +273,11 @@ const HeaderToolbar = ({
         >
           <ArrowUpDown className="h-5 w-5" />
           {isSortActive && (
-            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
           )}
         </button>
         {isSortDropdownOpen && (
-          <div className="absolute right-0 top-full z-20 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg animate-dropdown dark:border-dark-tertiary dark:bg-dark-secondary">
+          <div className="animate-dropdown dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full right-0 z-20 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
             <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-neutral-400">
               Sort by
             </div>
@@ -274,22 +295,28 @@ const HeaderToolbar = ({
                     onSortChange({ field, direction: "asc" });
                   }
                 }}
-                className={`flex w-full items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
-                  sortState.field === field ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-200"
+                className={`dark:hover:bg-dark-tertiary flex w-full items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-100 ${
+                  sortState.field === field
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-200"
                 }`}
               >
                 <span>{sortFieldLabels[field]}</span>
                 {sortState.field === field && (
-                  <span className="text-xs">{sortState.direction === "asc" ? "↑" : "↓"}</span>
+                  <span className="text-xs">
+                    {sortState.direction === "asc" ? "↑" : "↓"}
+                  </span>
                 )}
               </button>
             ))}
             {isSortActive && (
               <>
-                <div className="my-1 border-t border-gray-200 dark:border-dark-tertiary" />
+                <div className="dark:border-dark-tertiary my-1 border-t border-gray-200" />
                 <button
-                  onClick={() => onSortChange({ field: "none", direction: "asc" })}
-                  className="flex w-full items-center px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-dark-tertiary"
+                  onClick={() =>
+                    onSortChange({ field: "none", direction: "asc" })
+                  }
+                  className="dark:hover:bg-dark-tertiary flex w-full items-center px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400"
                 >
                   Clear sort
                 </button>
@@ -302,23 +329,23 @@ const HeaderToolbar = ({
       {/* Search input - @user for assignee, plain text for task filter */}
       <div className="relative" ref={searchDropdownRef}>
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search or @user"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-36 rounded-md border border-gray-200 bg-white py-1 pl-7 pr-7 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 dark:border-dark-tertiary dark:bg-dark-secondary dark:text-white dark:placeholder-gray-500 sm:w-44"
-            style={{ 
+            className="dark:border-dark-tertiary dark:bg-dark-secondary w-36 rounded-md border border-gray-200 bg-white py-1 pr-7 pl-7 text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:outline-none sm:w-44 dark:text-white dark:placeholder-gray-500"
+            style={{
               borderColor: searchInput ? accentColor : undefined,
-              boxShadow: searchInput ? `0 0 0 1px ${accentColor}` : undefined 
+              boxShadow: searchInput ? `0 0 0 1px ${accentColor}` : undefined,
             }}
           />
           {searchInput && !isUserSearch && (
             <button
               onClick={clearSearchText}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -326,7 +353,7 @@ const HeaderToolbar = ({
         </div>
         {/* User dropdown - only for @mentions */}
         {showUserDropdown && isUserSearch && (
-          <div className="absolute right-0 top-full z-20 mt-1 max-h-48 w-56 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg animate-dropdown dark:border-dark-tertiary dark:bg-dark-secondary">
+          <div className="animate-dropdown dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full right-0 z-20 mt-1 max-h-48 w-56 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
             <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-neutral-400">
               Filter by assignee
             </div>
@@ -337,25 +364,31 @@ const HeaderToolbar = ({
                   onClick={() => addUserFilter(user)}
                   className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
                     index === highlightedIndex
-                      ? "bg-gray-100 dark:bg-dark-tertiary"
-                      : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                      ? "dark:bg-dark-tertiary bg-gray-100"
+                      : "dark:hover:bg-dark-tertiary hover:bg-gray-100"
                   }`}
                 >
-                  <span className="font-medium text-gray-900 dark:text-white">@{user.username}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    @{user.username}
+                  </span>
                   {user.email && (
-                    <span className="truncate text-xs text-gray-500 dark:text-gray-400">{user.email}</span>
+                    <span className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {user.email}
+                    </span>
                   )}
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No users found</div>
+              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                No users found
+              </div>
             )}
           </div>
         )}
       </div>
 
       {/* Active filter pills */}
-      <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
+      <div className="flex max-w-xs flex-wrap items-center gap-1.5">
         {filterState.selectedAssigneeIds.map((userId) => {
           const user = getUserById(userId);
           if (!user) return null;
@@ -382,7 +415,7 @@ const HeaderToolbar = ({
             <span
               key={`tag-${tagId}`}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-              style={{ backgroundColor: tag.color || '#3b82f6' }}
+              style={{ backgroundColor: tag.color || "#3b82f6" }}
             >
               {tag.name}
               <button

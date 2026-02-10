@@ -6,7 +6,11 @@ interface RadialProgressProps {
   size?: number;
 }
 
-const RadialProgress = ({ completed, total, size = 20 }: RadialProgressProps) => {
+const RadialProgress = ({
+  completed,
+  total,
+  size = 20,
+}: RadialProgressProps) => {
   const strokeWidth = 2.5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;

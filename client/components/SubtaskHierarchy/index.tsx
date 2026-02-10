@@ -33,7 +33,9 @@ const SubtaskHierarchy = ({
       {hasParent && (
         <div className="flex items-center gap-2">
           <CornerLeftUp className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-          <span className="text-sm text-gray-700 dark:text-gray-300">Belongs to:</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            Belongs to:
+          </span>
           <button
             type="button"
             onClick={() => onTaskClick(parentTask!.id)}
@@ -50,7 +52,7 @@ const SubtaskHierarchy = ({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex w-full items-center gap-2 rounded px-2 py-1 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+            className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 rounded px-2 py-1 text-left hover:bg-gray-100"
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
@@ -61,7 +63,7 @@ const SubtaskHierarchy = ({
               Subtasks ({subtasks!.length})
             </span>
           </button>
-          
+
           {isExpanded && (
             <ul className="mt-1 space-y-0 pl-6">
               {subtasks!.map((subtask) => (
@@ -69,7 +71,7 @@ const SubtaskHierarchy = ({
                   <button
                     type="button"
                     onClick={() => onTaskClick(subtask.id)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-0.5 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                    className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 rounded px-2 py-0.5 text-left hover:bg-gray-100"
                   >
                     {/* Subtask Title */}
                     <span className="min-w-0 flex-1 truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
@@ -78,7 +80,9 @@ const SubtaskHierarchy = ({
 
                     {/* Status Badge */}
                     {(() => {
-                      const colors = STATUS_BADGE_STYLES[subtask.status || ""] || STATUS_BADGE_STYLES["Input Queue"];
+                      const colors =
+                        STATUS_BADGE_STYLES[subtask.status || ""] ||
+                        STATUS_BADGE_STYLES["Input Queue"];
                       return (
                         <span
                           className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold ${colors.bg} ${colors.text} ${colors.darkBg} ${colors.darkText}`}
@@ -89,7 +93,9 @@ const SubtaskHierarchy = ({
                     })()}
 
                     {/* Assignee Avatar */}
-                    {subtask.taskAssignments && subtask.taskAssignments.length > 0 && subtask.taskAssignments[0].user.profilePictureExt ? (
+                    {subtask.taskAssignments &&
+                    subtask.taskAssignments.length > 0 &&
+                    subtask.taskAssignments[0].user.profilePictureExt ? (
                       <S3Image
                         s3Key={`users/${subtask.taskAssignments[0].user.userId}/profile.${subtask.taskAssignments[0].user.profilePictureExt}`}
                         alt={subtask.taskAssignments[0].user.username}
@@ -98,7 +104,7 @@ const SubtaskHierarchy = ({
                         className="h-5 w-5 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary">
+                      <div className="dark:bg-dark-tertiary flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200">
                         <User className="h-3 w-3 text-gray-500 dark:text-neutral-500" />
                       </div>
                     )}

@@ -2,37 +2,38 @@ import type { Request, Response } from "express";
 import { getPrismaClient } from "../lib/prisma.ts";
 import { createMentionNotifications } from "../services/notificationService.ts";
 
-export const createComment = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const createComment = async (req: Request, res: Response): Promise<void> => {
     const { taskId, userId, text } = req.body;
-    
+
     // Validate required fields
     if (!taskId || !userId || !text) {
-        res.status(400).json({ error: `Missing required fields: taskId=${taskId}, userId=${userId}, text=${text ? 'provided' : 'missing'}` });
+        res.status(400).json({
+            error: `Missing required fields: taskId=${taskId}, userId=${userId}, text=${text ? "provided" : "missing"}`,
+        });
         return;
     }
-    
+
     const numericUserId = Number(userId);
     const numericTaskId = Number(taskId);
-    
+
     if (isNaN(numericUserId) || isNaN(numericTaskId)) {
-        res.status(400).json({ error: `Invalid numeric values: taskId=${taskId}, userId=${userId}` });
+        res.status(400).json({
+            error: `Invalid numeric values: taskId=${taskId}, userId=${userId}`,
+        });
         return;
     }
-    
+
     try {
         // Verify user exists
         const user = await getPrismaClient().user.findUnique({
             where: { userId: numericUserId },
         });
-        
+
         if (!user) {
             res.status(404).json({ error: `User with id ${numericUserId} not found` });
             return;
         }
-        
+
         const newComment = await getPrismaClient().comment.create({
             data: {
                 taskId: numericTaskId,
@@ -59,28 +60,25 @@ export const createComment = async (
     }
 };
 
-export const toggleCommentResolved = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const toggleCommentResolved = async (req: Request, res: Response): Promise<void> => {
     const { commentId } = req.params;
     const numericCommentId = Number(commentId);
-    
+
     if (isNaN(numericCommentId)) {
         res.status(400).json({ error: `Invalid comment id: ${commentId}` });
         return;
     }
-    
+
     try {
         const comment = await getPrismaClient().comment.findUnique({
             where: { id: numericCommentId },
         });
-        
+
         if (!comment) {
             res.status(404).json({ error: `Comment with id ${numericCommentId} not found` });
             return;
         }
-        
+
         const updatedComment = await getPrismaClient().comment.update({
             where: { id: numericCommentId },
             data: { isResolved: !comment.isResolved },
@@ -91,7 +89,7 @@ export const toggleCommentResolved = async (
                 },
             },
         });
-        
+
         res.json(updatedComment);
     } catch (error: any) {
         res.status(500).json({ error: `Error toggling comment resolved: ${error.message}` });

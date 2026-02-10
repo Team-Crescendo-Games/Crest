@@ -49,7 +49,7 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
             },
             include: notificationInclude,
             orderBy: {
-                createdAt: 'desc',
+                createdAt: "desc",
             },
         });
 
@@ -170,7 +170,7 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
             data: { isRead: true },
         });
 
-        res.json({ 
+        res.json({
             message: "All notifications marked as read",
             count: result.count,
         });
@@ -254,7 +254,7 @@ export const batchDeleteNotifications = async (req: Request, res: Response): Pro
     }
 
     if (ids.length === 0) {
-        res.json({ 
+        res.json({
             message: "No notifications to delete",
             count: 0,
         });
@@ -287,7 +287,7 @@ export const batchDeleteNotifications = async (req: Request, res: Response): Pro
             return;
         }
 
-        const unauthorizedNotifications = notifications.filter(n => n.userId !== userIdNum);
+        const unauthorizedNotifications = notifications.filter((n) => n.userId !== userIdNum);
         if (unauthorizedNotifications.length > 0) {
             res.status(403).json({ error: "Access denied" });
             return;
@@ -300,7 +300,7 @@ export const batchDeleteNotifications = async (req: Request, res: Response): Pro
             },
         });
 
-        res.json({ 
+        res.json({
             message: "Notifications deleted successfully",
             count: result.count,
         });
@@ -317,7 +317,7 @@ export const checkDueDates = async (_req: Request, res: Response): Promise<void>
     try {
         await checkAndCreateDueDateNotifications();
 
-        res.json({ 
+        res.json({
             message: "Due date check completed successfully",
         });
     } catch (error: any) {

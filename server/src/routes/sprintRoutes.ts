@@ -1,14 +1,14 @@
 import { Router } from "express";
 import {
-  getSprints,
-  getSprint,
-  createSprint,
-  updateSprint,
-  deleteSprint,
-  addTaskToSprint,
-  removeTaskFromSprint,
-  duplicateSprint,
-  archiveSprint
+    getSprints,
+    getSprint,
+    createSprint,
+    updateSprint,
+    deleteSprint,
+    addTaskToSprint,
+    removeTaskFromSprint,
+    duplicateSprint,
+    archiveSprint,
 } from "../controllers/sprintController.ts";
 
 const router = Router();

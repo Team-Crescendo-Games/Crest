@@ -91,7 +91,9 @@ const getNotificationTypeLabel = (type: NotificationType): string => {
 };
 
 // Helper function to get severity color classes
-const getSeverityColorClasses = (severity: NotificationSeverity): { icon: string; border: string } => {
+const getSeverityColorClasses = (
+  severity: NotificationSeverity,
+): { icon: string; border: string } => {
   switch (severity) {
     case NotificationSeverity.CRITICAL:
       return {
@@ -120,8 +122,10 @@ const NotificationItem = ({
   onSelect,
 }: NotificationItemProps) => {
   const router = useRouter();
-  const [markAsRead, { isLoading: isMarkingRead }] = useMarkNotificationAsReadMutation();
-  const [deleteNotification, { isLoading: isDeleting }] = useDeleteNotificationMutation();
+  const [markAsRead, { isLoading: isMarkingRead }] =
+    useMarkNotificationAsReadMutation();
+  const [deleteNotification, { isLoading: isDeleting }] =
+    useDeleteNotificationMutation();
 
   const typeLabel = getNotificationTypeLabel(notification.type);
   const severityColors = getSeverityColorClasses(notification.severity);
@@ -181,7 +185,7 @@ const NotificationItem = ({
 
   return (
     <div
-      className={`group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+      className={`group flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
         !notification.isRead ? "bg-blue-50/50 dark:bg-blue-900/20" : ""
       } ${severityColors.border}`}
       onClick={handleClick}
@@ -200,7 +204,7 @@ const NotificationItem = ({
           type="checkbox"
           checked={isSelected}
           onChange={handleCheckboxChange}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
+          className="dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
           aria-label={`Select notification for ${notification.task?.title || "task"}`}
         />
       </div>
@@ -208,7 +212,10 @@ const NotificationItem = ({
       {/* Unread indicator */}
       <div className="flex-shrink-0 pt-1.5">
         {!notification.isRead ? (
-          <div className="h-2 w-2 rounded-full bg-blue-500" aria-label="Unread" />
+          <div
+            className="h-2 w-2 rounded-full bg-blue-500"
+            aria-label="Unread"
+          />
         ) : (
           <div className="h-2 w-2" /> // Spacer for alignment
         )}
@@ -222,7 +229,7 @@ const NotificationItem = ({
       {/* Content */}
       <div className="min-w-0 flex-1">
         {/* Task title */}
-        <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+        <p className="truncate text-sm font-medium text-gray-800 dark:text-white">
           {notification.task?.title || "Notification"}
         </p>
 
@@ -238,7 +245,7 @@ const NotificationItem = ({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         {/* Delete button */}
         <button
           onClick={handleDelete}
@@ -316,7 +323,7 @@ const EmbeddedNotificationItem = ({
 
   return (
     <div
-      className={`group flex items-center gap-2 px-6 py-2 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
+      className={`group dark:hover:bg-dark-tertiary flex cursor-pointer items-center gap-2 px-6 py-2 transition-colors hover:bg-gray-100 ${
         !notification.isRead ? "bg-blue-50/30 dark:bg-blue-900/10" : ""
       } ${severityColors.border}`}
       onClick={handleClick}
@@ -335,13 +342,13 @@ const EmbeddedNotificationItem = ({
           type="checkbox"
           checked={isSelected}
           onChange={handleCheckboxChange}
-          className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
+          className="dark:bg-dark-tertiary h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
         />
       </div>
 
       {/* Unread dot */}
       {!notification.isRead && (
-        <div className="h-1.5 w-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+        <div className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
       )}
 
       {/* Icon */}
@@ -351,7 +358,7 @@ const EmbeddedNotificationItem = ({
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-gray-700 dark:text-gray-200 truncate">
+        <p className="truncate text-sm text-gray-700 dark:text-gray-200">
           {notification.task?.title || "Notification"}
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -362,7 +369,11 @@ const EmbeddedNotificationItem = ({
   );
 };
 
-const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationInboxProps) => {
+const NotificationInbox = ({
+  isOpen,
+  onClose,
+  embedded = false,
+}: NotificationInboxProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -390,7 +401,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   // Handle click outside to close dropdown (only for non-embedded mode)
   useEffect(() => {
     if (embedded) return; // Skip for embedded mode
-    
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
@@ -415,7 +426,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   // Handle escape key to close (only for non-embedded mode)
   useEffect(() => {
     if (embedded) return; // Skip for embedded mode
-    
+
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -454,7 +465,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   // Handle select all toggle
   const handleSelectAll = () => {
     if (!notifications) return;
-    
+
     if (selectedIds.size === notifications.length) {
       // All are selected, deselect all
       setSelectedIds(new Set());
@@ -467,7 +478,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   // Handle batch delete
   const handleBatchDelete = async () => {
     if (!userId || selectedIds.size === 0) return;
-    
+
     try {
       await batchDelete({ ids: Array.from(selectedIds), userId });
       // Clear selection after successful deletion
@@ -485,8 +496,10 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   // Compute select all checkbox state
   const notificationCount = notifications?.length ?? 0;
   const selectedCount = selectedIds.size;
-  const isAllSelected = notificationCount > 0 && selectedCount === notificationCount;
-  const isIndeterminate = selectedCount > 0 && selectedCount < notificationCount;
+  const isAllSelected =
+    notificationCount > 0 && selectedCount === notificationCount;
+  const isIndeterminate =
+    selectedCount > 0 && selectedCount < notificationCount;
 
   // Embedded mode - render as inline sidebar section
   if (embedded) {
@@ -504,7 +517,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
                     if (el) el.indeterminate = isIndeterminate;
                   }}
                   onChange={handleSelectAll}
-                  className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
+                  className="dark:bg-dark-tertiary h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
                   aria-label="Select all"
                 />
               )}
@@ -514,7 +527,11 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
                   disabled={isBatchDeleting}
                   className="flex items-center gap-1 text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400"
                 >
-                  {isBatchDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  {isBatchDeleting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
                   <span>Delete ({selectedCount})</span>
                 </button>
               )}
@@ -525,7 +542,11 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
                 disabled={isMarkingAllRead}
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-700 disabled:opacity-50 dark:text-blue-400"
               >
-                {isMarkingAllRead ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCheck className="h-3 w-3" />}
+                {isMarkingAllRead ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CheckCheck className="h-3 w-3" />
+                )}
                 <span>Mark all read</span>
               </button>
             )}
@@ -534,9 +555,11 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex items-center justify-center py-4 px-6">
+          <div className="flex items-center justify-center px-6 py-4">
             <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">Loading...</span>
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+              Loading...
+            </span>
           </div>
         )}
 
@@ -550,24 +573,30 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
         {/* Empty state */}
         {!isLoading && !isError && notifications?.length === 0 && (
           <div className="px-6 py-4 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">No notifications</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No notifications
+            </p>
           </div>
         )}
 
         {/* Notification items */}
-        {!isLoading && !isError && notifications && notifications.length > 0 && userId && (
-          <div className="max-h-64 overflow-y-auto">
-            {notifications.map((notification) => (
-              <EmbeddedNotificationItem
-                key={notification.id}
-                notification={notification}
-                userId={userId}
-                isSelected={selectedIds.has(notification.id)}
-                onSelect={handleSelect}
-              />
-            ))}
-          </div>
-        )}
+        {!isLoading &&
+          !isError &&
+          notifications &&
+          notifications.length > 0 &&
+          userId && (
+            <div className="max-h-64 overflow-y-auto">
+              {notifications.map((notification) => (
+                <EmbeddedNotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  userId={userId}
+                  isSelected={selectedIds.has(notification.id)}
+                  onSelect={handleSelect}
+                />
+              ))}
+            </div>
+          )}
       </div>
     );
   }
@@ -577,12 +606,12 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
   return (
     <div
       ref={dropdownRef}
-      className="absolute bottom-full left-0 z-50 mb-2 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-white shadow-lg dark:bg-dark-secondary"
+      className="dark:bg-dark-secondary absolute bottom-full left-0 z-50 mb-2 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-white shadow-lg"
       role="dialog"
       aria-label="Notifications"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-stroke-dark">
+      <div className="dark:border-stroke-dark flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2">
           {/* Select all checkbox - only show when there are notifications */}
           {notificationCount > 0 && (
@@ -595,7 +624,7 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
                 }
               }}
               onChange={handleSelectAll}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
+              className="dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
               aria-label="Select all notifications"
               title={isAllSelected ? "Deselect all" : "Select all"}
             />
@@ -686,25 +715,30 @@ const NotificationInbox = ({ isOpen, onClose, embedded = false }: NotificationIn
               No notifications yet
             </p>
             <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-              You&apos;ll see notifications here when there&apos;s activity on your tasks
+              You&apos;ll see notifications here when there&apos;s activity on
+              your tasks
             </p>
           </div>
         )}
 
         {/* Notification items - using NotificationItem subcomponent */}
-        {!isLoading && !isError && notifications && notifications.length > 0 && userId && (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                userId={userId}
-                isSelected={selectedIds.has(notification.id)}
-                onSelect={handleSelect}
-              />
-            ))}
-          </div>
-        )}
+        {!isLoading &&
+          !isError &&
+          notifications &&
+          notifications.length > 0 &&
+          userId && (
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  userId={userId}
+                  isSelected={selectedIds.has(notification.id)}
+                  onSelect={handleSelect}
+                />
+              ))}
+            </div>
+          )}
       </div>
     </div>
   );

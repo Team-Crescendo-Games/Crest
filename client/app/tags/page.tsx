@@ -38,7 +38,11 @@ const TagsPage = () => {
 
   const handleSaveEdit = async () => {
     if (!editingName.trim() || editingId === null) return;
-    await updateTag({ tagId: editingId, name: editingName.trim(), color: editingColor });
+    await updateTag({
+      tagId: editingId,
+      name: editingName.trim(),
+      color: editingColor,
+    });
     setEditingId(null);
     setEditingName("");
     setEditingColor("");
@@ -62,11 +66,11 @@ const TagsPage = () => {
       <Header name="Tags" />
 
       {/* Create new tag */}
-      <div className="mb-6 mt-4 flex max-w-md items-center gap-2">
+      <div className="mt-4 mb-6 flex max-w-md items-center gap-2">
         <input
           type="text"
           placeholder="New tag name..."
-          className="flex-1 rounded border border-gray-300 p-2 shadow-sm focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
+          className="dark:border-dark-tertiary dark:bg-dark-tertiary flex-1 rounded border border-gray-300 p-2 shadow-sm focus:border-gray-400 focus:outline-none dark:text-white"
           value={newTagName}
           onChange={(e) => setNewTagName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -75,7 +79,7 @@ const TagsPage = () => {
           type="color"
           value={newTagColor}
           onChange={(e) => setNewTagColor(e.target.value)}
-          className="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5 dark:border-dark-tertiary"
+          className="dark:border-dark-tertiary h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
           title="Tag color"
         />
         <button
@@ -97,13 +101,13 @@ const TagsPage = () => {
         {tags?.map((tag) => (
           <div
             key={tag.id}
-            className="flex items-center justify-between rounded-lg bg-white p-3 shadow dark:bg-dark-secondary"
+            className="dark:bg-dark-secondary flex items-center justify-between rounded-lg bg-white p-3 shadow"
           >
             {editingId === tag.id ? (
               <div className="flex flex-1 items-center gap-2">
                 <input
                   type="text"
-                  className="flex-1 rounded border border-gray-300 p-1.5 text-sm focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
+                  className="dark:border-dark-tertiary dark:bg-dark-tertiary flex-1 rounded border border-gray-300 p-1.5 text-sm focus:border-gray-400 focus:outline-none dark:text-white"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   onKeyDown={(e) => {
@@ -116,7 +120,7 @@ const TagsPage = () => {
                   type="color"
                   value={editingColor}
                   onChange={(e) => setEditingColor(e.target.value)}
-                  className="h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5 dark:border-dark-tertiary"
+                  className="dark:border-dark-tertiary h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5"
                 />
                 <button
                   onClick={handleSaveEdit}

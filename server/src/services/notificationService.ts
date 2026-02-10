@@ -1,4 +1,4 @@
-import type { Notification } from '../../prisma/generated/prisma/client.js';
+import type { Notification } from "../../prisma/generated/prisma/client.js";
 import { getPrismaClient } from "../lib/prisma.ts";
 
 export const NotificationType = {
@@ -9,7 +9,7 @@ export const NotificationType = {
     TASK_REASSIGNED: 4,
 } as const;
 
-export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 
 export const NotificationSeverity = {
     INFO: 0,
@@ -17,7 +17,7 @@ export const NotificationSeverity = {
     CRITICAL: 2,
 } as const;
 
-export type NotificationSeverity = typeof NotificationSeverity[keyof typeof NotificationSeverity];
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
 
 export interface CreateNotificationParams {
     userId: number;
@@ -77,19 +77,19 @@ export function parseMentions(text: string): string[] {
     }
 
     const mentionRegex = /(?:^|[\s.,!?;:()\[\]{}])@(\w+)/g;
-    
+
     const mentions: string[] = [];
     let match: RegExpExecArray | null;
-    
+
     while ((match = mentionRegex.exec(text)) !== null) {
         const username = match[1];
         if (username) {
-            if (!mentions.some(m => m.toLowerCase() === username.toLowerCase())) {
+            if (!mentions.some((m) => m.toLowerCase() === username.toLowerCase())) {
                 mentions.push(username);
             }
         }
     }
-    
+
     return mentions;
 }
 
@@ -103,7 +103,7 @@ export async function createMentionNotifications(
     authorUserId: number
 ): Promise<void> {
     const mentionedUsernames = parseMentions(commentText);
-    
+
     if (mentionedUsernames.length === 0) {
         return;
     }
@@ -114,7 +114,7 @@ export async function createMentionNotifications(
         where: {
             username: {
                 in: mentionedUsernames,
-                mode: 'insensitive',
+                mode: "insensitive",
             },
         },
         select: {
@@ -226,12 +226,9 @@ export async function checkAndCreateDueDateNotifications(): Promise<void> {
         where: {
             dueDate: {
                 gt: now,
-                lte: twentyFourHoursFromNow
+                lte: twentyFourHoursFromNow,
             },
-            OR: [
-                { status: null },
-                { status: { not: DONE_STATUS } }
-            ]
+            OR: [{ status: null }, { status: { not: DONE_STATUS } }],
         },
         include: {
             taskAssignments: {
@@ -247,10 +244,7 @@ export async function checkAndCreateDueDateNotifications(): Promise<void> {
             dueDate: {
                 lte: now,
             },
-            OR: [
-                { status: null },
-                { status: { not: DONE_STATUS } }
-            ]
+            OR: [{ status: null }, { status: { not: DONE_STATUS } }],
         },
         include: {
             taskAssignments: {

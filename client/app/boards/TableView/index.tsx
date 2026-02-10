@@ -11,11 +11,30 @@ type Props = {
   sortState?: SortState;
 };
 
-const BoardTableView = ({ id, setIsModalNewTaskOpen, filterState, sortState }: Props) => {
-  const { data: tasks, error, isLoading } = useGetTasksQuery({ projectId: Number(id) });
+const BoardTableView = ({
+  id,
+  setIsModalNewTaskOpen,
+  filterState,
+  sortState,
+}: Props) => {
+  const {
+    data: tasks,
+    error,
+    isLoading,
+  } = useGetTasksQuery({ projectId: Number(id) });
 
-  if (isLoading) return <div className="flex h-96 items-center justify-center text-gray-500">Loading...</div>;
-  if (error) return <div className="flex h-96 items-center justify-center text-red-500">An error occurred while fetching tasks</div>;
+  if (isLoading)
+    return (
+      <div className="flex h-96 items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="flex h-96 items-center justify-center text-red-500">
+        An error occurred while fetching tasks
+      </div>
+    );
 
   return (
     <TableView

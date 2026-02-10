@@ -8,8 +8,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { SPRINT_MAIN_COLOR } from "@/lib/entityColors";
-import { TAB_BUTTON_BASE_STYLES, TAB_BUTTON_INDICATOR_STYLES } from "@/lib/styleConstants";
-import { Tag, useDuplicateSprintMutation, useArchiveSprintMutation } from "@/state/api";
+import {
+  TAB_BUTTON_BASE_STYLES,
+  TAB_BUTTON_INDICATOR_STYLES,
+} from "@/lib/styleConstants";
+import {
+  Tag,
+  useDuplicateSprintMutation,
+  useArchiveSprintMutation,
+} from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
@@ -62,13 +69,19 @@ const SprintHeader = ({
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [includeFinishedTasks, setIncludeFinishedTasks] = useState(false);
   const [newSprintTitle, setNewSprintTitle] = useState("");
-  const [duplicateSprint, { isLoading: isDuplicating }] = useDuplicateSprintMutation();
-  const [archiveSprint, { isLoading: isArchiving }] = useArchiveSprintMutation();
+  const [duplicateSprint, { isLoading: isDuplicating }] =
+    useDuplicateSprintMutation();
+  const [archiveSprint, { isLoading: isArchiving }] =
+    useArchiveSprintMutation();
 
   const handleDuplicate = async () => {
     try {
       const title = newSprintTitle.trim() || `${sprintTitle} (Copy)`;
-      const newSprint = await duplicateSprint({ sprintId, title, includeFinishedTasks }).unwrap();
+      const newSprint = await duplicateSprint({
+        sprintId,
+        title,
+        includeFinishedTasks,
+      }).unwrap();
       setShowDuplicateConfirm(false);
       setIncludeFinishedTasks(false);
       setNewSprintTitle("");
@@ -104,19 +117,19 @@ const SprintHeader = ({
           This sprint is inactive
         </div>
       )}
-      
+
       {/* Sprint Title and Dates */}
-      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
+      <div className="pt-6 pb-6 lg:pt-8 lg:pb-4">
         <div className="flex flex-col gap-2">
           <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-800 dark:text-white">
             {sprintTitle}
-            <span className="inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+            <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
               {totalTasks} tasks · {totalPoints} pts
             </span>
             <button
               onClick={() => setShowDuplicateConfirm(true)}
               disabled={isDuplicating}
-              className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 disabled:opacity-50"
+              className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
               aria-label="Duplicate sprint"
               title="Duplicate sprint"
             >
@@ -138,7 +151,7 @@ const SprintHeader = ({
             >
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     New Sprint Name
                   </label>
                   <input
@@ -146,10 +159,10 @@ const SprintHeader = ({
                     value={newSprintTitle}
                     onChange={(e) => setNewSprintTitle(e.target.value)}
                     placeholder={`${sprintTitle} (Copy)`}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
+                    className="dark:border-dark-tertiary dark:bg-dark-tertiary w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <input
                     type="checkbox"
                     checked={includeFinishedTasks}
@@ -163,7 +176,7 @@ const SprintHeader = ({
             <button
               onClick={() => setShowArchiveConfirm(true)}
               disabled={isArchiving}
-              className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 disabled:opacity-50"
+              className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
               aria-label={isActive ? "Archive sprint" : "Unarchive sprint"}
               title={isActive ? "Archive sprint" : "Unarchive sprint"}
             >
@@ -174,9 +187,10 @@ const SprintHeader = ({
               onClose={() => setShowArchiveConfirm(false)}
               onConfirm={handleArchive}
               title={isActive ? "Archive Sprint" : "Unarchive Sprint"}
-              message={isActive 
-                ? `Archive "${sprintTitle}"? It will be hidden from the sidebar by default.`
-                : `Unarchive "${sprintTitle}"? It will be visible in the sidebar again.`
+              message={
+                isActive
+                  ? `Archive "${sprintTitle}"? It will be hidden from the sidebar by default.`
+                  : `Unarchive "${sprintTitle}"? It will be visible in the sidebar again.`
               }
               confirmLabel={isActive ? "Archive" : "Unarchive"}
               isLoading={isArchiving}
@@ -211,7 +225,7 @@ const SprintHeader = ({
 
       {/* TABS */}
       <div className="flex flex-wrap items-end justify-between gap-1">
-        <div className="relative flex items-end gap-2 md:gap-4 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 dark:after:bg-stroke-dark">
+        <div className="dark:after:bg-stroke-dark relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 md:gap-4">
           <TabButton
             name="Board"
             icon={<BiColumns className="h-5 w-5" />}
@@ -261,15 +275,15 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
   return (
     <button
       className={`${TAB_BUTTON_BASE_STYLES} ${
-        isActive 
-          ? "font-bold text-gray-900 dark:text-white" 
+        isActive
+          ? "font-bold text-gray-900 dark:text-white"
           : "text-gray-500 hover:text-purple-500 dark:text-neutral-500 dark:hover:text-purple-400"
       }`}
       style={isActive ? { color: SPRINT_MAIN_COLOR } : undefined}
       onClick={() => setActiveTab(name)}
     >
       {isActive && (
-        <span 
+        <span
           className={TAB_BUTTON_INDICATOR_STYLES}
           style={{ backgroundColor: SPRINT_MAIN_COLOR }}
         />

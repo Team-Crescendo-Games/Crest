@@ -11,8 +11,17 @@ type Props = {
   sortState: SortState;
 };
 
-const UserBoardView = ({ userId, setIsModalNewTaskOpen, filterState, sortState }: Props) => {
-  const { data: tasks, isLoading, error } = useGetTasksAssignedToUserQuery(userId);
+const UserBoardView = ({
+  userId,
+  setIsModalNewTaskOpen,
+  filterState,
+  sortState,
+}: Props) => {
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = useGetTasksAssignedToUserQuery(userId);
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;

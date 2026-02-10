@@ -35,18 +35,26 @@ const SprintSettings = ({ params }: Props) => {
   useEffect(() => {
     if (sprint) {
       setTitle(sprint.title);
-      setStartDate(sprint.startDate ? new Date(sprint.startDate).toISOString().split("T")[0] : "");
-      setDueDate(sprint.dueDate ? new Date(sprint.dueDate).toISOString().split("T")[0] : "");
+      setStartDate(
+        sprint.startDate
+          ? new Date(sprint.startDate).toISOString().split("T")[0]
+          : "",
+      );
+      setDueDate(
+        sprint.dueDate
+          ? new Date(sprint.dueDate).toISOString().split("T")[0]
+          : "",
+      );
     }
   }, [sprint]);
 
   const handleSave = async () => {
     if (!title.trim()) return;
-    await updateSprint({ 
-      sprintId: Number(id), 
-      title: title.trim(), 
+    await updateSprint({
+      sprintId: Number(id),
+      title: title.trim(),
       startDate: startDate || undefined,
-      dueDate: dueDate || undefined
+      dueDate: dueDate || undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -122,16 +130,19 @@ const SprintSettings = ({ params }: Props) => {
             {isUpdating ? "Saving..." : "Save Changes"}
           </button>
           {saved && (
-            <span className="text-sm text-green-600 dark:text-green-400">Saved!</span>
+            <span className="text-sm text-green-600 dark:text-green-400">
+              Saved!
+            </span>
           )}
         </div>
 
-        <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
+        <div className="dark:border-stroke-dark border-t border-gray-200 pt-6">
           <h3 className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
             Danger Zone
           </h3>
           <p className="mb-3 text-sm text-gray-500 dark:text-neutral-400">
-            Deleting this sprint will remove all task associations but will not delete the tasks themselves.
+            Deleting this sprint will remove all task associations but will not
+            delete the tasks themselves.
           </p>
           <button
             onClick={() => setShowDeleteConfirm(true)}

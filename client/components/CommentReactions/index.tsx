@@ -4,7 +4,11 @@ import { useState, useMemo, useRef } from "react";
 import { Smile } from "lucide-react";
 import EmojiPicker from "@/components/EmojiPicker";
 import ReactionBadge from "@/components/ReactionBadge";
-import { CommentReaction, GroupedReaction, useToggleReactionMutation } from "@/state/api";
+import {
+  CommentReaction,
+  GroupedReaction,
+  useToggleReactionMutation,
+} from "@/state/api";
 
 interface CommentReactionsProps {
   commentId: number;
@@ -14,15 +18,23 @@ interface CommentReactionsProps {
   hideAddButton?: boolean;
 }
 
-const CommentReactions = ({ commentId, reactions, currentUserId, hideAddButton }: CommentReactionsProps) => {
+const CommentReactions = ({
+  commentId,
+  reactions,
+  currentUserId,
+  hideAddButton,
+}: CommentReactionsProps) => {
   const [showPicker, setShowPicker] = useState(false);
   const [toggleReaction] = useToggleReactionMutation();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Group reactions by emoji and sort by count descending (Requirement 2.5)
   const groupedReactions = useMemo((): GroupedReaction[] => {
-    const groups: Record<string, { users: { userId: number; username: string }[] }> = {};
-    
+    const groups: Record<
+      string,
+      { users: { userId: number; username: string }[] }
+    > = {};
+
     for (const reaction of reactions) {
       if (!groups[reaction.emoji]) {
         groups[reaction.emoji] = { users: [] };
@@ -40,8 +52,8 @@ const CommentReactions = ({ commentId, reactions, currentUserId, hideAddButton }
         emoji,
         count: data.users.length,
         users: data.users,
-        reactedByCurrentUser: currentUserId 
-          ? data.users.some(u => u.userId === currentUserId)
+        reactedByCurrentUser: currentUserId
+          ? data.users.some((u) => u.userId === currentUserId)
           : false,
       }))
       .sort((a, b) => b.count - a.count); // Sort by count descending
@@ -53,7 +65,7 @@ const CommentReactions = ({ commentId, reactions, currentUserId, hideAddButton }
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 mt-1">
+    <div className="mt-1 flex flex-wrap items-center gap-1">
       {/* Existing reaction badges */}
       {groupedReactions.map((group) => (
         <ReactionBadge
@@ -65,19 +77,19 @@ const CommentReactions = ({ commentId, reactions, currentUserId, hideAddButton }
           onClick={() => handleToggleReaction(group.emoji)}
         />
       ))}
-      
+
       {/* Add reaction button - inline with badges (hidden when FloatingReactionButton is used) */}
       {!hideAddButton && (
         <div className="relative">
           <button
             ref={triggerRef}
             onClick={() => setShowPicker(!showPicker)}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-tertiary dark:hover:text-gray-300"
+            className="dark:hover:bg-dark-tertiary flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:text-gray-300"
             title="Add reaction"
           >
             <Smile size={14} />
           </button>
-          
+
           {showPicker && (
             <EmojiPicker
               onSelect={handleToggleReaction}
@@ -92,14 +104,14 @@ const CommentReactions = ({ commentId, reactions, currentUserId, hideAddButton }
 };
 
 /** Floating add reaction button to be placed on comment bubble corner */
-export const FloatingReactionButton = ({ 
-  commentId, 
-  currentUserId, 
+export const FloatingReactionButton = ({
+  commentId,
+  currentUserId,
   position,
   inline = false,
-}: { 
-  commentId: number; 
-  currentUserId: number | undefined; 
+}: {
+  commentId: number;
+  currentUserId: number | undefined;
   position: "left" | "right";
   /** When true, renders without absolute positioning (for use in a container) */
   inline?: boolean;
@@ -114,12 +126,11 @@ export const FloatingReactionButton = ({
     setShowPicker(false);
   };
 
-  const positionClasses = position === "left" 
-    ? "-left-2 -top-2" 
-    : "-right-2 -top-2";
+  const positionClasses =
+    position === "left" ? "-left-2 -top-2" : "-right-2 -top-2";
 
-  const wrapperClasses = inline 
-    ? "relative" 
+  const wrapperClasses = inline
+    ? "relative"
     : `absolute ${positionClasses} z-10`;
 
   const buttonClasses = inline
@@ -136,7 +147,7 @@ export const FloatingReactionButton = ({
       >
         <Smile size={14} />
       </button>
-      
+
       {showPicker && (
         <EmojiPicker
           onSelect={handleToggleReaction}

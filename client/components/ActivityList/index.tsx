@@ -15,7 +15,7 @@ const ActivityList = ({
 }: ActivityListProps) => {
   // Sort activities by createdAt in descending order (newest first)
   const sortedActivities = [...activities].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   return (

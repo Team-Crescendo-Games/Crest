@@ -10,8 +10,8 @@ const STATUS_INT_TO_STRING: Record<number, string> = {
 const STATUS_STRING_TO_INT: Record<string, number> = {
     "Input Queue": 0,
     "Work In Progress": 1,
-    "Review": 2,
-    "Done": 3,
+    Review: 2,
+    Done: 3,
 };
 
 export const statusIntToString = (status: number | null): string | null => {
@@ -19,5 +19,5 @@ export const statusIntToString = (status: number | null): string | null => {
 };
 
 export const statusStringToInt = (status: string | null | undefined): number | null => {
-    return status ? STATUS_STRING_TO_INT[status] ?? null : null;
+    return status ? (STATUS_STRING_TO_INT[status] ?? null) : null;
 };

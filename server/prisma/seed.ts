@@ -31,16 +31,16 @@ async function deleteAllData(orderedFileNames: string[]) {
 async function resetSequences() {
     // Reset PostgreSQL sequences to max ID + 1 for all tables with auto-increment
     const sequences = [
-        { table: 'User', column: 'userId' },
-        { table: 'Project', column: 'id' },
-        { table: 'Task', column: 'id' },
-        { table: 'Tag', column: 'id' },
-        { table: 'TaskTag', column: 'id' },
-        { table: 'TaskAssignment', column: 'id' },
-        { table: 'Attachment', column: 'id' },
-        { table: 'Comment', column: 'id' },
-        { table: 'Sprint', column: 'id' },
-        { table: 'SprintTask', column: 'id' },
+        { table: "User", column: "userId" },
+        { table: "Project", column: "id" },
+        { table: "Task", column: "id" },
+        { table: "Tag", column: "id" },
+        { table: "TaskTag", column: "id" },
+        { table: "TaskAssignment", column: "id" },
+        { table: "Attachment", column: "id" },
+        { table: "Comment", column: "id" },
+        { table: "Sprint", column: "id" },
+        { table: "SprintTask", column: "id" },
     ];
 
     for (const { table, column } of sequences) {

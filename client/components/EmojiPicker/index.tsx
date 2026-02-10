@@ -13,7 +13,10 @@ interface EmojiPickerProps {
 
 const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
   const pickerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [position, setPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   // Calculate position based on trigger element - run immediately on mount
   useEffect(() => {
@@ -23,7 +26,7 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
         const pickerHeight = 220; // approximate height of picker
         const spaceAbove = rect.top;
         const spaceBelow = window.innerHeight - rect.bottom;
-        
+
         // Prefer opening upward, but open downward if not enough space
         if (spaceAbove >= pickerHeight || spaceAbove > spaceBelow) {
           // Open upward
@@ -40,10 +43,10 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
         }
       }
     };
-    
+
     // Calculate immediately
     calculatePosition();
-    
+
     // Also recalculate on scroll/resize
     window.addEventListener("scroll", calculatePosition, true);
     window.addEventListener("resize", calculatePosition);
@@ -55,9 +58,15 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
         // Also check if click was on the trigger
-        if (triggerRef?.current && triggerRef.current.contains(event.target as Node)) {
+        if (
+          triggerRef?.current &&
+          triggerRef.current.contains(event.target as Node)
+        ) {
           return;
         }
         onClose();
@@ -79,35 +88,39 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
         left: position.left,
         zIndex: 9999,
       }}
-      className="rounded-lg border border-gray-200 bg-white shadow-lg dark:border-stroke-dark dark:bg-dark-secondary"
+      className="dark:border-stroke-dark dark:bg-dark-secondary rounded-lg border border-gray-200 bg-white shadow-lg"
     >
       <div className="max-h-52 overflow-y-auto p-2">
         <table className="border-collapse">
           <tbody>
-            {Array.from({ length: Math.ceil(AVAILABLE_EMOJIS.length / 6) }).map((_, rowIndex) => (
-              <tr key={rowIndex}>
-                {AVAILABLE_EMOJIS.slice(rowIndex * 6, rowIndex * 6 + 6).map((emoji) => (
-                  <td key={emoji.id} className="p-0.5">
-                    <button
-                      onClick={() => {
-                        onSelect(emoji.id);
-                        onClose();
-                      }}
-                      className="flex h-9 w-9 items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-dark-tertiary"
-                      title={emoji.label}
-                    >
-                      <Image
-                        src={emoji.src}
-                        alt={emoji.label}
-                        width={28}
-                        height={28}
-                        className="h-7 w-7 rounded object-cover"
-                      />
-                    </button>
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {Array.from({ length: Math.ceil(AVAILABLE_EMOJIS.length / 6) }).map(
+              (_, rowIndex) => (
+                <tr key={rowIndex}>
+                  {AVAILABLE_EMOJIS.slice(rowIndex * 6, rowIndex * 6 + 6).map(
+                    (emoji) => (
+                      <td key={emoji.id} className="p-0.5">
+                        <button
+                          onClick={() => {
+                            onSelect(emoji.id);
+                            onClose();
+                          }}
+                          className="dark:hover:bg-dark-tertiary flex h-9 w-9 items-center justify-center rounded hover:bg-gray-100"
+                          title={emoji.label}
+                        >
+                          <Image
+                            src={emoji.src}
+                            alt={emoji.label}
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 rounded object-cover"
+                          />
+                        </button>
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>

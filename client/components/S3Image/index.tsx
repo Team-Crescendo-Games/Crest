@@ -51,13 +51,13 @@ const setCachedPresignedUrl = (s3Key: string, url: string): void => {
   });
 };
 
-const S3Image = ({ 
-  s3Key, 
-  alt, 
-  width, 
-  height, 
-  className, 
-  fallbackClassName, 
+const S3Image = ({
+  s3Key,
+  alt,
+  width,
+  height,
+  className,
+  fallbackClassName,
   fallbackType = "user",
   version = 0,
   style,
@@ -67,7 +67,7 @@ const S3Image = ({
   // Check cache first
   const cachedPresignedUrl = s3Key ? getCachedPresignedUrl(s3Key) : null;
   const shouldFetchPresigned = !cachedPresignedUrl && !!s3Key;
-  
+
   const { data, isLoading, error } = useGetPresignedUrlQuery(s3Key!, {
     skip: !shouldFetchPresigned,
     refetchOnMountOrArgChange: version,
@@ -96,7 +96,7 @@ const S3Image = ({
     const isLargeContainer = width > 100 || height > 100;
     const iconSize = isLargeContainer ? 48 : Math.min(width, height) * 0.6;
     const iconClass = "text-gray-500 dark:text-gray-400";
-    
+
     switch (fallbackType) {
       case "image":
         return <FileImage className={iconClass} size={iconSize} />;
@@ -109,20 +109,28 @@ const S3Image = ({
   };
 
   // Show fallback if no s3Key, loading, no URL, error, or image load error
-  const showFallback = !s3Key || (isLoading && !cachedPresignedUrl) || !imageUrl || error || hasError;
+  const showFallback =
+    !s3Key ||
+    (isLoading && !cachedPresignedUrl) ||
+    !imageUrl ||
+    error ||
+    hasError;
 
   if (showFallback) {
     const isLargeContainer = width > 100 || height > 100;
     const fallbackWidth = isLargeContainer ? 120 : width;
     const fallbackHeight = isLargeContainer ? 80 : height;
-    
+
     return (
-      <div 
+      <div
         className="flex items-center justify-center"
         style={{ width, height }}
       >
-        <div 
-          className={fallbackClassName || `flex items-center justify-center rounded-lg bg-gray-200 dark:bg-dark-tertiary ${className}`} 
+        <div
+          className={
+            fallbackClassName ||
+            `dark:bg-dark-tertiary flex items-center justify-center rounded-lg bg-gray-200 ${className}`
+          }
           style={{ width: fallbackWidth, height: fallbackHeight }}
         >
           {getFallbackIcon()}

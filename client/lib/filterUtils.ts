@@ -19,7 +19,7 @@ export function isFilterActive(filterState: FilterState): boolean {
  */
 export function matchesTagFilter(
   task: Task,
-  selectedTagIds: number[]
+  selectedTagIds: number[],
 ): boolean {
   // If no tags selected, all tasks pass
   if (selectedTagIds.length === 0) {
@@ -36,7 +36,7 @@ export function matchesTagFilter(
  */
 export function matchesPriorityFilter(
   task: Task,
-  selectedPriorities: Priority[]
+  selectedPriorities: Priority[],
 ): boolean {
   // If no priorities selected, all tasks pass
   if (selectedPriorities.length === 0) {
@@ -119,7 +119,7 @@ export function isDueThisMonth(dueDate: string): boolean {
  */
 export function matchesDueDateFilter(
   task: Task,
-  selectedDueDateOptions: DueDateOption[]
+  selectedDueDateOptions: DueDateOption[],
 ): boolean {
   // If no due date options selected, all tasks pass
   if (selectedDueDateOptions.length === 0) {
@@ -174,7 +174,7 @@ export function matchesDueDateFilter(
  */
 export function matchesAssigneeFilter(
   task: Task,
-  selectedAssigneeIds: number[]
+  selectedAssigneeIds: number[],
 ): boolean {
   // If no assignees selected, all tasks pass
   if (selectedAssigneeIds.length === 0) {
@@ -208,7 +208,7 @@ export function matchesSearchText(task: Task, searchText: string): boolean {
 
   const titleMatch = task.title?.toLowerCase().includes(trimmed) ?? false;
   const descMatch = task.description?.toLowerCase().includes(trimmed) ?? false;
-  
+
   return titleMatch || descMatch;
 }
 
@@ -222,19 +222,25 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
     const passesTagFilter = matchesTagFilter(task, filterState.selectedTagIds);
     const passesPriorityFilter = matchesPriorityFilter(
       task,
-      filterState.selectedPriorities
+      filterState.selectedPriorities,
     );
     const passesDueDateFilter = matchesDueDateFilter(
       task,
-      filterState.selectedDueDateOptions
+      filterState.selectedDueDateOptions,
     );
     const passesAssigneeFilter = matchesAssigneeFilter(
       task,
-      filterState.selectedAssigneeIds
+      filterState.selectedAssigneeIds,
     );
     const passesSearchText = matchesSearchText(task, filterState.searchText);
 
-    return passesTagFilter && passesPriorityFilter && passesDueDateFilter && passesAssigneeFilter && passesSearchText;
+    return (
+      passesTagFilter &&
+      passesPriorityFilter &&
+      passesDueDateFilter &&
+      passesAssigneeFilter &&
+      passesSearchText
+    );
   });
 }
 
@@ -275,7 +281,9 @@ export function applySorting(tasks: Task[], sortState: SortState): Task[] {
         if (!a.dueDate && !b.dueDate) comparison = 0;
         else if (!a.dueDate) comparison = 1;
         else if (!b.dueDate) comparison = -1;
-        else comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        else
+          comparison =
+            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         break;
 
       case "priority":

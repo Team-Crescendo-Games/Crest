@@ -19,7 +19,10 @@ type Props = {
   children?: React.ReactNode;
 };
 
-const variantStyles: Record<ConfirmationVariant, { icon: React.ReactNode; buttonClass: string }> = {
+const variantStyles: Record<
+  ConfirmationVariant,
+  { icon: React.ReactNode; buttonClass: string }
+> = {
   danger: {
     icon: <Trash2 className="h-5 w-5 text-red-500" />,
     buttonClass: "bg-red-600 hover:bg-red-700 text-white",
@@ -65,11 +68,11 @@ const ConfirmationMenu = ({
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
+      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg dark:bg-dark-secondary animate-scale-in"
+        className="dark:bg-dark-secondary animate-scale-in w-full max-w-sm rounded-lg bg-white p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
@@ -95,7 +98,7 @@ const ConfirmationMenu = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-stroke-dark dark:text-gray-300 dark:hover:bg-dark-tertiary"
+            className="dark:border-stroke-dark dark:hover:bg-dark-tertiary rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300"
           >
             {cancelLabel}
           </button>
@@ -109,7 +112,7 @@ const ConfirmationMenu = ({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

@@ -46,7 +46,10 @@ const ProjectSelector = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
@@ -54,7 +57,8 @@ const ProjectSelector = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const defaultInputClass = "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
+  const defaultInputClass =
+    "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
   const inputClass = inputClassName || defaultInputClass;
 
   return (
@@ -87,19 +91,19 @@ const ProjectSelector = ({
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               <X size={16} />
             </button>
           ) : (
             <ChevronDown
               size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"
             />
           )}
         </div>
         {showDropdown && (
-          <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+          <div className="dark:border-dark-tertiary dark:bg-dark-secondary absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => {
                 const isCurrentlySelected = selectedProject?.id === project.id;
@@ -107,27 +111,33 @@ const ProjectSelector = ({
                   <button
                     key={project.id}
                     type="button"
-                    onClick={() => !isCurrentlySelected && handleSelect(project)}
+                    onClick={() =>
+                      !isCurrentlySelected && handleSelect(project)
+                    }
                     disabled={isCurrentlySelected}
                     className={`flex w-full flex-col px-3 py-2 text-left ${
                       isCurrentlySelected
-                        ? "cursor-not-allowed bg-gray-50 dark:bg-dark-tertiary/50"
-                        : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                        ? "dark:bg-dark-tertiary/50 cursor-not-allowed bg-gray-50"
+                        : "dark:hover:bg-dark-tertiary hover:bg-gray-100"
                     }`}
                   >
-                    <span className={`text-sm font-medium ${
-                      isCurrentlySelected
-                        ? "text-gray-400 dark:text-gray-500"
-                        : "text-gray-900 dark:text-white"
-                    }`}>
+                    <span
+                      className={`text-sm font-medium ${
+                        isCurrentlySelected
+                          ? "text-gray-400 dark:text-gray-500"
+                          : "text-gray-900 dark:text-white"
+                      }`}
+                    >
                       {project.name}
                     </span>
                     {project.description && (
-                      <span className={`text-xs truncate ${
-                        isCurrentlySelected
-                          ? "text-gray-300 dark:text-gray-600"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}>
+                      <span
+                        className={`truncate text-xs ${
+                          isCurrentlySelected
+                            ? "text-gray-300 dark:text-gray-600"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
                         {project.description}
                       </span>
                     )}

@@ -49,7 +49,7 @@ const AssigneeAvatarGroup = ({
       ))}
       {overflowCount > 0 && (
         <div
-          className="-ml-2 flex items-center justify-center rounded-full bg-gray-300 dark:bg-dark-tertiary text-xs font-medium text-gray-700 dark:text-gray-200"
+          className="dark:bg-dark-tertiary -ml-2 flex items-center justify-center rounded-full bg-gray-300 text-xs font-medium text-gray-700 dark:text-gray-200"
           style={{ width: size, height: size, zIndex: 0 }}
         >
           +{overflowCount}

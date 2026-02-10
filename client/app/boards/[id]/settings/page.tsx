@@ -40,7 +40,11 @@ const BoardSettings = ({ params }: Props) => {
 
   const handleSave = async () => {
     if (!name.trim()) return;
-    await updateProject({ projectId: Number(id), name: name.trim(), description: description.trim() || undefined });
+    await updateProject({
+      projectId: Number(id),
+      name: name.trim(),
+      description: description.trim() || undefined,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -103,16 +107,19 @@ const BoardSettings = ({ params }: Props) => {
             {isUpdating ? "Saving..." : "Save Changes"}
           </button>
           {saved && (
-            <span className="text-sm text-green-600 dark:text-green-400">Saved!</span>
+            <span className="text-sm text-green-600 dark:text-green-400">
+              Saved!
+            </span>
           )}
         </div>
 
-        <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
+        <div className="dark:border-stroke-dark border-t border-gray-200 pt-6">
           <h3 className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
             Danger Zone
           </h3>
           <p className="mb-3 text-sm text-gray-500 dark:text-neutral-400">
-            Deleting this board will permanently remove all its tasks, comments, and attachments.
+            Deleting this board will permanently remove all its tasks, comments,
+            and attachments.
           </p>
           <button
             onClick={() => setShowDeleteConfirm(true)}

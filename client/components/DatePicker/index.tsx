@@ -2,7 +2,19 @@
 
 import { parseLocalDate } from "@/lib/dateUtils";
 import { useState, useRef, useEffect } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, parse, isValid } from "date-fns";
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  parse,
+  isValid,
+} from "date-fns";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 type DatePickerProps = {
@@ -16,7 +28,13 @@ type DatePickerProps = {
 
 const DAYS_OF_WEEK = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DatePickerProps) => {
+const DatePicker = ({
+  value,
+  onChange,
+  onClose,
+  className = "",
+  minDate,
+}: DatePickerProps) => {
   const [isReady, setIsReady] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
     return value ? parseLocalDate(value) : new Date();
@@ -65,12 +83,22 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    
+
     // Try to parse the date in various formats
-    const formats = ["MM/dd/yyyy", "M/d/yyyy", "MM-dd-yyyy", "M-d-yyyy", "yyyy-MM-dd"];
+    const formats = [
+      "MM/dd/yyyy",
+      "M/d/yyyy",
+      "MM-dd-yyyy",
+      "M-d-yyyy",
+      "yyyy-MM-dd",
+    ];
     for (const fmt of formats) {
       const parsed = parse(newValue, fmt, new Date());
-      if (isValid(parsed) && parsed.getFullYear() > 1900 && parsed.getFullYear() < 2100) {
+      if (
+        isValid(parsed) &&
+        parsed.getFullYear() > 1900 &&
+        parsed.getFullYear() < 2100
+      ) {
         const isoDate = format(parsed, "yyyy-MM-dd");
         onChange(isoDate);
         setViewDate(parsed);
@@ -104,7 +132,10 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         onClose?.();
       }
     };
@@ -115,7 +146,7 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
   return (
     <div
       ref={containerRef}
-      className={`w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary transition-opacity duration-75 ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
+      className={`dark:border-dark-tertiary dark:bg-dark-secondary w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg transition-opacity duration-75 ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Manual input field */}
@@ -127,7 +158,7 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
           placeholder="MM/DD/YYYY"
-          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
+          className="dark:border-dark-tertiary dark:bg-dark-tertiary w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:text-white dark:placeholder-gray-500"
         />
       </div>
 
@@ -135,7 +166,7 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={handlePrevMonth}
-          className="rounded p-1 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+          className="dark:hover:bg-dark-tertiary rounded p-1 hover:bg-gray-100"
         >
           <ChevronLeft size={16} className="text-gray-600 dark:text-gray-300" />
         </button>
@@ -144,16 +175,22 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
         </span>
         <button
           onClick={handleNextMonth}
-          className="rounded p-1 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+          className="dark:hover:bg-dark-tertiary rounded p-1 hover:bg-gray-100"
         >
-          <ChevronRight size={16} className="text-gray-600 dark:text-gray-300" />
+          <ChevronRight
+            size={16}
+            className="text-gray-600 dark:text-gray-300"
+          />
         </button>
       </div>
 
       {/* Day of week headers */}
       <div className="mb-1 grid grid-cols-7 gap-1">
         {DAYS_OF_WEEK.map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+          <div
+            key={day}
+            className="text-center text-xs font-medium text-gray-500 dark:text-gray-400"
+          >
             {day}
           </div>
         ))}
@@ -169,7 +206,9 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const isCurrentMonth = isSameMonth(day, viewDate);
           const isTodayDate = isToday(day);
-          const isBeforeMinDate = minDate ? day < parseLocalDate(minDate) : false;
+          const isBeforeMinDate = minDate
+            ? day < parseLocalDate(minDate)
+            : false;
           const isDisabled = isBeforeMinDate;
 
           return (
@@ -181,12 +220,12 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
                 isDisabled
                   ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
                   : isSelected
-                  ? "bg-blue-600 text-white"
-                  : isTodayDate
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                  : isCurrentMonth
-                  ? "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-tertiary"
-                  : "text-gray-400 dark:text-gray-500"
+                    ? "bg-blue-600 text-white"
+                    : isTodayDate
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      : isCurrentMonth
+                        ? "dark:hover:bg-dark-tertiary text-gray-700 hover:bg-gray-100 dark:text-gray-200"
+                        : "text-gray-400 dark:text-gray-500"
               }`}
             >
               {format(day, "d")}
@@ -197,7 +236,7 @@ const DatePicker = ({ value, onChange, onClose, className = "", minDate }: DateP
 
       {/* Footer with clear button */}
       {selectedDate && (
-        <div className="mt-2 border-t border-gray-200 pt-2 dark:border-dark-tertiary">
+        <div className="dark:border-dark-tertiary mt-2 border-t border-gray-200 pt-2">
           <button
             onClick={handleClear}
             className="flex w-full items-center justify-center gap-1 rounded py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"

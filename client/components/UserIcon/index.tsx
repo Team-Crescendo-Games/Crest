@@ -17,21 +17,21 @@ type UserIconProps = {
   opacity?: string;
 };
 
-const UserIcon = ({ 
-  userId, 
-  username, 
-  profilePictureExt, 
-  size = 32, 
-  className = "", 
+const UserIcon = ({
+  userId,
+  username,
+  profilePictureExt,
+  size = 32,
+  className = "",
   tooltipLabel = "User",
-  opacity = "opacity-100"
+  opacity = "opacity-100",
 }: UserIconProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const hoverRingStyle = isHovered ? `0 0 0 2px ${APP_ACCENT_LIGHT}` : "none";
-  
+
   const content = (
-    <div 
-      className={`relative group ${opacity}`}
+    <div
+      className={`group relative ${opacity}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -41,20 +41,23 @@ const UserIcon = ({
           alt={username || "User"}
           width={size}
           height={size}
-          className={`rounded-full object-cover cursor-pointer transition-all duration-200 ${className}`}
+          className={`cursor-pointer rounded-full object-cover transition-all duration-200 ${className}`}
           style={{ boxShadow: hoverRingStyle }}
         />
       ) : (
-        <div 
-          className={`flex items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary cursor-pointer transition-all duration-200 ${className}`} 
+        <div
+          className={`dark:bg-dark-tertiary flex cursor-pointer items-center justify-center rounded-full bg-gray-200 transition-all duration-200 ${className}`}
           style={{ width: size, height: size, boxShadow: hoverRingStyle }}
         >
-          <User className="text-gray-500 dark:text-gray-400" size={size * 0.6} />
+          <User
+            className="text-gray-500 dark:text-gray-400"
+            size={size * 0.6}
+          />
         </div>
       )}
-      
+
       {/* Tooltip */}
-      <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+      <div className="pointer-events-none absolute top-1/2 left-full z-10 ml-2 -translate-y-1/2 transform rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         {tooltipLabel}: {username || "Unknown"}
       </div>
     </div>
@@ -63,7 +66,11 @@ const UserIcon = ({
   // If we have a userId, wrap in Link for navigation
   if (userId) {
     return (
-      <Link href={`/users/${userId}`} className="inline-block" onClick={(e) => e.stopPropagation()}>
+      <Link
+        href={`/users/${userId}`}
+        className="inline-block"
+        onClick={(e) => e.stopPropagation()}
+      >
         {content}
       </Link>
     );

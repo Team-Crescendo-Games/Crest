@@ -3,10 +3,21 @@
 import Header from "@/components/Header";
 import TaskCard from "@/components/TaskCard";
 import TaskDetailModal from "@/components/TaskDetailModal";
-import { Task, Status, useGetTasksAssignedToUserQuery, useGetTasksAuthoredByUserQuery } from "@/state/api";
+import {
+  Task,
+  Status,
+  useGetTasksAssignedToUserQuery,
+  useGetTasksAuthoredByUserQuery,
+} from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useState } from "react";
-import { CheckCircle2, Clock, AlertCircle, UserCheck, FilePlus } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  UserCheck,
+  FilePlus,
+} from "lucide-react";
 
 type TabType = "assigned" | "created";
 
@@ -14,15 +25,11 @@ const HomePage = () => {
   const { data: authData, isLoading: authLoading } = useAuthUser();
   const userId = authData?.userDetails?.userId;
 
-  const { data: assignedTasks, isLoading: assignedLoading } = useGetTasksAssignedToUserQuery(
-    userId!,
-    { skip: !userId }
-  );
+  const { data: assignedTasks, isLoading: assignedLoading } =
+    useGetTasksAssignedToUserQuery(userId!, { skip: !userId });
 
-  const { data: authoredTasks, isLoading: authoredLoading } = useGetTasksAuthoredByUserQuery(
-    userId!,
-    { skip: !userId }
-  );
+  const { data: authoredTasks, isLoading: authoredLoading } =
+    useGetTasksAuthoredByUserQuery(userId!, { skip: !userId });
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,15 +46,24 @@ const HomePage = () => {
   };
 
   // Filter for open tasks (not Done)
-  const openAssignedTasks = assignedTasks?.filter((task) => task.status !== Status.Done) || [];
-  const openAuthoredTasks = authoredTasks?.filter((task) => task.status !== Status.Done) || [];
+  const openAssignedTasks =
+    assignedTasks?.filter((task) => task.status !== Status.Done) || [];
+  const openAuthoredTasks =
+    authoredTasks?.filter((task) => task.status !== Status.Done) || [];
 
-  const currentTasks = activeTab === "assigned" ? openAssignedTasks : openAuthoredTasks;
+  const currentTasks =
+    activeTab === "assigned" ? openAssignedTasks : openAuthoredTasks;
 
   // Group by status (for assigned tasks stats)
-  const todoTasks = openAssignedTasks.filter((t) => t.status === Status.InputQueue);
-  const wipTasks = openAssignedTasks.filter((t) => t.status === Status.WorkInProgress);
-  const reviewTasks = openAssignedTasks.filter((t) => t.status === Status.Review);
+  const todoTasks = openAssignedTasks.filter(
+    (t) => t.status === Status.InputQueue,
+  );
+  const wipTasks = openAssignedTasks.filter(
+    (t) => t.status === Status.WorkInProgress,
+  );
+  const reviewTasks = openAssignedTasks.filter(
+    (t) => t.status === Status.Review,
+  );
 
   const isLoading = authLoading || assignedLoading || authoredLoading;
 
@@ -65,21 +81,23 @@ const HomePage = () => {
 
       {/* Stats Cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
+        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-gray-100 p-2 dark:bg-dark-tertiary">
+            <div className="dark:bg-dark-tertiary rounded-full bg-gray-100 p-2">
               <Clock className="h-5 w-5 text-gray-600 dark:text-neutral-300" />
             </div>
             <div>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {todoTasks.length}
               </p>
-              <p className="text-sm text-gray-500 dark:text-neutral-400">To Do</p>
+              <p className="text-sm text-gray-500 dark:text-neutral-400">
+                To Do
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
+        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
               <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -95,7 +113,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
+        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
               <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -141,7 +159,7 @@ const HomePage = () => {
       {/* Task List */}
       <section>
         {currentTasks.length === 0 ? (
-          <div className="rounded-lg bg-white p-8 text-center shadow dark:bg-dark-secondary">
+          <div className="dark:bg-dark-secondary rounded-lg bg-white p-8 text-center shadow">
             <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
             <p className="text-gray-600 dark:text-neutral-300">
               {activeTab === "assigned"

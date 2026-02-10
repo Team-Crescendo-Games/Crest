@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getPresignedViewUrl, getPresignedDownloadUrl, getPresignedUploadUrl } from "../controllers/s3Controller.ts";
+import {
+    getPresignedViewUrl,
+    getPresignedDownloadUrl,
+    getPresignedUploadUrl,
+} from "../controllers/s3Controller.ts";
 
 const router = Router();
 

@@ -12,7 +12,12 @@ type Props = {
   sortState?: SortState;
 };
 
-const SprintTableView = ({ tasks, setIsModalNewTaskOpen, filterState, sortState }: Props) => {
+const SprintTableView = ({
+  tasks,
+  setIsModalNewTaskOpen,
+  filterState,
+  sortState,
+}: Props) => {
   return (
     <TableView
       tasks={tasks}

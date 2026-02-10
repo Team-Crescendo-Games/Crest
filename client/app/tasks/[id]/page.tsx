@@ -15,7 +15,11 @@ const TaskPage = ({ params }: Props) => {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
   const taskId = parseInt(id, 10);
-  const { data: task, isLoading, error } = useGetTaskByIdQuery(taskId, {
+  const {
+    data: task,
+    isLoading,
+    error,
+  } = useGetTaskByIdQuery(taskId, {
     skip: isNaN(taskId),
   });
 
@@ -55,7 +59,7 @@ const TaskPage = ({ params }: Props) => {
 
   const handleTaskNavigate = (newTaskId: number) => {
     // Preserve returnUrl when navigating between tasks
-    const url = returnUrl 
+    const url = returnUrl
       ? `/tasks/${newTaskId}?returnUrl=${encodeURIComponent(returnUrl)}`
       : `/tasks/${newTaskId}`;
     router.push(url);
