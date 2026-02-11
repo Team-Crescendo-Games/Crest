@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/app/redux";
-import { setIsDarkMode, setImpersonatedUser } from "@/state";
+import { setIsDarkMode, setImpersonatedUser, setIsSidebarCollapsed } from "@/state";
 import {
   useGetProjectsQuery,
   useGetSprintsQuery,
@@ -16,6 +16,8 @@ import {
   BarChart3,
   Bell,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Eye,
   EyeOff,
@@ -65,6 +67,7 @@ const Sidebar = () => {
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
   const createMenuRef = useRef<HTMLDivElement>(null);
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const isSidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
   const impersonatedUser = useAppSelector(
     (state) => state.global.impersonatedUser,
   );
@@ -198,7 +201,7 @@ const Sidebar = () => {
   const currentUserDetails = currentUser?.userDetails;
 
   return (
-    <div className="dark:bg-dark-secondary fixed z-20 flex h-full w-64 flex-col bg-white shadow-xl">
+    <div className={`dark:bg-dark-secondary fixed z-20 flex h-full flex-col bg-white shadow-xl transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-64"}`}>
       <ModalNewBoard
         isOpen={isModalNewBoardOpen}
         onClose={() => setIsModalNewBoardOpen(false)}
@@ -213,7 +216,7 @@ const Sidebar = () => {
       />
 
       {/* Impersonation banner - fixed at top */}
-      {impersonatedUser && (
+      {impersonatedUser && !isSidebarCollapsed && (
         <div className="shrink-0 flex items-center justify-between bg-amber-100 px-3 py-1.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
           <span className="truncate">
             Viewing as <strong>{impersonatedUser.username}</strong>
@@ -229,7 +232,7 @@ const Sidebar = () => {
       )}
 
       {/* LOGO & TITLE - fixed at top */}
-      <div className="shrink-0 flex items-center gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800">
+      <div className={`shrink-0 flex items-center border-b border-gray-100 dark:border-gray-800 ${isSidebarCollapsed ? "justify-center px-2 py-4" : "gap-3 px-6 py-4"}`}>
         <Image
           src="/favicon.ico"
           alt="Logo"
@@ -237,26 +240,28 @@ const Sidebar = () => {
           height={32}
           className="h-8 w-8 object-contain"
         />
-        <span className="text-xl font-semibold text-gray-900 dark:text-white">
-          Crest
-        </span>
+        {!isSidebarCollapsed && (
+          <span className="text-xl font-semibold text-gray-900 dark:text-white">
+            Crest
+          </span>
+        )}
       </div>
 
       {/* CREATE BUTTON - fixed at top */}
-      <div className="shrink-0 relative px-6 py-3" ref={createMenuRef}>
+      <div className={`shrink-0 relative ${isSidebarCollapsed ? "px-2 py-3" : "px-6 py-3"}`} ref={createMenuRef}>
         <button
           onClick={() => setShowCreateMenu((prev) => !prev)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors hover:opacity-90"
+          className={`flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90 ${isSidebarCollapsed ? "w-full p-2" : "w-full px-4 py-1.5"}`}
           style={{
             backgroundColor: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK,
             color: isDarkMode ? "#1f2937" : "#ffffff",
           }}
         >
           <Plus className="h-4 w-4" />
-          Create
+          {!isSidebarCollapsed && "Create"}
         </button>
         {showCreateMenu && (
-          <div className="dark:bg-dark-tertiary absolute top-full right-6 left-6 z-50 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700">
+          <div className={`dark:bg-dark-tertiary absolute z-50 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 ${isSidebarCollapsed ? "top-0 left-full ml-1" : "top-full right-6 left-6 w-auto"}`}>
             <button
               onClick={() => handleCreateOption("task")}
               className="dark:hover:bg-dark-secondary flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200"
@@ -285,6 +290,8 @@ const Sidebar = () => {
         )}
       </div>
 
+      {!isSidebarCollapsed && (
+      <>
       {/* OVERVIEW - fixed */}
       <div className="shrink-0">
         {/* ADMIN LINK - Above Overview */}
@@ -323,7 +330,7 @@ const Sidebar = () => {
             </div>
             <div className="animate-slide-down opacity-0" style={{ animationDelay: "50ms" }}>
               <SidebarSubLinkWithIcon
-                icon={User}
+                icon={ClipboardList}
                 label="My Tasks"
                 href={userId ? `/users/${userId}` : "/users"}
                 isDarkMode={isDarkMode}
@@ -527,10 +534,20 @@ const Sidebar = () => {
           )}
         </div>
       </div>
+      </>
+      )}
 
       {/* BOTTOM SECTION - User, Dark Mode, Sign Out - fixed at bottom */}
-      <div className="dark:bg-dark-secondary shrink-0 border-t border-gray-100 bg-white px-4 py-4 dark:border-gray-800">
-        <div className="flex items-center gap-1">
+      <div className={`dark:bg-dark-secondary mt-auto shrink-0 border-t border-gray-100 bg-white py-4 dark:border-gray-800 ${isSidebarCollapsed ? "px-2" : "px-4"}`}>
+        <div className={`flex items-center ${isSidebarCollapsed ? "flex-col gap-2" : "gap-1"}`}>
+          {/* Collapse toggle */}
+          <button
+            onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
+            className="dark:hover:bg-dark-tertiary rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </button>
           {/* User icon */}
           <Link
             href="/profile"
@@ -564,12 +581,14 @@ const Sidebar = () => {
           </button>
 
           {/* Sign out */}
-          <button
-            onClick={handleSignOut}
-            className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
-          >
-            Sign out
-          </button>
+          {!isSidebarCollapsed && (
+            <button
+              onClick={handleSignOut}
+              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </div>
     </div>

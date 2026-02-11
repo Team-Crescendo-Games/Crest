@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { Task as TaskType, useUpdateTaskStatusMutation } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
-import { Plus } from "lucide-react";
+import { ClipboardList, Diamond, Plus } from "lucide-react";
 import type { DropTargetMonitor, DragSourceMonitor } from "react-dnd";
 import TaskDetailModal from "@/components/TaskDetailModal";
 import TaskCard from "@/components/TaskCard";
@@ -155,8 +155,8 @@ const TaskColumn = ({
             style={{ backgroundColor: STATUS_COLORS_BY_NAME[status] }}
           />
           {status}{" "}
-          <span className="dark:bg-dark-tertiary ml-2 inline-block rounded-full bg-gray-100 px-2 py-1 text-center text-xs leading-none font-medium text-gray-600 dark:text-gray-300">
-            {tasksCount} tasks · {totalPoints} pts
+          <span className="dark:bg-dark-tertiary ml-2 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-center text-xs leading-none font-medium text-gray-600 dark:text-gray-300">
+            <ClipboardList className="h-3 w-3" /> {tasksCount} · <Diamond className="h-2.5 w-2.5" fill="currentColor" /> {totalPoints}
           </span>
         </h3>
         <div className="dark:from-stroke-dark dark:to-stroke-dark mt-3 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:via-gray-600" />

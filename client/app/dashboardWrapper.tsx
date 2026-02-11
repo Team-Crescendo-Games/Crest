@@ -10,6 +10,7 @@ import AuthProvider from "@/app/authProvider";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const isSidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
@@ -19,12 +20,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen w-full bg-gray-50 text-gray-900">
         <Sidebar />
-        <main className="dark:bg-dark-bg relative flex h-screen w-full flex-col bg-gray-50 md:pl-64">
+        <main className={`dark:bg-dark-bg relative flex h-screen w-full flex-col bg-gray-50 transition-all duration-300 ${isSidebarCollapsed ? "pl-16" : "pl-64"}`}>
           {/* Dot background pattern */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-25"
+            className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40"
             style={{
-              backgroundImage: `radial-gradient(circle, rgba(156, 163, 175, 0.4) 1px, transparent 1px)`,
+              backgroundImage: `radial-gradient(circle, rgba(156, 163, 175, 0.5) 1.2px, transparent 1.2px)`,
               backgroundSize: "20px 20px",
             }}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Table, User as UserIcon } from "lucide-react";
+import { ArrowLeft, ClipboardList, Diamond, Table, User as UserIcon } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import Link from "next/link";
 import React from "react";
@@ -83,8 +83,8 @@ const UserHeader = ({
               <h1 className="text-2xl font-semibold dark:text-white">
                 {user.fullName || user.username}
               </h1>
-              <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
-                {totalTasks} tasks · {totalPoints} pts
+              <span className="dark:bg-dark-tertiary inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
+                <ClipboardList className="h-3.5 w-3.5" /> {totalTasks} · <Diamond className="h-3 w-3" fill="currentColor" /> {totalPoints}
               </span>
               <div className="group relative cursor-pointer">
                 <RefreshButton onRefresh={onRefresh} label="User" />
