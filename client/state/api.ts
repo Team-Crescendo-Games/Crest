@@ -79,6 +79,7 @@ export interface Activity {
   user: {
     userId: number;
     username: string;
+    fullName?: string;
   };
 }
 
@@ -157,6 +158,7 @@ export interface TaskAssignmentWithUser {
   user: {
     userId: number;
     username: string;
+    fullName?: string;
     profilePictureExt?: string;
   };
 }

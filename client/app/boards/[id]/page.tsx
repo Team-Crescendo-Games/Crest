@@ -4,7 +4,7 @@ import { useState, use } from "react";
 import BoardHeader from "@/app/boards/BoardHeader";
 import Board from "../BoardView";
 import Table from "../TableView";
-import ModalNewTask from "@/components/ModalNewTask";
+import TaskCreateModal from "@/components/TaskCreateModal";
 import {
   useGetProjectsQuery,
   useGetTagsQuery,
@@ -47,7 +47,7 @@ const BoardPage = ({ params }: Props) => {
 
   return (
     <div className="flex h-full flex-col">
-      <ModalNewTask
+      <TaskCreateModal
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
         projectId={Number(id)}

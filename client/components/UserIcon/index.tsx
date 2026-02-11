@@ -10,6 +10,7 @@ import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 type UserIconProps = {
   userId?: number;
   username?: string;
+  fullName?: string;
   profilePictureExt?: string;
   size?: number;
   className?: string;
@@ -20,6 +21,7 @@ type UserIconProps = {
 const UserIcon = ({
   userId,
   username,
+  fullName,
   profilePictureExt,
   size = 32,
   className = "",
@@ -28,6 +30,7 @@ const UserIcon = ({
 }: UserIconProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const hoverRingStyle = isHovered ? `0 0 0 2px ${APP_ACCENT_LIGHT}` : "none";
+  const displayName = fullName || username;
 
   const content = (
     <div
@@ -38,7 +41,7 @@ const UserIcon = ({
       {profilePictureExt && userId ? (
         <S3Image
           s3Key={getUserProfileS3Key(userId, profilePictureExt)}
-          alt={username || "User"}
+          alt={displayName || "User"}
           width={size}
           height={size}
           className={`cursor-pointer rounded-full object-cover transition-all duration-200 ${className}`}
@@ -58,7 +61,7 @@ const UserIcon = ({
 
       {/* Tooltip */}
       <div className="pointer-events-none absolute top-1/2 left-full z-10 ml-2 -translate-y-1/2 transform rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-        {tooltipLabel}: {username || "Unknown"}
+        {tooltipLabel}: {displayName || "Unknown"}
       </div>
     </div>
   );

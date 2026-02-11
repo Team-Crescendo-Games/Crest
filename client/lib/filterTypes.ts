@@ -70,6 +70,8 @@ export interface FilterState {
   selectedAssigneeIds: number[];
   /** Array of selected status values for filtering tasks by workflow state */
   selectedStatuses: TaskStatus[];
+  /** Array of selected board/project IDs for filtering tasks by board */
+  selectedBoardIds: number[];
   /** Text search filter for task title/description */
   searchText: string;
   /** Time range filter for tasks with startDate or dueDate in range */
@@ -86,5 +88,6 @@ export const initialFilterState: FilterState = {
   selectedDueDateOptions: [],
   selectedAssigneeIds: [],
   selectedStatuses: [],
+  selectedBoardIds: [],
   searchText: "",
 };

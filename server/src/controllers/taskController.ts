@@ -20,7 +20,7 @@ const taskInclude = {
             reactions: {
                 include: {
                     user: {
-                        select: { userId: true, username: true },
+                        select: { userId: true, username: true, fullName: true },
                     },
                 },
             },
@@ -36,7 +36,7 @@ const taskInclude = {
             priority: true,
             taskAssignments: {
                 include: {
-                    user: { select: { userId: true, username: true, profilePictureExt: true } },
+                    user: { select: { userId: true, username: true, fullName: true, profilePictureExt: true } },
                 },
             },
         },
@@ -54,7 +54,7 @@ const taskInclude = {
     activities: {
         include: {
             user: {
-                select: { userId: true, username: true },
+                select: { userId: true, username: true, fullName: true },
             },
         },
         orderBy: {
@@ -67,6 +67,7 @@ const taskInclude = {
                 select: {
                     userId: true,
                     username: true,
+                    fullName: true,
                     profilePictureExt: true,
                 },
             },

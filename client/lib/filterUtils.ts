@@ -12,6 +12,7 @@ export function isFilterActive(filterState: FilterState): boolean {
     filterState.selectedDueDateOptions.length > 0 ||
     filterState.selectedAssigneeIds.length > 0 ||
     filterState.selectedStatuses.length > 0 ||
+    filterState.selectedBoardIds.length > 0 ||
     filterState.searchText.trim().length > 0 ||
     !!(filterState.timeRange?.startDate || filterState.timeRange?.endDate)
   );
@@ -236,6 +237,32 @@ export function matchesSearchText(task: Task, searchText: string): boolean {
 }
 
 /**
+ * Checks if a task matches the board filter criteria (OR logic within boards).
+ * Task passes if its projectId is in selectedBoardIds.
+ * If selectedBoardIds is empty, all tasks pass.
+ *
+ * @param task - The task to check
+ * @param selectedBoardIds - Array of selected project/board IDs
+ * @returns true if task matches the board filter or no boards are selected
+ */
+export function matchesBoardFilter(
+  task: Task,
+  selectedBoardIds: number[],
+): boolean {
+  // If no boards selected, all tasks pass
+  if (selectedBoardIds.length === 0) {
+    return true;
+  }
+
+  // Task must belong to one of the selected boards
+  if (!task.projectId) {
+    return false;
+  }
+
+  return selectedBoardIds.includes(task.projectId);
+}
+
+/**
  * Checks if a task matches the time range filter.
  * Task passes if its startDate OR dueDate falls within the specified range.
  * If no time range is set, all tasks pass.
@@ -322,6 +349,10 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
       task,
       filterState.selectedAssigneeIds,
     );
+    const passesBoardFilter = matchesBoardFilter(
+      task,
+      filterState.selectedBoardIds,
+    );
     const passesSearchText = matchesSearchText(task, filterState.searchText);
     const passesTimeRange = matchesTimeRange(task, filterState.timeRange);
 
@@ -331,6 +362,7 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
       passesStatusFilter &&
       passesDueDateFilter &&
       passesAssigneeFilter &&
+      passesBoardFilter &&
       passesSearchText &&
       passesTimeRange
     );

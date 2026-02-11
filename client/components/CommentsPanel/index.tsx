@@ -29,11 +29,14 @@ const formatCommentTimestamp = (dateString: string): string => {
 // Render comment text with @mentions as pills
 const renderCommentWithMentions = (
   text: string,
-  users: { userId?: number; username: string }[] | undefined,
+  users: { userId?: number; username: string; fullName?: string }[] | undefined,
 ): React.ReactNode => {
   if (!users || users.length === 0) return text;
 
-  const usernames = new Set(users.map((u) => u.username.toLowerCase()));
+  // Create a map from username to full name for display
+  const usernameToFullName = new Map(
+    users.map((u) => [u.username.toLowerCase(), u.fullName || u.username]),
+  );
   const mentionRegex = /@(\w+)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -41,19 +44,19 @@ const renderCommentWithMentions = (
 
   while ((match = mentionRegex.exec(text)) !== null) {
     const username = match[1];
-    const isValidUser = usernames.has(username.toLowerCase());
+    const fullName = usernameToFullName.get(username.toLowerCase());
 
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
 
-    if (isValidUser) {
+    if (fullName) {
       parts.push(
         <span
           key={match.index}
           className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
         >
-          @{username}
+          @{fullName}
         </span>,
       );
     } else {
@@ -108,7 +111,8 @@ const CommentsPanel = ({
       ?.filter((user) => {
         const searchLower = mentionSearch.toLowerCase();
         return (
-          user.username.toLowerCase().includes(searchLower) ||
+          (user.username?.toLowerCase().includes(searchLower) ?? false) ||
+          (user.fullName?.toLowerCase().includes(searchLower) ?? false) ||
           (user.email?.toLowerCase().includes(searchLower) ?? false)
         );
       })
@@ -246,7 +250,7 @@ const CommentsPanel = ({
                     />
                   ) : (
                     <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-medium text-white">
-                      {comment.user?.username?.charAt(0).toUpperCase() || "?"}
+                      {(comment.user?.fullName || comment.user?.username)?.charAt(0).toUpperCase() || "?"}
                     </div>
                   )}
                   <div className="min-w-0">
@@ -254,7 +258,7 @@ const CommentsPanel = ({
                       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         {isCurrentUser
                           ? "You"
-                          : comment.user?.username || "Unknown"}
+                          : comment.user?.fullName || comment.user?.username || "Unknown"}
                       </span>
                       {comment.createdAt && (
                         <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -376,19 +380,19 @@ const CommentsPanel = ({
                           user.userId,
                           user.profilePictureExt,
                         )}
-                        alt={user.username}
+                        alt={user.fullName || user.username}
                         width={24}
                         height={24}
                         className="h-6 w-6 rounded-full object-cover"
                       />
                     ) : (
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
-                        {user.username.charAt(0).toUpperCase()}
+                        {(user.fullName || user.username).charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                        {user.username}
+                        {user.fullName || user.username}
                       </p>
                       {user.email && (
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">

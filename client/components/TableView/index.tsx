@@ -317,6 +317,7 @@ const TableView = ({
                                   key={ta.userId}
                                   userId={ta.user.userId}
                                   username={ta.user.username}
+                                  fullName={ta.user.fullName}
                                   profilePictureExt={ta.user.profilePictureExt}
                                   size={28}
                                   tooltipLabel="Assignee"
@@ -341,6 +342,7 @@ const TableView = ({
                           <UserIcon
                             userId={task.author.userId}
                             username={task.author.username}
+                            fullName={task.author.fullName}
                             profilePictureExt={task.author.profilePictureExt}
                             size={28}
                             tooltipLabel="Author"

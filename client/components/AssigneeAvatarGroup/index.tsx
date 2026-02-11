@@ -6,6 +6,7 @@ type AssigneeAvatarGroupProps = {
   assignees: Array<{
     userId: number;
     username: string;
+    fullName?: string;
     profilePictureExt?: string;
   }>;
   maxDisplay?: number;
@@ -41,6 +42,7 @@ const AssigneeAvatarGroup = ({
           <UserIcon
             userId={assignee.userId}
             username={assignee.username}
+            fullName={assignee.fullName}
             profilePictureExt={assignee.profilePictureExt}
             size={size}
             tooltipLabel="Assignee"

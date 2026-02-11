@@ -1,5 +1,45 @@
 /* Amplify UI Dark Mode Overrides */
 
+/* Split-screen auth layout */
+[data-amplify-authenticator] {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  [data-amplify-authenticator] {
+    margin-left: 45%;
+    width: 55%;
+  }
+}
+
+/* Center the form */
+[data-amplify-authenticator] [data-amplify-router] {
+  max-width: 400px;
+  width: 100%;
+  border-radius: 1rem !important;
+}
+
+/* Softer input styling */
+[data-amplify-authenticator] input {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Rounded primary button */
+[data-amplify-authenticator] button[data-variation="primary"] {
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1rem !important;
+  transition: background-color 0.2s, transform 0.1s !important;
+}
+
+[data-amplify-authenticator] button[data-variation="primary"]:active {
+  transform: scale(0.98);
+}
+
 /* Dark mode styles for Amplify components */
 .dark [data-amplify-authenticator] {
   --amplify-colors-background-primary: #161618;

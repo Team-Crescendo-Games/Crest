@@ -19,6 +19,7 @@ import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 import RadialProgress from "@/components/RadialProgress";
 import DatePicker from "@/components/DatePicker";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/dateUtils";
 import { MessageSquareMore, X, Plus, Diamond, Calendar } from "lucide-react";
 import { Paperclip } from "lucide-react";
 import UserIcon from "@/components/UserIcon";
@@ -206,12 +207,10 @@ const TaskCard = ({
   const tags = task.taskTags?.map((tt) => tt.tag) || [];
   const tagIds = tags.map((t) => t.id);
   const avgColor = getAverageTagColor(task);
-  const formattedDueDate = task.dueDate
-    ? format(new Date(task.dueDate), "P")
-    : "";
-  const dueDateValue = task.dueDate
-    ? new Date(task.dueDate).toISOString().split("T")[0]
-    : "";
+  // Parse as local date to avoid UTC timezone shift
+  const dueDate = task.dueDate ? parseLocalDate(task.dueDate.split("T")[0]) : null;
+  const formattedDueDate = dueDate ? format(dueDate, "P") : "";
+  const dueDateValue = task.dueDate ? task.dueDate.split("T")[0] : "";
   const numberOfComments = task.comments?.length || 0;
   const numberOfAttachments = task.attachments?.length || 0;
   const subtasks = task.subtasks ?? [];
@@ -427,6 +426,7 @@ const TaskCard = ({
                   key={ta.userId}
                   userId={ta.user.userId}
                   username={ta.user.username}
+                  fullName={ta.user.fullName}
                   profilePictureExt={ta.user.profilePictureExt}
                   size={24}
                   className="dark:ring-dark-tertiary ring-2 ring-white"

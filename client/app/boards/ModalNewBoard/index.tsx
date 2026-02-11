@@ -23,7 +23,7 @@ const ModalNewBoard = ({ isOpen, onClose }: Props) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} name="Create New Board">
       <form
-        className="mt-4 space-y-6"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();

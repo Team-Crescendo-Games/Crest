@@ -41,7 +41,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import ModalNewBoard from "@/app/boards/ModalNewBoard";
 import ModalNewSprint from "@/app/sprints/ModalNewSprint";
-import ModalNewTask from "@/components/ModalNewTask";
+import TaskCreateModal from "@/components/TaskCreateModal";
 import S3Image from "@/components/S3Image";
 import {
   BOARD_MAIN_COLOR,
@@ -135,6 +135,20 @@ const Sidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Shift+A keyboard shortcut to toggle Create menu
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const tag = (event.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (event.target as HTMLElement)?.isContentEditable) return;
+      if (event.shiftKey && event.key === "A") {
+        event.preventDefault();
+        setShowCreateMenu((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleCreateOption = (option: "task" | "sprint" | "board") => {
     setShowCreateMenu(false);
     if (option === "task") setIsModalNewTaskOpen(true);
@@ -193,7 +207,7 @@ const Sidebar = () => {
         isOpen={isModalNewSprintOpen}
         onClose={() => setIsModalNewSprintOpen(false)}
       />
-      <ModalNewTask
+      <TaskCreateModal
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
       />
@@ -330,7 +344,7 @@ const Sidebar = () => {
       </div>
 
       {/* WORKSPACE - fixed */}
-      <div className="shrink-0">
+      <div className="shrink-0 relative z-0">
         <button
           onClick={() => setShowWorkspace((prev) => !prev)}
           className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
@@ -375,13 +389,13 @@ const Sidebar = () => {
       </div>
 
       {/* BOARDS & SPRINTS - each with restricted height */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* BOARDS SECTION */}
         <div className="flex min-h-0 flex-col" style={{ maxHeight: showBoards ? "50%" : "auto" }}>
           {/* BOARDS HEADER */}
           <button
             onClick={() => setShowBoards((prev) => !prev)}
-            className="shrink-0 flex w-full items-center justify-between bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
+            className="shrink-0 relative z-20 flex w-full items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
           >
             <div className="flex items-center gap-2">
               <BiColumns
@@ -390,7 +404,7 @@ const Sidebar = () => {
               />
               <span>Boards</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 overflow-visible">
               <span
                 role="button"
                 onClick={(e) => {
@@ -452,13 +466,13 @@ const Sidebar = () => {
           {/* SPRINTS HEADER */}
           <button
             onClick={() => setShowSprints((prev) => !prev)}
-            className="shrink-0 flex w-full items-center justify-between bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
+            className="shrink-0 relative z-10 flex w-full items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
           >
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
             <span>Sprints</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-visible">
             <span
               role="button"
               onClick={(e) => {

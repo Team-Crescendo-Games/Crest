@@ -630,6 +630,7 @@ const TimelineView = ({
                             <UserIcon
                               userId={task.taskAssignments[0].user.userId}
                               username={task.taskAssignments[0].user.username}
+                              fullName={task.taskAssignments[0].user.fullName}
                               profilePictureExt={
                                 task.taskAssignments[0].user.profilePictureExt
                               }

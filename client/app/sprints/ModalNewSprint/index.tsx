@@ -82,7 +82,7 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} name="Create New Sprint">
       <form
-        className="mt-4 space-y-6"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();

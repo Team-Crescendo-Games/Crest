@@ -82,7 +82,7 @@ export interface FormattedActivity {
  * // Returns: { username: "john", action: "moved the card from", highlightedParts: [...] }
  */
 export function formatActivityMessage(activity: Activity): FormattedActivity {
-  const username = activity.user?.username || "Unknown user";
+  const username = activity.user?.fullName || activity.user?.username || "Unknown user";
 
   switch (activity.activityType) {
     case ActivityType.CREATE_TASK:
@@ -100,11 +100,106 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           { text: activity.newStatus || "unknown", highlight: true },
         ],
       };
-    case ActivityType.EDIT_TASK:
+    case ActivityType.EDIT_TASK: {
+      const editField = activity.editField || "edited the card";
+      
+      // Parse edit field to extract and highlight values
+      // Pattern: "updated the points to X"
+      const pointsMatch = editField.match(/^(updated the points to )(.+)$/);
+      if (pointsMatch) {
+        return {
+          username,
+          action: pointsMatch[1],
+          highlightedParts: [{ text: pointsMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "added to sprint: X"
+      const sprintAddMatch = editField.match(/^(added to sprint: )(.+)$/);
+      if (sprintAddMatch) {
+        return {
+          username,
+          action: sprintAddMatch[1],
+          highlightedParts: [{ text: sprintAddMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "removed from sprint: X"
+      const sprintRemoveMatch = editField.match(/^(removed from sprint: )(.+)$/);
+      if (sprintRemoveMatch) {
+        return {
+          username,
+          action: sprintRemoveMatch[1],
+          highlightedParts: [{ text: sprintRemoveMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "changed the priority to X"
+      const priorityMatch = editField.match(/^(changed the priority to )(.+)$/);
+      if (priorityMatch) {
+        return {
+          username,
+          action: priorityMatch[1],
+          highlightedParts: [{ text: priorityMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "changed the status to X"
+      const statusMatch = editField.match(/^(changed the status to )(.+)$/);
+      if (statusMatch) {
+        return {
+          username,
+          action: statusMatch[1],
+          highlightedParts: [{ text: statusMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "updated the due date to X"
+      const dueDateMatch = editField.match(/^(updated the due date to )(.+)$/);
+      if (dueDateMatch) {
+        return {
+          username,
+          action: dueDateMatch[1],
+          highlightedParts: [{ text: dueDateMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "moved to board: X"
+      const boardMatch = editField.match(/^(moved to board: )(.+)$/);
+      if (boardMatch) {
+        return {
+          username,
+          action: boardMatch[1],
+          highlightedParts: [{ text: boardMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "assigned to X"
+      const assignMatch = editField.match(/^(assigned to )(.+)$/);
+      if (assignMatch) {
+        return {
+          username,
+          action: assignMatch[1],
+          highlightedParts: [{ text: assignMatch[2], highlight: true }],
+        };
+      }
+      
+      // Pattern: "unassigned X"
+      const unassignMatch = editField.match(/^(unassigned )(.+)$/);
+      if (unassignMatch) {
+        return {
+          username,
+          action: unassignMatch[1],
+          highlightedParts: [{ text: unassignMatch[2], highlight: true }],
+        };
+      }
+      
+      // Default: no highlighting
       return {
         username,
-        action: activity.editField || "edited the card",
+        action: editField,
       };
+    }
     default:
       return {
         username,

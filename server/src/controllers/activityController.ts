@@ -62,6 +62,7 @@ export const getActivitiesByTask = async (req: Request, res: Response): Promise<
                     select: {
                         userId: true,
                         username: true,
+                        fullName: true,
                     },
                 },
             },
@@ -132,6 +133,7 @@ export const createActivity = async (
                     select: {
                         userId: true,
                         username: true,
+                        fullName: true,
                     },
                 },
             },

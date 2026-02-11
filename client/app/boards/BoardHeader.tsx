@@ -15,6 +15,7 @@ import { Tag, useArchiveProjectMutation } from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
+import SearchInput from "@/components/SearchInput";
 
 type Props = {
   activeTab: string;
@@ -126,6 +127,15 @@ const BoardHeader = ({
         )}
       </div>
 
+      {/* Search */}
+      <div className="mb-2">
+        <SearchInput
+          filterState={filterState}
+          onFilterChange={onFilterChange}
+          accentColor={BOARD_MAIN_COLOR}
+        />
+      </div>
+
       {/* TABS */}
       <div className="flex flex-wrap items-end justify-between gap-1">
         <div className="dark:after:bg-stroke-dark relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 md:gap-4">
@@ -152,7 +162,6 @@ const BoardHeader = ({
           isSortActive={isSortActive}
           showMyTasks={showMyTasks}
           onShowMyTasksChange={onShowMyTasksChange}
-          accentColor={BOARD_MAIN_COLOR}
         />
       </div>
     </div>

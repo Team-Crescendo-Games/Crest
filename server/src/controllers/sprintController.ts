@@ -51,7 +51,7 @@ export const getSprint = async (req: Request, res: Response) => {
                                         reactions: {
                                             include: {
                                                 user: {
-                                                    select: { userId: true, username: true },
+                                                    select: { userId: true, username: true, fullName: true },
                                                 },
                                             },
                                         },
@@ -64,6 +64,7 @@ export const getSprint = async (req: Request, res: Response) => {
                                             select: {
                                                 userId: true,
                                                 username: true,
+                                                fullName: true,
                                                 profilePictureExt: true,
                                             },
                                         },
@@ -87,6 +88,7 @@ export const getSprint = async (req: Request, res: Response) => {
                                                     select: {
                                                         userId: true,
                                                         username: true,
+                                                        fullName: true,
                                                         profilePictureExt: true,
                                                     },
                                                 },
@@ -110,6 +112,7 @@ export const getSprint = async (req: Request, res: Response) => {
                                             select: {
                                                 userId: true,
                                                 username: true,
+                                                fullName: true,
                                                 profilePictureExt: true,
                                             },
                                         },

@@ -4,11 +4,12 @@ import { useState, use } from "react";
 import UserHeader from "./UserHeader";
 import UserBoardView from "./BoardView";
 import UserTableView from "./TableView";
-import ModalNewTask from "@/components/ModalNewTask";
+import TaskCreateModal from "@/components/TaskCreateModal";
 import {
   useGetUserByIdQuery,
   useGetTasksAssignedToUserQuery,
   useGetTagsQuery,
+  useGetProjectsQuery,
 } from "@/state/api";
 import {
   FilterState,
@@ -42,9 +43,16 @@ const UserBoardPage = ({ params }: Props) => {
   const { data: tags = [] } = useGetTagsQuery();
   const { data: tasks = [], refetch: refetchTasks } =
     useGetTasksAssignedToUserQuery(userId);
+  const { data: projects = [] } = useGetProjectsQuery();
 
-  const totalTasks = tasks.length;
-  const totalPoints = tasks.reduce((sum, task) => sum + (task.points || 0), 0);
+  // Filter out tasks from archived boards for stats
+  const activeProjectIds = new Set(projects.filter((p) => p.isActive).map((p) => p.id));
+  const activeTasks = tasks.filter(
+    (task) => !task.projectId || activeProjectIds.has(task.projectId),
+  );
+
+  const totalTasks = activeTasks.length;
+  const totalPoints = activeTasks.reduce((sum, task) => sum + (task.points || 0), 0);
 
   const handleFilterChange = (newState: FilterState) =>
     setFilterState(newState);
@@ -55,7 +63,7 @@ const UserBoardPage = ({ params }: Props) => {
 
   return (
     <div className="flex h-full flex-col">
-      <ModalNewTask
+      <TaskCreateModal
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
         defaultAssigneeId={userId}

@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { parseLocalDate } from "@/lib/dateUtils";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -24,6 +25,7 @@ type DatePickerProps = {
   placeholder?: string;
   className?: string;
   minDate?: string; // ISO date string - dates before this will be disabled
+  anchorRef?: React.RefObject<HTMLElement | null>; // Reference to anchor element for portal positioning
 };
 
 const DAYS_OF_WEEK = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -34,6 +36,7 @@ const DatePicker = ({
   onClose,
   className = "",
   minDate,
+  anchorRef,
 }: DatePickerProps) => {
   const [isReady, setIsReady] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
@@ -42,10 +45,22 @@ const DatePicker = ({
   const [inputValue, setInputValue] = useState(() => {
     return value ? format(parseLocalDate(value), "MM/dd/yyyy") : "";
   });
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedDate = value ? parseLocalDate(value) : null;
+
+  // Calculate position based on anchor element
+  useEffect(() => {
+    if (anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [anchorRef]);
 
   // Delay visibility until after first render to prevent position flicker
   useEffect(() => {
@@ -134,18 +149,20 @@ const DatePicker = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        (!anchorRef?.current || !anchorRef.current.contains(e.target as Node))
       ) {
         onClose?.();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+  }, [onClose, anchorRef]);
 
-  return (
+  const pickerContent = (
     <div
       ref={containerRef}
+      style={anchorRef ? { position: "absolute", top: position.top, left: position.left, zIndex: 9999 } : undefined}
       className={`dark:border-dark-tertiary dark:bg-dark-secondary w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg transition-opacity duration-75 ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
@@ -248,6 +265,13 @@ const DatePicker = ({
       )}
     </div>
   );
+
+  // Use portal when anchorRef is provided (for overflow scenarios like modals)
+  if (anchorRef && typeof document !== "undefined") {
+    return createPortal(pickerContent, document.body);
+  }
+
+  return pickerContent;
 };
 
 export default DatePicker;

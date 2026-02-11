@@ -14,7 +14,7 @@ import SprintHeader from "@/app/sprints/SprintHeader";
 import BoardView from "@/app/sprints/BoardView";
 import TableView from "@/app/sprints/TableView";
 import TimelineView from "@/app/sprints/TimelineView";
-import ModalNewTask from "@/components/ModalNewTask";
+import TaskCreateModal from "@/components/TaskCreateModal";
 
 const SprintPage = () => {
   const params = useParams();
@@ -70,7 +70,7 @@ const SprintPage = () => {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <ModalNewTask
+      <TaskCreateModal
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
         sprintId={sprintId}

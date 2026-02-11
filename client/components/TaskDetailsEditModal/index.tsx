@@ -1,0 +1,242 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Modal from "@/components/Modal";
+import TaskForm, { TaskFormData } from "@/components/TaskForm";
+import {
+  Task,
+  Priority,
+  Status,
+  useUpdateTaskMutation,
+  useGetTagsQuery,
+  useGetUsersQuery,
+  useGetProjectsQuery,
+  useGetSprintsQuery,
+  useGetTasksQuery,
+  useGetPresignedUploadUrlMutation,
+  useCreateAttachmentMutation,
+  useDeleteAttachmentMutation,
+  User,
+  Sprint,
+} from "@/state/api";
+import { useAuthUser } from "@/lib/useAuthUser";
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  task: Task | null;
+  onSave?: (task: Task) => void;
+};
+
+const TaskDetailsEditModal = ({
+  isOpen,
+  onClose,
+  task,
+  onSave,
+}: Props) => {
+  const [updateTask, { isLoading }] = useUpdateTaskMutation();
+  const { data: availableTags = [] } = useGetTagsQuery();
+  const { data: users = [] } = useGetUsersQuery();
+  const { data: projects = [] } = useGetProjectsQuery();
+  const { data: sprints = [] } = useGetSprintsQuery();
+  const { data: authData } = useAuthUser();
+  const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();
+  const [createAttachment] = useCreateAttachmentMutation();
+  const [deleteAttachment] = useDeleteAttachmentMutation();
+
+  // Fetch tasks for subtask selection when a project is selected
+  const [selectedProjectIdForTasks, setSelectedProjectIdForTasks] = useState<number | null>(null);
+  const { data: availableTasks = [] } = useGetTasksQuery(
+    { projectId: selectedProjectIdForTasks! },
+    { skip: !selectedProjectIdForTasks }
+  );
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  const [formData, setFormData] = useState<TaskFormData>({
+    title: "",
+    description: "",
+    status: Status.InputQueue,
+    priority: Priority.Backlog,
+    startDate: "",
+    dueDate: "",
+    points: "",
+    selectedTagIds: [],
+    selectedAssignees: [],
+    selectedProject: null,
+    selectedSprints: [],
+    selectedSubtaskIds: [],
+    pendingFiles: [],
+  });
+
+  // Update project ID for task fetching when project changes
+  useEffect(() => {
+    setSelectedProjectIdForTasks(formData.selectedProject?.id || null);
+  }, [formData.selectedProject]);
+
+  // Initialize form data when task changes
+  useEffect(() => {
+    if (isOpen && task) {
+      const assignees: User[] = task.taskAssignments?.map((ta) => {
+        const fullUser = users.find((u) => u.userId === ta.user.userId);
+        return fullUser || {
+          userId: ta.user.userId,
+          username: ta.user.username,
+          email: "",
+          profilePictureExt: ta.user.profilePictureExt,
+        };
+      }) || [];
+
+      const project = projects.find((p) => p.id === task.projectId) || null;
+
+      const taskSprints: Sprint[] = task.sprints
+        ?.map((s) => sprints.find((sp) => sp.id === s.id))
+        .filter((s): s is Sprint => s !== undefined) || [];
+
+      setFormData({
+        title: task.title,
+        description: task.description || "",
+        status: task.status as Status || Status.InputQueue,
+        priority: task.priority as Priority || Priority.Backlog,
+        startDate: task.startDate
+          ? new Date(task.startDate).toISOString().split("T")[0]
+          : "",
+        dueDate: task.dueDate
+          ? new Date(task.dueDate).toISOString().split("T")[0]
+          : "",
+        points: task.points?.toString() || "",
+        selectedTagIds: task.taskTags?.map((tt) => tt.tag.id) || [],
+        selectedAssignees: assignees,
+        selectedProject: project,
+        selectedSprints: taskSprints,
+        selectedSubtaskIds: task.subtasks?.map((s) => s.id) || [],
+        pendingFiles: [],
+      });
+    }
+  }, [isOpen, task, projects, sprints, users]);
+
+  const handleFormChange = (changes: Partial<TaskFormData>) => {
+    setFormData((prev) => ({ ...prev, ...changes }));
+  };
+
+  const handleSubmit = async () => {
+    if (!task) return;
+    const authorUserId = authData?.userDetails?.userId;
+
+    // First update the task
+    const updatedTask = await updateTask({
+      id: task.id,
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+      priority: formData.priority,
+      startDate: formData.startDate || undefined,
+      dueDate: formData.dueDate || undefined,
+      points: formData.points ? Number(formData.points) : undefined,
+      assigneeIds: formData.selectedAssignees
+        .map((a) => a.userId)
+        .filter((id): id is number => id !== undefined),
+      tagIds: formData.selectedTagIds,
+      subtaskIds: formData.selectedSubtaskIds,
+      projectId: formData.selectedProject?.id || undefined,
+      sprintIds: formData.selectedSprints.map((s) => s.id),
+      userId: authorUserId,
+    }).unwrap();
+
+    // Upload any pending files
+    if (formData.pendingFiles && formData.pendingFiles.length > 0 && authorUserId) {
+      setIsUploading(true);
+      for (const pf of formData.pendingFiles) {
+        let attachmentId: number | null = null;
+        try {
+          const attachment = await createAttachment({
+            taskId: task.id,
+            uploadedById: authorUserId,
+            fileName: pf.fileName,
+            fileExt: pf.fileExt,
+          }).unwrap();
+
+          attachmentId = attachment.id;
+          const s3Key = `tasks/${task.id}/attachments/${attachment.id}.${pf.fileExt}`;
+
+          const { url } = await getPresignedUploadUrl({
+            key: s3Key,
+            contentType: pf.file.type || "application/octet-stream",
+          }).unwrap();
+
+          const uploadResponse = await fetch(url, {
+            method: "PUT",
+            body: pf.file,
+            headers: { "Content-Type": pf.file.type || "application/octet-stream" },
+          });
+
+          if (!uploadResponse.ok) throw new Error("Failed to upload file to S3");
+          attachmentId = null;
+        } catch (error) {
+          console.error("File upload error:", error);
+          if (attachmentId) {
+            try { await deleteAttachment(attachmentId); } catch { /* ignore */ }
+          }
+        }
+      }
+      setIsUploading(false);
+    }
+
+    onSave?.(updatedTask);
+    onClose();
+  };
+
+  const isFormValid = () => {
+    return formData.title && formData.selectedProject;
+  };
+
+  if (!task) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} name={`Edit: ${task.title}`}>
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+      >
+        <TaskForm
+          formData={formData}
+          onChange={handleFormChange}
+          users={users}
+          projects={projects}
+          sprints={sprints}
+          tags={availableTags}
+          showPoints={true}
+          filterActiveOnly={false}
+          showSubtasks={true}
+          showAttachments={true}
+          availableTasks={availableTasks}
+          currentTaskId={task.id}
+        />
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:hover:bg-dark-secondary"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={`flex-1 rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 focus:outline-none dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
+              !isFormValid() || isLoading || isUploading ? "cursor-not-allowed opacity-50" : ""
+            }`}
+            disabled={!isFormValid() || isLoading || isUploading}
+          >
+            {isLoading || isUploading ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+export default TaskDetailsEditModal;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetTasksAssignedToUserQuery } from "@/state/api";
+import { useGetTasksAssignedToUserQuery, useGetProjectsQuery } from "@/state/api";
 import BoardView from "@/components/BoardView";
 import { FilterState, SortState } from "@/lib/filterTypes";
 
@@ -22,13 +22,20 @@ const UserBoardView = ({
     isLoading,
     error,
   } = useGetTasksAssignedToUserQuery(userId);
+  const { data: projects = [] } = useGetProjectsQuery();
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;
 
+  // Filter out tasks from archived boards
+  const activeProjectIds = new Set(projects.filter((p) => p.isActive).map((p) => p.id));
+  const activeTasks = (tasks ?? []).filter(
+    (task) => !task.projectId || activeProjectIds.has(task.projectId),
+  );
+
   return (
     <BoardView
-      tasks={tasks ?? []}
+      tasks={activeTasks}
       setIsModalNewTaskOpen={setIsModalNewTaskOpen}
       filterState={filterState}
       sortState={sortState}

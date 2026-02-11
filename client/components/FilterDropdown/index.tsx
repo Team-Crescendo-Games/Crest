@@ -9,7 +9,7 @@ import {
   initialFilterState,
 } from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
-import { Tag, Priority } from "@/state/api";
+import { Tag, Priority, Project } from "@/state/api";
 
 interface FilterDropdownProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ interface FilterDropdownProps {
   filterState: FilterState;
   onFilterChange: (newState: FilterState) => void;
   tags: Tag[];
+  projects?: Project[];
 }
 
 const FilterDropdown = ({
@@ -25,6 +26,7 @@ const FilterDropdown = ({
   filterState,
   onFilterChange,
   tags,
+  projects = [],
 }: FilterDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +35,7 @@ const FilterDropdown = ({
   const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
   const [isStatusExpanded, setIsStatusExpanded] = useState(false);
   const [isDueDateExpanded, setIsDueDateExpanded] = useState(false);
+  const [isBoardsExpanded, setIsBoardsExpanded] = useState(false);
 
   const priorityOptions: Priority[] = [
     Priority.Urgent,
@@ -151,6 +154,17 @@ const FilterDropdown = ({
     onFilterChange({
       ...filterState,
       selectedStatuses: newSelectedStatuses,
+    });
+  };
+
+  const handleBoardToggle = (boardId: number, checked: boolean) => {
+    const newSelectedBoardIds = checked
+      ? [...filterState.selectedBoardIds, boardId]
+      : filterState.selectedBoardIds.filter((id) => id !== boardId);
+
+    onFilterChange({
+      ...filterState,
+      selectedBoardIds: newSelectedBoardIds,
     });
   };
 
@@ -291,7 +305,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Due Date Section */}
-        <div className="px-4 py-3">
+        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
           <button
             type="button"
             onClick={() => setIsDueDateExpanded(!isDueDateExpanded)}
@@ -329,6 +343,46 @@ const FilterDropdown = ({
             </div>
           )}
         </div>
+
+        {/* Boards Section */}
+        {projects.filter((p) => p.isActive).length > 0 && (
+          <div className="px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setIsBoardsExpanded(!isBoardsExpanded)}
+              className="flex w-full items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              aria-expanded={isBoardsExpanded}
+            >
+              <span>Boards</span>
+              {isBoardsExpanded ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {isBoardsExpanded && (
+              <div className="mt-2 space-y-2">
+                {projects.filter((p) => p.isActive).map((project) => (
+                  <label
+                    key={project.id}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filterState.selectedBoardIds.includes(project.id)}
+                      onChange={(e) =>
+                        handleBoardToggle(project.id, e.target.checked)
+                      }
+                      className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="truncate">{project.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Clear All Button */}

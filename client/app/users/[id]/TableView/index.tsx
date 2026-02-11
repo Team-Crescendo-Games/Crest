@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetTasksAssignedToUserQuery } from "@/state/api";
+import { useGetTasksAssignedToUserQuery, useGetProjectsQuery } from "@/state/api";
 import TableView from "@/components/TableView";
 import { FilterState, SortState } from "@/lib/filterTypes";
 
@@ -17,6 +17,7 @@ const UserTableView = ({ userId, filterState, sortState }: Props) => {
     error,
     isLoading,
   } = useGetTasksAssignedToUserQuery(userId);
+  const { data: projects = [] } = useGetProjectsQuery();
 
   if (isLoading)
     return (
@@ -31,9 +32,15 @@ const UserTableView = ({ userId, filterState, sortState }: Props) => {
       </div>
     );
 
+  // Filter out tasks from archived boards
+  const activeProjectIds = new Set(projects.filter((p) => p.isActive).map((p) => p.id));
+  const activeTasks = (tasks ?? []).filter(
+    (task) => !task.projectId || activeProjectIds.has(task.projectId),
+  );
+
   return (
     <TableView
-      tasks={tasks ?? []}
+      tasks={activeTasks}
       filterState={filterState}
       sortState={sortState}
       showCreateButton={false}

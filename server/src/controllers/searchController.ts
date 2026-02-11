@@ -69,7 +69,11 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         if (categoryList.includes("users")) {
             results.users = await getPrismaClient().user.findMany({
                 where: {
-                    OR: [{ username: { contains: query as string, mode: "insensitive" } }],
+                    OR: [
+                        { username: { contains: query as string, mode: "insensitive" } },
+                        { fullName: { contains: query as string, mode: "insensitive" } },
+                        { email: { contains: query as string, mode: "insensitive" } },
+                    ],
                 },
             });
         }
