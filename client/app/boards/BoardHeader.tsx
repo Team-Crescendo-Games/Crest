@@ -16,6 +16,8 @@ import HeaderButton from "@/components/HeaderButton";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
+import PresenceAvatars from "@/components/PresenceAvatars";
+import type { CollaboratorUser } from "@/lib/useCollaboration";
 
 type Props = {
   activeTab: string;
@@ -36,6 +38,7 @@ type Props = {
   showMyTasks: boolean;
   onShowMyTasksChange: (show: boolean) => void;
   onRefresh: () => void;
+  collaborators?: CollaboratorUser[];
 };
 
 const BoardHeader = ({
@@ -57,6 +60,7 @@ const BoardHeader = ({
   showMyTasks,
   onShowMyTasksChange,
   onRefresh,
+  collaborators = [],
 }: Props) => {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [archiveProject, { isLoading: isArchiving }] =
@@ -119,6 +123,9 @@ const BoardHeader = ({
             icon={<Settings className="h-5 w-5" />}
             tooltip="Settings"
           />
+          <div className="ml-auto">
+            <PresenceAvatars collaborators={collaborators} />
+          </div>
         </div>
         {boardDescription && (
           <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">

@@ -21,6 +21,8 @@ import HeaderButton from "@/components/HeaderButton";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
+import PresenceAvatars from "@/components/PresenceAvatars";
+import type { CollaboratorUser } from "@/lib/useCollaboration";
 
 type Props = {
   activeTab: "Board" | "Table" | "Timeline";
@@ -44,6 +46,7 @@ type Props = {
   onRefresh: () => void;
   isStandupMode: boolean;
   onToggleStandup: () => void;
+  collaborators?: CollaboratorUser[];
 };
 
 const SprintHeader = ({
@@ -68,6 +71,7 @@ const SprintHeader = ({
   onRefresh,
   isStandupMode,
   onToggleStandup,
+  collaborators = [],
 }: Props) => {
   const router = useRouter();
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
@@ -213,6 +217,9 @@ const SprintHeader = ({
               icon={<Settings className="h-5 w-5" />}
               tooltip="Settings"
             />
+            <div className="ml-auto">
+              <PresenceAvatars collaborators={collaborators} />
+            </div>
           </h1>
           {/* Date display with calendar icon */}
           {(sprintStartDate || sprintDueDate) && (

@@ -26,6 +26,7 @@ type Props = {
   projectId?: number | null;
   sprintId?: number | null;
   defaultAssigneeId?: number | null;
+  onTaskCreated?: (taskId: number) => void;
 };
 
 const TaskCreateModal = ({
@@ -34,6 +35,7 @@ const TaskCreateModal = ({
   projectId = null,
   sprintId = null,
   defaultAssigneeId = null,
+  onTaskCreated,
 }: Props) => {
   const [createTask, { isLoading }] = useCreateTaskMutation();
   const [updateTask] = useUpdateTaskMutation();
@@ -190,6 +192,7 @@ const TaskCreateModal = ({
       setIsUploading(false);
     }
 
+    onTaskCreated?.(newTask.id);
     onClose();
   };
 

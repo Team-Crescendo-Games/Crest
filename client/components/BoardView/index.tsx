@@ -19,6 +19,9 @@ type BoardViewProps = {
   filterState: FilterState;
   sortState?: SortState;
   showMyTasks?: boolean;
+  taskSelectionMap?: Map<number, string>;
+  onTaskSelect?: (taskId: number | null) => void;
+  onTaskUpdate?: (taskId: number) => void;
 };
 
 const taskStatus = ["Input Queue", "Work In Progress", "Review", "Done"];
@@ -29,6 +32,9 @@ const BoardView = ({
   filterState,
   sortState = initialSortState,
   showMyTasks = false,
+  taskSelectionMap,
+  onTaskSelect,
+  onTaskUpdate,
 }: BoardViewProps) => {
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
   const { data: authData } = useAuthUser();
@@ -49,17 +55,20 @@ const BoardView = ({
   const handleTaskClick = (task: TaskType) => {
     setSelectedTaskId(task.id);
     setIsTaskDetailModalOpen(true);
+    onTaskSelect?.(task.id);
   };
 
   const handleCloseModal = () => {
     setIsTaskDetailModalOpen(false);
     setSelectedTaskId(null);
+    onTaskSelect?.(null);
   };
 
   const moveTask = async (taskId: number, toStatus: string) => {
     try {
       const userId = authData?.userDetails?.userId;
       await updateTaskStatus({ taskId, status: toStatus, userId }).unwrap();
+      onTaskUpdate?.(taskId);
     } catch (error) {
       console.error("Failed to update task status:", error);
     }
@@ -78,6 +87,7 @@ const BoardView = ({
             onTaskClick={handleTaskClick}
             showMyTasks={showMyTasks}
             currentUserId={currentUserId}
+            taskSelectionMap={taskSelectionMap}
           />
         ))}
       </div>
@@ -99,6 +109,7 @@ type TaskColumnProps = {
   onTaskClick: (task: TaskType) => void;
   showMyTasks: boolean;
   currentUserId?: number;
+  taskSelectionMap?: Map<number, string>;
 };
 
 const TaskColumn = ({
@@ -109,6 +120,7 @@ const TaskColumn = ({
   onTaskClick,
   showMyTasks,
   currentUserId,
+  taskSelectionMap,
 }: TaskColumnProps) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: DND_ITEM_TYPES.TASK,
@@ -173,6 +185,7 @@ const TaskColumn = ({
               !!currentUserId &&
               task.taskAssignments?.some((ta) => ta.userId === currentUserId)
             }
+            collaboratorBorderColor={taskSelectionMap?.get(task.id)}
           />
         ))}
       </div>
@@ -184,9 +197,10 @@ type DraggableTaskProps = {
   task: TaskType;
   onClick?: (task: TaskType) => void;
   highlighted?: boolean;
+  collaboratorBorderColor?: string;
 };
 
-const DraggableTask = ({ task, onClick, highlighted }: DraggableTaskProps) => {
+const DraggableTask = ({ task, onClick, highlighted, collaboratorBorderColor }: DraggableTaskProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: DND_ITEM_TYPES.TASK,
     item: { id: task.id, projectId: task.projectId } as DraggedTask,
@@ -208,7 +222,7 @@ const DraggableTask = ({ task, onClick, highlighted }: DraggableTaskProps) => {
       }}
       className={`mb-2 ${isDragging ? "opacity-50" : "opacity-100"}`}
     >
-      <TaskCard task={task} onClick={handleClick} highlighted={highlighted} />
+      <TaskCard task={task} onClick={handleClick} highlighted={highlighted} collaboratorBorderColor={collaboratorBorderColor} />
     </div>
   );
 };

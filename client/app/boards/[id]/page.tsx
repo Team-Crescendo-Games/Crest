@@ -17,6 +17,7 @@ import {
   initialSortState,
 } from "@/lib/filterTypes";
 import { isFilterActive, isSortActive } from "@/lib/filterUtils";
+import { useCollaboration } from "@/lib/useCollaboration";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -30,6 +31,9 @@ const BoardPage = ({ params }: Props) => {
     useState<FilterState>(initialFilterState);
   const [sortState, setSortState] = useState<SortState>(initialSortState);
   const [showMyTasks, setShowMyTasks] = useState(false);
+
+  const { collaborators, taskSelectionMap, selectTask, notifyTaskUpdate } =
+    useCollaboration(`board-${id}`);
 
   const { data: projects, refetch: refetchProjects } = useGetProjectsQuery();
   const { data: tags = [] } = useGetTagsQuery();
@@ -51,6 +55,7 @@ const BoardPage = ({ params }: Props) => {
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
         projectId={Number(id)}
+        onTaskCreated={notifyTaskUpdate}
       />
       <BoardHeader
         activeTab={activeTab}
@@ -74,6 +79,7 @@ const BoardPage = ({ params }: Props) => {
           refetchProjects();
           refetchTasks();
         }}
+        collaborators={collaborators}
       />
       <div className="min-h-0 flex-1">
         {activeTab === "Board" && (
@@ -83,6 +89,9 @@ const BoardPage = ({ params }: Props) => {
             filterState={filterState}
             sortState={sortState}
             showMyTasks={showMyTasks}
+            taskSelectionMap={taskSelectionMap}
+            onTaskSelect={selectTask}
+            onTaskUpdate={notifyTaskUpdate}
           />
         )}
         {activeTab === "Table" && (

@@ -29,6 +29,7 @@ type Props = {
   onClick?: () => void;
   className?: string;
   highlighted?: boolean;
+  collaboratorBorderColor?: string;
 };
 
 // Portal wrapper for dropdowns with ref to content and animation
@@ -190,6 +191,7 @@ const TaskCard = ({
   onClick,
   className = "",
   highlighted = false,
+  collaboratorBorderColor,
 }: Props) => {
   const [updateTask] = useUpdateTaskMutation();
   const { data: allTags } = useGetTagsQuery();
@@ -281,9 +283,11 @@ const TaskCard = ({
       className={`dark:bg-dark-tertiary relative flex overflow-hidden rounded-md bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={{
         ...(avgColor ? { backgroundColor: avgColor } : {}),
-        ...(highlighted
-          ? { outline: `2px solid ${APP_ACCENT_LIGHT}`, outlineOffset: "-1px" }
-          : {}),
+        ...(collaboratorBorderColor
+          ? { outline: `2.5px solid ${collaboratorBorderColor}`, outlineOffset: "-1px" }
+          : highlighted
+            ? { outline: `2px solid ${APP_ACCENT_LIGHT}`, outlineOffset: "-1px" }
+            : {}),
       }}
     >
       {/* Priority bar on left side */}

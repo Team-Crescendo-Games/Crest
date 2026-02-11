@@ -10,6 +10,9 @@ type BoardProps = {
   filterState: FilterState;
   sortState: SortState;
   showMyTasks?: boolean;
+  taskSelectionMap?: Map<number, string>;
+  onTaskSelect?: (taskId: number | null) => void;
+  onTaskUpdate?: (taskId: number) => void;
 };
 
 const BoardViewWrapper = ({
@@ -18,6 +21,9 @@ const BoardViewWrapper = ({
   filterState,
   sortState,
   showMyTasks = false,
+  taskSelectionMap,
+  onTaskSelect,
+  onTaskUpdate,
 }: BoardProps) => {
   const {
     data: tasks,
@@ -35,6 +41,9 @@ const BoardViewWrapper = ({
       filterState={filterState}
       sortState={sortState}
       showMyTasks={showMyTasks}
+      taskSelectionMap={taskSelectionMap}
+      onTaskSelect={onTaskSelect}
+      onTaskUpdate={onTaskUpdate}
     />
   );
 };

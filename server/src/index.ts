@@ -56,7 +56,13 @@ app.use("/admin", adminRoutes);
 app.use("/analytics", analyticsRoutes);
 app.post("/create-user", postUser);
 
+import { createServer } from "http";
+import { initSocket } from "./socket.ts";
+
+const httpServer = createServer(app);
+initSocket(httpServer);
+
 const port = Number(process.env.PORT) || 3000;
-app.listen(port, "0.0.0.0", () => {
+httpServer.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`);
 });

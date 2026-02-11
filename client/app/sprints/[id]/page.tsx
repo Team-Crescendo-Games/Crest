@@ -16,6 +16,7 @@ import TableView from "@/app/sprints/TableView";
 import TimelineView from "@/app/sprints/TimelineView";
 import StandupMode from "@/components/StandupMode";
 import TaskCreateModal from "@/components/TaskCreateModal";
+import { useCollaboration } from "@/lib/useCollaboration";
 
 const SprintPage = () => {
   const params = useParams();
@@ -34,6 +35,9 @@ const SprintPage = () => {
   // Save filter state before entering standup so we can restore it
   const [preStandupFilterState, setPreStandupFilterState] =
     useState<FilterState | null>(null);
+
+  const { collaborators, taskSelectionMap, selectTask, notifyTaskUpdate } =
+    useCollaboration(`sprint-${sprintId}`);
 
   const {
     data: sprint,
@@ -116,6 +120,7 @@ const SprintPage = () => {
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
         sprintId={sprintId}
+        onTaskCreated={notifyTaskUpdate}
       />
       <SprintHeader
         activeTab={activeTab}
@@ -139,6 +144,7 @@ const SprintPage = () => {
         onRefresh={refetch}
         isStandupMode={isStandupMode}
         onToggleStandup={handleToggleStandup}
+        collaborators={collaborators}
       />
       {isStandupMode && (
         <StandupMode
@@ -155,6 +161,9 @@ const SprintPage = () => {
             filterState={filterState}
             sortState={sortState}
             showMyTasks={showMyTasks}
+            taskSelectionMap={taskSelectionMap}
+            onTaskSelect={selectTask}
+            onTaskUpdate={notifyTaskUpdate}
           />
         )}
         {activeTab === "Table" && (
