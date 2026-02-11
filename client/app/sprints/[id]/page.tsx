@@ -14,6 +14,7 @@ import SprintHeader from "@/app/sprints/SprintHeader";
 import BoardView from "@/app/sprints/BoardView";
 import TableView from "@/app/sprints/TableView";
 import TimelineView from "@/app/sprints/TimelineView";
+import StandupMode from "@/components/StandupMode";
 import TaskCreateModal from "@/components/TaskCreateModal";
 
 const SprintPage = () => {
@@ -28,6 +29,11 @@ const SprintPage = () => {
     useState<FilterState>(initialFilterState);
   const [sortState, setSortState] = useState<SortState>(initialSortState);
   const [showMyTasks, setShowMyTasks] = useState(false);
+  const [isStandupMode, setIsStandupMode] = useState(false);
+  const [standupUserId, setStandupUserId] = useState<number | null>(null);
+  // Save filter state before entering standup so we can restore it
+  const [preStandupFilterState, setPreStandupFilterState] =
+    useState<FilterState | null>(null);
 
   const {
     data: sprint,
@@ -47,6 +53,42 @@ const SprintPage = () => {
   const handleFilterChange = (newState: FilterState) =>
     setFilterState(newState);
   const handleSortChange = (newState: SortState) => setSortState(newState);
+
+  const handleToggleStandup = () => {
+    if (!isStandupMode) {
+      // Entering standup: save current filters, clear assignee filter
+      setPreStandupFilterState(filterState);
+      setFilterState({
+        ...initialFilterState,
+        selectedAssigneeIds: [],
+      });
+      setStandupUserId(null);
+      setShowMyTasks(false);
+    } else {
+      // Exiting standup: restore previous filters
+      if (preStandupFilterState) {
+        setFilterState(preStandupFilterState);
+      }
+      setPreStandupFilterState(null);
+      setStandupUserId(null);
+    }
+    setIsStandupMode(!isStandupMode);
+  };
+
+  const handleStandupUserSelect = (userId: number | null) => {
+    setStandupUserId(userId);
+    if (userId !== null) {
+      setFilterState((prev) => ({
+        ...prev,
+        selectedAssigneeIds: [userId],
+      }));
+    } else {
+      setFilterState((prev) => ({
+        ...prev,
+        selectedAssigneeIds: [],
+      }));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -95,7 +137,15 @@ const SprintPage = () => {
         showMyTasks={showMyTasks}
         onShowMyTasksChange={setShowMyTasks}
         onRefresh={refetch}
+        isStandupMode={isStandupMode}
+        onToggleStandup={handleToggleStandup}
       />
+      {isStandupMode && (
+        <StandupMode
+          selectedUserId={standupUserId}
+          onSelectUser={handleStandupUserSelect}
+        />
+      )}
       <div className="flex-1 overflow-auto">
         {activeTab === "Board" && (
           <BoardView

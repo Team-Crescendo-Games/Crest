@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, Calendar, Copy, Settings, Table } from "lucide-react";
+import { Archive, Calendar, Copy, Settings, Table, Users } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import { MdTimeline } from "react-icons/md";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { SPRINT_MAIN_COLOR } from "@/lib/entityColors";
@@ -18,6 +17,7 @@ import {
   useArchiveSprintMutation,
 } from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
+import HeaderButton from "@/components/HeaderButton";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
@@ -42,6 +42,8 @@ type Props = {
   showMyTasks: boolean;
   onShowMyTasksChange: (show: boolean) => void;
   onRefresh: () => void;
+  isStandupMode: boolean;
+  onToggleStandup: () => void;
 };
 
 const SprintHeader = ({
@@ -64,6 +66,8 @@ const SprintHeader = ({
   showMyTasks,
   onShowMyTasksChange,
   onRefresh,
+  isStandupMode,
+  onToggleStandup,
 }: Props) => {
   const router = useRouter();
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
@@ -127,15 +131,12 @@ const SprintHeader = ({
             <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
               {totalTasks} tasks · {totalPoints} pts
             </span>
-            <button
+            <HeaderButton
               onClick={() => setShowDuplicateConfirm(true)}
               disabled={isDuplicating}
-              className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
-              aria-label="Duplicate sprint"
-              title="Duplicate sprint"
-            >
-              <Copy className="h-5 w-5" />
-            </button>
+              icon={<Copy className="h-5 w-5" />}
+              tooltip="Duplicate sprint"
+            />
             <ConfirmationMenu
               isOpen={showDuplicateConfirm}
               onClose={() => {
@@ -174,15 +175,12 @@ const SprintHeader = ({
                 </label>
               </div>
             </ConfirmationMenu>
-            <button
+            <HeaderButton
               onClick={() => setShowArchiveConfirm(true)}
               disabled={isArchiving}
-              className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
-              aria-label={isActive ? "Archive sprint" : "Unarchive sprint"}
-              title={isActive ? "Archive sprint" : "Unarchive sprint"}
-            >
-              <Archive className="h-5 w-5" />
-            </button>
+              icon={<Archive className="h-5 w-5" />}
+              tooltip={isActive ? "Archive sprint" : "Unarchive sprint"}
+            />
             <ConfirmationMenu
               isOpen={showArchiveConfirm}
               onClose={() => setShowArchiveConfirm(false)}
@@ -197,14 +195,24 @@ const SprintHeader = ({
               isLoading={isArchiving}
               variant="warning"
             />
-            <RefreshButton onRefresh={onRefresh} label="Sprint" />
-            <Link
+            <div className="group relative cursor-pointer">
+              <RefreshButton onRefresh={onRefresh} label="Sprint" />
+              <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                Refresh
+              </div>
+            </div>
+            <HeaderButton
+              onClick={onToggleStandup}
+              icon={<Users className="h-5 w-5" />}
+              tooltip={isStandupMode ? "Exit standup" : "Standup mode"}
+              active={isStandupMode}
+              activeClassName="cursor-pointer text-purple-500 dark:text-purple-400"
+            />
+            <HeaderButton
               href={`/sprints/${sprintId}/settings`}
-              className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-              aria-label="Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Link>
+              icon={<Settings className="h-5 w-5" />}
+              tooltip="Settings"
+            />
           </h1>
           {/* Date display with calendar icon */}
           {(sprintStartDate || sprintDueDate) && (
@@ -219,7 +227,7 @@ const SprintHeader = ({
       </div>
 
       {/* Search */}
-      <div className="mb-2">
+      <div className={`mb-2 ${isStandupMode ? "pointer-events-none opacity-40" : ""}`}>
         <SearchInput
           filterState={filterState}
           onFilterChange={onFilterChange}

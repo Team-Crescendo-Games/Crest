@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Archive, Settings, Table } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
-import Link from "next/link";
 import React from "react";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { BOARD_MAIN_COLOR } from "@/lib/entityColors";
@@ -13,6 +12,7 @@ import {
 } from "@/lib/styleConstants";
 import { Tag, useArchiveProjectMutation } from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
+import HeaderButton from "@/components/HeaderButton";
 import HeaderToolbar from "@/components/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
@@ -88,15 +88,12 @@ const BoardHeader = ({
           <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
             {totalTasks} tasks · {totalPoints} pts
           </span>
-          <button
+          <HeaderButton
             onClick={() => setShowArchiveConfirm(true)}
             disabled={isArchiving}
-            className="text-gray-500 hover:text-gray-700 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-neutral-200"
-            aria-label={isActive ? "Archive board" : "Unarchive board"}
-            title={isActive ? "Archive board" : "Unarchive board"}
-          >
-            <Archive className="h-5 w-5" />
-          </button>
+            icon={<Archive className="h-5 w-5" />}
+            tooltip={isActive ? "Archive board" : "Unarchive board"}
+          />
           <ConfirmationMenu
             isOpen={showArchiveConfirm}
             onClose={() => setShowArchiveConfirm(false)}
@@ -111,14 +108,17 @@ const BoardHeader = ({
             isLoading={isArchiving}
             variant="warning"
           />
-          <RefreshButton onRefresh={onRefresh} label="Board" />
-          <Link
+          <div className="group relative cursor-pointer">
+            <RefreshButton onRefresh={onRefresh} label="Board" />
+            <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              Refresh
+            </div>
+          </div>
+          <HeaderButton
             href={`/boards/${boardId}/settings`}
-            className="text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
+            icon={<Settings className="h-5 w-5" />}
+            tooltip="Settings"
+          />
         </div>
         {boardDescription && (
           <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">

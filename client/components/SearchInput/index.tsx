@@ -129,7 +129,7 @@ const SearchInput = ({
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="dark:border-dark-tertiary dark:bg-dark-secondary w-64 rounded-md border border-gray-200 bg-white py-1 pr-7 pl-7 text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:outline-none sm:w-80 dark:text-white dark:placeholder-gray-500"
+          className="dark:border-dark-tertiary dark:bg-dark-secondary w-80 rounded-md border border-gray-200 bg-white py-1.5 pr-7 pl-7 text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:outline-none sm:w-96 dark:text-white dark:placeholder-gray-500"
           style={{
             borderColor: searchInput ? accentColor : undefined,
             boxShadow: searchInput ? `0 0 0 1px ${accentColor}` : undefined,

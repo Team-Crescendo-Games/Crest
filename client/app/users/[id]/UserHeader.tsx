@@ -86,7 +86,12 @@ const UserHeader = ({
               <span className="dark:bg-dark-tertiary inline-block rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
                 {totalTasks} tasks · {totalPoints} pts
               </span>
-              <RefreshButton onRefresh={onRefresh} label="User" />
+              <div className="group relative cursor-pointer">
+                <RefreshButton onRefresh={onRefresh} label="User" />
+                <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  Refresh
+                </div>
+              </div>
             </div>
             {user.email && (
               <p className="text-sm text-gray-500 dark:text-neutral-400">
