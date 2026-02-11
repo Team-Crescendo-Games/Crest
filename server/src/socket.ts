@@ -21,7 +21,7 @@ const rooms = new Map<string, Map<string, PresenceUser>>();
 let colorIndex = 0;
 
 function getNextColor(): string {
-  const color = COLLABORATOR_COLORS[colorIndex % COLLABORATOR_COLORS.length];
+  const color = COLLABORATOR_COLORS[colorIndex % COLLABORATOR_COLORS.length] ?? "#3b82f6";
   colorIndex++;
   return color;
 }
