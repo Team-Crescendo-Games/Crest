@@ -7,14 +7,16 @@ import {
   setIsSidebarCollapsed,
 } from "@/state";
 import {
-  useGetProjectsQuery,
+  useGetBoardsQuery,
   useGetSprintsQuery,
   useGetUnreadCountQuery,
   useUpdateTaskMutation,
   useAddTaskToSprintMutation,
-  useReorderProjectsMutation,
+  useReorderBoardsMutation,
+  useGetWorkspacesQuery,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { signOut } from "aws-amplify/auth";
 import {
   BarChart3,
@@ -38,6 +40,7 @@ import {
   Users,
   Zap,
   LogOut,
+  Building2,
 } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import Image from "next/image";
@@ -46,7 +49,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import ModalNewBoard from "@/components/boards/modalNewBoard";
-import ModalNewSprint from "@/app/sprints/ModalNewSprint";
+import ModalNewSprint from "@/app/sprints/ModalNewSprint"; // TODO: Move this to components and rename for consistency
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import S3Image from "@/components/S3Image";
 import {
@@ -66,14 +69,16 @@ const Sidebar = () => {
   const [showOverview, setShowOverview] = useState(true);
   const [showBoards, setShowBoards] = useState(true);
   const [showSprints, setShowSprints] = useState(true);
-  const [showWorkspace, setShowWorkspace] = useState(true);
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(true);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showActiveSprintsOnly, setShowActiveSprintsOnly] = useState(true);
   const [showActiveBoardsOnly, setShowActiveBoardsOnly] = useState(true);
   const [isModalNewBoardOpen, setIsModalNewBoardOpen] = useState(false);
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
+
   const createMenuRef = useRef<HTMLDivElement>(null);
+
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
@@ -85,47 +90,61 @@ const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data: projects } = useGetProjectsQuery();
-  const { data: sprints } = useGetSprintsQuery();
+  const { data: currentUser } = useAuthUser();
+  const userId = currentUser?.userDetails?.userId;
+  const realUserEmail = impersonatedUser
+    ? undefined
+    : currentUser?.userDetails?.email;
+  const isAdmin = isAdminUser(realUserEmail) || !!impersonatedUser;
+
+  const { activeWorkspaceId, setWorkspace } = useWorkspace();
+
+  // --- DATA FETCHING ---
+  const { data: workspaces } = useGetWorkspacesQuery(userId!, {
+    skip: !userId,
+  });
+
+  // Initialize workspace if none selected
+  useEffect(() => {
+    if (workspaces && workspaces.length > 0 && !activeWorkspaceId) {
+      setWorkspace(workspaces[0].id);
+    }
+  }, [workspaces, activeWorkspaceId, setWorkspace]);
+
+  const { data: boards } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: sprints } = useGetSprintsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: unreadCountData } = useGetUnreadCountQuery(userId!, {
+    skip: !userId,
+  });
+
   const [updateTask] = useUpdateTaskMutation();
   const [addTaskToSprint] = useAddTaskToSprintMutation();
-  const [reorderProjects] = useReorderProjectsMutation();
+  const [reorderBoards] = useReorderBoardsMutation();
 
-  // Filter sprints based on active toggle and sort by end date (dueDate)
+  const unreadCount = unreadCountData?.count ?? 0;
+
+  // --- FILTERING ---
   const filteredSprints = sprints
     ?.filter((sprint) =>
       showActiveSprintsOnly ? sprint.isActive !== false : true,
     )
     .sort((a, b) => {
-      // Sort by dueDate descending (most recent first)
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
     });
 
-  // Filter boards based on active toggle
-  const filteredBoards = projects?.filter((project) =>
-    showActiveBoardsOnly ? project.isActive !== false : true,
+  const filteredBoards = boards?.filter((board) =>
+    showActiveBoardsOnly ? board.isActive !== false : true,
   );
 
-  const { data: currentUser } = useAuthUser();
-  const userId = currentUser?.userDetails?.userId;
-  // For admin check, use the real user's email (not impersonated)
-  const realUserEmail = impersonatedUser
-    ? undefined
-    : currentUser?.userDetails?.email;
-  const isAdmin = isAdminUser(realUserEmail) || !!impersonatedUser; // If impersonating, user is admin
-
-  // Fetch unread notification count
-  const { data: unreadCountData } = useGetUnreadCountQuery(userId!, {
-    skip: !userId,
-  });
-  const unreadCount = unreadCountData?.count ?? 0;
-
-  const handleStopImpersonating = () => {
-    dispatch(setImpersonatedUser(null));
-  };
+  // --- HANDLERS ---
+  const handleStopImpersonating = () => dispatch(setImpersonatedUser(null));
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -134,7 +153,6 @@ const Sidebar = () => {
     }
   };
 
-  // Close create menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -148,7 +166,6 @@ const Sidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Shift+A keyboard shortcut to toggle Create menu
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement)?.tagName;
@@ -174,22 +191,20 @@ const Sidebar = () => {
     else if (option === "board") setIsModalNewBoardOpen(true);
   };
 
-  // Handler for moving task to a different board
   const handleMoveTaskToBoard = async (
     taskId: number,
-    projectId: number,
-    currentProjectId: number,
+    boardId: number,
+    currentBoardId: number,
   ) => {
-    if (projectId === currentProjectId) return; // Already on this board
+    if (boardId === currentBoardId) return;
     try {
-      await updateTask({ id: taskId, projectId, userId }).unwrap();
-      router.push(`/boards/${projectId}`);
+      await updateTask({ id: taskId, boardId, userId }).unwrap();
+      router.push(`/boards/${boardId}`);
     } catch (error) {
       console.error("Failed to move task to board:", error);
     }
   };
 
-  // Handler for adding task to a sprint
   const handleAddTaskToSprint = async (taskId: number, sprintId: number) => {
     try {
       await addTaskToSprint({ sprintId, taskId }).unwrap();
@@ -198,15 +213,18 @@ const Sidebar = () => {
     }
   };
 
-  // Handler for reordering boards
   const handleReorderBoards = async (dragIndex: number, hoverIndex: number) => {
-    if (!filteredBoards || dragIndex === hoverIndex) return;
+    if (!filteredBoards || dragIndex === hoverIndex || !activeWorkspaceId)
+      return;
     const newOrder = [...filteredBoards];
     const [removed] = newOrder.splice(dragIndex, 1);
     newOrder.splice(hoverIndex, 0, removed);
     const orderedIds = newOrder.map((p) => p.id);
     try {
-      await reorderProjects(orderedIds).unwrap();
+      await reorderBoards({
+        orderedIds,
+        workspaceId: activeWorkspaceId,
+      }).unwrap();
     } catch (error) {
       console.error("Failed to reorder boards:", error);
     }
@@ -232,7 +250,7 @@ const Sidebar = () => {
         onClose={() => setIsModalNewTaskOpen(false)}
       />
 
-      {/* Impersonation banner - fixed at top */}
+      {/* Impersonation banner */}
       {impersonatedUser && !isSidebarCollapsed && (
         <div className="flex shrink-0 items-center justify-between bg-amber-100 px-3 py-1.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
           <span className="truncate">
@@ -241,14 +259,13 @@ const Sidebar = () => {
           <button
             onClick={handleStopImpersonating}
             className="ml-2 flex shrink-0 items-center gap-1 rounded bg-amber-600 px-2 py-0.5 text-white hover:bg-amber-700"
-            title="Stop impersonating"
           >
             <LogOut className="h-3 w-3" />
           </button>
         </div>
       )}
 
-      {/* LOGO & TITLE - fixed at top */}
+      {/* LOGO & TITLE */}
       <div
         className={`flex shrink-0 items-center border-b border-gray-100 dark:border-gray-800 ${isSidebarCollapsed ? "justify-center px-2 py-4" : "gap-3 px-6 py-4"}`}
       >
@@ -266,7 +283,28 @@ const Sidebar = () => {
         )}
       </div>
 
-      {/* CREATE BUTTON - fixed at top */}
+      {/* WORKSPACE SWITCHER */}
+      {!isSidebarCollapsed && workspaces && workspaces.length > 0 && (
+        <div className="shrink-0 px-6 pb-2 pt-4">
+          <div className="group relative">
+            <select
+              value={activeWorkspaceId || ""}
+              onChange={(e) => setWorkspace(Number(e.target.value))}
+              className="w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pl-9 text-sm font-medium text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-dark-tertiary dark:text-gray-200"
+            >
+              {workspaces.map((ws) => (
+                <option key={ws.id} value={ws.id}>
+                  {ws.name}
+                </option>
+              ))}
+            </select>
+            <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          </div>
+        </div>
+      )}
+
+      {/* CREATE BUTTON */}
       <div
         className={`relative shrink-0 ${isSidebarCollapsed ? "px-2 py-3" : "px-6 py-3"}`}
         ref={createMenuRef}
@@ -290,14 +328,13 @@ const Sidebar = () => {
               onClick={() => handleCreateOption("task")}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
             >
-              <ClipboardList className="h-4 w-4" />
-              Task
+              <ClipboardList className="h-4 w-4" /> Task
             </button>
             <button
               onClick={() => handleCreateOption("sprint")}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 dark:text-gray-200 dark:hover:bg-purple-900/20"
             >
-              <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
+              <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />{" "}
               Sprint
             </button>
             <button
@@ -307,7 +344,7 @@ const Sidebar = () => {
               <BiColumns
                 className="h-4 w-4"
                 style={{ color: BOARD_MAIN_COLOR }}
-              />
+              />{" "}
               Board
             </button>
           </div>
@@ -316,9 +353,8 @@ const Sidebar = () => {
 
       {!isSidebarCollapsed && (
         <>
-          {/* OVERVIEW - fixed */}
+          {/* OVERVIEW SECTION */}
           <div className="shrink-0">
-            {/* ADMIN LINK - Above Overview */}
             {isAdmin && (
               <SidebarLink
                 icon={Settings}
@@ -328,7 +364,6 @@ const Sidebar = () => {
                 variant="admin"
               />
             )}
-            {/* OVERVIEW HEADER */}
             <button
               onClick={() => setShowOverview((prev) => !prev)}
               className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
@@ -341,7 +376,6 @@ const Sidebar = () => {
                 className={`h-5 w-5 transition-transform duration-300 ${showOverview ? "rotate-180" : "rotate-0"}`}
               />
             </button>
-            {/* OVERVIEW LIST */}
             {showOverview && (
               <div className="overflow-hidden">
                 <div
@@ -385,10 +419,10 @@ const Sidebar = () => {
             )}
           </div>
 
-          {/* WORKSPACE - fixed */}
+          {/* WORKSPACE SECTION */}
           <div className="relative z-0 shrink-0">
             <button
-              onClick={() => setShowWorkspace((prev) => !prev)}
+              onClick={() => setShowWorkspaceMenu((prev) => !prev)}
               className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
             >
               <div className="flex items-center gap-2">
@@ -396,11 +430,10 @@ const Sidebar = () => {
                 <span>Workspace</span>
               </div>
               <ChevronDown
-                className={`h-5 w-5 transition-transform duration-300 ${showWorkspace ? "rotate-180" : "rotate-0"}`}
+                className={`h-5 w-5 transition-transform duration-300 ${showWorkspaceMenu ? "rotate-180" : "rotate-0"}`}
               />
             </button>
-            {/* WORKSPACE LIST */}
-            {showWorkspace && (
+            {showWorkspaceMenu && (
               <div className="overflow-hidden">
                 <div
                   className="animate-slide-down opacity-0"
@@ -439,14 +472,13 @@ const Sidebar = () => {
             )}
           </div>
 
-          {/* BOARDS & SPRINTS - each with restricted height */}
+          {/* BOARDS & SPRINTS */}
           <div className="flex min-h-0 flex-1 flex-col">
-            {/* BOARDS SECTION */}
+            {/* BOARDS */}
             <div
               className="flex min-h-0 flex-col"
               style={{ maxHeight: showBoards ? "50%" : "auto" }}
             >
-              {/* BOARDS HEADER */}
               <button
                 onClick={() => setShowBoards((prev) => !prev)}
                 className="relative z-20 flex w-full shrink-0 items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
@@ -472,11 +504,6 @@ const Sidebar = () => {
                     ) : (
                       <EyeOff className="h-4 w-4" />
                     )}
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-[100] mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-950">
-                      {showActiveBoardsOnly
-                        ? "Show archived boards"
-                        : "Show active only"}
-                    </span>
                   </span>
                   <span
                     role="button"
@@ -493,21 +520,20 @@ const Sidebar = () => {
                   />
                 </div>
               </button>
-              {/* BOARDS LIST */}
               {showBoards && (
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {filteredBoards?.map((project, index) => (
+                  {filteredBoards?.map((board, index) => (
                     <div
-                      key={project.id}
+                      key={board.id}
                       className="animate-slide-down opacity-0"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <DraggableBoardLink
-                        projectId={project.id}
+                        boardId={board.id}
                         index={index}
-                        label={project.name}
-                        href={`/boards/${project.id}`}
-                        isInactive={project.isActive === false}
+                        label={board.name}
+                        href={`/boards/${board.id}`}
+                        isInactive={board.isActive === false}
                         onDropTask={handleMoveTaskToBoard}
                         onReorder={handleReorderBoards}
                       />
@@ -517,12 +543,11 @@ const Sidebar = () => {
               )}
             </div>
 
-            {/* SPRINTS SECTION */}
+            {/* SPRINTS */}
             <div
               className="flex min-h-0 flex-col"
               style={{ maxHeight: showSprints ? "50%" : "auto" }}
             >
-              {/* SPRINTS HEADER */}
               <button
                 onClick={() => setShowSprints((prev) => !prev)}
                 className="relative z-10 flex w-full shrink-0 items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
@@ -548,11 +573,6 @@ const Sidebar = () => {
                     ) : (
                       <EyeOff className="h-4 w-4" />
                     )}
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-[100] mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-gray-950">
-                      {showActiveSprintsOnly
-                        ? "Show archived sprints"
-                        : "Show active only"}
-                    </span>
                   </span>
                   <span
                     role="button"
@@ -569,7 +589,6 @@ const Sidebar = () => {
                   />
                 </div>
               </button>
-              {/* SPRINTS LIST */}
               {showSprints && (
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                   {filteredSprints?.map((sprint, index) => (
@@ -594,14 +613,13 @@ const Sidebar = () => {
         </>
       )}
 
-      {/* BOTTOM SECTION - User, Dark Mode, Sign Out - fixed at bottom */}
+      {/* BOTTOM SECTION */}
       <div
         className={`mt-auto shrink-0 border-t border-gray-100 bg-white py-4 dark:border-gray-800 dark:bg-dark-secondary ${isSidebarCollapsed ? "px-2" : "px-4"}`}
       >
         <div
           className={`flex items-center ${isSidebarCollapsed ? "flex-col gap-2" : "gap-1"}`}
         >
-          {/* Collapse toggle */}
           <button
             onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
@@ -613,7 +631,6 @@ const Sidebar = () => {
               <ChevronLeft className="h-5 w-5" />
             )}
           </button>
-          {/* User icon */}
           <Link
             href="/profile"
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
@@ -621,7 +638,6 @@ const Sidebar = () => {
             {currentUserDetails?.userId &&
             currentUserDetails?.profilePictureExt ? (
               <S3Image
-                key={`profile-${currentUserDetails.userId}`}
                 s3Key={`users/${currentUserDetails.userId}/profile.${currentUserDetails.profilePictureExt}`}
                 alt={currentUserDetails?.username || "User Profile Picture"}
                 width={20}
@@ -632,8 +648,6 @@ const Sidebar = () => {
               <User className="h-5 w-5" />
             )}
           </Link>
-
-          {/* Dark mode toggle */}
           <button
             onClick={() => dispatch(setIsDarkMode(!isDarkMode))}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
@@ -644,8 +658,6 @@ const Sidebar = () => {
               <Moon className="h-5 w-5" />
             )}
           </button>
-
-          {/* Sign out */}
           {!isSidebarCollapsed && (
             <button
               onClick={handleSignOut}
@@ -656,283 +668,6 @@ const Sidebar = () => {
           )}
         </div>
       </div>
-    </div>
-  );
-};
-
-interface SidebarLinkProps {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  isDarkMode: boolean;
-  badge?: number;
-  variant?: "default" | "admin";
-}
-
-const SidebarLink = ({
-  href,
-  icon: Icon,
-  label,
-  isDarkMode,
-  badge,
-  variant = "default",
-}: SidebarLinkProps) => {
-  const pathname = usePathname();
-  const isActive =
-    pathname === href || (pathname === "/" && href === "/dashboard");
-
-  const isAdmin = variant === "admin";
-  const activeColor = isAdmin
-    ? "#dc2626" // red-600
-    : isDarkMode
-      ? APP_ACCENT_LIGHT
-      : APP_ACCENT_DARK;
-  const iconColor = isAdmin ? "#ef4444" : undefined; // red-500 for admin
-
-  return (
-    <Link href={href} className="w-full">
-      <div
-        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
-          isActive ? "bg-gray-100 text-white dark:bg-dark-tertiary" : ""
-        } ${isAdmin ? "hover:bg-red-50 dark:hover:bg-red-900/20" : ""} justify-start px-6 py-2`}
-      >
-        {isActive && (
-          <div
-            className="absolute left-0 top-0 h-[100%] w-[3px]"
-            style={{ backgroundColor: activeColor }}
-          />
-        )}
-
-        <Icon
-          className="h-5 w-5 text-gray-800 dark:text-gray-100"
-          style={iconColor ? { color: iconColor } : undefined}
-        />
-        <span
-          className={`text-sm font-medium ${isAdmin ? "text-red-600 dark:text-red-400" : "text-gray-800 dark:text-gray-100"}`}
-        >
-          {label}
-        </span>
-        {badge !== undefined && badge > 0 && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-            {badge > 99 ? "99+" : badge}
-          </span>
-        )}
-      </div>
-    </Link>
-  );
-};
-
-interface DroppableBoardLinkProps {
-  projectId: number;
-  href: string;
-  label: string;
-  isInactive?: boolean;
-  onDropTask: (
-    taskId: number,
-    projectId: number,
-    currentProjectId: number,
-  ) => void;
-}
-
-// Keep for backwards compatibility but not used anymore
-const DroppableBoardLink = ({
-  projectId,
-  href,
-  label,
-  isInactive,
-  onDropTask,
-}: DroppableBoardLinkProps) => {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-
-  const [{ isOver, canDrop }, drop] = useDrop(
-    () => ({
-      accept: DND_ITEM_TYPES.TASK,
-      drop: (item: DraggedTask) => {
-        onDropTask(item.id, projectId, item.projectId);
-      },
-      canDrop: (item: DraggedTask) => item.projectId !== projectId,
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-        canDrop: monitor.canDrop(),
-      }),
-    }),
-    [projectId, onDropTask],
-  );
-
-  return (
-    <div
-      ref={(instance) => {
-        drop(instance);
-      }}
-    >
-      <Link href={href} className="w-full">
-        <div
-          className={`relative flex cursor-pointer items-center transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
-            isActive ? "bg-gray-100 dark:bg-dark-tertiary" : ""
-          } ${
-            isOver && canDrop
-              ? "bg-blue-100 ring-2 ring-inset ring-blue-400 dark:bg-blue-900/30"
-              : ""
-          } justify-start px-6 py-2 pl-10`}
-        >
-          {isActive && (
-            <div
-              className="absolute left-0 top-0 h-[100%] w-[3px]"
-              style={{ backgroundColor: BOARD_MAIN_COLOR }}
-            />
-          )}
-          <span
-            className={`text-sm ${isInactive ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}
-          >
-            {label}
-          </span>
-        </div>
-      </Link>
-    </div>
-  );
-};
-
-interface DraggableBoardLinkProps {
-  projectId: number;
-  index: number;
-  href: string;
-  label: string;
-  isInactive?: boolean;
-  onDropTask: (
-    taskId: number,
-    projectId: number,
-    currentProjectId: number,
-  ) => void;
-  onReorder: (dragIndex: number, dropIndex: number) => void;
-}
-
-const DraggableBoardLink = ({
-  projectId,
-  index,
-  href,
-  label,
-  isInactive,
-  onDropTask,
-  onReorder,
-}: DraggableBoardLinkProps) => {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-  const ref = useRef<HTMLDivElement>(null);
-  const [dropPosition, setDropPosition] = useState<"above" | "below" | null>(
-    null,
-  );
-
-  const [{ isDragging }, drag] = useDrag(
-    () => ({
-      type: DND_ITEM_TYPES.SIDEBAR_BOARD,
-      item: { id: projectId, index },
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
-      end: () => {
-        setDropPosition(null);
-      },
-    }),
-    [projectId, index],
-  );
-
-  const [{ isOver: isOverTask, canDrop: canDropTask }, dropTask] = useDrop(
-    () => ({
-      accept: DND_ITEM_TYPES.TASK,
-      drop: (item: DraggedTask) => {
-        onDropTask(item.id, projectId, item.projectId);
-      },
-      canDrop: (item: DraggedTask) => item.projectId !== projectId,
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-        canDrop: monitor.canDrop(),
-      }),
-    }),
-    [projectId, onDropTask],
-  );
-
-  const [{ isOver: isOverBoard }, dropBoard] = useDrop(
-    () => ({
-      accept: DND_ITEM_TYPES.SIDEBAR_BOARD,
-      hover: (item: DraggedSidebarBoard, monitor) => {
-        if (item.id === projectId) {
-          setDropPosition(null);
-          return;
-        }
-        const hoverBoundingRect = ref.current?.getBoundingClientRect();
-        if (!hoverBoundingRect) return;
-        const hoverMiddleY =
-          (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-        const clientOffset = monitor.getClientOffset();
-        if (!clientOffset) return;
-        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-        setDropPosition(hoverClientY < hoverMiddleY ? "above" : "below");
-      },
-      drop: (item: DraggedSidebarBoard) => {
-        if (item.id === projectId || dropPosition === null) return;
-        const targetIndex = dropPosition === "above" ? index : index + 1;
-        const adjustedIndex =
-          item.index < index ? targetIndex - 1 : targetIndex;
-        if (item.index !== adjustedIndex) {
-          onReorder(item.index, adjustedIndex);
-        }
-        setDropPosition(null);
-      },
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-      }),
-    }),
-    [index, projectId, onReorder, dropPosition],
-  );
-
-  // Reset drop position when not hovering
-  useEffect(() => {
-    if (!isOverBoard) {
-      setDropPosition(null);
-    }
-  }, [isOverBoard]);
-
-  // Combine drag and drop refs
-  drag(dropTask(dropBoard(ref)));
-
-  return (
-    <div
-      ref={ref}
-      className="relative"
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-    >
-      {/* Drop indicator line - above */}
-      {dropPosition === "above" && (
-        <div className="absolute left-6 right-2 top-0 h-0.5 -translate-y-0.5 rounded-full bg-blue-500" />
-      )}
-      <Link href={href} className="w-full">
-        <div
-          className={`relative flex cursor-grab items-center transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
-            isActive ? "bg-gray-100 dark:bg-dark-tertiary" : ""
-          } ${
-            isOverTask && canDropTask
-              ? "bg-blue-100 ring-2 ring-inset ring-blue-400 dark:bg-blue-900/30"
-              : ""
-          } justify-start px-6 py-2 pl-10`}
-        >
-          {isActive && (
-            <div
-              className="absolute left-0 top-0 h-[100%] w-[3px]"
-              style={{ backgroundColor: BOARD_MAIN_COLOR }}
-            />
-          )}
-          <span
-            className={`text-sm ${isInactive ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}
-          >
-            {label}
-          </span>
-        </div>
-      </Link>
-      {/* Drop indicator line - below */}
-      {dropPosition === "below" && (
-        <div className="absolute bottom-0 left-6 right-2 h-0.5 translate-y-0.5 rounded-full bg-blue-500" />
-      )}
     </div>
   );
 };
@@ -986,10 +721,11 @@ const DroppableSprintLink = ({
         >
           {isActive && (
             <div
-              className="absolute left-0 top-0 h-[100%] w-[3px]"
+              className="w-0.75 absolute left-0 top-0 h-full"
               style={{ backgroundColor: SPRINT_MAIN_COLOR }}
             />
           )}
+
           <span
             className={`text-sm ${isInactive ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}
           >
@@ -1001,13 +737,76 @@ const DroppableSprintLink = ({
   );
 };
 
+interface SidebarLinkProps {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  isDarkMode: boolean;
+  badge?: number;
+  variant?: "default" | "admin";
+}
+
+const SidebarLink = ({
+  href,
+  icon: Icon,
+  label,
+  isDarkMode,
+  badge,
+  variant = "default",
+}: SidebarLinkProps) => {
+  const pathname = usePathname();
+  const isActive =
+    pathname === href || (pathname === "/" && href === "/dashboard");
+  const isAdmin = variant === "admin";
+
+  const activeColor = isAdmin
+    ? "#dc2626" // red-600
+    : isDarkMode
+      ? APP_ACCENT_LIGHT
+      : APP_ACCENT_DARK;
+  const iconColor = isAdmin ? "#ef4444" : undefined; // red-500 for admin
+
+  return (
+    <Link href={href} className="w-full">
+      <div
+        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
+          isActive ? "bg-gray-100 text-white dark:bg-dark-tertiary" : ""
+        } ${isAdmin ? "hover:bg-red-50 dark:hover:bg-red-900/20" : ""} justify-start px-6 py-2`}
+      >
+        {isActive && (
+          <div
+            className="w-0.75 absolute left-0 top-0 h-full"
+            style={{ backgroundColor: activeColor }}
+          />
+        )}
+
+        <Icon
+          className="h-5 w-5 text-gray-800 dark:text-gray-100"
+          style={iconColor ? { color: iconColor } : undefined}
+        />
+
+        <span
+          className={`text-sm font-medium ${isAdmin ? "text-red-600 dark:text-red-400" : "text-gray-800 dark:text-gray-100"}`}
+        >
+          {label}
+        </span>
+
+        {badge !== undefined && badge > 0 && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+};
+
 interface SidebarSubLinkWithIconProps {
   href: string;
   label: string;
   icon: LucideIcon;
   isDarkMode: boolean;
   badge?: number;
-  /** Optional custom active check - if provided, overrides default pathname === href check */
   isActiveOverride?: boolean;
 }
 
@@ -1020,10 +819,10 @@ const SidebarSubLinkWithIcon = ({
   isActiveOverride,
 }: SidebarSubLinkWithIconProps) => {
   const pathname = usePathname();
+
   // Use override if provided, otherwise fall back to default href comparison
   const isActive =
     isActiveOverride !== undefined ? isActiveOverride : pathname === href;
-
   const activeColor = isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK;
 
   return (
@@ -1035,14 +834,17 @@ const SidebarSubLinkWithIcon = ({
       >
         {isActive && (
           <div
-            className="absolute left-0 top-0 h-[100%] w-[3px]"
+            className="w-0.75 absolute left-0 top-0 h-full"
             style={{ backgroundColor: activeColor }}
           />
         )}
+
         <Icon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+
         <span className="text-sm text-gray-700 dark:text-gray-200">
           {label}
         </span>
+
         {badge !== undefined && badge > 0 && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
             {badge > 99 ? "99+" : badge}
@@ -1050,6 +852,125 @@ const SidebarSubLinkWithIcon = ({
         )}
       </div>
     </Link>
+  );
+};
+
+interface DraggableBoardLinkProps {
+  boardId: number;
+  index: number;
+  href: string;
+  label: string;
+  isInactive?: boolean;
+  onDropTask: (taskId: number, boardId: number, currentBoardId: number) => void;
+  onReorder: (dragIndex: number, dropIndex: number) => void;
+}
+
+const DraggableBoardLink = ({
+  boardId,
+  index,
+  href,
+  label,
+  isInactive,
+  onDropTask,
+  onReorder,
+}: DraggableBoardLinkProps) => {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+  const ref = useRef<HTMLDivElement>(null);
+  const [dropPosition, setDropPosition] = useState<"above" | "below" | null>(
+    null,
+  );
+
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: DND_ITEM_TYPES.SIDEBAR_BOARD,
+      item: { id: boardId, index },
+      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+      end: () => setDropPosition(null),
+    }),
+    [boardId, index],
+  );
+
+  const [{ isOver: isOverTask, canDrop: canDropTask }, dropTask] = useDrop(
+    () => ({
+      accept: DND_ITEM_TYPES.TASK,
+      drop: (item: DraggedTask) => onDropTask(item.id, boardId, item.boardId),
+      canDrop: (item: DraggedTask) => item.boardId !== boardId,
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }),
+    [boardId, onDropTask],
+  );
+
+  const [{ isOver: isOverBoard }, dropBoard] = useDrop(
+    () => ({
+      accept: DND_ITEM_TYPES.SIDEBAR_BOARD,
+      hover: (item: DraggedSidebarBoard, monitor) => {
+        if (item.id === boardId) {
+          setDropPosition(null);
+          return;
+        }
+        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        if (!hoverBoundingRect) return;
+        const hoverMiddleY =
+          (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const clientOffset = monitor.getClientOffset();
+        if (!clientOffset) return;
+        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+        setDropPosition(hoverClientY < hoverMiddleY ? "above" : "below");
+      },
+      drop: (item: DraggedSidebarBoard) => {
+        if (item.id === boardId || dropPosition === null) return;
+        const targetIndex = dropPosition === "above" ? index : index + 1;
+        const adjustedIndex =
+          item.index < index ? targetIndex - 1 : targetIndex;
+        if (item.index !== adjustedIndex) onReorder(item.index, adjustedIndex);
+        setDropPosition(null);
+      },
+      collect: (monitor) => ({ isOver: monitor.isOver() }),
+    }),
+    [index, boardId, onReorder, dropPosition],
+  );
+
+  useEffect(() => {
+    if (!isOverBoard) setDropPosition(null);
+  }, [isOverBoard]);
+
+  // eslint-disable-next-line react-hooks/refs
+  drag(dropTask(dropBoard(ref)));
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      {dropPosition === "above" && (
+        <div className="absolute left-6 right-2 top-0 h-0.5 -translate-y-0.5 rounded-full bg-blue-500" />
+      )}
+      <Link href={href} className="w-full">
+        <div
+          className={`relative flex cursor-grab items-center transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${isActive ? "bg-gray-100 dark:bg-dark-tertiary" : ""} ${isOverTask && canDropTask ? "bg-blue-100 ring-2 ring-inset ring-blue-400 dark:bg-blue-900/30" : ""} justify-start px-6 py-2 pl-10`}
+        >
+          {isActive && (
+            <div
+              className="w-0.75 absolute left-0 top-0 h-full"
+              style={{ backgroundColor: BOARD_MAIN_COLOR }}
+            />
+          )}
+          <span
+            className={`text-sm ${isInactive ? "text-gray-400 dark:text-gray-500" : "text-gray-700 dark:text-gray-200"}`}
+          >
+            {label}
+          </span>
+        </div>
+      </Link>
+      {dropPosition === "below" && (
+        <div className="absolute bottom-0 left-6 right-2 h-0.5 translate-y-0.5 rounded-full bg-blue-500" />
+      )}
+    </div>
   );
 };
 

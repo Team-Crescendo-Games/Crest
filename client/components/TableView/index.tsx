@@ -3,9 +3,14 @@
 import { useState } from "react";
 import { Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { Task } from "@/state/api";
-import TaskDetailModal from "@/components/TaskDetailModal";
+import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import UserIcon from "@/components/UserIcon";
-import { applyFilters, applySorting, priorityOrder, statusOrder } from "@/lib/filterUtils";
+import {
+  applyFilters,
+  applySorting,
+  priorityOrder,
+  statusOrder,
+} from "@/lib/filterUtils";
 import { FilterState, SortState, initialSortState } from "@/lib/filterTypes";
 import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
@@ -111,14 +116,18 @@ const TableView = ({
         }
 
         if (localSortField === "priority") {
-          aVal = aVal ? priorityOrder[aVal as keyof typeof priorityOrder] ?? 99 : 99;
-          bVal = bVal ? priorityOrder[bVal as keyof typeof priorityOrder] ?? 99 : 99;
+          aVal = aVal
+            ? (priorityOrder[aVal as keyof typeof priorityOrder] ?? 99)
+            : 99;
+          bVal = bVal
+            ? (priorityOrder[bVal as keyof typeof priorityOrder] ?? 99)
+            : 99;
           return localSortDirection === "asc" ? aVal - bVal : bVal - aVal;
         }
 
         if (localSortField === "status") {
-          aVal = aVal ? statusOrder[aVal] ?? 99 : 99;
-          bVal = bVal ? statusOrder[bVal] ?? 99 : 99;
+          aVal = aVal ? (statusOrder[aVal] ?? 99) : 99;
+          bVal = bVal ? (statusOrder[bVal] ?? 99) : 99;
           return localSortDirection === "asc" ? aVal - bVal : bVal - aVal;
         }
 
@@ -160,14 +169,14 @@ const TableView = ({
     "px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-dark-tertiary transition-colors";
 
   return (
-    <div className="w-full px-4 pt-4 pb-8 xl:px-6">
+    <div className="w-full px-4 pb-8 pt-4 xl:px-6">
       {showCreateButton && setIsModalNewTaskOpen && (
         <div className="mb-4">
           <button
             onClick={() => setIsModalNewTaskOpen(true)}
-            className="dark:border-stroke-dark dark:bg-dark-secondary/50 dark:hover:bg-dark-secondary flex cursor-pointer items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 px-4 py-2 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:text-neutral-300"
+            className="flex cursor-pointer items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 px-4 py-2 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:border-stroke-dark dark:bg-dark-secondary/50 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
           >
-            <span className="dark:bg-dark-tertiary/70 flex h-6 w-6 items-center justify-center rounded-full bg-gray-200/70">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200/70 dark:bg-dark-tertiary/70">
               <Plus size={14} />
             </span>
             <span className="text-sm font-medium">Create Task</span>
@@ -180,13 +189,13 @@ const TableView = ({
           <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="dark:border-stroke-dark dark:bg-dark-secondary rounded border border-gray-200 bg-white shadow-sm">
+        <div className="rounded border border-gray-200 bg-white shadow-sm dark:border-stroke-dark dark:bg-dark-secondary">
           <div className="max-h-[calc(100vh-280px)] overflow-auto">
-            <table className="dark:divide-stroke-dark min-w-full divide-y divide-gray-200">
-              <thead className="dark:bg-dark-tertiary sticky top-0 z-10 bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-stroke-dark">
+              <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-dark-tertiary">
                 <tr>
                   <th
-                    className={`${headerClass} max-w-[400px] min-w-[200px]`}
+                    className={`${headerClass} min-w-[200px] max-w-[400px]`}
                     onClick={() => handleSort("title")}
                   >
                     <div className="flex items-center gap-1">
@@ -269,12 +278,12 @@ const TableView = ({
                   <th className={`${headerClass} text-center`}>Author</th>
                 </tr>
               </thead>
-              <tbody className="dark:divide-stroke-dark divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-stroke-dark">
                 {displayTasks.map((task) => (
                   <tr
                     key={task.id}
                     onClick={() => handleRowClick(task.id)}
-                    className="dark:hover:bg-dark-tertiary cursor-pointer transition-colors hover:bg-gray-50"
+                    className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-dark-tertiary"
                   >
                     <td className="max-w-[400px] px-3 py-3">
                       <span className="block truncate font-medium text-gray-900 dark:text-white">
@@ -321,11 +330,11 @@ const TableView = ({
                                   profilePictureExt={ta.user.profilePictureExt}
                                   size={28}
                                   tooltipLabel="Assignee"
-                                  className="dark:ring-dark-secondary ring-2 ring-white"
+                                  className="ring-2 ring-white dark:ring-dark-secondary"
                                 />
                               ))}
                               {task.taskAssignments.length > 3 && (
-                                <div className="dark:bg-dark-tertiary dark:ring-dark-secondary flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 ring-2 ring-white dark:text-gray-300">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 ring-2 ring-white dark:bg-dark-tertiary dark:text-gray-300 dark:ring-dark-secondary">
                                   +{task.taskAssignments.length - 3}
                                 </div>
                               )}

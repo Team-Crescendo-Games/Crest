@@ -3,8 +3,8 @@
 import Header from "@/components/Header";
 import ProjectCard from "@/components/ProjectCard";
 import UserCard from "@/components/UserCard";
-import TaskDetailModal from "@/components/TaskDetailModal";
-import TaskCard from "@/components/TaskCard";
+import TaskDetailModal from "@/components/tasks/taskDetailModal";
+import TaskCard from "@/components/tasks/taskCard";
 import { Task, useSearchQuery } from "@/state/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -265,13 +265,13 @@ const Search = () => {
 
           {/* Centered Search Input */}
           <div className="relative w-full max-w-lg">
-            <SearchIcon className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               ref={inputRef}
               type="text"
               value={inputValue}
               placeholder="Press Enter to search..."
-              className="dark:border-dark-tertiary dark:bg-dark-secondary w-full rounded-xl border border-gray-300 bg-white py-4 pr-4 pl-12 text-lg shadow-sm transition-colors focus:border-gray-400 focus:outline-none dark:text-white dark:placeholder-neutral-400"
+              className="w-full rounded-xl border border-gray-300 bg-white py-4 pl-12 pr-4 text-lg shadow-sm transition-colors focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-secondary dark:text-white dark:placeholder-neutral-400"
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(true)}
@@ -282,7 +282,7 @@ const Search = () => {
             {shouldShowSuggestions && (
               <div
                 ref={suggestionsRef}
-                className="dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full right-0 left-0 z-10 mt-2 rounded-lg border border-gray-200 bg-white shadow-lg"
+                className="absolute left-0 right-0 top-full z-10 mt-2 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary"
               >
                 <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-neutral-400">
                   Recent Searches
@@ -291,7 +291,7 @@ const Search = () => {
                   <div
                     key={term}
                     onClick={() => handleSelectRecentSearch(term)}
-                    className="dark:hover:bg-dark-tertiary flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left hover:bg-gray-100"
+                    className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                   >
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-400" />
@@ -301,7 +301,7 @@ const Search = () => {
                     </div>
                     <button
                       onClick={(e) => handleRemoveRecentSearch(e, term)}
-                      className="dark:hover:bg-dark-bg rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:text-white"
+                      className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-dark-bg dark:hover:text-white"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -334,13 +334,13 @@ const Search = () => {
 
           <div className="mb-4 flex flex-wrap items-center gap-4">
             <div className="relative max-w-xl flex-1">
-              <SearchIcon className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 ref={inputRef}
                 type="text"
                 value={inputValue}
                 placeholder="Search..."
-                className="dark:border-dark-tertiary dark:bg-dark-secondary w-full rounded-lg border border-gray-300 bg-white py-3 pr-4 pl-10 shadow-sm transition-colors focus:border-gray-400 focus:outline-none dark:text-white dark:placeholder-neutral-400"
+                className="w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 shadow-sm transition-colors focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-secondary dark:text-white dark:placeholder-neutral-400"
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setShowSuggestions(true)}
@@ -350,7 +350,7 @@ const Search = () => {
               {shouldShowSuggestions && (
                 <div
                   ref={suggestionsRef}
-                  className="dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full right-0 left-0 z-10 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg"
+                  className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary"
                 >
                   <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-neutral-400">
                     Recent Searches
@@ -359,7 +359,7 @@ const Search = () => {
                     <div
                       key={term}
                       onClick={() => handleSelectRecentSearch(term)}
-                      className="dark:hover:bg-dark-tertiary flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left hover:bg-gray-100"
+                      className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                     >
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-400" />
@@ -369,7 +369,7 @@ const Search = () => {
                       </div>
                       <button
                         onClick={(e) => handleRemoveRecentSearch(e, term)}
-                        className="dark:hover:bg-dark-bg rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:text-white"
+                        className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-dark-bg dark:hover:text-white"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -389,7 +389,7 @@ const Search = () => {
 
             <button
               onClick={handleBackToSearch}
-              className="dark:border-dark-tertiary dark:hover:bg-dark-tertiary rounded-lg border border-gray-300 px-4 py-3 text-gray-600 transition-colors hover:bg-gray-50 dark:text-neutral-300"
+              className="rounded-lg border border-gray-300 px-4 py-3 text-gray-600 transition-colors hover:bg-gray-50 dark:border-dark-tertiary dark:text-neutral-300 dark:hover:bg-dark-tertiary"
             >
               Clear
             </button>
@@ -455,7 +455,7 @@ const Search = () => {
                       <Link
                         key={sprint.id}
                         href={`/sprints/${sprint.id}`}
-                        className="dark:bg-dark-secondary rounded-md bg-white p-4 shadow transition-all hover:outline hover:outline-2 hover:outline-purple-300 dark:hover:outline-purple-600"
+                        className="rounded-md bg-white p-4 shadow transition-all hover:outline hover:outline-2 hover:outline-purple-300 dark:bg-dark-secondary dark:hover:outline-purple-600"
                       >
                         <div className="flex items-center gap-2">
                           <Zap

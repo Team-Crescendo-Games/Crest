@@ -13,7 +13,7 @@ import {
 import { Tag, useArchiveBoardMutation } from "@/state/api"; // UPDATED IMPORT
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderButton from "@/components/HeaderButton";
-import HeaderToolbar from "@/components/HeaderToolbar";
+import HeaderToolbar from "@/components/UI/generic/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
 import PresenceAvatars from "@/components/PresenceAvatars";
@@ -63,7 +63,7 @@ export default function BoardHeader({
   collaborators = [],
 }: Props) {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [archiveBoard, { isLoading: isArchiving }] = useArchiveBoardMutation(); 
+  const [archiveBoard, { isLoading: isArchiving }] = useArchiveBoardMutation();
 
   const handleArchive = async () => {
     try {
@@ -83,13 +83,14 @@ export default function BoardHeader({
         </div>
       )}
 
-      <div className="pt-6 pb-6 lg:pt-8 lg:pb-4">
+      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold dark:text-white">
             {boardName}
           </h1>
-          <span className="dark:bg-dark-tertiary inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
-            <ClipboardList className="h-3.5 w-3.5" /> {totalTasks} · <Diamond className="h-3 w-3" fill="currentColor" /> {totalPoints}
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+            <ClipboardList className="h-3.5 w-3.5" /> {totalTasks} ·{" "}
+            <Diamond className="h-3 w-3" fill="currentColor" /> {totalPoints}
           </span>
           <HeaderButton
             onClick={() => setShowArchiveConfirm(true)}
@@ -113,7 +114,7 @@ export default function BoardHeader({
           />
           <div className="group relative cursor-pointer">
             <RefreshButton onRefresh={onRefresh} label="Board" />
-            <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-normal text-white opacity-0 transition-opacity group-hover:opacity-100">
               Refresh
             </div>
           </div>
@@ -144,7 +145,7 @@ export default function BoardHeader({
 
       {/* TABS */}
       <div className="flex flex-wrap items-end justify-between gap-1">
-        <div className="dark:after:bg-stroke-dark relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 md:gap-4">
+        <div className="relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 dark:after:bg-stroke-dark md:gap-4">
           <TabButton
             name="Board"
             icon={<BiColumns className="h-5 w-5" />}
@@ -172,7 +173,7 @@ export default function BoardHeader({
       </div>
     </div>
   );
-};
+}
 
 type TabButtonProps = {
   name: string;
@@ -204,4 +205,4 @@ function TabButton({ name, icon, setActiveTab, activeTab }: TabButtonProps) {
       {name}
     </button>
   );
-};
+}

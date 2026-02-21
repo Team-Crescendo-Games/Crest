@@ -102,10 +102,16 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (startPickerRef.current && !startPickerRef.current.contains(e.target as Node)) {
+      if (
+        startPickerRef.current &&
+        !startPickerRef.current.contains(e.target as Node)
+      ) {
         setShowStartPicker(false);
       }
-      if (endPickerRef.current && !endPickerRef.current.contains(e.target as Node)) {
+      if (
+        endPickerRef.current &&
+        !endPickerRef.current.contains(e.target as Node)
+      ) {
         setShowEndPicker(false);
       }
     };
@@ -225,8 +231,18 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
 
       {!isLoading && !hasData && (
         <div className="flex h-64 flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-          <svg className="mb-3 h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <svg
+            className="mb-3 h-12 w-12"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
           <p className="text-sm">No completed tasks in this period</p>
         </div>
@@ -242,23 +258,45 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
           <div className="relative flex flex-1 flex-col">
             <div className="absolute inset-0 flex flex-col justify-between">
               {yAxisLabels.map((_, index) => (
-                <div key={index} className="border-t border-gray-200 dark:border-gray-700" />
+                <div
+                  key={index}
+                  className="border-t border-gray-200 dark:border-gray-700"
+                />
               ))}
             </div>
             {chartType === "line" && (
               <div className="relative h-full w-full">
-                <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 256" preserveAspectRatio="none">
-                  <path d={generateAreaPath()} className="fill-blue-500/20 dark:fill-blue-400/20" />
-                  <path d={generateLinePath()} className="fill-none stroke-blue-500 dark:stroke-blue-400" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                <svg
+                  className="absolute inset-0 h-full w-full"
+                  viewBox="0 0 100 256"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d={generateAreaPath()}
+                    className="fill-blue-500/20 dark:fill-blue-400/20"
+                  />
+                  <path
+                    d={generateLinePath()}
+                    className="fill-none stroke-blue-500 dark:stroke-blue-400"
+                    strokeWidth="2"
+                    vectorEffect="non-scaling-stroke"
+                  />
                 </svg>
                 <div className="absolute inset-0 flex items-end justify-around px-1">
                   {data.map((point, index) => {
                     const bottomPercent = (point.points / maxPoints) * 100;
                     return (
-                      <div key={point.date || index} className="group relative flex flex-1 justify-center" style={{ height: "100%" }}>
+                      <div
+                        key={point.date || index}
+                        className="group relative flex flex-1 justify-center"
+                        style={{ height: "100%" }}
+                      >
                         <div
                           className="absolute h-4 w-4 -translate-x-1/2 cursor-pointer"
-                          style={{ bottom: `calc(${bottomPercent}% - 8px)`, left: "50%" }}
+                          style={{
+                            bottom: `calc(${bottomPercent}% - 8px)`,
+                            left: "50%",
+                          }}
                         >
                           <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700">
                             {point.points} pts
@@ -273,12 +311,20 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
             {chartType === "bar" && (
               <div className="relative flex h-full items-end justify-around gap-1 px-1">
                 {data.map((point, index) => {
-                  const heightPercent = maxPoints > 0 ? (point.points / maxPoints) * 100 : 0;
+                  const heightPercent =
+                    maxPoints > 0 ? (point.points / maxPoints) * 100 : 0;
                   return (
-                    <div key={point.date || index} className="group relative flex-1" style={{ height: "100%" }}>
+                    <div
+                      key={point.date || index}
+                      className="group relative flex-1"
+                      style={{ height: "100%" }}
+                    >
                       <div
                         className="absolute bottom-0 left-1/2 w-full max-w-12 -translate-x-1/2 rounded-t bg-blue-500 transition-all duration-300 hover:bg-blue-600 dark:bg-blue-400 dark:hover:bg-blue-300"
-                        style={{ height: `${heightPercent}%`, minHeight: point.points > 0 ? "4px" : "0px" }}
+                        style={{
+                          height: `${heightPercent}%`,
+                          minHeight: point.points > 0 ? "4px" : "0px",
+                        }}
                       >
                         <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700">
                           {point.points} pts
@@ -291,7 +337,10 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
             )}
             <div className="mt-2 flex justify-around">
               {data.map((point, index) => (
-                <span key={point.date || index} className="flex-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                <span
+                  key={point.date || index}
+                  className="flex-1 text-center text-xs text-gray-500 dark:text-gray-400"
+                >
                   {point.label}
                 </span>
               ))}

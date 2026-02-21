@@ -9,7 +9,7 @@ import {
   initialFilterState,
 } from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
-import { Tag, Priority, Project } from "@/state/api";
+import { Tag, Priority, Board } from "@/state/api"; 
 
 interface FilterDropdownProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface FilterDropdownProps {
   filterState: FilterState;
   onFilterChange: (newState: FilterState) => void;
   tags: Tag[];
-  projects?: Project[];
+  boards?: Board[]; 
 }
 
 const FilterDropdown = ({
@@ -26,7 +26,7 @@ const FilterDropdown = ({
   filterState,
   onFilterChange,
   tags,
-  projects = [],
+  boards = [], 
 }: FilterDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -159,8 +159,8 @@ const FilterDropdown = ({
 
   const handleBoardToggle = (boardId: number, checked: boolean) => {
     const newSelectedBoardIds = checked
-      ? [...filterState.selectedBoardIds, boardId]
-      : filterState.selectedBoardIds.filter((id) => id !== boardId);
+      ? [...(filterState.selectedBoardIds || []), boardId]
+      : (filterState.selectedBoardIds || []).filter((id) => id !== boardId);
 
     onFilterChange({
       ...filterState,
@@ -171,12 +171,12 @@ const FilterDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="dark:border-dark-tertiary dark:bg-dark-secondary animate-dropdown absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-150 ease-out"
+      className="animate-dropdown absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-150 ease-out dark:border-dark-tertiary dark:bg-dark-secondary"
       role="dialog"
       aria-label="Filter options"
     >
       {/* Header */}
-      <div className="dark:border-dark-tertiary border-b border-gray-200 px-4 py-3">
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-dark-tertiary">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
           Filters
         </h3>
@@ -185,7 +185,7 @@ const FilterDropdown = ({
       {/* Filter Sections Container */}
       <div className="max-h-80 overflow-y-auto">
         {/* Labels Section */}
-        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
             onClick={() => setIsLabelsExpanded(!isLabelsExpanded)}
@@ -218,7 +218,7 @@ const FilterDropdown = ({
                       onChange={(e) =>
                         handleTagToggle(tag.id, e.target.checked)
                       }
-                      className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
                     />
                     <span className="truncate">{tag.name}</span>
                   </label>
@@ -229,7 +229,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Priority Section */}
-        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
             onClick={() => setIsPriorityExpanded(!isPriorityExpanded)}
@@ -257,7 +257,7 @@ const FilterDropdown = ({
                     onChange={(e) =>
                       handlePriorityToggle(priority, e.target.checked)
                     }
-                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
                   />
                   <span>{priority}</span>
                 </label>
@@ -267,7 +267,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Status Section */}
-        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
             onClick={() => setIsStatusExpanded(!isStatusExpanded)}
@@ -295,7 +295,7 @@ const FilterDropdown = ({
                     onChange={(e) =>
                       handleStatusToggle(status, e.target.checked)
                     }
-                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
                   />
                   <span>{status}</span>
                 </label>
@@ -305,7 +305,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Due Date Section */}
-        <div className="dark:border-dark-tertiary border-b border-gray-100 px-4 py-3">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
             onClick={() => setIsDueDateExpanded(!isDueDateExpanded)}
@@ -335,7 +335,7 @@ const FilterDropdown = ({
                     onChange={(e) =>
                       handleDueDateToggle(option, e.target.checked)
                     }
-                    className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
                   />
                   <span>{dueDateOptionLabels[option]}</span>
                 </label>
@@ -345,7 +345,7 @@ const FilterDropdown = ({
         </div>
 
         {/* Boards Section */}
-        {projects.filter((p) => p.isActive).length > 0 && (
+        {boards.filter((b) => b.isActive).length > 0 && (
           <div className="px-4 py-3">
             <button
               type="button"
@@ -363,22 +363,30 @@ const FilterDropdown = ({
 
             {isBoardsExpanded && (
               <div className="mt-2 space-y-2">
-                {projects.filter((p) => p.isActive).map((project) => (
-                  <label
-                    key={project.id}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filterState.selectedBoardIds.includes(project.id)}
-                      onChange={(e) =>
-                        handleBoardToggle(project.id, e.target.checked)
-                      }
-                      className="dark:border-dark-tertiary dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="truncate">{project.name}</span>
-                  </label>
-                ))}
+                {boards
+                  .filter((b) => b.isActive)
+                  .map(
+                    (
+                      board,
+                    ) => (
+                      <label
+                        key={board.id}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filterState.selectedBoardIds?.includes(
+                            board.id,
+                          )} // Added optional chaining just in case
+                          onChange={(e) =>
+                            handleBoardToggle(board.id, e.target.checked)
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
+                        />
+                        <span className="truncate">{board.name}</span>
+                      </label>
+                    ),
+                  )}
               </div>
             )}
           </div>
@@ -387,7 +395,7 @@ const FilterDropdown = ({
 
       {/* Clear All Button */}
       {isFilterActive(filterState) && (
-        <div className="dark:border-dark-tertiary border-t border-gray-200 px-4 py-3">
+        <div className="border-t border-gray-200 px-4 py-3 dark:border-dark-tertiary">
           <button
             type="button"
             onClick={() => onFilterChange(initialFilterState)}

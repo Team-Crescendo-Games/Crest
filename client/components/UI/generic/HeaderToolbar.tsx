@@ -12,13 +12,22 @@ import {
 } from "@/lib/filterTypes";
 import { PRIORITY_COLORS } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
-import { APP_ACCENT_LIGHT, APP_ACCENT_DARK } from "@/lib/entityColors";
-import { Tag, Priority, useGetUsersQuery, useGetProjectsQuery } from "@/state/api";
-import { BOARD_MAIN_COLOR } from "@/lib/entityColors";
-import FilterDropdown from "@/components/FilterDropdown";
+import {
+  APP_ACCENT_LIGHT,
+  APP_ACCENT_DARK,
+  BOARD_MAIN_COLOR,
+} from "@/lib/entityColors";
+import {
+  Tag,
+  Priority,
+  useGetWorkspaceMembersQuery,
+  useGetBoardsQuery,
+} from "@/state/api";
+import FilterDropdown from "@/components/UI/generic/FilterDropdown";
 import DatePicker from "@/components/DatePicker";
 import { useAppSelector } from "@/app/redux";
 import { parseLocalDate } from "@/lib/dateUtils";
+import { useWorkspace } from "@/lib/useWorkspace"; 
 
 type HeaderToolbarProps = {
   filterState: FilterState;
@@ -53,12 +62,21 @@ const HeaderToolbar = ({
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const { activeWorkspaceId } = useWorkspace(); // ADDED
+
   const startDateRef = useRef<HTMLDivElement>(null);
   const endDateRef = useRef<HTMLDivElement>(null);
 
-  const { data: users = [] } = useGetUsersQuery();
-  const { data: projects = [] } = useGetProjectsQuery();
+  // SCOPED FETCHING
+  const { data: members = [] } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    { skip: !activeWorkspaceId },
+  );
+  const { data: boards = [] } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
 
   const removeUserFilter = (userId: number) => {
     onFilterChange({
@@ -69,8 +87,10 @@ const HeaderToolbar = ({
     });
   };
 
+  // Helper updated to search through Workspace Members instead of raw Users
   const getUserById = (userId: number) => {
-    return users.find((u) => u.userId === userId);
+    const member = members.find((m) => m.userId === userId);
+    return member?.user;
   };
 
   const sortFieldLabels: Record<SortField, string> = {
@@ -126,6 +146,7 @@ const HeaderToolbar = ({
     onFilterChange({
       ...filterState,
       selectedBoardIds: filterState.selectedBoardIds.filter(
+        // Ensure your FilterState interface supports selectedBoardIds!
         (id) => id !== boardId,
       ),
     });
@@ -175,7 +196,7 @@ const HeaderToolbar = ({
           className={`flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors ${
             showMyTasks
               ? "bg-yellow-100 dark:bg-yellow-900/30"
-              : "dark:hover:bg-dark-tertiary text-gray-500 hover:bg-gray-100 dark:text-neutral-400"
+              : "text-gray-500 hover:bg-gray-100 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
           }`}
           style={
             showMyTasks
@@ -194,7 +215,7 @@ const HeaderToolbar = ({
         </label>
       )}
 
-      {/* Time Range Selector - shown when hideMyTasks is true (user page) */}
+      {/* Time Range Selector */}
       {hideMyTasks && (
         <div className="flex items-center gap-1">
           {/* Start Date */}
@@ -207,7 +228,7 @@ const HeaderToolbar = ({
               className={`flex items-center gap-1 rounded-md border px-2 py-1 text-sm transition-colors ${
                 filterState.timeRange?.startDate
                   ? "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "dark:border-dark-tertiary dark:hover:bg-dark-tertiary border-gray-200 text-gray-500 hover:bg-gray-100 dark:text-neutral-400"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-dark-tertiary dark:text-neutral-400 dark:hover:bg-dark-tertiary"
               }`}
             >
               <Calendar className="h-3.5 w-3.5" />
@@ -218,7 +239,7 @@ const HeaderToolbar = ({
               </span>
             </button>
             {showStartDatePicker && (
-              <div className="absolute top-full left-0 z-30 mt-1">
+              <div className="absolute left-0 top-full z-30 mt-1">
                 <DatePicker
                   value={filterState.timeRange?.startDate || undefined}
                   onChange={handleStartDateChange}
@@ -240,7 +261,7 @@ const HeaderToolbar = ({
               className={`flex items-center gap-1 rounded-md border px-2 py-1 text-sm transition-colors ${
                 filterState.timeRange?.endDate
                   ? "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "dark:border-dark-tertiary dark:hover:bg-dark-tertiary border-gray-200 text-gray-500 hover:bg-gray-100 dark:text-neutral-400"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-dark-tertiary dark:text-neutral-400 dark:hover:bg-dark-tertiary"
               }`}
             >
               <Calendar className="h-3.5 w-3.5" />
@@ -251,7 +272,7 @@ const HeaderToolbar = ({
               </span>
             </button>
             {showEndDatePicker && (
-              <div className="absolute top-full left-0 z-30 mt-1">
+              <div className="absolute left-0 top-full z-30 mt-1">
                 <DatePicker
                   value={filterState.timeRange?.endDate || undefined}
                   onChange={handleEndDateChange}
@@ -288,7 +309,7 @@ const HeaderToolbar = ({
         >
           <Filter className="h-5 w-5" />
           {isFilterActive && (
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
           )}
         </button>
         <FilterDropdown
@@ -297,7 +318,7 @@ const HeaderToolbar = ({
           filterState={filterState}
           onFilterChange={onFilterChange}
           tags={tags}
-          projects={projects}
+          boards={boards}
         />
       </div>
 
@@ -314,11 +335,11 @@ const HeaderToolbar = ({
         >
           <ArrowUpDown className="h-5 w-5" />
           {isSortActive && (
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
           )}
         </button>
         {isSortDropdownOpen && (
-          <div className="animate-dropdown dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full right-0 z-20 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
+          <div className="animate-dropdown absolute right-0 top-full z-20 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
             <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-neutral-400">
               Sort by
             </div>
@@ -336,7 +357,7 @@ const HeaderToolbar = ({
                     onSortChange({ field, direction: "asc" });
                   }
                 }}
-                className={`dark:hover:bg-dark-tertiary flex w-full items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-100 ${
+                className={`flex w-full items-center justify-between px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
                   sortState.field === field
                     ? "text-blue-600 dark:text-blue-400"
                     : "text-gray-700 dark:text-gray-200"
@@ -352,12 +373,12 @@ const HeaderToolbar = ({
             ))}
             {isSortActive && (
               <>
-                <div className="dark:border-dark-tertiary my-1 border-t border-gray-200" />
+                <div className="my-1 border-t border-gray-200 dark:border-dark-tertiary" />
                 <button
                   onClick={() =>
                     onSortChange({ field: "none", direction: "asc" })
                   }
-                  className="dark:hover:bg-dark-tertiary flex w-full items-center px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400"
+                  className="flex w-full items-center px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-dark-tertiary"
                 >
                   Clear sort
                 </button>
@@ -440,7 +461,8 @@ const HeaderToolbar = ({
           </span>
         ))}
         {filterState.selectedStatuses.map((status) => {
-          const colors = STATUS_BADGE_STYLES[status] || STATUS_BADGE_STYLES["Input Queue"];
+          const colors =
+            STATUS_BADGE_STYLES[status] || STATUS_BADGE_STYLES["Input Queue"];
           return (
             <span
               key={`status-${status}`}
@@ -457,20 +479,20 @@ const HeaderToolbar = ({
             </span>
           );
         })}
-        {filterState.selectedBoardIds.map((boardId) => {
-          const project = projects.find((p) => p.id === boardId);
-          if (!project) return null;
+        {filterState.selectedBoardIds?.map((boardId) => {
+          const board = boards.find((b) => b.id === boardId);
+          if (!board) return null;
           return (
             <span
               key={`board-${boardId}`}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white"
               style={{ backgroundColor: BOARD_MAIN_COLOR }}
             >
-              {project.name}
+              {board.name}
               <button
                 onClick={() => removeBoardFilter(boardId)}
                 className="ml-0.5 hover:opacity-70"
-                aria-label={`Remove ${project.name} filter`}
+                aria-label={`Remove ${board.name} filter`}
               >
                 <X size={12} />
               </button>

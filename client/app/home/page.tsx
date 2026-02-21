@@ -1,8 +1,8 @@
 "use client";
 
 import Header from "@/components/Header";
-import TaskCard from "@/components/TaskCard";
-import TaskDetailModal from "@/components/TaskDetailModal";
+import TaskCard from "@/components/tasks/taskCard";
+import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import {
   Task,
   Status,
@@ -81,9 +81,9 @@ const HomePage = () => {
 
       {/* Stats Cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
+        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
           <div className="flex items-center gap-3">
-            <div className="dark:bg-dark-tertiary rounded-full bg-gray-100 p-2">
+            <div className="rounded-full bg-gray-100 p-2 dark:bg-dark-tertiary">
               <Clock className="h-5 w-5 text-gray-600 dark:text-neutral-300" />
             </div>
             <div>
@@ -97,7 +97,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
+        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
               <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -113,7 +113,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="dark:bg-dark-secondary rounded-lg bg-white p-4 shadow">
+        <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
               <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -159,7 +159,7 @@ const HomePage = () => {
       {/* Task List */}
       <section>
         {currentTasks.length === 0 ? (
-          <div className="dark:bg-dark-secondary rounded-lg bg-white p-8 text-center shadow">
+          <div className="rounded-lg bg-white p-8 text-center shadow dark:bg-dark-secondary">
             <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
             <p className="text-gray-600 dark:text-neutral-300">
               {activeTab === "assigned"

@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetTaskByIdQuery } from "@/state/api";
-import TaskDetailModal from "@/components/TaskDetailModal";
+import TaskDetailModal from "@/components/tasks/taskDetailModal";
 
 type Props = {
   params: Promise<{ id: string }>;

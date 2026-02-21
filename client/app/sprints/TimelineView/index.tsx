@@ -9,7 +9,7 @@ import { STATUS_BG_CLASSES } from "@/lib/statusColors";
 import { APP_ACCENT_LIGHT, SPRINT_MAIN_COLOR } from "@/lib/entityColors";
 import { applyFilters, applySorting } from "@/lib/filterUtils";
 import { parseLocalDate } from "@/lib/dateUtils";
-import TaskDetailModal from "@/components/TaskDetailModal";
+import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import UserIcon from "@/components/UserIcon";
 import { Plus } from "lucide-react";
 
@@ -341,9 +341,9 @@ const TimelineView = ({
     <div className="mb-4">
       <button
         onClick={() => setIsModalNewTaskOpen(true)}
-        className="dark:border-stroke-dark dark:bg-dark-secondary/50 dark:hover:bg-dark-secondary flex items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 px-4 py-2 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:text-neutral-300"
+        className="flex items-center gap-2 rounded-md border-2 border-dashed border-gray-300 bg-white/50 px-4 py-2 text-gray-500 transition-colors hover:border-gray-400 hover:bg-white hover:text-gray-700 dark:border-stroke-dark dark:bg-dark-secondary/50 dark:text-neutral-500 dark:hover:border-neutral-500 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
       >
-        <span className="dark:bg-dark-tertiary/70 flex h-6 w-6 items-center justify-center rounded-full bg-gray-200/70">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200/70 dark:bg-dark-tertiary/70">
           <Plus size={14} />
         </span>
         <span className="text-sm font-medium">Create Task</span>
@@ -353,7 +353,7 @@ const TimelineView = ({
 
   if (!tasks || tasks.length === 0) {
     return (
-      <div className="px-4 pt-4 pb-8 xl:px-6">
+      <div className="px-4 pb-8 pt-4 xl:px-6">
         <CreateTaskButton />
         <div className="flex h-80 items-center justify-center">
           <p className="text-gray-500 dark:text-gray-400">
@@ -366,7 +366,7 @@ const TimelineView = ({
 
   if (!sprintStartDate || !sprintDueDate) {
     return (
-      <div className="px-4 pt-4 pb-8 xl:px-6">
+      <div className="px-4 pb-8 pt-4 xl:px-6">
         <CreateTaskButton />
         <div className="flex h-80 items-center justify-center">
           <p className="text-gray-500 dark:text-gray-400">
@@ -379,7 +379,7 @@ const TimelineView = ({
 
   if (tasksWithDates.length === 0) {
     return (
-      <div className="px-4 pt-4 pb-8 xl:px-6">
+      <div className="px-4 pb-8 pt-4 xl:px-6">
         <CreateTaskButton />
         <div className="flex h-80 items-center justify-center">
           <p className="text-gray-500 dark:text-gray-400">
@@ -391,11 +391,11 @@ const TimelineView = ({
   }
 
   return (
-    <div className="h-full px-4 pt-4 pb-4 xl:px-6">
+    <div className="h-full px-4 pb-4 pt-4 xl:px-6">
       <CreateTaskButton />
       <div ref={containerRef} style={{ width: "100%" }}>
         {/* Week Headers */}
-        <div className="mb-2 flex border-t border-b border-gray-300 dark:border-gray-600">
+        <div className="mb-2 flex border-b border-t border-gray-300 dark:border-gray-600">
           <div className="relative flex">
             {weekHeaders.map((week, index) => (
               <div
@@ -412,7 +412,7 @@ const TimelineView = ({
         </div>
 
         {/* Date Headers */}
-        <div className="dark:border-stroke-dark mb-4 flex border-b border-gray-200">
+        <div className="mb-4 flex border-b border-gray-200 dark:border-stroke-dark">
           <div className="relative flex">
             {dateHeaders.map((date, index) => {
               const isToday = date.toDateString() === new Date().toDateString();
@@ -420,10 +420,17 @@ const TimelineView = ({
               return (
                 <div
                   key={index}
-                  className={`dark:border-stroke-dark flex-shrink-0 border-l border-gray-200 px-1 py-2 text-center text-xs ${
+                  className={`flex-shrink-0 border-l border-gray-200 px-1 py-2 text-center text-xs dark:border-stroke-dark ${
                     isToday ? "" : ""
                   } ${isLast ? "border-r" : ""}`}
-                  style={isToday ? { backgroundColor: `${SPRINT_MAIN_COLOR}10`, width: `${DAY_WIDTH}px` } : { width: `${DAY_WIDTH}px` }}
+                  style={
+                    isToday
+                      ? {
+                          backgroundColor: `${SPRINT_MAIN_COLOR}10`,
+                          width: `${DAY_WIDTH}px`,
+                        }
+                      : { width: `${DAY_WIDTH}px` }
+                  }
                 >
                   <div
                     className={`font-medium ${isToday ? "font-bold" : "text-gray-700 dark:text-gray-300"}`}
@@ -585,7 +592,7 @@ const TimelineView = ({
                           onMouseDown={(e) =>
                             handleDragStart(e, task.id, "start")
                           }
-                          className="absolute top-0 left-0 z-30 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
+                          className="absolute left-0 top-0 z-30 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
                           style={{ transform: "translateX(-50%)" }}
                         >
                           <div className="mx-auto h-full w-1 rounded-full bg-white/80 shadow dark:bg-gray-300/80" />
@@ -652,7 +659,7 @@ const TimelineView = ({
                           onMouseDown={(e) =>
                             handleDragStart(e, task.id, "end")
                           }
-                          className="absolute top-0 right-0 z-30 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
+                          className="absolute right-0 top-0 z-30 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
                           style={{ transform: "translateX(50%)" }}
                         >
                           <div className="mx-auto h-full w-1 rounded-full bg-white/80 shadow dark:bg-gray-300/80" />

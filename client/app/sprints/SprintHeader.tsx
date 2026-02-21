@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, Calendar, ClipboardList, Copy, Diamond, Settings, Table, Users } from "lucide-react";
+import {
+  Archive,
+  Calendar,
+  ClipboardList,
+  Copy,
+  Diamond,
+  Settings,
+  Table,
+  Users,
+} from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import { MdTimeline } from "react-icons/md";
 import { useRouter } from "next/navigation";
@@ -18,7 +27,7 @@ import {
 } from "@/state/api";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderButton from "@/components/HeaderButton";
-import HeaderToolbar from "@/components/HeaderToolbar";
+import HeaderToolbar from "@/components/UI/generic/HeaderToolbar";
 import RefreshButton from "@/components/RefreshButton";
 import SearchInput from "@/components/SearchInput";
 import PresenceAvatars from "@/components/PresenceAvatars";
@@ -128,12 +137,13 @@ const SprintHeader = ({
       )}
 
       {/* Sprint Title and Dates */}
-      <div className="pt-6 pb-6 lg:pt-8 lg:pb-4">
+      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8">
         <div className="flex flex-col gap-2">
           <h1 className="flex items-center gap-3 text-2xl font-bold text-gray-800 dark:text-white">
             {sprintTitle}
-            <span className="dark:bg-dark-tertiary inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:text-white">
-              <ClipboardList className="h-3.5 w-3.5" /> {totalTasks} · <Diamond className="h-3 w-3" fill="currentColor" /> {totalPoints}
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-sm font-medium text-gray-700 dark:bg-dark-tertiary dark:text-white">
+              <ClipboardList className="h-3.5 w-3.5" /> {totalTasks} ·{" "}
+              <Diamond className="h-3 w-3" fill="currentColor" /> {totalPoints}
             </span>
             <HeaderButton
               onClick={() => setShowDuplicateConfirm(true)}
@@ -165,7 +175,7 @@ const SprintHeader = ({
                     value={newSprintTitle}
                     onChange={(e) => setNewSprintTitle(e.target.value)}
                     placeholder={`${sprintTitle} (Copy)`}
-                    className="dark:border-dark-tertiary dark:bg-dark-tertiary w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:text-white dark:placeholder-gray-500"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
                 <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -201,7 +211,7 @@ const SprintHeader = ({
             />
             <div className="group relative cursor-pointer">
               <RefreshButton onRefresh={onRefresh} label="Sprint" />
-              <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-normal text-white opacity-0 transition-opacity group-hover:opacity-100">
                 Refresh
               </div>
             </div>
@@ -226,7 +236,8 @@ const SprintHeader = ({
             <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
               <Calendar className="h-4 w-4" />
               <span>
-                {sprintStartDate ? formatDate(sprintStartDate) : "—"} – {sprintDueDate ? formatDate(sprintDueDate) : "—"}
+                {sprintStartDate ? formatDate(sprintStartDate) : "—"} –{" "}
+                {sprintDueDate ? formatDate(sprintDueDate) : "—"}
               </span>
             </div>
           )}
@@ -234,7 +245,9 @@ const SprintHeader = ({
       </div>
 
       {/* Search */}
-      <div className={`mb-2 ${isStandupMode ? "pointer-events-none opacity-40" : ""}`}>
+      <div
+        className={`mb-2 ${isStandupMode ? "pointer-events-none opacity-40" : ""}`}
+      >
         <SearchInput
           filterState={filterState}
           onFilterChange={onFilterChange}
@@ -244,7 +257,7 @@ const SprintHeader = ({
 
       {/* TABS */}
       <div className="flex flex-wrap items-end justify-between gap-1">
-        <div className="dark:after:bg-stroke-dark relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 md:gap-4">
+        <div className="relative flex items-end gap-2 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200 dark:after:bg-stroke-dark md:gap-4">
           <TabButton
             name="Board"
             icon={<BiColumns className="h-5 w-5" />}

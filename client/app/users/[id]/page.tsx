@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, use } from "react";
-import UserHeader from "./UserHeader";
-import UserBoardView from "./BoardView";
-import UserTableView from "./TableView";
+import UserHeader from "@/components/users/userHeader";
+import UserBoardView from "@/components/users/userBoardView";
+import UserTableView from "@/components/users/userTableView";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import {
   useGetUserByIdQuery,
   useGetTasksAssignedToUserQuery,
   useGetTagsQuery,
-  useGetProjectsQuery,
+  useGetBoardsQuery,
 } from "@/state/api";
 import {
   FilterState,
@@ -18,14 +18,16 @@ import {
   initialSortState,
 } from "@/lib/filterTypes";
 import { isFilterActive, isSortActive } from "@/lib/filterUtils";
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-const UserBoardPage = ({ params }: Props) => {
+export default function UserBoardPage({ params }: Props) {
   const { id } = use(params);
   const userId = Number(id);
+  const { activeWorkspaceId } = useWorkspace();
 
   const [activeTab, setActiveTab] = useState("Board");
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
@@ -40,17 +42,25 @@ const UserBoardPage = ({ params }: Props) => {
     isError,
     refetch: refetchUser,
   } = useGetUserByIdQuery(userId);
-  const { data: tags = [] } = useGetTagsQuery();
+
+  // Scope tags and boards to the active workspace
+  const { data: tags = [] } = useGetTagsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: boards = [] } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+
   const { data: tasks = [], refetch: refetchTasks } =
     useGetTasksAssignedToUserQuery(userId);
-  const { data: projects = [] } = useGetProjectsQuery();
 
-  // Filter out tasks from archived boards for stats
-  const activeProjectIds = new Set(
-    projects.filter((p) => p.isActive).map((p) => p.id),
+  // Filter out tasks from archived boards AND boards outside the current workspace
+  const activeBoardIds = new Set(
+    boards.filter((b) => b.isActive).map((b) => b.id),
   );
+
   const activeTasks = tasks.filter(
-    (task) => !task.projectId || activeProjectIds.has(task.projectId),
+    (task) => !task.boardId || activeBoardIds.has(task.boardId),
   );
 
   const totalTasks = activeTasks.length;
@@ -113,6 +123,4 @@ const UserBoardPage = ({ params }: Props) => {
       </div>
     </div>
   );
-};
-
-export default UserBoardPage;
+}

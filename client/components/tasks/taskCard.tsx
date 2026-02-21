@@ -14,6 +14,7 @@ import {
   useUpdateTaskMutation,
   useGetTagsQuery,
 } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
 import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 import RadialProgress from "@/components/RadialProgress";
@@ -32,7 +33,6 @@ type Props = {
   collaboratorBorderColor?: string;
 };
 
-// Portal wrapper for dropdowns with ref to content and animation
 type DropdownPortalProps = {
   children: React.ReactNode;
   anchorRef: React.RefObject<HTMLElement | null>;
@@ -48,8 +48,11 @@ const DropdownPortal = forwardRef<DropdownPortalHandle, DropdownPortalProps>(
   ({ children, anchorRef, isOpen, animate = false }, ref) => {
     const [position, setPosition] = useState({ top: 0, left: 0 });
     const [isVisible, setIsVisible] = useState(false);
-    const [shouldRender, setShouldRender] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    // Keep mounted while opening/closing animation is in progress
+    const shouldRender = animate ? isOpen || isVisible : isOpen;
+    const EXIT_ANIMATION_MS = 150; // keep in sync with CSS transition duration
 
     useImperativeHandle(ref, () => ({
       contains: (target: Node) => contentRef.current?.contains(target) ?? false,
@@ -65,22 +68,18 @@ const DropdownPortal = forwardRef<DropdownPortalHandle, DropdownPortalProps>(
       }
     }, [isOpen, anchorRef]);
 
-    // Handle animation states
+    // Handle animation states without synchronous setState in effect body
     useEffect(() => {
+      if (!animate) return;
+
+      let timer: number;
       if (isOpen) {
-        setShouldRender(true);
-        // Small delay to trigger CSS transition
-        const timer = setTimeout(() => setIsVisible(true), 10);
-        return () => clearTimeout(timer);
+        timer = window.setTimeout(() => setIsVisible(true), 10); // trigger enter transition
       } else {
-        setIsVisible(false);
-        // Wait for exit animation before unmounting
-        const timer = setTimeout(
-          () => setShouldRender(false),
-          animate ? 150 : 0,
-        );
-        return () => clearTimeout(timer);
+        timer = window.setTimeout(() => setIsVisible(false), EXIT_ANIMATION_MS); // unmount after exit
       }
+
+      return () => window.clearTimeout(timer);
     }, [isOpen, animate]);
 
     if (!shouldRender || typeof document === "undefined") return null;
@@ -114,8 +113,8 @@ const DropdownPortal = forwardRef<DropdownPortalHandle, DropdownPortalProps>(
     );
   },
 );
+DropdownPortal.displayName = "DropdownPortal";
 
-// Animated tag pill component with enter/exit animations
 type AnimatedTagPillProps = {
   tag: { id: number; name: string; color?: string | null };
   onRemove: (tagId: number) => void;
@@ -193,8 +192,14 @@ const TaskCard = ({
   highlighted = false,
   collaboratorBorderColor,
 }: Props) => {
+  const { activeWorkspaceId } = useWorkspace(); // ADDED
   const [updateTask] = useUpdateTaskMutation();
-  const { data: allTags } = useGetTagsQuery();
+
+  // Scoped to current workspace
+  const { data: allTags } = useGetTagsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [isHoveringDueDate, setIsHoveringDueDate] = useState(false);
@@ -209,8 +214,10 @@ const TaskCard = ({
   const tags = task.taskTags?.map((tt) => tt.tag) || [];
   const tagIds = tags.map((t) => t.id);
   const avgColor = getAverageTagColor(task);
-  // Parse as local date to avoid UTC timezone shift
-  const dueDate = task.dueDate ? parseLocalDate(task.dueDate.split("T")[0]) : null;
+
+  const dueDate = task.dueDate
+    ? parseLocalDate(task.dueDate.split("T")[0])
+    : null;
   const formattedDueDate = dueDate ? format(dueDate, "P") : "";
   const dueDateValue = task.dueDate ? task.dueDate.split("T")[0] : "";
   const numberOfComments = task.comments?.length || 0;
@@ -222,7 +229,6 @@ const TaskCard = ({
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      // Check both anchor ref and portal content for priority menu
       if (
         priorityRef.current &&
         !priorityRef.current.contains(target) &&
@@ -230,7 +236,6 @@ const TaskCard = ({
       ) {
         setShowPriorityMenu(false);
       }
-      // Check both anchor ref and portal content for tag menu
       if (
         tagRef.current &&
         !tagRef.current.contains(target) &&
@@ -249,9 +254,7 @@ const TaskCard = ({
   };
 
   const handleRemoveTag = async (tagId: number) => {
-    // Start exit animation
     setRemovingTagIds((prev) => new Set(prev).add(tagId));
-    // Wait for animation then update
     setTimeout(async () => {
       await updateTask({
         id: task.id,
@@ -280,20 +283,26 @@ const TaskCard = ({
   return (
     <div
       onClick={onClick}
-      className={`dark:bg-dark-tertiary relative flex overflow-hidden rounded-md bg-white shadow transition-all hover:outline hover:outline-2 hover:outline-gray-300 dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
+      className={`relative flex overflow-hidden rounded-md bg-white shadow transition-all hover:outline-2 hover:outline-gray-300 dark:bg-dark-tertiary dark:hover:outline-gray-600 ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={{
         ...(avgColor ? { backgroundColor: avgColor } : {}),
         ...(collaboratorBorderColor
-          ? { outline: `2.5px solid ${collaboratorBorderColor}`, outlineOffset: "-1px" }
+          ? {
+              outline: `2.5px solid ${collaboratorBorderColor}`,
+              outlineOffset: "-1px",
+            }
           : highlighted
-            ? { outline: `2px solid ${APP_ACCENT_LIGHT}`, outlineOffset: "-1px" }
+            ? {
+                outline: `2px solid ${APP_ACCENT_LIGHT}`,
+                outlineOffset: "-1px",
+              }
             : {}),
       }}
     >
       {/* Priority bar on left side */}
       <div
         ref={priorityRef}
-        className="relative w-1.5 flex-shrink-0 cursor-pointer"
+        className="relative w-1.5 shrink-0 cursor-pointer"
         style={{
           backgroundColor: task.priority
             ? `${PRIORITY_COLORS_BY_NAME[task.priority]}99`
@@ -311,7 +320,7 @@ const TaskCard = ({
         isOpen={showPriorityMenu}
         animate
       >
-        <div className="dark:border-dark-tertiary dark:bg-dark-secondary ml-1 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+        <div className="ml-1 rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
           {Object.values(Priority).map((p) => (
             <button
               key={p}
@@ -319,7 +328,7 @@ const TaskCard = ({
                 e.stopPropagation();
                 handlePriorityChange(p);
               }}
-              className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 px-3 py-1 text-left text-xs hover:bg-gray-100"
+              className="flex w-full items-center gap-2 px-3 py-1 text-left text-xs hover:bg-gray-100 dark:hover:bg-dark-tertiary"
             >
               <span
                 className="h-2 w-2 rounded-full"
@@ -334,7 +343,7 @@ const TaskCard = ({
                 e.stopPropagation();
                 handlePriorityChange(null);
               }}
-              className="dark:hover:bg-dark-tertiary block w-full px-3 py-1 text-left text-xs text-gray-500 hover:bg-gray-100"
+              className="block w-full px-3 py-1 text-left text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
             >
               Clear
             </button>
@@ -342,10 +351,10 @@ const TaskCard = ({
         </div>
       </DropdownPortal>
 
-      {/* Comment indicator triangle (Google Sheets style) */}
+      {/* Comment indicator triangle */}
       {numberOfComments > 0 && (
         <div
-          className="absolute top-0 right-0 h-0 w-0"
+          className="absolute right-0 top-0 h-0 w-0"
           style={{
             borderLeft: "10px solid transparent",
             borderTop: "10px solid rgb(240, 168, 102)",
@@ -388,7 +397,7 @@ const TaskCard = ({
                 e.stopPropagation();
                 setShowTagMenu(!showTagMenu);
               }}
-              className="dark:bg-dark-tertiary flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600"
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-dark-tertiary dark:text-gray-400 dark:hover:bg-gray-600"
             >
               <Plus size={12} />
             </button>
@@ -399,7 +408,7 @@ const TaskCard = ({
             isOpen={showTagMenu && availableTags.length > 0}
             animate
           >
-            <div className="dark:border-dark-tertiary dark:bg-dark-secondary mt-1 max-h-32 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+            <div className="mt-1 max-h-32 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
               {availableTags.map((tag) => (
                 <button
                   key={tag.id}
@@ -407,7 +416,7 @@ const TaskCard = ({
                     e.stopPropagation();
                     handleAddTag(tag.id);
                   }}
-                  className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 px-3 py-1 text-left text-xs hover:bg-gray-100"
+                  className="flex w-full items-center gap-2 px-3 py-1 text-left text-xs hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                 >
                   <span
                     className="h-2 w-2 rounded-full"
@@ -420,7 +429,7 @@ const TaskCard = ({
           </DropdownPortal>
         </div>
 
-        <div className="dark:border-stroke-dark mt-2 border-t border-gray-200" />
+        <div className="mt-2 border-t border-gray-200 dark:border-stroke-dark" />
 
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -433,12 +442,12 @@ const TaskCard = ({
                   fullName={ta.user.fullName}
                   profilePictureExt={ta.user.profilePictureExt}
                   size={24}
-                  className="dark:ring-dark-tertiary ring-2 ring-white"
+                  className="ring-2 ring-white dark:ring-dark-tertiary"
                   tooltipLabel="Assignee"
                 />
               ))}
               {(task.taskAssignments?.length ?? 0) > 3 && (
-                <div className="dark:border-dark-tertiary dark:bg-dark-surface flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-xs font-medium text-gray-600 dark:text-gray-300">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-xs font-medium text-gray-600 dark:border-dark-tertiary dark:bg-dark-surface dark:text-gray-300">
                   +{(task.taskAssignments?.length ?? 0) - 3}
                 </div>
               )}
@@ -459,7 +468,7 @@ const TaskCard = ({
                   }}
                   className={`flex items-center gap-1 rounded px-1 py-0.5 text-xs transition-all ${
                     isHoveringDueDate
-                      ? "dark:bg-dark-tertiary bg-gray-100 text-gray-700 dark:text-white"
+                      ? "bg-gray-100 text-gray-700 dark:bg-dark-tertiary dark:text-white"
                       : "text-gray-500 dark:text-neutral-500"
                   }`}
                   title="Click to edit due date"
@@ -498,7 +507,7 @@ const TaskCard = ({
                       e.stopPropagation();
                       setIsEditingDueDate(true);
                     }}
-                    className="dark:bg-dark-tertiary flex items-center gap-1 rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-500 dark:text-neutral-400"
+                    className="flex items-center gap-1 rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-500 dark:bg-dark-tertiary dark:text-neutral-400"
                     title="Set due date"
                   >
                     <Calendar size={10} />

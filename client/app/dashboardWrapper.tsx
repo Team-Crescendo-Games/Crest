@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/UI/structural/sidebar";
 import AppNotification from "@/components/AppNotification";
 import StoreProvider, { useAppSelector } from "@/app/redux";
 import AuthProvider from "@/app/authProvider";

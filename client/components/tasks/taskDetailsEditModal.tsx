@@ -10,7 +10,7 @@ import {
   useUpdateTaskMutation,
   useGetTagsQuery,
   useGetUsersQuery,
-  useGetProjectsQuery,
+  useGetBoardsQuery,
   useGetSprintsQuery,
   useGetTasksQuery,
   useGetPresignedUploadUrlMutation,
@@ -20,6 +20,7 @@ import {
   Sprint,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type Props = {
   isOpen: boolean;
@@ -28,27 +29,35 @@ type Props = {
   onSave?: (task: Task) => void;
 };
 
-const TaskDetailsEditModal = ({
-  isOpen,
-  onClose,
-  task,
-  onSave,
-}: Props) => {
+const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
+  const { activeWorkspaceId } = useWorkspace();
+
   const [updateTask, { isLoading }] = useUpdateTaskMutation();
-  const { data: availableTags = [] } = useGetTagsQuery();
-  const { data: users = [] } = useGetUsersQuery();
-  const { data: projects = [] } = useGetProjectsQuery();
-  const { data: sprints = [] } = useGetSprintsQuery();
+
+  // Scope queries to the active workspace
+  const { data: availableTags = [] } = useGetTagsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: boards = [] } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: sprints = [] } = useGetSprintsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const { data: users = [] } = useGetUsersQuery(); // Consider scoping to Workspace Members later
+
   const { data: authData } = useAuthUser();
   const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();
   const [createAttachment] = useCreateAttachmentMutation();
   const [deleteAttachment] = useDeleteAttachmentMutation();
 
-  // Fetch tasks for subtask selection when a project is selected
-  const [selectedProjectIdForTasks, setSelectedProjectIdForTasks] = useState<number | null>(null);
+  // Fetch tasks for subtask selection when a board is selected
+  const [selectedBoardIdForTasks, setSelectedBoardIdForTasks] = useState<
+    number | null
+  >(null);
   const { data: availableTasks = [] } = useGetTasksQuery(
-    { projectId: selectedProjectIdForTasks! },
-    { skip: !selectedProjectIdForTasks }
+    { boardId: selectedBoardIdForTasks! },
+    { skip: !selectedBoardIdForTasks },
   );
 
   const [isUploading, setIsUploading] = useState(false);
@@ -63,41 +72,45 @@ const TaskDetailsEditModal = ({
     points: "",
     selectedTagIds: [],
     selectedAssignees: [],
-    selectedProject: null,
+    selectedBoard: null,
     selectedSprints: [],
     selectedSubtaskIds: [],
     pendingFiles: [],
   });
 
-  // Update project ID for task fetching when project changes
+  // Update board ID for task fetching when board changes
   useEffect(() => {
-    setSelectedProjectIdForTasks(formData.selectedProject?.id || null);
-  }, [formData.selectedProject]);
+    setSelectedBoardIdForTasks(formData.selectedBoard?.id || null);
+  }, [formData.selectedBoard]);
 
   // Initialize form data when task changes
   useEffect(() => {
     if (isOpen && task) {
-      const assignees: User[] = task.taskAssignments?.map((ta) => {
-        const fullUser = users.find((u) => u.userId === ta.user.userId);
-        return fullUser || {
-          userId: ta.user.userId,
-          username: ta.user.username,
-          email: "",
-          profilePictureExt: ta.user.profilePictureExt,
-        };
-      }) || [];
+      const assignees: User[] =
+        task.taskAssignments?.map((ta) => {
+          const fullUser = users.find((u) => u.userId === ta.user.userId);
+          return (
+            fullUser || {
+              userId: ta.user.userId,
+              username: ta.user.username,
+              email: "",
+              profilePictureExt: ta.user.profilePictureExt,
+            }
+          );
+        }) || [];
 
-      const project = projects.find((p) => p.id === task.projectId) || null;
+      const board = boards.find((b) => b.id === task.boardId) || null;
 
-      const taskSprints: Sprint[] = task.sprints
-        ?.map((s) => sprints.find((sp) => sp.id === s.id))
-        .filter((s): s is Sprint => s !== undefined) || [];
+      const taskSprints: Sprint[] =
+        task.sprints
+          ?.map((s) => sprints.find((sp) => sp.id === s.id))
+          .filter((s): s is Sprint => s !== undefined) || [];
 
       setFormData({
         title: task.title,
         description: task.description || "",
-        status: task.status as Status || Status.InputQueue,
-        priority: task.priority as Priority || Priority.Backlog,
+        status: (task.status as Status) || Status.InputQueue,
+        priority: (task.priority as Priority) || Priority.Backlog,
         startDate: task.startDate
           ? new Date(task.startDate).toISOString().split("T")[0]
           : "",
@@ -107,13 +120,13 @@ const TaskDetailsEditModal = ({
         points: task.points?.toString() || "",
         selectedTagIds: task.taskTags?.map((tt) => tt.tag.id) || [],
         selectedAssignees: assignees,
-        selectedProject: project,
+        selectedBoard: board,
         selectedSprints: taskSprints,
         selectedSubtaskIds: task.subtasks?.map((s) => s.id) || [],
         pendingFiles: [],
       });
     }
-  }, [isOpen, task, projects, sprints, users]);
+  }, [isOpen, task, boards, sprints, users]);
 
   const handleFormChange = (changes: Partial<TaskFormData>) => {
     setFormData((prev) => ({ ...prev, ...changes }));
@@ -138,13 +151,17 @@ const TaskDetailsEditModal = ({
         .filter((id): id is number => id !== undefined),
       tagIds: formData.selectedTagIds,
       subtaskIds: formData.selectedSubtaskIds,
-      projectId: formData.selectedProject?.id || undefined,
+      boardId: formData.selectedBoard?.id || undefined,
       sprintIds: formData.selectedSprints.map((s) => s.id),
       userId: authorUserId,
     }).unwrap();
 
     // Upload any pending files
-    if (formData.pendingFiles && formData.pendingFiles.length > 0 && authorUserId) {
+    if (
+      formData.pendingFiles &&
+      formData.pendingFiles.length > 0 &&
+      authorUserId
+    ) {
       setIsUploading(true);
       for (const pf of formData.pendingFiles) {
         let attachmentId: number | null = null;
@@ -167,15 +184,22 @@ const TaskDetailsEditModal = ({
           const uploadResponse = await fetch(url, {
             method: "PUT",
             body: pf.file,
-            headers: { "Content-Type": pf.file.type || "application/octet-stream" },
+            headers: {
+              "Content-Type": pf.file.type || "application/octet-stream",
+            },
           });
 
-          if (!uploadResponse.ok) throw new Error("Failed to upload file to S3");
+          if (!uploadResponse.ok)
+            throw new Error("Failed to upload file to S3");
           attachmentId = null;
         } catch (error) {
           console.error("File upload error:", error);
           if (attachmentId) {
-            try { await deleteAttachment(attachmentId); } catch { /* ignore */ }
+            try {
+              await deleteAttachment(attachmentId);
+            } catch {
+              /* ignore */
+            }
           }
         }
       }
@@ -187,7 +211,7 @@ const TaskDetailsEditModal = ({
   };
 
   const isFormValid = () => {
-    return formData.title && formData.selectedProject;
+    return formData.title && formData.selectedBoard;
   };
 
   if (!task) return null;
@@ -205,7 +229,7 @@ const TaskDetailsEditModal = ({
           formData={formData}
           onChange={handleFormChange}
           users={users}
-          projects={projects}
+          boards={boards}
           sprints={sprints}
           tags={availableTags}
           showPoints={true}
@@ -220,14 +244,16 @@ const TaskDetailsEditModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:hover:bg-dark-secondary"
+            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:hover:bg-dark-secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className={`flex-1 rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 focus:outline-none dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-              !isFormValid() || isLoading || isUploading ? "cursor-not-allowed opacity-50" : ""
+            className={`flex-1 rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
+              !isFormValid() || isLoading || isUploading
+                ? "cursor-not-allowed opacity-50"
+                : ""
             }`}
             disabled={!isFormValid() || isLoading || isUploading}
           >

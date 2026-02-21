@@ -7,16 +7,17 @@ import SubtaskHierarchy from "@/components/SubtaskHierarchy";
 import ActivityList from "@/components/ActivityList";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import CommentsPanel from "@/components/CommentsPanel";
-import TaskDetailsEditModal from "@/components/TaskDetailsEditModal";
+import TaskDetailsEditModal from "@/components/tasks/taskDetailsEditModal";
 import {
   Task,
   useDeleteTaskMutation,
   useCreateTaskMutation,
   useGetUsersQuery,
-  useGetProjectsQuery,
+  useGetBoardsQuery,
   getAttachmentS3Key,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
 import { format } from "date-fns";
@@ -91,36 +92,6 @@ const TaskDetailsFloatingButton = ({
   );
 };
 
-// URL regex pattern for auto-linking
-const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,;:!?"'\])>])/g;
-
-// Helper to render text with auto-linked URLs
-const LinkifiedText = ({ text }: { text: string }) => {
-  const parts = text.split(URL_REGEX);
-
-  return (
-    <>
-      {parts.map((part, index) => {
-        if (URL_REGEX.test(part)) {
-          URL_REGEX.lastIndex = 0;
-          return (
-            <a
-              key={index}
-              href={part}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              {part}
-            </a>
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
-    </>
-  );
-};
-
 interface TaskDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -162,6 +133,8 @@ const TaskDetailModal = ({
   tasks,
   onTaskNavigate,
 }: TaskDetailModalProps) => {
+  const { activeWorkspaceId } = useWorkspace();
+
   const [isEditing, setIsEditing] = useState(false);
   const [displayedTaskId, setDisplayedTaskId] = useState<number | null>(null);
   const [localTaskOverride, setLocalTaskOverride] = useState<Task | null>(null);
@@ -169,19 +142,26 @@ const TaskDetailModal = ({
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
+
   const [deleteTask, { isLoading: isDeleting }] = useDeleteTaskMutation();
   const [createTask, { isLoading: isDuplicating }] = useCreateTaskMutation();
+
   const { data: users } = useGetUsersQuery();
-  const { data: projects } = useGetProjectsQuery();
+  const { data: boards } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
   const { data: authData } = useAuthUser();
 
   // Attachment preview state
-  const [previewAttachmentId, setPreviewAttachmentId] = useState<number | null>(null);
-  const [textPreviewContent, setTextPreviewContent] = useState<string | null>(null);
+  const [previewAttachmentId, setPreviewAttachmentId] = useState<number | null>(
+    null,
+  );
+  const [textPreviewContent, setTextPreviewContent] = useState<string | null>(
+    null,
+  );
   const [textPreviewLoading, setTextPreviewLoading] = useState(false);
   const [textPreviewError, setTextPreviewError] = useState<string | null>(null);
 
-  // Sync displayedTaskId when modal opens with a new task
   useEffect(() => {
     if (task) {
       setDisplayedTaskId(task.id);
@@ -190,7 +170,6 @@ const TaskDetailModal = ({
     }
   }, [task]);
 
-  // Reset preview state when task changes
   useEffect(() => {
     setPreviewAttachmentId(null);
     setTextPreviewContent(null);
@@ -206,7 +185,6 @@ const TaskDetailModal = ({
 
   if (!task) return null;
 
-  // Look up the currently displayed task
   const baseTask =
     displayedTaskId && tasks
       ? (tasks.find((t) => t.id === displayedTaskId) ?? task)
@@ -218,7 +196,6 @@ const TaskDetailModal = ({
       : baseTask;
 
   const tags = currentTask.taskTags?.map((tt) => tt.tag.name) || [];
-
   const hasHierarchy =
     currentTask.parentTask != null ||
     (currentTask.subtasks != null && currentTask.subtasks.length > 0);
@@ -230,9 +207,7 @@ const TaskDetailModal = ({
     ? format(new Date(currentTask.dueDate), "MM/dd/yyyy")
     : "Not set";
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
+  const handleEditClick = () => setIsEditing(true);
 
   const handleEditSave = (updatedTask: Task) => {
     setLocalTaskOverride(updatedTask);
@@ -257,7 +232,7 @@ const TaskDetailModal = ({
         startDate: currentTask.startDate || undefined,
         dueDate: currentTask.dueDate || undefined,
         points: currentTask.points ?? undefined,
-        projectId: currentTask.projectId,
+        boardId: currentTask.boardId,
         authorUserId: authorId,
         tagIds: currentTask.taskTags?.map((tt) => tt.tag.id),
         sprintIds: currentTask.sprints?.map((s) => s.id),
@@ -284,10 +259,14 @@ const TaskDetailModal = ({
     fileExt: string;
   }) => {
     try {
-      const s3Key = getAttachmentS3Key(attachment.taskId, attachment.id, attachment.fileExt);
+      const s3Key = getAttachmentS3Key(
+        attachment.taskId,
+        attachment.id,
+        attachment.fileExt,
+      );
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
       const presignedResponse = await fetch(
-        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`
+        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`,
       );
       const { url } = await presignedResponse.json();
       if (url) {
@@ -309,10 +288,14 @@ const TaskDetailModal = ({
     setTextPreviewContent(null);
 
     try {
-      const s3Key = getAttachmentS3Key(attachment.taskId, attachment.id, attachment.fileExt);
+      const s3Key = getAttachmentS3Key(
+        attachment.taskId,
+        attachment.id,
+        attachment.fileExt,
+      );
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
       const presignedResponse = await fetch(
-        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`
+        `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}&fileName=${encodeURIComponent(attachment.fileName)}`,
       );
       const { url } = await presignedResponse.json();
 
@@ -326,7 +309,9 @@ const TaskDetailModal = ({
       }
     } catch (error: unknown) {
       console.error("Failed to preview text file:", error);
-      setTextPreviewError(error instanceof Error ? error.message : "Failed to load file content");
+      setTextPreviewError(
+        error instanceof Error ? error.message : "Failed to load file content",
+      );
     } finally {
       setTextPreviewLoading(false);
     }
@@ -339,7 +324,8 @@ const TaskDetailModal = ({
         <Users className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
         <AssigneeAvatarGroup
           assignees={
-            currentTask.taskAssignments && currentTask.taskAssignments.length > 0
+            currentTask.taskAssignments &&
+            currentTask.taskAssignments.length > 0
               ? currentTask.taskAssignments.map((ta) => ({
                   userId: ta.user.userId,
                   username: ta.user.username,
@@ -373,9 +359,12 @@ const TaskDetailModal = ({
         name={
           <div className="flex items-center gap-2">
             {currentTask.status === "Done" && (
-              <div className="relative flex-shrink-0">
+              <div className="relative shrink-0">
                 <div className="h-5 w-5 rotate-45 bg-green-500" />
-                <Check size={14} className="absolute inset-0 m-auto text-white" />
+                <Check
+                  size={14}
+                  className="absolute inset-0 m-auto text-white"
+                />
               </div>
             )}
             <span>{currentTask.title}</span>
@@ -420,16 +409,16 @@ const TaskDetailModal = ({
           </div>
         }
         leftPanel={
-          <div className="animate-slide-in-left flex flex-col items-end gap-3 pt-4">
+          <div className="flex animate-slide-in-left flex-col items-end gap-3 pt-4">
             {/* Board */}
-            {projects && (
+            {boards && (
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/boards/${currentTask.projectId}`}
+                  href={`/boards/${currentTask.boardId}`}
                   className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800"
                 >
-                  {projects.find((p) => p.id === currentTask.projectId)?.name ||
-                    `Board ${currentTask.projectId}`}
+                  {boards.find((b) => b.id === currentTask.boardId)?.name ||
+                    `Board ${currentTask.boardId}`}
                 </Link>
                 <div className="group relative">
                   <BiColumns className="h-4 w-4 text-white dark:text-neutral-500" />
@@ -511,7 +500,7 @@ const TaskDetailModal = ({
           {/* Description */}
           <div>
             {currentTask.description ? (
-              <div className="prose prose-sm max-w-none break-words text-gray-600 prose-headings:text-gray-800 prose-a:text-blue-600 prose-strong:text-gray-700 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-gray-800 prose-pre:bg-gray-100 dark:text-neutral-400 dark:prose-headings:text-neutral-200 dark:prose-a:text-blue-400 dark:prose-strong:text-neutral-300 dark:prose-code:bg-dark-tertiary dark:prose-code:text-neutral-200 dark:prose-pre:bg-dark-tertiary">
+              <div className="prose prose-sm prose-headings:text-gray-800 prose-a:text-blue-600 prose-strong:text-gray-700 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-gray-800 prose-pre:bg-gray-100 dark:prose-headings:text-neutral-200 dark:prose-a:text-blue-400 dark:prose-strong:text-neutral-300 dark:prose-code:bg-dark-tertiary dark:prose-code:text-neutral-200 dark:prose-pre:bg-dark-tertiary wrap-break-word max-w-none text-gray-600 dark:text-neutral-400">
                 <Markdown>{currentTask.description}</Markdown>
               </div>
             ) : (
@@ -525,13 +514,21 @@ const TaskDetailModal = ({
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <span className="text-sm text-gray-600 dark:text-neutral-400">Start:</span>
-              <span className="text-sm text-gray-900 dark:text-white">{formattedStartDate}</span>
+              <span className="text-sm text-gray-600 dark:text-neutral-400">
+                Start:
+              </span>
+              <span className="text-sm text-gray-900 dark:text-white">
+                {formattedStartDate}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
-              <span className="text-sm text-gray-600 dark:text-neutral-400">Due:</span>
-              <span className="text-sm text-gray-900 dark:text-white">{formattedDueDate}</span>
+              <span className="text-sm text-gray-600 dark:text-neutral-400">
+                Due:
+              </span>
+              <span className="text-sm text-gray-900 dark:text-white">
+                {formattedDueDate}
+              </span>
             </div>
           </div>
 
@@ -544,86 +541,95 @@ const TaskDetailModal = ({
             (currentTask.activities && currentTask.activities.length > 0)) && (
             <div className="space-y-2">
               {/* Attachments */}
-              {currentTask.attachments && currentTask.attachments.length > 0 && (
-                <CollapsibleSection title="Attachments" count={currentTask.attachments.length}>
-                  <div className="space-y-2">
-                    {currentTask.attachments.map((attachment) => (
-                      <div
-                        key={attachment.id}
-                        className="dark:border-stroke-dark rounded-lg border border-gray-200"
-                      >
-                        <div className="dark:bg-dark-tertiary flex items-center justify-between bg-gray-50 px-3 py-2">
-                          <p className="truncate text-sm text-gray-700 dark:text-neutral-300">
-                            {attachment.fileName}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleDownloadAttachment(attachment)}
-                              className="rounded bg-gray-200 p-1.5 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                              title="Download"
-                            >
-                              <Download size={14} />
-                            </button>
-                            {(isImageFile(attachment.fileExt) || isTextFile(attachment.fileExt)) && (
+              {currentTask.attachments &&
+                currentTask.attachments.length > 0 && (
+                  <CollapsibleSection
+                    title="Attachments"
+                    count={currentTask.attachments.length}
+                  >
+                    <div className="space-y-2">
+                      {currentTask.attachments.map((attachment) => (
+                        <div
+                          key={attachment.id}
+                          className="rounded-lg border border-gray-200 dark:border-stroke-dark"
+                        >
+                          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 dark:bg-dark-tertiary">
+                            <p className="truncate text-sm text-gray-700 dark:text-neutral-300">
+                              {attachment.fileName}
+                            </p>
+                            <div className="flex items-center gap-1">
                               <button
-                                onClick={() => {
-                                  if (previewAttachmentId === attachment.id) {
-                                    setPreviewAttachmentId(null);
-                                    setTextPreviewContent(null);
-                                    setTextPreviewError(null);
-                                  } else {
-                                    setPreviewAttachmentId(attachment.id);
-                                    if (isTextFile(attachment.fileExt)) {
-                                      handlePreviewTextFile(attachment);
-                                    }
-                                  }
-                                }}
-                                className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                                onClick={() =>
+                                  handleDownloadAttachment(attachment)
+                                }
+                                className="rounded bg-gray-200 p-1.5 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                                title="Download"
                               >
-                                {previewAttachmentId === attachment.id ? "Hide" : "Preview"}
+                                <Download size={14} />
                               </button>
-                            )}
+                              {(isImageFile(attachment.fileExt) ||
+                                isTextFile(attachment.fileExt)) && (
+                                <button
+                                  onClick={() => {
+                                    if (previewAttachmentId === attachment.id) {
+                                      setPreviewAttachmentId(null);
+                                      setTextPreviewContent(null);
+                                      setTextPreviewError(null);
+                                    } else {
+                                      setPreviewAttachmentId(attachment.id);
+                                      if (isTextFile(attachment.fileExt)) {
+                                        handlePreviewTextFile(attachment);
+                                      }
+                                    }
+                                  }}
+                                  className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                                >
+                                  {previewAttachmentId === attachment.id
+                                    ? "Hide"
+                                    : "Preview"}
+                                </button>
+                              )}
+                            </div>
                           </div>
+                          {previewAttachmentId === attachment.id && (
+                            <div className="animate-slide-down p-2">
+                              {isImageFile(attachment.fileExt) ? (
+                                <S3Image
+                                  s3Key={getAttachmentS3Key(
+                                    attachment.taskId,
+                                    attachment.id,
+                                    attachment.fileExt,
+                                  )}
+                                  alt={attachment.fileName}
+                                  width={600}
+                                  height={400}
+                                  className="h-auto w-full rounded object-contain"
+                                  fallbackType="image"
+                                />
+                              ) : isTextFile(attachment.fileExt) ? (
+                                <div className="max-h-96 overflow-auto rounded bg-gray-100 p-3 dark:bg-dark-bg">
+                                  {textPreviewLoading ? (
+                                    <p className="text-sm text-gray-500 dark:text-neutral-400">
+                                      Loading...
+                                    </p>
+                                  ) : textPreviewError ? (
+                                    <p className="text-sm text-red-500 dark:text-red-400">
+                                      {textPreviewError}
+                                    </p>
+                                  ) : (
+                                    <pre className="wrap-break-word whitespace-pre-wrap font-mono text-xs text-gray-800 dark:text-neutral-200">
+                                      {textPreviewContent}
+                                    </pre>
+                                  )}
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
-                        {previewAttachmentId === attachment.id && (
-                          <div className="animate-slide-down p-2">
-                            {isImageFile(attachment.fileExt) ? (
-                              <S3Image
-                                s3Key={getAttachmentS3Key(
-                                  attachment.taskId,
-                                  attachment.id,
-                                  attachment.fileExt
-                                )}
-                                alt={attachment.fileName}
-                                width={600}
-                                height={400}
-                                className="h-auto w-full rounded object-contain"
-                                fallbackType="image"
-                              />
-                            ) : isTextFile(attachment.fileExt) ? (
-                              <div className="dark:bg-dark-bg max-h-96 overflow-auto rounded bg-gray-100 p-3">
-                                {textPreviewLoading ? (
-                                  <p className="text-sm text-gray-500 dark:text-neutral-400">
-                                    Loading...
-                                  </p>
-                                ) : textPreviewError ? (
-                                  <p className="text-sm text-red-500 dark:text-red-400">
-                                    {textPreviewError}
-                                  </p>
-                                ) : (
-                                  <pre className="font-mono text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-neutral-200">
-                                    {textPreviewContent}
-                                  </pre>
-                                )}
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CollapsibleSection>
-              )}
+                      ))}
+                    </div>
+                  </CollapsibleSection>
+                )}
 
               {/* Subtasks */}
               {hasHierarchy && (
@@ -693,7 +699,7 @@ const TaskDetailModal = ({
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder={`${currentTask.title} (Copy)`}
-            className="dark:border-dark-tertiary dark:bg-dark-tertiary w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:text-white dark:placeholder-gray-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
           />
         </div>
       </ConfirmationMenu>

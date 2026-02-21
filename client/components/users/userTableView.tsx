@@ -1,8 +1,9 @@
 "use client";
 
-import { useGetTasksAssignedToUserQuery, useGetProjectsQuery } from "@/state/api";
+import { useGetTasksAssignedToUserQuery, useGetBoardsQuery } from "@/state/api"; // REPLACED
 import TableView from "@/components/TableView";
 import { FilterState, SortState } from "@/lib/filterTypes";
+import { useWorkspace } from "@/lib/useWorkspace"; 
 
 type Props = {
   userId: number;
@@ -11,13 +12,22 @@ type Props = {
   sortState?: SortState;
 };
 
-const UserTableView = ({ userId, filterState, sortState }: Props) => {
+const UserTableView = ({
+  userId,
+  setIsModalNewTaskOpen,
+  filterState,
+  sortState,
+}: Props) => {
+  const { activeWorkspaceId } = useWorkspace(); 
+
   const {
     data: tasks,
     error,
     isLoading,
   } = useGetTasksAssignedToUserQuery(userId);
-  const { data: projects = [] } = useGetProjectsQuery();
+  const { data: boards = [] } = useGetBoardsQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
 
   if (isLoading)
     return (
@@ -33,14 +43,17 @@ const UserTableView = ({ userId, filterState, sortState }: Props) => {
     );
 
   // Filter out tasks from archived boards
-  const activeProjectIds = new Set(projects.filter((p) => p.isActive).map((p) => p.id));
+  const activeBoardIds = new Set(
+    boards.filter((b) => b.isActive).map((b) => b.id),
+  );
   const activeTasks = (tasks ?? []).filter(
-    (task) => !task.projectId || activeProjectIds.has(task.projectId),
+    (task) => !task.boardId || activeBoardIds.has(task.boardId),
   );
 
   return (
     <TableView
       tasks={activeTasks}
+      setIsModalNewTaskOpen={setIsModalNewTaskOpen} 
       filterState={filterState}
       sortState={sortState}
       showCreateButton={false}
