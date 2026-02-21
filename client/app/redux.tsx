@@ -52,12 +52,13 @@ const persistConfig = {
 
 // Migration to handle adding new fields to persisted state
 const migrateState = (state: any) => {
-  if (state && state.global && !state.global.notifications) {
+  if (state && state.global) {
     return {
       ...state,
       global: {
         ...state.global,
-        notifications: [],
+        notifications: state.global.notifications || [],
+        activeWorkspaceId: state.global.activeWorkspaceId || null,
       },
     };
   }

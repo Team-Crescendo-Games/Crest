@@ -41,7 +41,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import ModalNewBoard from "@/app/boards/ModalNewBoard";
+import ModalNewBoard from "@/components/boards/modalNewBoard";
 import ModalNewSprint from "@/app/sprints/ModalNewSprint";
 import TaskCreateModal from "@/components/TaskCreateModal";
 import S3Image from "@/components/S3Image";

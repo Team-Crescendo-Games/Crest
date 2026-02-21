@@ -14,6 +14,7 @@ import { STATUS_COLORS_BY_NAME } from "@/lib/statusColors";
 import { DND_ITEM_TYPES, DraggedTask } from "@/lib/dndTypes";
 
 type BoardViewProps = {
+  boardId: string;
   tasks: TaskType[];
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   filterState: FilterState;
@@ -26,7 +27,7 @@ type BoardViewProps = {
 
 const taskStatus = ["Input Queue", "Work In Progress", "Review", "Done"];
 
-const BoardView = ({
+export default function BoardView({
   tasks,
   setIsModalNewTaskOpen,
   filterState,
@@ -35,21 +36,18 @@ const BoardView = ({
   taskSelectionMap,
   onTaskSelect,
   onTaskUpdate,
-}: BoardViewProps) => {
+}: BoardViewProps) {
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
   const { data: authData } = useAuthUser();
 
   const currentUserId = authData?.userDetails?.userId;
 
-  // Apply filters then sorting to tasks
   const filteredTasks = applyFilters(tasks, filterState);
   const sortedTasks = applySorting(filteredTasks, sortState);
 
-  // Modal state management for task detail modal
   const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
-  // Derive selected task from fresh task data
   const selectedTask = tasks.find((t) => t.id === selectedTaskId) || null;
 
   const handleTaskClick = (task: TaskType) => {
@@ -148,7 +146,7 @@ const TaskColumn = ({
           : ""
       } `}
     >
-      <div className="mb-4 flex w-full flex-shrink-0 flex-col">
+      <div className="mb-4 flex w-full shrink-0 flex-col">
         <h3 className="flex items-center text-base font-semibold text-gray-800 dark:text-white">
           <span
             className="mr-2 h-3 w-3 rounded-full shadow-sm"
@@ -159,7 +157,7 @@ const TaskColumn = ({
             <ClipboardList className="h-3 w-3" /> {tasksCount} · <Diamond className="h-2.5 w-2.5" fill="currentColor" /> {totalPoints}
           </span>
         </h3>
-        <div className="dark:from-stroke-dark dark:to-stroke-dark mt-3 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:via-gray-600" />
+        <div className="dark:from-stroke-dark dark:to-stroke-dark mt-3 h-px bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:via-gray-600" />
       </div>
 
       <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1">
@@ -200,10 +198,10 @@ type DraggableTaskProps = {
   collaboratorBorderColor?: string;
 };
 
-const DraggableTask = ({ task, onClick, highlighted, collaboratorBorderColor }: DraggableTaskProps) => {
+function DraggableTask({ task, onClick, highlighted, collaboratorBorderColor }: DraggableTaskProps) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: DND_ITEM_TYPES.TASK,
-    item: { id: task.id, projectId: task.projectId } as DraggedTask,
+    item: { id: task.id, boardId: task.boardId } as DraggedTask, 
     collect: (monitor: DragSourceMonitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -226,5 +224,3 @@ const DraggableTask = ({ task, onClick, highlighted, collaboratorBorderColor }: 
     </div>
   );
 };
-
-export default BoardView;

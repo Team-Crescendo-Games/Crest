@@ -62,5 +62,11 @@
     "@xstate/react": {
       "react": "$react"
     }
+  },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ],
+    "tailwindConfig": "./tailwind.config.ts"
   }
 }

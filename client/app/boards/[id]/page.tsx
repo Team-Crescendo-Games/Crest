@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, use } from "react";
-import BoardHeader from "@/app/boards/BoardHeader";
-import Board from "../BoardView";
-import Table from "../TableView";
+import BoardHeader from "@/components/boards/boardHeader";
+import BoardView from "@/components/boards/boardView";
+import BoardTableView from "@/components/boards/boardTableView";
 import TaskCreateModal from "@/components/TaskCreateModal";
 import {
-  useGetProjectsQuery,
+  useGetBoardsQuery,
   useGetTagsQuery,
   useGetTasksQuery,
 } from "@/state/api";
@@ -18,13 +18,17 @@ import {
 } from "@/lib/filterTypes";
 import { isFilterActive, isSortActive } from "@/lib/filterUtils";
 import { useCollaboration } from "@/lib/useCollaboration";
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-const BoardPage = ({ params }: Props) => {
+export default function BoardPage({ params }: Props) {
   const { id } = use(params);
+  const boardId = Number(id);
+  const { activeWorkspaceId } = useWorkspace();
+
   const [activeTab, setActiveTab] = useState("Board");
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
   const [filterState, setFilterState] =
@@ -33,14 +37,24 @@ const BoardPage = ({ params }: Props) => {
   const [showMyTasks, setShowMyTasks] = useState(false);
 
   const { collaborators, taskSelectionMap, selectTask, notifyTaskUpdate } =
-    useCollaboration(`board-${id}`);
+    useCollaboration(`board-${boardId}`);
 
-  const { data: projects, refetch: refetchProjects } = useGetProjectsQuery();
-  const { data: tags = [] } = useGetTagsQuery();
-  const { data: tasks = [], refetch: refetchTasks } = useGetTasksQuery({
-    projectId: Number(id),
+  const { data: boards, refetch: refetchBoards } = useGetBoardsQuery(
+    activeWorkspaceId || -1,
+    {
+      skip: !activeWorkspaceId,
+    },
+  );
+
+  const { data: tags = [] } = useGetTagsQuery(activeWorkspaceId || -1, {
+    skip: !activeWorkspaceId,
   });
-  const project = projects?.find((p) => p.id === Number(id));
+
+  const { data: tasks = [], refetch: refetchTasks } = useGetTasksQuery({
+    boardId,
+  });
+
+  const board = boards?.find((b) => b.id === boardId);
 
   const totalTasks = tasks.length;
   const totalPoints = tasks.reduce((sum, task) => sum + (task.points || 0), 0);
@@ -49,21 +63,24 @@ const BoardPage = ({ params }: Props) => {
     setFilterState(newState);
   const handleSortChange = (newState: SortState) => setSortState(newState);
 
+  if (!board) return null; // TODO: Add loading state
+
   return (
     <div className="flex h-full flex-col">
       <TaskCreateModal
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
-        projectId={Number(id)}
+        boardId={boardId}
         onTaskCreated={notifyTaskUpdate}
       />
+
       <BoardHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        boardName={project?.name || "Board"}
-        boardDescription={project?.description}
+        boardName={board.name || "Board"}
+        boardDescription={board.description}
         boardId={id}
-        isActive={project?.isActive !== false}
+        isActive={board.isActive !== false}
         filterState={filterState}
         onFilterChange={handleFilterChange}
         tags={tags}
@@ -76,15 +93,17 @@ const BoardPage = ({ params }: Props) => {
         showMyTasks={showMyTasks}
         onShowMyTasksChange={setShowMyTasks}
         onRefresh={() => {
-          refetchProjects();
+          refetchBoards();
           refetchTasks();
         }}
         collaborators={collaborators}
       />
+
       <div className="min-h-0 flex-1">
         {activeTab === "Board" && (
-          <Board
-            id={id}
+          <BoardView
+            boardId={id}
+            tasks={tasks}
             setIsModalNewTaskOpen={setIsModalNewTaskOpen}
             filterState={filterState}
             sortState={sortState}
@@ -95,15 +114,15 @@ const BoardPage = ({ params }: Props) => {
           />
         )}
         {activeTab === "Table" && (
-          <Table
-            id={id}
+          <BoardTableView
+            boardId={id}
+            tasks={tasks}
             setIsModalNewTaskOpen={setIsModalNewTaskOpen}
             filterState={filterState}
+            sortState={sortState}
           />
         )}
       </div>
     </div>
   );
-};
-
-export default BoardPage;
+}

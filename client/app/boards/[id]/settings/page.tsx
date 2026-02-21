@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import {
-  useGetProjectsQuery,
-  useUpdateProjectMutation,
-  useDeleteProjectMutation,
+  useGetBoardsQuery,
+  useUpdateBoardMutation,
+  useDeleteBoardMutation,
 } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 
@@ -16,15 +17,18 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
-const BoardSettings = ({ params }: Props) => {
+export default function BoardSettings({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
+  const { activeWorkspaceId } = useWorkspace();
 
-  const { data: projects } = useGetProjectsQuery();
-  const project = projects?.find((p) => p.id === Number(id));
+  const { data: boards } = useGetBoardsQuery(activeWorkspaceId || -1, {
+    skip: !activeWorkspaceId,
+  });
+  const board = boards?.find((b) => b.id === Number(id));
 
-  const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
-  const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
+  const [updateBoard, { isLoading: isUpdating }] = useUpdateBoardMutation();
+  const [deleteBoard, { isLoading: isDeleting }] = useDeleteBoardMutation();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,16 +36,17 @@ const BoardSettings = ({ params }: Props) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (project) {
-      setName(project.name);
-      setDescription(project.description || "");
+    if (board) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setName(board.name);
+      setDescription(board.description || "");
     }
-  }, [project]);
+  }, [board]);
 
   const handleSave = async () => {
     if (!name.trim()) return;
-    await updateProject({
-      projectId: Number(id),
+    await updateBoard({
+      boardId: Number(id),
       name: name.trim(),
       description: description.trim() || undefined,
     });
@@ -50,11 +55,11 @@ const BoardSettings = ({ params }: Props) => {
   };
 
   const handleDelete = async () => {
-    await deleteProject(Number(id));
+    await deleteBoard(Number(id));
     router.push("/");
   };
 
-  if (!project) return <div className="p-8">Loading...</div>;
+  if (!board) return <ErrorComponent />;
 
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none focus:outline-none focus:border-gray-400";
@@ -68,7 +73,7 @@ const BoardSettings = ({ params }: Props) => {
         >
           <ArrowLeft className="h-4 w-4" /> Back to board
         </Link>
-        <Header name={`${project.name} — Settings`} />
+        <Header name={`${board.name} — Settings`} />
       </div>
 
       <div className="max-w-lg space-y-6">
@@ -113,7 +118,7 @@ const BoardSettings = ({ params }: Props) => {
           )}
         </div>
 
-        <div className="dark:border-stroke-dark border-t border-gray-200 pt-6">
+        <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
           <h3 className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
             Danger Zone
           </h3>
@@ -134,7 +139,7 @@ const BoardSettings = ({ params }: Props) => {
             onClose={() => setShowDeleteConfirm(false)}
             onConfirm={handleDelete}
             title="Delete Board"
-            message={`Delete "${project?.name}" and all its tasks? This cannot be undone.`}
+            message={`Delete "${board?.name}" and all its tasks? This cannot be undone.`}
             confirmLabel="Delete"
             isLoading={isDeleting}
             variant="danger"
@@ -143,6 +148,24 @@ const BoardSettings = ({ params }: Props) => {
       </div>
     </div>
   );
-};
+}
 
-export default BoardSettings;
+function ErrorComponent() {
+  return (
+    <div className="p-8">
+      <h2 className="text-xl font-semibold text-red-600 dark:text-red-400">
+        Board not found
+      </h2>
+      <p className="mt-2 text-gray-500 dark:text-neutral-400">
+        The board you are looking for does not exist or you do not have access
+        to it.
+      </p>
+      <Link
+        href="/"
+        className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to home
+      </Link>
+    </div>
+  );
+}

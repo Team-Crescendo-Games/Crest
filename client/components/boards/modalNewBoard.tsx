@@ -1,20 +1,35 @@
+"use client";
+
 import Modal from "@/components/Modal";
-import { useCreateProjectMutation } from "@/state/api";
+import { useCreateBoardMutation } from "@/state/api";
 import { useState } from "react";
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-const ModalNewBoard = ({ isOpen, onClose }: Props) => {
-  const [createProject, { isLoading }] = useCreateProjectMutation();
+export default function ModalNewBoard({ isOpen, onClose }: Props) {
+  const [createBoard, { isLoading }] = useCreateBoardMutation();
+  const { activeWorkspaceId } = useWorkspace();
+
   const [boardName, setBoardName] = useState("");
   const [description, setDescription] = useState("");
 
   const handleSubmit = async () => {
-    if (!boardName) return;
-    await createProject({ name: boardName, description });
+    if (!boardName || !activeWorkspaceId) return;
+
+    await createBoard({
+      name: boardName,
+      description,
+      workspaceId: activeWorkspaceId,
+    });
+
+    // Reset and close
+    setBoardName("");
+    setDescription("");
+    onClose();
   };
 
   const inputStyles =
@@ -44,7 +59,7 @@ const ModalNewBoard = ({ isOpen, onClose }: Props) => {
         />
         <button
           type="submit"
-          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 focus:outline-none dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
+          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
             !boardName || isLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
           disabled={!boardName || isLoading}
@@ -54,6 +69,4 @@ const ModalNewBoard = ({ isOpen, onClose }: Props) => {
       </form>
     </Modal>
   );
-};
-
-export default ModalNewBoard;
+}

@@ -6,7 +6,7 @@ export const DND_ITEM_TYPES = {
 
 export interface DraggedTask {
   id: number;
-  projectId: number;
+  boardId: number;
 }
 
 export interface DraggedSidebarBoard {

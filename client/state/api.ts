@@ -1,12 +1,26 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 
-export interface Project {
+export interface Workspace {
+  id: number;
+  name: string;
+}
+
+export interface WorkspaceMember {
+  id: number;
+  userId: number;
+  workspaceId: number;
+  role: string;
+  user?: User;
+}
+
+export interface Board {
   id: number;
   name: string;
   description?: string;
   isActive?: boolean;
   displayOrder?: number;
+  workspaceId: number;
 }
 
 export enum Priority {
@@ -99,7 +113,6 @@ export interface User {
   cognitoId?: string;
 }
 
-// Helper to construct S3 key for user profile pictures
 export const getUserProfileS3Key = (userId: number, ext: string) =>
   `users/${userId}/profile.${ext}`;
 
@@ -111,7 +124,6 @@ export interface Attachment {
   uploadedById: number;
 }
 
-// Helper to construct S3 key for attachments
 export const getAttachmentS3Key = (
   taskId: number,
   attachmentId: number,
@@ -142,6 +154,13 @@ export interface GroupedReaction {
   count: number;
   users: { userId: number; username: string }[];
   reactedByCurrentUser: boolean;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  color?: string;
+  workspaceId: number;
 }
 
 export interface TaskTag {
@@ -190,7 +209,7 @@ export interface Task {
   startDate?: string;
   dueDate?: string;
   points?: number;
-  projectId: number;
+  boardId: number;
   authorUserId?: number;
 
   author?: User;
@@ -204,27 +223,22 @@ export interface Task {
   activities?: Activity[];
 }
 
-export interface SearchResults {
-  tasks?: Task[];
-  projects?: Project[];
-  users?: User[];
-  sprints?: Sprint[];
-}
-
-export interface Tag {
-  id: number;
-  name: string;
-  color?: string;
-}
-
 export interface Sprint {
   id: number;
   title: string;
   startDate?: string;
   dueDate?: string;
   isActive?: boolean;
+  workspaceId: number;
   tasks?: Task[];
   _count?: { sprintTasks: number };
+}
+
+export interface SearchResults {
+  tasks?: Task[];
+  boards?: Board[];
+  users?: User[];
+  sprints?: Sprint[];
 }
 
 export interface PointsDataPoint {
@@ -235,6 +249,7 @@ export interface PointsDataPoint {
 
 export interface PointsAnalyticsParams {
   userId: number;
+  workspaceId: number;
   groupBy: "week" | "month" | "year";
   startDate: string;
   endDate: string;
@@ -254,7 +269,9 @@ export const api = createApi({
   }),
   reducerPath: "api",
   tagTypes: [
-    "Projects",
+    "Workspaces",
+    "WorkspaceMembers",
+    "Boards",
     "Tasks",
     "Users",
     "Tags",
@@ -264,76 +281,103 @@ export const api = createApi({
     "Analytics",
   ],
   endpoints: (build) => ({
-    // projects
-    getProjects: build.query<Project[], void>({
-      query: () => "projects",
-      providesTags: ["Projects"],
+    // --- WORKSPACES ---
+    getWorkspaces: build.query<Workspace[], number>({
+      query: (userId) => `workspaces?userId=${userId}`,
+      providesTags: ["Workspaces"],
     }),
-
-    createProject: build.mutation<Project, Partial<Project>>({
-      query: (project) => ({
-        url: "projects",
+    createWorkspace: build.mutation<
+      Workspace,
+      { name: string; userId: number }
+    >({
+      query: (workspace) => ({
+        url: "workspaces",
         method: "POST",
-        body: project,
+        body: workspace,
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: ["Workspaces"],
     }),
-
-    deleteProject: build.mutation<void, number>({
-      query: (projectId) => ({
-        url: `projects/${projectId}`,
+    deleteWorkspace: build.mutation<void, number>({
+      query: (workspaceId) => ({
+        url: `workspaces/${workspaceId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: ["Workspaces", "Boards"],
+    }),
+    getWorkspaceMembers: build.query<WorkspaceMember[], number>({
+      query: (workspaceId) => `workspaces/${workspaceId}/members`,
+      providesTags: ["WorkspaceMembers"],
     }),
 
-    updateProject: build.mutation<
-      Project,
-      { projectId: number; name: string; description?: string }
+    // --- BOARDS ---
+    getBoards: build.query<Board[], number>({
+      query: (workspaceId) => `boards?workspaceId=${workspaceId}`,
+      providesTags: ["Boards"],
+    }),
+    createBoard: build.mutation<
+      Board,
+      Partial<Board> & { workspaceId: number }
     >({
-      query: ({ projectId, ...body }) => ({
-        url: `projects/${projectId}`,
+      query: (board) => ({
+        url: "boards",
+        method: "POST",
+        body: board,
+      }),
+      invalidatesTags: ["Boards"],
+    }),
+    deleteBoard: build.mutation<void, number>({
+      query: (boardId) => ({
+        url: `boards/${boardId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Boards"],
+    }),
+    updateBoard: build.mutation<
+      Board,
+      { boardId: number; name: string; description?: string }
+    >({
+      query: ({ boardId, ...body }) => ({
+        url: `boards/${boardId}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: ["Boards"],
     }),
-
-    archiveProject: build.mutation<Project, number>({
-      query: (projectId) => ({
-        url: `projects/${projectId}/archive`,
+    archiveBoard: build.mutation<Board, number>({
+      query: (boardId) => ({
+        url: `boards/${boardId}/archive`,
         method: "PATCH",
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: ["Boards"],
     }),
-
-    reorderProjects: build.mutation<Project[], number[]>({
-      query: (orderedIds) => ({
-        url: "projects/reorder",
+    reorderBoards: build.mutation<
+      Board[],
+      { orderedIds: number[]; workspaceId: number }
+    >({
+      query: (body) => ({
+        url: "boards/reorder",
         method: "PATCH",
-        body: { orderedIds },
+        body,
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: ["Boards"],
     }),
 
-    // tasks
-    getTasks: build.query<Task[], { projectId: number }>({
-      query: ({ projectId }) => `tasks?projectId=${projectId}`,
-      providesTags: (result, error, { projectId }) =>
+    // --- TASKS ---
+    getTasks: build.query<Task[], { boardId: number }>({
+      query: ({ boardId }) => `tasks?boardId=${boardId}`,
+      providesTags: (result, error, { boardId }) =>
         result
           ? [
               ...result.map(({ id }) => ({ type: "Tasks" as const, id })),
-              { type: "Tasks" as const, id: `PROJECT-${projectId}` },
+              { type: "Tasks" as const, id: `BOARD-${boardId}` },
               "Tasks",
             ]
           : ["Tasks"],
     }),
-
     getTaskById: build.query<Task, number>({
       query: (taskId) => `tasks/${taskId}`,
       providesTags: (result, error, taskId) => [{ type: "Tasks", id: taskId }],
     }),
-
     getTasksByUser: build.query<Task[], number>({
       query: (userId) => `tasks/user/${userId}`,
       providesTags: (result, error, userId) =>
@@ -341,19 +385,16 @@ export const api = createApi({
           ? result.map(({ id }) => ({ type: "Tasks", id }))
           : [{ type: "Tasks", id: userId }],
     }),
-
     getTasksAssignedToUser: build.query<Task[], number>({
       query: (userId) => `tasks/user/${userId}/assigned`,
       providesTags: (result) =>
         result ? result.map(({ id }) => ({ type: "Tasks", id })) : ["Tasks"],
     }),
-
     getTasksAuthoredByUser: build.query<Task[], number>({
       query: (userId) => `tasks/user/${userId}/authored`,
       providesTags: (result) =>
         result ? result.map(({ id }) => ({ type: "Tasks", id })) : ["Tasks"],
     }),
-
     createTask: build.mutation<
       Task,
       Partial<Task> & {
@@ -369,7 +410,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
-
     updateTaskStatus: build.mutation<
       Task,
       { taskId: number; status: string; userId?: number }
@@ -381,11 +421,10 @@ export const api = createApi({
       }),
       invalidatesTags: (result, error, { taskId }) => [
         { type: "Tasks", id: taskId },
-        "Tasks", // Invalidate all task queries to refresh the board
-        "Sprints", // Invalidate sprints to refresh sprint board views
+        "Tasks",
+        "Sprints",
       ],
     }),
-
     updateTask: build.mutation<
       Task,
       Partial<Task> & {
@@ -404,11 +443,10 @@ export const api = createApi({
       }),
       invalidatesTags: (_, __, { id }) => [
         { type: "Tasks", id },
-        "Tasks", // Invalidate all tasks to refresh subtask relationships
-        "Sprints", // Invalidate sprints when task sprint associations change
+        "Tasks",
+        "Sprints",
       ],
     }),
-
     deleteTask: build.mutation<void, number>({
       query: (taskId) => ({
         url: `tasks/${taskId}`,
@@ -417,17 +455,15 @@ export const api = createApi({
       invalidatesTags: ["Tasks", "Sprints"],
     }),
 
-    // users
+    // --- USERS ---
     getUsers: build.query<User[], void>({
       query: () => "users",
       providesTags: ["Users"],
     }),
-
     getUserById: build.query<User, number>({
       query: (userId) => `users/id/${userId}`,
       providesTags: (result, error, userId) => [{ type: "Users", id: userId }],
     }),
-
     getAuthUser: build.query({
       queryFn: async (
         args: { impersonatedCognitoId: string },
@@ -441,7 +477,6 @@ export const api = createApi({
           if (!session) throw new Error("No session found");
           const { userSub } = session;
 
-          // If impersonating (non-empty string), fetch the impersonated user's details
           const cognitoIdToFetch = args.impersonatedCognitoId || userSub;
           const userDetailsResponse = await fetchWithBQ(
             `users/${cognitoIdToFetch}`,
@@ -457,15 +492,15 @@ export const api = createApi({
               realUserSub: userSub,
             },
           };
-        } catch (error: any) {
-          return { error: error.message || "Could not fetch user data" };
+        } catch (error) {
+          if (error instanceof Error) return { error: error.message };
+          return { error: String(error) || "Could not fetch user data" };
         }
       },
       providesTags: (_result, _error, args) => [
         { type: "Users", id: `AUTH-${args.impersonatedCognitoId || "self"}` },
       ],
     }),
-
     updateUserProfilePicture: build.mutation<
       User,
       { cognitoId: string; profilePictureExt: string }
@@ -477,7 +512,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
-
     updateUserProfile: build.mutation<
       User,
       { cognitoId: string; fullName?: string }
@@ -489,8 +523,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
-
-    // admin endpoints
     adminUpdateUser: build.mutation<
       User,
       {
@@ -509,13 +541,16 @@ export const api = createApi({
       invalidatesTags: ["Users"],
     }),
 
-    // search
+    // --- SEARCH ---
     search: build.query<
       SearchResults,
-      { query: string; categories?: string[] }
+      { query: string; workspaceId: number; categories?: string[] }
     >({
-      query: ({ query, categories }) => {
-        const params = new URLSearchParams({ query });
+      query: ({ query, workspaceId, categories }) => {
+        const params = new URLSearchParams({
+          query,
+          workspaceId: workspaceId.toString(),
+        });
         if (categories && categories.length > 0) {
           params.set("categories", categories.join(","));
         }
@@ -523,13 +558,15 @@ export const api = createApi({
       },
     }),
 
-    // tags
-    getTags: build.query<Tag[], void>({
-      query: () => "tags",
+    // --- TAGS ---
+    getTags: build.query<Tag[], number>({
+      query: (workspaceId) => `tags?workspaceId=${workspaceId}`,
       providesTags: ["Tags"],
     }),
-
-    createTag: build.mutation<Tag, { name: string; color?: string }>({
+    createTag: build.mutation<
+      Tag,
+      { name: string; color?: string; workspaceId: number }
+    >({
       query: (body) => ({
         url: "tags",
         method: "POST",
@@ -537,7 +574,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tags"],
     }),
-
     updateTag: build.mutation<
       Tag,
       { tagId: number; name?: string; color?: string }
@@ -549,7 +585,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tags"],
     }),
-
     deleteTag: build.mutation<void, number>({
       query: (tagId) => ({
         url: `tags/${tagId}`,
@@ -558,9 +593,9 @@ export const api = createApi({
       invalidatesTags: ["Tags"],
     }),
 
-    // sprints
-    getSprints: build.query<Sprint[], void>({
-      query: () => "sprints",
+    // --- SPRINTS ---
+    getSprints: build.query<Sprint[], number>({
+      query: (workspaceId) => `sprints?workspaceId=${workspaceId}`,
       providesTags: (result) =>
         result
           ? [
@@ -569,7 +604,6 @@ export const api = createApi({
             ]
           : [{ type: "Sprints" as const }],
     }),
-
     getSprint: build.query<Sprint, number>({
       query: (sprintId) => `sprints/${sprintId}`,
       providesTags: (result, error, sprintId) => [
@@ -577,10 +611,14 @@ export const api = createApi({
         { type: "Sprints" },
       ],
     }),
-
     createSprint: build.mutation<
       Sprint,
-      { title: string; startDate?: string; dueDate?: string }
+      {
+        title: string;
+        workspaceId: number;
+        startDate?: string;
+        dueDate?: string;
+      }
     >({
       query: (body) => ({
         url: "sprints",
@@ -589,7 +627,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Sprints"],
     }),
-
     updateSprint: build.mutation<
       Sprint,
       { sprintId: number; title?: string; startDate?: string; dueDate?: string }
@@ -604,7 +641,6 @@ export const api = createApi({
         "Sprints",
       ],
     }),
-
     deleteSprint: build.mutation<void, number>({
       query: (sprintId) => ({
         url: `sprints/${sprintId}`,
@@ -612,7 +648,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Sprints"],
     }),
-
     addTaskToSprint: build.mutation<void, { sprintId: number; taskId: number }>(
       {
         query: ({ sprintId, taskId }) => ({
@@ -625,7 +660,6 @@ export const api = createApi({
         ],
       },
     ),
-
     removeTaskFromSprint: build.mutation<
       void,
       { sprintId: number; taskId: number }
@@ -639,7 +673,6 @@ export const api = createApi({
         "Sprints",
       ],
     }),
-
     duplicateSprint: build.mutation<
       Sprint,
       { sprintId: number; title?: string; includeFinishedTasks?: boolean }
@@ -651,7 +684,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Sprints"],
     }),
-
     archiveSprint: build.mutation<Sprint, number>({
       query: (sprintId) => ({
         url: `sprints/${sprintId}/archive`,
@@ -663,19 +695,14 @@ export const api = createApi({
       ],
     }),
 
-    // comments
+    // --- COMMENTS, REACTIONS, S3, ACTIVITIES, NOTIFICATIONS, ATTACHMENTS ---
     createComment: build.mutation<
       Comment,
       { taskId: number; userId: number; text: string }
     >({
-      query: (body) => ({
-        url: "comments",
-        method: "POST",
-        body,
-      }),
+      query: (body) => ({ url: "comments", method: "POST", body }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
-
     toggleCommentResolved: build.mutation<Comment, { commentId: number }>({
       query: ({ commentId }) => ({
         url: `comments/${commentId}/resolved`,
@@ -683,38 +710,23 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
-
-    // reactions
     toggleReaction: build.mutation<
       CommentReaction | null,
       { commentId: number; userId: number; emoji: string }
     >({
-      query: (body) => ({
-        url: "reactions/toggle",
-        method: "POST",
-        body,
-      }),
+      query: (body) => ({ url: "reactions/toggle", method: "POST", body }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
-
-    // s3 presigned urls
     getPresignedUrl: build.query<{ url: string }, string>({
       query: (key) => `s3/presigned?key=${encodeURIComponent(key)}`,
-      keepUnusedDataFor: 3500, // Cache for ~1 hour (slightly less than URL expiry)
+      keepUnusedDataFor: 3500,
     }),
-
     getPresignedUploadUrl: build.mutation<
       { url: string },
       { key: string; contentType: string }
     >({
-      query: (body) => ({
-        url: "s3/presigned/upload",
-        method: "POST",
-        body,
-      }),
+      query: (body) => ({ url: "s3/presigned/upload", method: "POST", body }),
     }),
-
-    // activities
     getActivitiesByTask: build.query<Activity[], number>({
       query: (taskId) => `activities?taskId=${taskId}`,
       providesTags: (result, error, taskId) => [
@@ -722,18 +734,14 @@ export const api = createApi({
         "Activities",
       ],
     }),
-
-    // notifications
     getNotifications: build.query<Notification[], number>({
       query: (userId) => `notifications?userId=${userId}`,
       providesTags: ["Notifications"],
     }),
-
     getUnreadCount: build.query<UnreadCountResponse, number>({
       query: (userId) => `notifications/unread-count?userId=${userId}`,
       providesTags: ["Notifications"],
     }),
-
     markNotificationAsRead: build.mutation<
       Notification,
       { notificationId: number; userId: number }
@@ -744,7 +752,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
-
     markAllNotificationsAsRead: build.mutation<
       { message: string; count: number },
       number
@@ -755,7 +762,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
-
     deleteNotification: build.mutation<
       { message: string },
       { notificationId: number; userId: number }
@@ -766,7 +772,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
-
     batchDeleteNotifications: build.mutation<
       { message: string; count: number },
       { ids: number[]; userId: number }
@@ -778,15 +783,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
-
-    // analytics
-    getPointsAnalytics: build.query<PointsDataPoint[], PointsAnalyticsParams>({
-      query: ({ userId, groupBy, startDate, endDate }) =>
-        `analytics/points?userId=${userId}&groupBy=${groupBy}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
-      providesTags: ["Analytics"],
-    }),
-
-    // attachments
     createAttachment: build.mutation<
       Attachment,
       {
@@ -796,14 +792,9 @@ export const api = createApi({
         fileExt: string;
       }
     >({
-      query: (body) => ({
-        url: "attachments",
-        method: "POST",
-        body,
-      }),
+      query: (body) => ({ url: "attachments", method: "POST", body }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
-
     deleteAttachment: build.mutation<void, number>({
       query: (attachmentId) => ({
         url: `attachments/${attachmentId}`,
@@ -811,42 +802,61 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tasks", "Sprints"],
     }),
+
+    // --- ANALYTICS ---
+    getPointsAnalytics: build.query<PointsDataPoint[], PointsAnalyticsParams>({
+      query: ({ userId, workspaceId, groupBy, startDate, endDate }) =>
+        `analytics/points?userId=${userId}&workspaceId=${workspaceId}&groupBy=${groupBy}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
+      providesTags: ["Analytics"],
+    }),
   }),
 });
 
 export const {
-  useGetProjectsQuery,
-  useCreateProjectMutation,
-  useDeleteProjectMutation,
-  useArchiveProjectMutation,
-  useUpdateProjectMutation,
-  useReorderProjectsMutation,
+  // Workspaces
+  useGetWorkspacesQuery,
+  useCreateWorkspaceMutation,
+  useDeleteWorkspaceMutation,
+  useGetWorkspaceMembersQuery,
+  // Boards (Replaced Projects)
+  useGetBoardsQuery,
+  useCreateBoardMutation,
+  useDeleteBoardMutation,
+  useArchiveBoardMutation,
+  useUpdateBoardMutation,
+  useReorderBoardsMutation,
+  // Tasks
   useGetTasksQuery,
   useGetTaskByIdQuery,
   useCreateTaskMutation,
   useUpdateTaskStatusMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
-  useSearchQuery,
-  useGetUsersQuery,
-  useGetUserByIdQuery,
   useGetTasksByUserQuery,
   useGetTasksAssignedToUserQuery,
   useGetTasksAuthoredByUserQuery,
+  // Users
+  useSearchQuery,
+  useGetUsersQuery,
+  useGetUserByIdQuery,
   useGetAuthUserQuery,
   useUpdateUserProfilePictureMutation,
   useUpdateUserProfileMutation,
   useAdminUpdateUserMutation,
+  // Tags
   useGetTagsQuery,
   useCreateTagMutation,
   useUpdateTagMutation,
   useDeleteTagMutation,
+  // Comments & Reactions
   useCreateCommentMutation,
   useToggleCommentResolvedMutation,
   useToggleReactionMutation,
+  // S3
   useGetPresignedUrlQuery,
   useLazyGetPresignedUrlQuery,
   useGetPresignedUploadUrlMutation,
+  // Sprints
   useGetSprintsQuery,
   useGetSprintQuery,
   useCreateSprintMutation,
@@ -856,6 +866,7 @@ export const {
   useRemoveTaskFromSprintMutation,
   useDuplicateSprintMutation,
   useArchiveSprintMutation,
+  // Activities, Notifications, Analytics, Attachments
   useGetActivitiesByTaskQuery,
   useGetNotificationsQuery,
   useGetUnreadCountQuery,

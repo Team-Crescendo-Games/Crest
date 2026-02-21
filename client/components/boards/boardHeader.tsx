@@ -10,7 +10,7 @@ import {
   TAB_BUTTON_BASE_STYLES,
   TAB_BUTTON_INDICATOR_STYLES,
 } from "@/lib/styleConstants";
-import { Tag, useArchiveProjectMutation } from "@/state/api";
+import { Tag, useArchiveBoardMutation } from "@/state/api"; // UPDATED IMPORT
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import HeaderButton from "@/components/HeaderButton";
 import HeaderToolbar from "@/components/HeaderToolbar";
@@ -41,7 +41,7 @@ type Props = {
   collaborators?: CollaboratorUser[];
 };
 
-const BoardHeader = ({
+export default function BoardHeader({
   activeTab,
   setActiveTab,
   boardName,
@@ -61,14 +61,13 @@ const BoardHeader = ({
   onShowMyTasksChange,
   onRefresh,
   collaborators = [],
-}: Props) => {
+}: Props) {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [archiveProject, { isLoading: isArchiving }] =
-    useArchiveProjectMutation();
+  const [archiveBoard, { isLoading: isArchiving }] = useArchiveBoardMutation(); 
 
   const handleArchive = async () => {
     try {
-      await archiveProject(Number(boardId)).unwrap();
+      await archiveBoard(Number(boardId)).unwrap();
       setShowArchiveConfirm(false);
     } catch (error) {
       console.error("Failed to archive board:", error);
@@ -182,7 +181,7 @@ type TabButtonProps = {
   activeTab: string;
 };
 
-const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
+function TabButton({ name, icon, setActiveTab, activeTab }: TabButtonProps) {
   const isActive = activeTab === name;
 
   return (
@@ -206,5 +205,3 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
     </button>
   );
 };
-
-export default BoardHeader;
