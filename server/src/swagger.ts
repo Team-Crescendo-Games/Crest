@@ -27,13 +27,31 @@ const options: swaggerJsdoc.Options = {
                         profilePictureExt: { type: "string", nullable: true },
                     },
                 },
-                Project: {
+                Workspace: {
+                    type: "object",
+                    properties: {
+                        id: { type: "integer" },
+                        name: { type: "string" },
+                    },
+                },
+                WorkspaceMember: {
+                    type: "object",
+                    properties: {
+                        id: { type: "integer" },
+                        userId: { type: "integer" },
+                        workspaceId: { type: "integer" },
+                        role: { type: "string" },
+                    },
+                },
+                Board: {
                     type: "object",
                     properties: {
                         id: { type: "integer" },
                         name: { type: "string" },
                         description: { type: "string", nullable: true },
                         isActive: { type: "boolean" },
+                        displayOrder: { type: "integer" },
+                        workspaceId: { type: "integer" },
                     },
                 },
                 Task: {
@@ -53,7 +71,7 @@ const options: swaggerJsdoc.Options = {
                         startDate: { type: "string", format: "date-time", nullable: true },
                         dueDate: { type: "string", format: "date-time", nullable: true },
                         points: { type: "integer", nullable: true },
-                        projectId: { type: "integer" },
+                        boardId: { type: "integer" }, // Replaced projectId
                         authorUserId: { type: "integer" },
                         parentTaskId: { type: "integer", nullable: true },
                     },
@@ -66,6 +84,7 @@ const options: swaggerJsdoc.Options = {
                         startDate: { type: "string", format: "date-time", nullable: true },
                         dueDate: { type: "string", format: "date-time", nullable: true },
                         isActive: { type: "boolean" },
+                        workspaceId: { type: "integer" }, // Added
                     },
                 },
                 Tag: {
@@ -74,6 +93,7 @@ const options: swaggerJsdoc.Options = {
                         id: { type: "integer" },
                         name: { type: "string" },
                         color: { type: "string", nullable: true },
+                        workspaceId: { type: "integer" }, // Added
                     },
                 },
                 Comment: {
@@ -147,7 +167,9 @@ const options: swaggerJsdoc.Options = {
             },
         },
         tags: [
-            { name: "Projects", description: "Project management endpoints" },
+            { name: "Workspaces", description: "Workspace management endpoints" },
+            { name: "Workspace Members", description: "Workspace membership endpoints" },
+            { name: "Boards", description: "Board management endpoints" },
             { name: "Tasks", description: "Task management endpoints" },
             { name: "Users", description: "User management endpoints" },
             { name: "Sprints", description: "Sprint management endpoints" },
@@ -159,6 +181,7 @@ const options: swaggerJsdoc.Options = {
             { name: "Reactions", description: "Comment reaction endpoints" },
             { name: "S3", description: "S3 presigned URL endpoints" },
             { name: "Search", description: "Search endpoints" },
+            { name: "Analytics", description: "Analytics and reporting endpoints" },
             { name: "Admin", description: "Admin endpoints" },
         ],
     },

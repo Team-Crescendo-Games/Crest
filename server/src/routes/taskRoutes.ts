@@ -18,14 +18,14 @@ const router = Router();
  * /tasks:
  *   get:
  *     tags: [Tasks]
- *     summary: Get tasks for a project
+ *     summary: Get tasks for a board
  *     parameters:
  *       - in: query
- *         name: projectId
+ *         name: boardId
  *         required: true
  *         schema:
  *           type: integer
- *         description: Project ID to filter tasks
+ *         description: Board ID to filter tasks
  *     responses:
  *       200:
  *         description: List of tasks
@@ -52,7 +52,7 @@ router.get("/", getTasks);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, projectId, authorUserId]
+ *             required: [title, boardId, authorUserId]
  *             properties:
  *               title:
  *                 type: string
@@ -71,7 +71,7 @@ router.get("/", getTasks);
  *                 format: date-time
  *               points:
  *                 type: integer
- *               projectId:
+ *               boardId:
  *                 type: integer
  *               authorUserId:
  *                 type: integer

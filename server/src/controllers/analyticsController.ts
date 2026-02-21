@@ -3,15 +3,16 @@ import { getPrismaClient } from "../lib/prisma.ts";
 
 // Types for analytics
 interface PointsDataPoint {
-    date: string;      // ISO date string (start of period)
-    points: number;    // Total points for the period
-    label: string;     // Display label
+    date: string; // ISO date string (start of period)
+    points: number; // Total points for the period
+    label: string; // Display label
 }
 
 type GroupBy = "week" | "month" | "year";
 
 interface PointsAnalyticsQuery {
     userId?: string;
+    workspaceId?: string; // ADDED: Must scope analytics to the current workspace
     groupBy?: string;
     startDate?: string;
     endDate?: string;
@@ -65,7 +66,7 @@ function generatePeriods(
 ): { start: Date; end: Date; label: string }[] {
     const periods: { start: Date; end: Date; label: string }[] = [];
     let current: Date;
-    
+
     switch (groupBy) {
         case "week": {
             current = startOfWeek(startDate);
@@ -84,7 +85,9 @@ function generatePeriods(
         case "month": {
             current = startOfMonth(startDate);
             while (current < endDate) {
-                const periodEnd = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1));
+                const periodEnd = new Date(
+                    Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1)
+                );
                 periods.push({
                     start: new Date(current),
                     end: periodEnd,
@@ -108,45 +111,38 @@ function generatePeriods(
             break;
         }
     }
-    
+
     return periods;
 }
 
 /**
- * Get points analytics for a user
- * GET /analytics/points?userId=:userId&groupBy=:groupBy&startDate=:startDate&endDate=:endDate
- *
- * Query Parameters:
- * - userId (required): The user ID to get analytics for
- * - groupBy (required): Grouping - "week", "month", or "year"
- * - startDate (required): Start of date range (ISO string)
- * - endDate (required): End of date range (ISO string)
- * 
- * Response:
- * - Array of PointsDataPoint objects with date, points, and label
+ * Get points analytics for a user in a specific workspace
+ * GET /analytics/points?userId=:userId&workspaceId=:workspaceId&groupBy=:groupBy&startDate=:startDate&endDate=:endDate
  */
 export const getPointsAnalytics = async (
     req: Request<{}, {}, {}, PointsAnalyticsQuery>,
     res: Response<PointsDataPoint[] | { error: string }>
 ): Promise<void> => {
-    const { userId, groupBy, startDate, endDate } = req.query;
+    const { userId, workspaceId, groupBy, startDate, endDate } = req.query;
 
-    // Validate userId
     if (!userId || isNaN(Number(userId))) {
         res.status(400).json({ error: "Valid userId is required" });
         return;
     }
 
-    // Validate groupBy
+    if (!workspaceId || isNaN(Number(workspaceId))) {
+        res.status(400).json({ error: "Valid workspaceId is required" });
+        return;
+    }
+
     const validGroupBy: GroupBy[] = ["week", "month", "year"];
     if (!groupBy || !validGroupBy.includes(groupBy as GroupBy)) {
-        res.status(400).json({ 
-            error: "Invalid groupBy. Must be: week, month, or year" 
+        res.status(400).json({
+            error: "Invalid groupBy. Must be: week, month, or year",
         });
         return;
     }
 
-    // Validate dates
     if (!startDate || !endDate) {
         res.status(400).json({ error: "startDate and endDate are required" });
         return;
@@ -166,23 +162,21 @@ export const getPointsAnalytics = async (
     }
 
     const numericUserId = Number(userId);
+    const numericWorkspaceId = Number(workspaceId);
     const groupByType = groupBy as GroupBy;
 
     try {
         const prisma = getPrismaClient();
 
-        // Generate time periods
         const periods = generatePeriods(start, end, groupByType);
 
-        // Query tasks where:
-        // 1. status = 3 (Done)
-        // 2. The task is assigned to the specified user
-        // 3. dueDate is within the date range
-        // 4. Task has points
         const tasks = await prisma.task.findMany({
             where: {
                 status: STATUS_DONE,
                 points: { not: null },
+                board: {
+                    workspaceId: numericWorkspaceId,
+                },
                 dueDate: {
                     gte: start,
                     lt: end,
@@ -200,7 +194,6 @@ export const getPointsAnalytics = async (
             },
         });
 
-        // Aggregate points by period
         const result: PointsDataPoint[] = periods.map((periodInfo) => {
             const periodPoints = tasks
                 .filter((task) => {

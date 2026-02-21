@@ -9,7 +9,8 @@ import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./swagger.ts";
 
-import projectRoutes from "./routes/projectRoutes.ts";
+import workspaceRoutes from "./routes/workspaceRoutes.ts";
+import boardRoutes from "./routes/boardRoutes.ts";
 import taskRoutes from "./routes/taskRoutes.ts";
 import userRoutes from "./routes/userRoutes.ts";
 import searchRoutes from "./routes/searchRoutes.ts";
@@ -40,7 +41,8 @@ app.get("/", (_req, res) => {
     res.send("This is the home route");
 });
 
-app.use("/projects", projectRoutes);
+app.use("/workspaces", workspaceRoutes);
+app.use("/boards", boardRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);
 app.use("/search", searchRoutes);

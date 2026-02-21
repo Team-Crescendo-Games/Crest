@@ -36,7 +36,14 @@ const taskInclude = {
             priority: true,
             taskAssignments: {
                 include: {
-                    user: { select: { userId: true, username: true, fullName: true, profilePictureExt: true } },
+                    user: {
+                        select: {
+                            userId: true,
+                            username: true,
+                            fullName: true,
+                            profilePictureExt: true,
+                        },
+                    },
                 },
             },
         },
@@ -96,7 +103,6 @@ interface UpdateContext {
 }
 
 // Field update handlers for updateTask
-// Helper to clamp string length for activity messages
 function clampString(str: string, maxLength: number = 50): string {
     return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
 }
@@ -170,9 +176,9 @@ function handlePointsUpdate(ctx: UpdateContext, points: number | string | null |
     }
 }
 
-function handleProjectIdUpdate(ctx: UpdateContext, projectId: number | undefined): void {
-    if (projectId === undefined) return;
-    ctx.data.projectId = projectId ? Number(projectId) : null;
+function handleBoardIdUpdate(ctx: UpdateContext, boardId: number | undefined): void {
+    if (boardId === undefined) return;
+    ctx.data.boardId = boardId ? Number(boardId) : null;
 }
 
 async function handleTagsUpdate(ctx: UpdateContext, tagIds: number[] | undefined): Promise<void> {
@@ -210,7 +216,6 @@ async function handleSprintsUpdate(
     const removedSprintIds = currentSprintIds.filter((id) => !sprintIds.includes(id));
 
     if (addedSprintIds.length > 0 || removedSprintIds.length > 0) {
-        // Fetch sprint names for added sprints
         const addedSprints =
             addedSprintIds.length > 0
                 ? await getPrismaClient().sprint.findMany({
@@ -219,7 +224,6 @@ async function handleSprintsUpdate(
                   })
                 : [];
 
-        // Get removed sprint names from current data
         const removedSprintNames = currentSprintTasks
             .filter((st) => removedSprintIds.includes(st.sprintId))
             .map((st) => st.sprint.title);
@@ -344,13 +348,18 @@ async function handleEditActivities(ctx: UpdateContext, userId: number): Promise
     }
 }
 
-export const getTasks = async (_req: Request, res: Response) => {
-    const { projectId } = _req.query;
+export const getTasks = async (req: Request, res: Response) => {
+    const { boardId } = req.query;
+
+    if (!boardId) {
+        res.status(400).json({ error: "boardId is required" });
+        return;
+    }
 
     try {
         const tasks = await getPrismaClient().task.findMany({
             where: {
-                projectId: Number(projectId),
+                boardId: Number(boardId),
             },
             include: taskInclude,
         });
@@ -393,7 +402,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
         startDate,
         dueDate,
         points,
-        projectId,
+        boardId,
         authorUserId,
         tagIds,
         sprintIds,
@@ -409,7 +418,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
                 startDate,
                 dueDate,
                 points,
-                projectId,
+                boardId: Number(boardId),
                 authorUserId,
                 ...(tagIds?.length && {
                     taskTags: {
@@ -441,11 +450,10 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
             console.error("Error creating activity for new task:", activityError.message);
         }
 
-        // Create notifications for assignees when task is created (excluding the author)
+        // Create notifications for assignees when task is created
         if (assigneeIds?.length) {
             try {
                 for (const assigneeId of assigneeIds) {
-                    // Don't notify the author if they assigned themselves
                     if (assigneeId === authorUserId) continue;
 
                     await createNotification({
@@ -536,7 +544,7 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
         points,
         tagIds,
         subtaskIds,
-        projectId,
+        boardId,
         sprintIds,
         userId,
         assigneeIds,
@@ -555,7 +563,6 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
             editActivities: [],
         };
 
-        // Handle scalar field updates
         handleTitleUpdate(ctx, title);
         handleDescriptionUpdate(ctx, description);
         handleStatusUpdate(ctx, status);
@@ -563,9 +570,8 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
         handleStartDateUpdate(ctx, startDate);
         handleDueDateUpdate(ctx, dueDate);
         handlePointsUpdate(ctx, points);
-        handleProjectIdUpdate(ctx, projectId);
+        handleBoardIdUpdate(ctx, boardId);
 
-        // Handle relation updates
         await handleTagsUpdate(ctx, tagIds);
         await handleSprintsUpdate(ctx, sprintIds);
         await handleAssigneesUpdate(ctx, assigneeIds, userId);
@@ -577,7 +583,6 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
             include: taskInclude,
         });
 
-        // Create activity records and notifications
         await handleEditActivities(ctx, userId);
 
         res.json(transformTask(updatedTask));

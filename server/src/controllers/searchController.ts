@@ -3,9 +3,14 @@ import { getPrismaClient } from "../lib/prisma.ts";
 import { statusIntToString } from "../lib/statusUtils.ts";
 
 export const search = async (req: Request, res: Response): Promise<void> => {
-    const { query, categories } = req.query;
+    const { query, categories, workspaceId } = req.query;
 
-    // Parse categories - default to all if not specified
+    if (!workspaceId) {
+        res.status(400).json({ error: "workspaceId is required for searching" });
+        return;
+    }
+
+    // Parse categories - default to all if not specified 
     const categoryList = categories
         ? (categories as string).split(",")
         : ["tasks", "boards", "users", "sprints"];
@@ -13,7 +18,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
     try {
         const results: {
             tasks?: any[];
-            projects?: any[];
+            boards?: any[]; 
             users?: any[];
             sprints?: any[];
         } = {};
@@ -21,6 +26,9 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         if (categoryList.includes("tasks")) {
             const tasks = await getPrismaClient().task.findMany({
                 where: {
+                    board: {
+                        workspaceId: Number(workspaceId),
+                    },
                     OR: [
                         { title: { contains: query as string, mode: "insensitive" } },
                         { description: { contains: query as string, mode: "insensitive" } },
@@ -56,8 +64,9 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         }
 
         if (categoryList.includes("boards")) {
-            results.projects = await getPrismaClient().project.findMany({
+            results.boards = await getPrismaClient().board.findMany({
                 where: {
+                    workspaceId: Number(workspaceId), 
                     OR: [
                         { name: { contains: query as string, mode: "insensitive" } },
                         { description: { contains: query as string, mode: "insensitive" } },
@@ -69,6 +78,11 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         if (categoryList.includes("users")) {
             results.users = await getPrismaClient().user.findMany({
                 where: {
+                    workspaceMembers: {
+                        some: {
+                            workspaceId: Number(workspaceId),
+                        },
+                    },
                     OR: [
                         { username: { contains: query as string, mode: "insensitive" } },
                         { fullName: { contains: query as string, mode: "insensitive" } },
@@ -81,6 +95,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         if (categoryList.includes("sprints")) {
             results.sprints = await getPrismaClient().sprint.findMany({
                 where: {
+                    workspaceId: Number(workspaceId),
                     title: { contains: query as string, mode: "insensitive" },
                 },
                 include: {

@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider      = "prisma-client-js"
+  provider = "prisma-client-js"
   output   = "./generated/prisma"
 }
 
@@ -21,6 +15,7 @@ model User {
   email             String?
   profilePictureExt String?
 
+  workspaceMembers WorkspaceMember[]
   authoredTasks    Task[]            @relation("TaskAuthor")
   taskAssignments  TaskAssignment[]
   attachments      Attachment[]
@@ -30,13 +25,38 @@ model User {
   notifications    Notification[]
 }
 
-model Project {
-  id           Int       @id @default(autoincrement())
+model Workspace {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  members WorkspaceMember[]
+  boards  Board[]
+  sprints Sprint[]
+  tags    Tag[] 
+}
+
+model WorkspaceMember {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  workspaceId Int
+  role        String @default("MEMBER") // ADMIN, MEMBER
+
+  user      User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Board {
+  id           Int     @id @default(autoincrement())
   name         String
   description  String?
-  isActive     Boolean   @default(true)
-  displayOrder Int       @default(0)
-  tasks        Task[]
+  isActive     Boolean @default(true)
+  displayOrder Int     @default(0)
+  workspaceId  Int
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     Task[]
 }
 
 model Task {
@@ -48,11 +68,11 @@ model Task {
   startDate    DateTime?
   dueDate      DateTime?
   points       Int?
-  projectId    Int
+  boardId      Int
   authorUserId Int
   parentTaskId Int?
 
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  board           Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
   author          User             @relation("TaskAuthor", fields: [authorUserId], references: [userId])
   parentTask      Task?            @relation("Subtasks", fields: [parentTaskId], references: [id])
   subtasks        Task[]           @relation("Subtasks")
@@ -66,10 +86,15 @@ model Task {
 }
 
 model Tag {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  color    String?
-  taskTags TaskTag[]
+  id          Int     @id @default(autoincrement())
+  name        String
+  color       String?
+  workspaceId Int
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  taskTags  TaskTag[]
+
+  @@unique([workspaceId, name]) 
 }
 
 model TaskTag {
@@ -90,6 +115,8 @@ model TaskAssignment {
 
   user User @relation(fields: [userId], references: [userId])
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
 }
 
 model Attachment {
@@ -131,11 +158,14 @@ model CommentReaction {
 }
 
 model Sprint {
-  id          Int          @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   startDate   DateTime?
   dueDate     DateTime?
-  isActive    Boolean      @default(true)
+  isActive    Boolean   @default(true)
+  workspaceId Int
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   sprintTasks SprintTask[]
 }
 
@@ -150,16 +180,15 @@ model SprintTask {
   @@unique([sprintId, taskId])
 }
 
-
 model Activity {
-  id             Int       @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   taskId         Int
   userId         Int
-  activityType   Int       // 0: Create, 1: Move, 2: Edit
-  previousStatus String?   // For Move activities
-  newStatus      String?   // For Move activities
-  editField      String?   // For Edit activities (e.g., "description", "label Feature")
-  createdAt      DateTime  @default(now())
+  activityType   Int      // 0: Create, 1: Move, 2: Edit
+  previousStatus String?  // For Move activities
+  newStatus      String?  // For Move activities
+  editField      String?  // For Edit activities
+  createdAt      DateTime @default(now())
 
   task          Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user          User           @relation(fields: [userId], references: [userId])
@@ -169,13 +198,12 @@ model Activity {
   @@index([userId])
 }
 
-
 model Notification {
   id         Int      @id @default(autoincrement())
   userId     Int
-  type       Int      // 0=Mention, 1=NearOverdue, 2=Overdue, 3=TaskEdited, 4=TaskReassigned
+  type       Int                  // 0=Mention, 1=NearOverdue, etc.
   severity   Int      @default(0) // 0=Info, 1=Medium, 2=Critical
-  message    String?  // Optional custom message
+  message    String?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
   taskId     Int?

@@ -3,12 +3,20 @@ import { getPrismaClient } from "../lib/prisma.ts";
 import { statusIntToString } from "../lib/statusUtils.ts";
 
 /**
- * Get all sprints with task counts
- * GET /sprints
+ * Get all sprints with task counts for a specific workspace
+ * GET /sprints?workspaceId=1
  */
-export const getSprints = async (_req: Request, res: Response) => {
+export const getSprints = async (req: Request, res: Response) => {
     try {
+        const { workspaceId } = req.query;
+
+        if (!workspaceId) {
+            res.status(400).json({ error: "workspaceId is required" });
+            return;
+        }
+
         const sprints = await getPrismaClient().sprint.findMany({
+            where: { workspaceId: Number(workspaceId) },
             include: {
                 _count: {
                     select: { sprintTasks: true },
@@ -51,7 +59,11 @@ export const getSprint = async (req: Request, res: Response) => {
                                         reactions: {
                                             include: {
                                                 user: {
-                                                    select: { userId: true, username: true, fullName: true },
+                                                    select: {
+                                                        userId: true,
+                                                        username: true,
+                                                        fullName: true,
+                                                    },
                                                 },
                                             },
                                         },
@@ -152,13 +164,17 @@ export const getSprint = async (req: Request, res: Response) => {
 };
 
 /**
- * Create a new sprint
+ * Create a new sprint within a workspace
  * POST /sprints
- * Body: { title: string, startDate?: string, dueDate?: string }
  */
 export const createSprint = async (req: Request, res: Response) => {
     try {
-        const { title, startDate, dueDate } = req.body;
+        const { title, startDate, dueDate, workspaceId } = req.body;
+
+        if (!workspaceId) {
+            res.status(400).json({ error: "workspaceId is required" });
+            return;
+        }
 
         // Validate required title
         if (!title || (typeof title === "string" && title.trim() === "")) {
@@ -171,6 +187,7 @@ export const createSprint = async (req: Request, res: Response) => {
                 title: title.trim(),
                 startDate: startDate ? new Date(startDate) : null,
                 dueDate: dueDate ? new Date(dueDate) : null,
+                workspaceId: Number(workspaceId),
             },
         });
 
@@ -184,7 +201,6 @@ export const createSprint = async (req: Request, res: Response) => {
 /**
  * Update an existing sprint
  * PATCH /sprints/:sprintId
- * Body: { title?: string, startDate?: string, dueDate?: string }
  */
 export const updateSprint = async (req: Request, res: Response) => {
     try {
@@ -197,7 +213,6 @@ export const updateSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if sprint exists
         const existingSprint = await getPrismaClient().sprint.findUnique({
             where: { id },
         });
@@ -207,28 +222,20 @@ export const updateSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Validate title if provided
         if (title !== undefined && (typeof title !== "string" || title.trim() === "")) {
             res.status(400).json({ error: "Title is required" });
             return;
         }
 
-        // Build update data
         const updateData: {
             title?: string;
             startDate?: Date | null;
             dueDate?: Date | null;
         } = {};
 
-        if (title !== undefined) {
-            updateData.title = title.trim();
-        }
-        if (startDate !== undefined) {
-            updateData.startDate = startDate ? new Date(startDate) : null;
-        }
-        if (dueDate !== undefined) {
-            updateData.dueDate = dueDate ? new Date(dueDate) : null;
-        }
+        if (title !== undefined) updateData.title = title.trim();
+        if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
+        if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
 
         const sprint = await getPrismaClient().sprint.update({
             where: { id },
@@ -256,7 +263,6 @@ export const deleteSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if sprint exists
         const existingSprint = await getPrismaClient().sprint.findUnique({
             where: { id },
         });
@@ -266,7 +272,6 @@ export const deleteSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Delete sprint (cascade will handle SprintTask records)
         await getPrismaClient().sprint.delete({
             where: { id },
         });
@@ -279,7 +284,7 @@ export const deleteSprint = async (req: Request, res: Response) => {
 };
 
 /**
- * Add a task to a sprint (idempotent - no error if already exists)
+ * Add a task to a sprint
  * POST /sprints/:sprintId/tasks/:taskId
  */
 export const addTaskToSprint = async (req: Request, res: Response) => {
@@ -288,19 +293,15 @@ export const addTaskToSprint = async (req: Request, res: Response) => {
         const sprintIdNum = Number(sprintId);
         const taskIdNum = Number(taskId);
 
-        // Validate sprint ID format
         if (isNaN(sprintIdNum)) {
             res.status(400).json({ error: "Invalid sprint ID" });
             return;
         }
-
-        // Validate task ID format
         if (isNaN(taskIdNum)) {
             res.status(400).json({ error: "Invalid task ID" });
             return;
         }
 
-        // Check if sprint exists
         const sprint = await getPrismaClient().sprint.findUnique({
             where: { id: sprintIdNum },
         });
@@ -310,7 +311,6 @@ export const addTaskToSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if task exists
         const task = await getPrismaClient().task.findUnique({
             where: { id: taskIdNum },
         });
@@ -320,7 +320,6 @@ export const addTaskToSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if association already exists (for idempotency)
         const existingAssociation = await getPrismaClient().sprintTask.findUnique({
             where: {
                 sprintId_taskId: {
@@ -331,12 +330,10 @@ export const addTaskToSprint = async (req: Request, res: Response) => {
         });
 
         if (existingAssociation) {
-            // Idempotent: return success without creating duplicate
             res.status(200).json(existingAssociation);
             return;
         }
 
-        // Create the association
         const sprintTask = await getPrismaClient().sprintTask.create({
             data: {
                 sprintId: sprintIdNum,
@@ -361,19 +358,15 @@ export const removeTaskFromSprint = async (req: Request, res: Response) => {
         const sprintIdNum = Number(sprintId);
         const taskIdNum = Number(taskId);
 
-        // Validate sprint ID format
         if (isNaN(sprintIdNum)) {
             res.status(400).json({ error: "Invalid sprint ID" });
             return;
         }
-
-        // Validate task ID format
         if (isNaN(taskIdNum)) {
             res.status(400).json({ error: "Invalid task ID" });
             return;
         }
 
-        // Check if sprint exists
         const sprint = await getPrismaClient().sprint.findUnique({
             where: { id: sprintIdNum },
         });
@@ -383,7 +376,6 @@ export const removeTaskFromSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if task exists
         const task = await getPrismaClient().task.findUnique({
             where: { id: taskIdNum },
         });
@@ -393,7 +385,6 @@ export const removeTaskFromSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Delete the association (if it exists)
         await getPrismaClient().sprintTask.deleteMany({
             where: {
                 sprintId: sprintIdNum,
@@ -422,7 +413,6 @@ export const archiveSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Get current sprint
         const existingSprint = await getPrismaClient().sprint.findUnique({
             where: { id },
         });
@@ -432,7 +422,6 @@ export const archiveSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Toggle isActive
         const sprint = await getPrismaClient().sprint.update({
             where: { id },
             data: { isActive: !existingSprint.isActive },
@@ -448,8 +437,6 @@ export const archiveSprint = async (req: Request, res: Response) => {
 /**
  * Duplicate a sprint with all its tasks
  * POST /sprints/:sprintId/duplicate
- * Body: { title?: string, includeFinishedTasks?: boolean } - optional new title, defaults to "Copy of {original title}"
- * includeFinishedTasks defaults to false (only migrate non-Done tasks)
  */
 export const duplicateSprint = async (req: Request, res: Response) => {
     try {
@@ -462,7 +449,6 @@ export const duplicateSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Get the original sprint with its tasks (including task status)
         const originalSprint = await getPrismaClient().sprint.findUnique({
             where: { id },
             include: {
@@ -481,23 +467,20 @@ export const duplicateSprint = async (req: Request, res: Response) => {
             return;
         }
 
-        // Create the new sprint
         const newTitle = title?.trim() || `Copy of ${originalSprint.title}`;
         const newSprint = await getPrismaClient().sprint.create({
             data: {
                 title: newTitle,
                 startDate: originalSprint.startDate,
                 dueDate: originalSprint.dueDate,
+                workspaceId: originalSprint.workspaceId, 
             },
         });
 
-        // Filter tasks based on includeFinishedTasks flag
-        // Status 3 = Done
         const tasksToMigrate = includeFinishedTasks
             ? originalSprint.sprintTasks
             : originalSprint.sprintTasks.filter((st) => st.task.status !== 3);
 
-        // Copy task associations to the new sprint
         if (tasksToMigrate.length > 0) {
             await getPrismaClient().sprintTask.createMany({
                 data: tasksToMigrate.map((st) => ({
@@ -507,7 +490,6 @@ export const duplicateSprint = async (req: Request, res: Response) => {
             });
         }
 
-        // Return the new sprint with task count
         const result = await getPrismaClient().sprint.findUnique({
             where: { id: newSprint.id },
             include: {
