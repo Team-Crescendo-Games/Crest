@@ -53,7 +53,7 @@ import { useDrag, useDrop } from "react-dnd";
 import ModalNewBoard from "@/components/boards/modalNewBoard";
 import ModalNewSprint from "@/components/sprints/modalNewSprint";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
-import ModalNewWorkspace from "@/components/workspaces/modalNewWorkspace";
+import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
 import S3Image from "@/components/S3Image";
 import {
   BOARD_MAIN_COLOR,

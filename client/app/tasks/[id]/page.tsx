@@ -50,8 +50,8 @@ const TaskPage = ({ params }: Props) => {
   const handleClose = () => {
     if (returnUrl) {
       router.push(returnUrl);
-    } else if (task.projectId) {
-      router.push(`/boards/${task.projectId}`);
+    } else if (task.boardId) {
+      router.push(`/boards/${task.boardId}`);
     } else {
       router.push("/");
     }

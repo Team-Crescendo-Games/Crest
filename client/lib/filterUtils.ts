@@ -255,11 +255,11 @@ export function matchesBoardFilter(
   }
 
   // Task must belong to one of the selected boards
-  if (!task.projectId) {
+  if (!task.boardId) {
     return false;
   }
 
-  return selectedBoardIds.includes(task.projectId);
+  return selectedBoardIds.includes(task.boardId);
 }
 
 /**
