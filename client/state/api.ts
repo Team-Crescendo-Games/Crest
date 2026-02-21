@@ -504,8 +504,12 @@ export const api = createApi({
             },
           };
         } catch (error) {
-          if (error instanceof Error) return { error: error.message };
-          return { error: String(error) || "Could not fetch user data" };
+          return {
+            error: {
+              status: "CUSTOM_ERROR" as const,
+              error: error instanceof Error ? error.message : String(error) || "Could not fetch user data",
+            },
+          };
         }
       },
       providesTags: (_result, _error, args) => [
