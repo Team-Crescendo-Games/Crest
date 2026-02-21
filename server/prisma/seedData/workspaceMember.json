@@ -1,0 +1,15 @@
+[
+  { "id": 1, "userId": 1, "workspaceId": 1, "role": "ADMIN" },
+  { "id": 2, "userId": 2, "workspaceId": 1, "role": "ADMIN" },
+  { "id": 3, "userId": 3, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 4, "userId": 4, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 5, "userId": 5, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 6, "userId": 6, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 7, "userId": 7, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 8, "userId": 8, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 9, "userId": 9, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 10, "userId": 10, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 11, "userId": 11, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 12, "userId": 12, "workspaceId": 1, "role": "MEMBER" },
+  { "id": 13, "userId": 13, "workspaceId": 1, "role": "MEMBER" }
+]

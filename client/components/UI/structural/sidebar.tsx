@@ -109,19 +109,33 @@ const Sidebar = () => {
   const { activeWorkspaceId, setWorkspace } = useWorkspace();
 
   // --- DATA FETCHING ---
-  const { data: workspaces, isLoading: isLoadingWorkspaces } =
-    useGetWorkspacesQuery(userId!, {
-      skip: !userId,
-    });
+  const {
+    data: workspaces,
+    isLoading: isLoadingWorkspaces,
+    isFetching: isFetchingWorkspaces,
+  } = useGetWorkspacesQuery(userId!, {
+    skip: !userId,
+  });
 
   // Initialize workspace if none selected, or force modal if they have 0 workspaces
   useEffect(() => {
     if (workspaces && workspaces.length > 0 && !activeWorkspaceId) {
       setWorkspace(workspaces[0].id);
-    } else if (workspaces && workspaces.length === 0 && !isLoadingWorkspaces) {
+    } else if (
+      workspaces &&
+      workspaces.length === 0 &&
+      !isLoadingWorkspaces &&
+      !isFetchingWorkspaces
+    ) {
       setIsModalNewWorkspaceOpen(true);
     }
-  }, [workspaces, activeWorkspaceId, setWorkspace, isLoadingWorkspaces]);
+  }, [
+    workspaces,
+    activeWorkspaceId,
+    setWorkspace,
+    isLoadingWorkspaces,
+    isFetchingWorkspaces,
+  ]);
 
   const { data: boards } = useGetBoardsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,

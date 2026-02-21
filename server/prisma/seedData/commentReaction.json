@@ -1,0 +1,11 @@
+[
+  { "id": 1, "emoji": "👍", "commentId": 1, "userId": 1 },
+  { "id": 2, "emoji": "🎉", "commentId": 1, "userId": 3 },
+  { "id": 3, "emoji": "👍", "commentId": 2, "userId": 3 },
+  { "id": 4, "emoji": "❤️", "commentId": 3, "userId": 5 },
+  { "id": 5, "emoji": "👍", "commentId": 5, "userId": 6 },
+  { "id": 6, "emoji": "🚀", "commentId": 7, "userId": 4 },
+  { "id": 7, "emoji": "👀", "commentId": 10, "userId": 2 },
+  { "id": 8, "emoji": "👍", "commentId": 11, "userId": 3 },
+  { "id": 9, "emoji": "🎉", "commentId": 12, "userId": 7 }
+]

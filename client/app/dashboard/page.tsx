@@ -13,7 +13,6 @@ import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
 import { ClipboardList } from "lucide-react";
 import PointsGraph from "@/components/PointsGraph";
-import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
 import { format, subMonths } from "date-fns";
 
 type GroupBy = "week" | "month" | "year";
@@ -112,8 +111,6 @@ const DashboardPage = () => {
 
   return (
     <div className="h-full p-8">
-      <ModalNewWorkspace isOpen={hasNoWorkspaces} onClose={() => {}} />
-
       {!hasNoWorkspaces && (
         <>
           <Header name="Dashboard" />

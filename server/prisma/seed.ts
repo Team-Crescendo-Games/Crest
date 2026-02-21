@@ -29,19 +29,22 @@ async function deleteAllData(orderedFileNames: string[]) {
 }
 
 async function resetSequences() {
-    // Reset PostgreSQL sequences to max ID + 1 for all tables with auto-increment
     const sequences = [
         { table: "User", column: "userId" },
-        { table: "Project", column: "id" },
+        { table: "Workspace", column: "id" },
+        { table: "WorkspaceMember", column: "id" },
+        { table: "Board", column: "id" },
         { table: "Task", column: "id" },
         { table: "Tag", column: "id" },
         { table: "TaskTag", column: "id" },
         { table: "TaskAssignment", column: "id" },
         { table: "Attachment", column: "id" },
         { table: "Comment", column: "id" },
+        { table: "CommentReaction", column: "id" },
         { table: "Sprint", column: "id" },
         { table: "SprintTask", column: "id" },
         { table: "Activity", column: "id" },
+        { table: "Notification", column: "id" },
     ];
 
     for (const { table, column } of sequences) {
@@ -60,22 +63,45 @@ async function main() {
     const dataDirectory = path.join(__dirname, "seedData");
 
     const orderedFileNames = [
+        "notification.json",
+        "commentReaction.json",
+        "activity.json",
+        "sprintTask.json",
+        "taskTag.json",
+        "taskAssignment.json",
+        "attachment.json",
+        "comment.json",
+        "sprint.json",
+        "task.json",
         "tag.json",
-        "project.json",
+        "board.json",
+        "workspaceMember.json",
+        "workspace.json",
         "user.json",
+    ];
+
+    await deleteAllData(orderedFileNames);
+
+    // Seed in reverse order (dependencies first)
+    const seedOrder = [
+        "user.json",
+        "workspace.json",
+        "workspaceMember.json",
+        "tag.json",
+        "board.json",
         "task.json",
         "sprint.json",
         "sprintTask.json",
         "attachment.json",
         "comment.json",
+        "commentReaction.json",
         "taskAssignment.json",
         "taskTag.json",
         "activity.json",
+        "notification.json",
     ];
 
-    await deleteAllData(orderedFileNames);
-
-    for (const fileName of orderedFileNames) {
+    for (const fileName of seedOrder) {
         const filePath = path.join(dataDirectory, fileName);
         const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
         const modelName = path.basename(fileName, path.extname(fileName));
@@ -91,7 +117,6 @@ async function main() {
         }
     }
 
-    // Reset sequences after seeding to prevent ID conflicts
     await resetSequences();
 }
 

@@ -1,0 +1,7 @@
+[
+  { "id": 1, "userId": 1, "type": 3, "severity": 0, "message": "Task 'Design the main module' was updated", "isRead": true, "taskId": 1, "activityId": 1, "createdAt": "2025-02-05T10:01:00Z" },
+  { "id": 2, "userId": 2, "type": 1, "severity": 1, "message": "Task 'Implement the navigation algorithm' is due soon", "isRead": false, "taskId": 2, "createdAt": "2026-02-13T08:00:00Z" },
+  { "id": 3, "userId": 5, "type": 2, "severity": 2, "message": "Task 'Develop renewable energy solutions' is overdue", "isRead": false, "taskId": 3, "createdAt": "2026-03-21T08:00:00Z" },
+  { "id": 4, "userId": 7, "type": 0, "severity": 0, "message": "You were mentioned in a comment on 'Implement real-time data analytics'", "isRead": false, "taskId": 6, "commentId": 6, "createdAt": "2026-01-15T11:01:00Z" },
+  { "id": 5, "userId": 4, "type": 4, "severity": 0, "message": "You were assigned to 'Create a new client dashboard interface'", "isRead": true, "taskId": 11, "createdAt": "2026-02-01T09:00:00Z" }
+]

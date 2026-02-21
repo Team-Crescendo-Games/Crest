@@ -1,5 +1,5 @@
 [
-  { "id": 1, "name": "Art", "color": "#ef4444" },
-  { "id": 2, "name": "Engineering", "color": "#3b82f6" },
-  { "id": 3, "name": "Design", "color": "#a855f7" }
+  { "id": 1, "name": "Art", "color": "#ef4444", "workspaceId": 1 },
+  { "id": 2, "name": "Engineering", "color": "#3b82f6", "workspaceId": 1 },
+  { "id": 3, "name": "Design", "color": "#a855f7", "workspaceId": 1 }
 ]
