@@ -15,7 +15,7 @@ import BoardView from "@/app/sprints/BoardView";
 import TableView from "@/app/sprints/TableView";
 import TimelineView from "@/app/sprints/TimelineView";
 import StandupMode from "@/components/StandupMode";
-import TaskCreateModal from "@/components/TaskCreateModal";
+import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import { useCollaboration } from "@/lib/useCollaboration";
 
 const SprintPage = () => {

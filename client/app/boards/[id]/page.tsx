@@ -4,7 +4,7 @@ import { useState, use } from "react";
 import BoardHeader from "@/components/boards/boardHeader";
 import BoardView from "@/components/boards/boardView";
 import BoardTableView from "@/components/boards/boardTableView";
-import TaskCreateModal from "@/components/TaskCreateModal";
+import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import {
   useGetBoardsQuery,
   useGetTagsQuery,

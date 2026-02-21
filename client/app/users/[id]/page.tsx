@@ -4,7 +4,7 @@ import { useState, use } from "react";
 import UserHeader from "./UserHeader";
 import UserBoardView from "./BoardView";
 import UserTableView from "./TableView";
-import TaskCreateModal from "@/components/TaskCreateModal";
+import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import {
   useGetUserByIdQuery,
   useGetTasksAssignedToUserQuery,
@@ -46,13 +46,18 @@ const UserBoardPage = ({ params }: Props) => {
   const { data: projects = [] } = useGetProjectsQuery();
 
   // Filter out tasks from archived boards for stats
-  const activeProjectIds = new Set(projects.filter((p) => p.isActive).map((p) => p.id));
+  const activeProjectIds = new Set(
+    projects.filter((p) => p.isActive).map((p) => p.id),
+  );
   const activeTasks = tasks.filter(
     (task) => !task.projectId || activeProjectIds.has(task.projectId),
   );
 
   const totalTasks = activeTasks.length;
-  const totalPoints = activeTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+  const totalPoints = activeTasks.reduce(
+    (sum, task) => sum + (task.points || 0),
+    0,
+  );
 
   const handleFilterChange = (newState: FilterState) =>
     setFilterState(newState);

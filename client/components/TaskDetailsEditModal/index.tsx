@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Modal from "@/components/Modal";
-import TaskForm, { TaskFormData } from "@/components/TaskForm";
+import TaskForm, { TaskFormData } from "@/components/tasks/taskForm";
 import {
   Task,
   Priority,

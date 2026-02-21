@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Project } from "@/state/api";
+import { Board } from "@/state/api";
 import { X, ChevronDown } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 
-type ProjectSelectorProps = {
-  projects: Project[];
-  selectedProject: Project | null;
-  onSelect: (project: Project | null) => void;
+type BoardSelectorProps = {
+  boards: Board[]; 
+  selectedBoard: Board | null; 
+  onSelect: (board: Board | null) => void; 
   label?: string;
   placeholder?: string;
   inputClassName?: string;
@@ -17,30 +17,34 @@ type ProjectSelectorProps = {
   usePortal?: boolean; // Use portal for dropdown to escape overflow containers
 };
 
-const ProjectSelector = ({
-  projects,
-  selectedProject,
+export default function BoardSelector({
+  boards,
+  selectedBoard,
   onSelect,
   label = "Board",
   placeholder = "Search boards...",
   inputClassName = "",
   showIcon = true,
   usePortal = false,
-}: ProjectSelectorProps) => {
+}: BoardSelectorProps) {
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const portalDropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredProjects = projects.filter((project) => {
+  const filteredBoards = boards.filter((board) => {
     const searchLower = search.toLowerCase();
-    return project.name.toLowerCase().includes(searchLower);
+    return board.name.toLowerCase().includes(searchLower);
   });
 
-  const handleSelect = (project: Project) => {
-    onSelect(project);
+  const handleSelect = (board: Board) => {
+    onSelect(board);
     setSearch("");
     setShowDropdown(false);
   };
@@ -91,8 +95,9 @@ const ProjectSelector = ({
       const target = event.target as Node;
       // Check if click is inside container or portal dropdown
       const isInsideContainer = containerRef.current?.contains(target);
-      const isInsidePortalDropdown = portalDropdownRef.current?.contains(target);
-      
+      const isInsidePortalDropdown =
+        portalDropdownRef.current?.contains(target);
+
       if (!isInsideContainer && !isInsidePortalDropdown) {
         setShowDropdown(false);
       }
@@ -122,59 +127,110 @@ const ProjectSelector = ({
             type="text"
             className={inputClass}
             placeholder={placeholder}
-            value={search || selectedProject?.name || ""}
+            value={search || selectedBoard?.name || ""}
             onChange={(e) => {
               setSearch(e.target.value);
-              if (selectedProject && e.target.value !== selectedProject.name) {
+              if (selectedBoard && e.target.value !== selectedBoard.name) {
                 onSelect(null);
               }
               setShowDropdown(true);
             }}
             onFocus={() => setShowDropdown(true)}
           />
-          {selectedProject ? (
+          {selectedBoard ? (
             <button
               type="button"
               onClick={handleClear}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               <X size={16} />
             </button>
           ) : (
             <ChevronDown
               size={16}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
           )}
         </div>
-        {showDropdown && (usePortal && typeof document !== "undefined" ? (
-          createPortal(
-            <div 
-              ref={portalDropdownRef}
-              className="dark:border-dark-tertiary dark:bg-dark-secondary max-h-48 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg"
-              style={{ 
-                position: "fixed", 
-                top: dropdownPosition.top, 
-                left: dropdownPosition.left, 
-                width: dropdownPosition.width,
-                zIndex: 9999 
-              }}
-            >
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((project) => {
-                  const isCurrentlySelected = selectedProject?.id === project.id;
+        {showDropdown &&
+          (usePortal && typeof document !== "undefined" ? (
+            createPortal(
+              <div
+                ref={portalDropdownRef}
+                className="max-h-48 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary"
+                style={{
+                  position: "fixed",
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left,
+                  width: dropdownPosition.width,
+                  zIndex: 9999,
+                }}
+              >
+                {filteredBoards.length > 0 ? (
+                  filteredBoards.map((board) => {
+                    const isCurrentlySelected = selectedBoard?.id === board.id;
+                    return (
+                      <button
+                        key={board.id}
+                        type="button"
+                        onClick={() =>
+                          !isCurrentlySelected && handleSelect(board)
+                        }
+                        disabled={isCurrentlySelected}
+                        className={`flex w-full flex-col px-3 py-2 text-left ${
+                          isCurrentlySelected
+                            ? "cursor-not-allowed bg-gray-50 dark:bg-dark-tertiary/50"
+                            : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium ${
+                            isCurrentlySelected
+                              ? "text-gray-400 dark:text-gray-500"
+                              : "text-gray-900 dark:text-white"
+                          }`}
+                        >
+                          {board.name}
+                        </span>
+                        {board.description && (
+                          <span
+                            className={`truncate text-xs ${
+                              isCurrentlySelected
+                                ? "text-gray-300 dark:text-gray-600"
+                                : "text-gray-500 dark:text-gray-400"
+                            }`}
+                          >
+                            {board.description}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                    No boards found
+                  </div>
+                )}
+              </div>,
+              document.body,
+            )
+          ) : (
+            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
+              {filteredBoards.length > 0 ? (
+                filteredBoards.map((board) => {
+                  const isCurrentlySelected = selectedBoard?.id === board.id;
                   return (
                     <button
-                      key={project.id}
+                      key={board.id}
                       type="button"
                       onClick={() =>
-                        !isCurrentlySelected && handleSelect(project)
+                        !isCurrentlySelected && handleSelect(board)
                       }
                       disabled={isCurrentlySelected}
                       className={`flex w-full flex-col px-3 py-2 text-left ${
                         isCurrentlySelected
-                          ? "dark:bg-dark-tertiary/50 cursor-not-allowed bg-gray-50"
-                          : "dark:hover:bg-dark-tertiary hover:bg-gray-100"
+                          ? "cursor-not-allowed bg-gray-50 dark:bg-dark-tertiary/50"
+                          : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                       }`}
                     >
                       <span
@@ -184,9 +240,9 @@ const ProjectSelector = ({
                             : "text-gray-900 dark:text-white"
                         }`}
                       >
-                        {project.name}
+                        {board.name}
                       </span>
-                      {project.description && (
+                      {board.description && (
                         <span
                           className={`truncate text-xs ${
                             isCurrentlySelected
@@ -194,7 +250,7 @@ const ProjectSelector = ({
                               : "text-gray-500 dark:text-gray-400"
                           }`}
                         >
-                          {project.description}
+                          {board.description}
                         </span>
                       )}
                     </button>
@@ -205,61 +261,9 @@ const ProjectSelector = ({
                   No boards found
                 </div>
               )}
-            </div>,
-            document.body
-          )
-        ) : (
-          <div className="dark:border-dark-tertiary dark:bg-dark-secondary absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map((project) => {
-                const isCurrentlySelected = selectedProject?.id === project.id;
-                return (
-                  <button
-                    key={project.id}
-                    type="button"
-                    onClick={() =>
-                      !isCurrentlySelected && handleSelect(project)
-                    }
-                    disabled={isCurrentlySelected}
-                    className={`flex w-full flex-col px-3 py-2 text-left ${
-                      isCurrentlySelected
-                        ? "dark:bg-dark-tertiary/50 cursor-not-allowed bg-gray-50"
-                        : "dark:hover:bg-dark-tertiary hover:bg-gray-100"
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-medium ${
-                        isCurrentlySelected
-                          ? "text-gray-400 dark:text-gray-500"
-                          : "text-gray-900 dark:text-white"
-                      }`}
-                    >
-                      {project.name}
-                    </span>
-                    {project.description && (
-                      <span
-                        className={`truncate text-xs ${
-                          isCurrentlySelected
-                            ? "text-gray-300 dark:text-gray-600"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      >
-                        {project.description}
-                      </span>
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                No boards found
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))}
       </div>
     </div>
   );
-};
-
-export default ProjectSelector;
+}
