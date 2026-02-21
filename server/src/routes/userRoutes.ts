@@ -27,12 +27,6 @@ const router = Router();
  *                 $ref: '#/components/schemas/User'
  *       500:
  *         description: Server error
- */
-router.get("/", getUsers);
-
-/**
- * @openapi
- * /users:
  *   post:
  *     tags: [Users]
  *     summary: Create a new user
@@ -64,6 +58,7 @@ router.get("/", getUsers);
  *       500:
  *         description: Server error
  */
+router.get("/", getUsers);
 router.post("/", postUser);
 
 /**

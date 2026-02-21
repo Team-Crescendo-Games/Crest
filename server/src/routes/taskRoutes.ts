@@ -37,12 +37,6 @@ const router = Router();
  *                 $ref: '#/components/schemas/Task'
  *       500:
  *         description: Server error
- */
-router.get("/", getTasks);
-
-/**
- * @openapi
- * /tasks:
  *   post:
  *     tags: [Tasks]
  *     summary: Create a new task
@@ -99,6 +93,7 @@ router.get("/", getTasks);
  *       500:
  *         description: Server error
  */
+router.get("/", getTasks);
 router.post("/", createTask);
 
 /**
@@ -202,70 +197,6 @@ router.get("/user/:userId/authored", getTasksAuthoredByUser);
  *         description: Task not found
  *       500:
  *         description: Server error
- */
-router.get("/:taskId", getTaskById);
-
-/**
- * @openapi
- * /tasks/{taskId}:
- *   delete:
- *     tags: [Tasks]
- *     summary: Delete a task
- *     parameters:
- *       - in: path
- *         name: taskId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       204:
- *         description: Task deleted
- *       500:
- *         description: Server error
- */
-router.delete("/:taskId", deleteTask);
-
-/**
- * @openapi
- * /tasks/{taskId}/status:
- *   patch:
- *     tags: [Tasks]
- *     summary: Update task status
- *     parameters:
- *       - in: path
- *         name: taskId
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [status]
- *             properties:
- *               status:
- *                 type: string
- *                 description: New status name
- *               userId:
- *                 type: integer
- *                 description: User making the change (for activity log)
- *     responses:
- *       200:
- *         description: Task status updated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
- *       500:
- *         description: Server error
- */
-router.patch("/:taskId/status", updateTaskStatus);
-
-/**
- * @openapi
- * /tasks/{taskId}:
  *   patch:
  *     tags: [Tasks]
  *     summary: Update a task
@@ -326,7 +257,61 @@ router.patch("/:taskId/status", updateTaskStatus);
  *               $ref: '#/components/schemas/Task'
  *       500:
  *         description: Server error
+ *   delete:
+ *     tags: [Tasks]
+ *     summary: Delete a task
+ *     parameters:
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Task deleted
+ *       500:
+ *         description: Server error
  */
+router.get("/:taskId", getTaskById);
 router.patch("/:taskId", updateTask);
+router.delete("/:taskId", deleteTask);
+
+/**
+ * @openapi
+ * /tasks/{taskId}/status:
+ *   patch:
+ *     tags: [Tasks]
+ *     summary: Update task status
+ *     parameters:
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 description: New status name
+ *               userId:
+ *                 type: integer
+ *                 description: User making the change (for activity log)
+ *     responses:
+ *       200:
+ *         description: Task status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Task'
+ *       500:
+ *         description: Server error
+ */
+router.patch("/:taskId/status", updateTaskStatus);
 
 export default router;
