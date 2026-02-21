@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import {
-  useGetSprintsQuery,
+  useGetSprintQuery,
   useUpdateSprintMutation,
   useDeleteSprintMutation,
 } from "@/state/api";
@@ -20,8 +20,10 @@ const SprintSettings = ({ params }: Props) => {
   const { id } = use(params);
   const router = useRouter();
 
-  const { data: sprints } = useGetSprintsQuery();
-  const sprint = sprints?.find((s) => s.id === Number(id));
+  // Swapped to query just the specific sprint
+  const { data: sprint, isLoading: isSprintLoading } = useGetSprintQuery(
+    Number(id),
+  );
 
   const [updateSprint, { isLoading: isUpdating }] = useUpdateSprintMutation();
   const [deleteSprint, { isLoading: isDeleting }] = useDeleteSprintMutation();
@@ -34,6 +36,7 @@ const SprintSettings = ({ params }: Props) => {
 
   useEffect(() => {
     if (sprint) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(sprint.title);
       setStartDate(
         sprint.startDate
@@ -65,7 +68,7 @@ const SprintSettings = ({ params }: Props) => {
     router.push("/");
   };
 
-  if (!sprint) return <div className="p-8">Loading...</div>;
+  if (isSprintLoading || !sprint) return <div className="p-8">Loading...</div>;
 
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none focus:outline-none focus:border-gray-400";
@@ -136,7 +139,7 @@ const SprintSettings = ({ params }: Props) => {
           )}
         </div>
 
-        <div className="dark:border-stroke-dark border-t border-gray-200 pt-6">
+        <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
           <h3 className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">
             Danger Zone
           </h3>

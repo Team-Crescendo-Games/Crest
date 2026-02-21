@@ -14,6 +14,7 @@ import {
   useAddTaskToSprintMutation,
   useReorderBoardsMutation,
   useGetWorkspacesQuery,
+  useAddWorkspaceMemberMutation,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
@@ -41,6 +42,7 @@ import {
   Zap,
   LogOut,
   Building2,
+  UserPlus,
 } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 import Image from "next/image";
@@ -49,8 +51,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import ModalNewBoard from "@/components/boards/modalNewBoard";
-import ModalNewSprint from "@/app/sprints/ModalNewSprint"; // TODO: Move this to components and rename for consistency
+import ModalNewSprint from "@/components/sprints/modalNewSprint";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
+import ModalNewWorkspace from "@/components/workspaces/modalNewWorkspace";
 import S3Image from "@/components/S3Image";
 import {
   BOARD_MAIN_COLOR,
@@ -64,6 +67,7 @@ import {
   DraggedSidebarBoard,
 } from "@/lib/dndTypes";
 import { isAdminUser } from "@/lib/adminAllowlist";
+import ModalInviteMember from "@/components/workspaces/modalInviteMember";
 
 const Sidebar = () => {
   const [showOverview, setShowOverview] = useState(true);
@@ -71,13 +75,18 @@ const Sidebar = () => {
   const [showSprints, setShowSprints] = useState(true);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(true);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const [showActiveSprintsOnly, setShowActiveSprintsOnly] = useState(true);
   const [showActiveBoardsOnly, setShowActiveBoardsOnly] = useState(true);
+
   const [isModalNewBoardOpen, setIsModalNewBoardOpen] = useState(false);
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
+  const [isModalNewWorkspaceOpen, setIsModalNewWorkspaceOpen] = useState(false);
+  const [isModalInviteMemberOpen, setIsModalInviteMemberOpen] = useState(false);
 
   const createMenuRef = useRef<HTMLDivElement>(null);
+  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const isSidebarCollapsed = useAppSelector(
@@ -100,16 +109,19 @@ const Sidebar = () => {
   const { activeWorkspaceId, setWorkspace } = useWorkspace();
 
   // --- DATA FETCHING ---
-  const { data: workspaces } = useGetWorkspacesQuery(userId!, {
-    skip: !userId,
-  });
+  const { data: workspaces, isLoading: isLoadingWorkspaces } =
+    useGetWorkspacesQuery(userId!, {
+      skip: !userId,
+    });
 
-  // Initialize workspace if none selected
+  // Initialize workspace if none selected, or force modal if they have 0 workspaces
   useEffect(() => {
     if (workspaces && workspaces.length > 0 && !activeWorkspaceId) {
       setWorkspace(workspaces[0].id);
+    } else if (workspaces && workspaces.length === 0 && !isLoadingWorkspaces) {
+      setIsModalNewWorkspaceOpen(true);
     }
-  }, [workspaces, activeWorkspaceId, setWorkspace]);
+  }, [workspaces, activeWorkspaceId, setWorkspace, isLoadingWorkspaces]);
 
   const { data: boards } = useGetBoardsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,
@@ -143,6 +155,8 @@ const Sidebar = () => {
     showActiveBoardsOnly ? board.isActive !== false : true,
   );
 
+  const activeWorkspace = workspaces?.find((w) => w.id === activeWorkspaceId);
+
   // --- HANDLERS ---
   const handleStopImpersonating = () => dispatch(setImpersonatedUser(null));
   const handleSignOut = async () => {
@@ -160,6 +174,12 @@ const Sidebar = () => {
         !createMenuRef.current.contains(event.target as Node)
       ) {
         setShowCreateMenu(false);
+      }
+      if (
+        workspaceDropdownRef.current &&
+        !workspaceDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsWorkspaceDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -184,11 +204,15 @@ const Sidebar = () => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleCreateOption = (option: "task" | "sprint" | "board") => {
+  const handleCreateOption = (
+    option: "task" | "sprint" | "board" | "workspace" | "invite",
+  ) => {
     setShowCreateMenu(false);
     if (option === "task") setIsModalNewTaskOpen(true);
     else if (option === "sprint") setIsModalNewSprintOpen(true);
     else if (option === "board") setIsModalNewBoardOpen(true);
+    else if (option === "workspace") setIsModalNewWorkspaceOpen(true);
+    else if (option === "invite") setIsModalInviteMemberOpen(true);
   };
 
   const handleMoveTaskToBoard = async (
@@ -249,6 +273,16 @@ const Sidebar = () => {
         isOpen={isModalNewTaskOpen}
         onClose={() => setIsModalNewTaskOpen(false)}
       />
+      <ModalNewWorkspace
+        isOpen={isModalNewWorkspaceOpen}
+        onClose={() => setIsModalNewWorkspaceOpen(false)}
+        // If they have 0 workspaces, force them to create one (hide close button)
+        canCancel={!!workspaces && workspaces.length > 0}
+      />
+      <ModalInviteMember
+        isOpen={isModalInviteMemberOpen}
+        onClose={() => setIsModalInviteMemberOpen(false)}
+      />
 
       {/* Impersonation banner */}
       {impersonatedUser && !isSidebarCollapsed && (
@@ -284,23 +318,60 @@ const Sidebar = () => {
       </div>
 
       {/* WORKSPACE SWITCHER */}
-      {!isSidebarCollapsed && workspaces && workspaces.length > 0 && (
-        <div className="shrink-0 px-6 pb-2 pt-4">
-          <div className="group relative">
-            <select
-              value={activeWorkspaceId || ""}
-              onChange={(e) => setWorkspace(Number(e.target.value))}
-              className="w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pl-9 text-sm font-medium text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-dark-tertiary dark:text-gray-200"
-            >
-              {workspaces.map((ws) => (
-                <option key={ws.id} value={ws.id}>
-                  {ws.name}
-                </option>
-              ))}
-            </select>
-            <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-          </div>
+      {!isSidebarCollapsed && (
+        <div
+          className="relative shrink-0 px-6 pb-2 pt-4"
+          ref={workspaceDropdownRef}
+        >
+          <button
+            onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+            className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-dark-tertiary dark:text-gray-200 dark:hover:bg-dark-secondary"
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <Building2 className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span className="truncate">
+                {activeWorkspace?.name || "Select Workspace"}
+              </span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${isWorkspaceDropdownOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {isWorkspaceDropdownOpen && (
+            <div className="absolute left-6 right-6 top-full z-50 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary">
+              <div className="max-h-48 overflow-y-auto">
+                {workspaces?.map((ws) => (
+                  <button
+                    key={ws.id}
+                    onClick={() => {
+                      setWorkspace(ws.id);
+                      setIsWorkspaceDropdownOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                      activeWorkspaceId === ws.id
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                    }`}
+                  >
+                    <span className="truncate">{ws.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    setIsWorkspaceDropdownOpen(false);
+                    setIsModalNewWorkspaceOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Workspace
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -334,7 +405,7 @@ const Sidebar = () => {
               onClick={() => handleCreateOption("sprint")}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 dark:text-gray-200 dark:hover:bg-purple-900/20"
             >
-              <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />{" "}
+              <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
               Sprint
             </button>
             <button
@@ -344,8 +415,15 @@ const Sidebar = () => {
               <BiColumns
                 className="h-4 w-4"
                 style={{ color: BOARD_MAIN_COLOR }}
-              />{" "}
+              />
               Board
+            </button>
+            <button
+              onClick={() => handleCreateOption("invite")}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 dark:text-gray-200 dark:hover:bg-green-900/20"
+            >
+              <UserPlus className="h-4 w-4 text-green-600 dark:text-green-500" />
+              Invite Member
             </button>
           </div>
         )}
@@ -427,7 +505,7 @@ const Sidebar = () => {
             >
               <div className="flex items-center gap-2">
                 <Folder className="h-4 w-4" />
-                <span>Workspace</span>
+                <span>Workspace Details</span>
               </div>
               <ChevronDown
                 className={`h-5 w-5 transition-transform duration-300 ${showWorkspaceMenu ? "rotate-180" : "rotate-0"}`}
@@ -661,7 +739,7 @@ const Sidebar = () => {
           {!isSidebarCollapsed && (
             <button
               onClick={handleSignOut}
-              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
+              className="ml-auto rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
             >
               Sign out
             </button>
@@ -760,11 +838,11 @@ const SidebarLink = ({
   const isAdmin = variant === "admin";
 
   const activeColor = isAdmin
-    ? "#dc2626" // red-600
+    ? "#dc2626"
     : isDarkMode
       ? APP_ACCENT_LIGHT
       : APP_ACCENT_DARK;
-  const iconColor = isAdmin ? "#ef4444" : undefined; // red-500 for admin
+  const iconColor = isAdmin ? "#ef4444" : undefined;
 
   return (
     <Link href={href} className="w-full">
@@ -820,7 +898,6 @@ const SidebarSubLinkWithIcon = ({
 }: SidebarSubLinkWithIconProps) => {
   const pathname = usePathname();
 
-  // Use override if provided, otherwise fall back to default href comparison
   const isActive =
     isActiveOverride !== undefined ? isActiveOverride : pathname === href;
   const activeColor = isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK;

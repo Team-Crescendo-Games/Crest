@@ -13,7 +13,7 @@ import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
 import { ClipboardList } from "lucide-react";
 import PointsGraph from "@/components/PointsGraph";
-import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
+import ModalNewWorkspace from "@/components/workspaces/modalNewWorkspace";
 import { format, subMonths } from "date-fns";
 
 type GroupBy = "week" | "month" | "year";

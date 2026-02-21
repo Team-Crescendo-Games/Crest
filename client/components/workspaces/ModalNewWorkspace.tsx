@@ -9,9 +9,10 @@ import { useWorkspace } from "@/lib/useWorkspace";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  canCancel?: boolean;
 };
 
-const ModalNewWorkspace = ({ isOpen, onClose }: Props) => {
+const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
   const [createWorkspace, { isLoading }] = useCreateWorkspaceMutation();
   const { data: authData } = useAuthUser();
   const { setWorkspace } = useWorkspace();
@@ -20,15 +21,16 @@ const ModalNewWorkspace = ({ isOpen, onClose }: Props) => {
 
   const handleSubmit = async () => {
     const userId = authData?.userDetails?.userId;
-    if (!name || !userId) return;
+    const trimmedName = name.trim();
+
+    if (!trimmedName || !userId) return;
 
     try {
       const newWorkspace = await createWorkspace({
-        name,
+        name: trimmedName,
         userId,
       }).unwrap();
 
-      // Immediately set the new workspace as active so the app unblocks!
       setWorkspace(newWorkspace.id);
 
       setName("");
@@ -46,7 +48,7 @@ const ModalNewWorkspace = ({ isOpen, onClose }: Props) => {
       isOpen={isOpen}
       onClose={onClose}
       name="Welcome! Create a Workspace"
-      hideClose
+      hideClose={!canCancel} // <-- Conditionally hide based on context
     >
       <div className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
         To get started, you need to create a workspace for your team or personal
@@ -70,9 +72,9 @@ const ModalNewWorkspace = ({ isOpen, onClose }: Props) => {
         <button
           type="submit"
           className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 ${
-            !name || isLoading ? "cursor-not-allowed opacity-50" : ""
+            !name.trim() || isLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
-          disabled={!name || isLoading}
+          disabled={!name.trim() || isLoading}
         >
           {isLoading ? "Creating..." : "Create Workspace"}
         </button>

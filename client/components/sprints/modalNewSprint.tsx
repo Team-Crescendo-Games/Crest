@@ -3,6 +3,7 @@
 import Modal from "@/components/Modal";
 import { useCreateSprintMutation } from "@/state/api";
 import { useState } from "react";
+import { useWorkspace } from "@/lib/useWorkspace"; 
 
 type Props = {
   isOpen: boolean;
@@ -10,9 +11,9 @@ type Props = {
 };
 
 const ModalNewSprint = ({ isOpen, onClose }: Props) => {
+  const { activeWorkspaceId } = useWorkspace(); 
   const [createSprint, { isLoading }] = useCreateSprintMutation();
 
-  // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -25,20 +26,23 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
   const [dateError, setDateError] = useState("");
 
   const handleSubmit = async () => {
-    // Validate title is not empty
+    // Failsafe in case Redux state drops the ID
+    if (!activeWorkspaceId) {
+      console.error("No active workspace selected");
+      return;
+    }
+
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setTitleError("Title is required");
       return;
     }
 
-    // Validate dates are provided
     if (!startDate || !dueDate) {
       setDateError("Both start date and due date are required");
       return;
     }
 
-    // Validate due date is after start date
     if (new Date(dueDate) < new Date(startDate)) {
       setDateError("Due date must be after start date");
       return;
@@ -52,20 +56,18 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
         title: trimmedTitle,
         startDate,
         dueDate,
+        workspaceId: activeWorkspaceId, 
       });
-      // Reset form and close modal on success
       setTitle("");
       setStartDate(getTodayDate());
       setDueDate("");
       onClose();
     } catch (error) {
-      // Error handling is managed by RTK Query
       console.error("Failed to create sprint:", error);
     }
   };
 
   const handleClose = () => {
-    // Reset form state when closing
     setTitle("");
     setStartDate(getTodayDate());
     setDueDate("");
@@ -77,10 +79,12 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
 
-  const isFormValid = title.trim().length > 0 && startDate && dueDate;
+  const isFormValid =
+    title.trim().length > 0 && startDate && dueDate && activeWorkspaceId;
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} name="Create New Sprint">
+      {/* Form JSX remains exactly the same */}
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -138,7 +142,7 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
         </div>
         <button
           type="submit"
-          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 focus:outline-none dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
+          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
             !isFormValid || isLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
           disabled={!isFormValid || isLoading}

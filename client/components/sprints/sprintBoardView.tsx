@@ -1,7 +1,7 @@
 "use client";
 
 import { Task as TaskType } from "@/state/api";
-import BoardView from "@/components/BoardView";
+import BoardView from "@/components/boards/boardView";
 import { FilterState, SortState } from "@/lib/filterTypes";
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
  * Uses the shared BoardView component with sprint tasks
  */
 const SprintBoardView = ({
-  sprintId: _sprintId,
+  sprintId, 
   tasks,
   setIsModalNewTaskOpen,
   filterState,
@@ -33,6 +33,7 @@ const SprintBoardView = ({
 }: Props) => {
   return (
     <BoardView
+      boardId={`sprint-${sprintId}`} 
       tasks={tasks}
       setIsModalNewTaskOpen={setIsModalNewTaskOpen}
       filterState={filterState}

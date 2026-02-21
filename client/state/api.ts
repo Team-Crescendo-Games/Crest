@@ -308,6 +308,17 @@ export const api = createApi({
       query: (workspaceId) => `workspaces/${workspaceId}/members`,
       providesTags: ["WorkspaceMembers"],
     }),
+    addWorkspaceMember: build.mutation<
+      WorkspaceMember,
+      { workspaceId: number; userId: number; role?: string }
+    >({
+      query: ({ workspaceId, ...body }) => ({
+        url: `workspaces/${workspaceId}/members`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["WorkspaceMembers"],
+    }), 
 
     // --- BOARDS ---
     getBoards: build.query<Board[], number>({
@@ -818,6 +829,7 @@ export const {
   useCreateWorkspaceMutation,
   useDeleteWorkspaceMutation,
   useGetWorkspaceMembersQuery,
+  useAddWorkspaceMemberMutation,
   // Boards (Replaced Projects)
   useGetBoardsQuery,
   useCreateBoardMutation,

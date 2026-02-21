@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useGetSprintQuery, useGetTagsQuery } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace"; 
 import {
   FilterState,
   initialFilterState,
@@ -11,9 +12,9 @@ import {
 } from "@/lib/filterTypes";
 import { isFilterActive, isSortActive } from "@/lib/filterUtils";
 import SprintHeader from "@/app/sprints/SprintHeader";
-import BoardView from "@/app/sprints/BoardView";
-import TableView from "@/app/sprints/TableView";
-import TimelineView from "@/app/sprints/TimelineView";
+import BoardView from "@/components/sprints/sprintBoardView";
+import TableView from "@/components/sprints/sprintTableView";
+import TimelineView from "@/components/sprints/sprintTimelineView";
 import StandupMode from "@/components/StandupMode";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import { useCollaboration } from "@/lib/useCollaboration";
@@ -21,6 +22,8 @@ import { useCollaboration } from "@/lib/useCollaboration";
 const SprintPage = () => {
   const params = useParams();
   const sprintId = Number(params.id);
+
+  const { activeWorkspaceId } = useWorkspace(); 
 
   const [activeTab, setActiveTab] = useState<"Board" | "Table" | "Timeline">(
     "Board",
@@ -32,7 +35,7 @@ const SprintPage = () => {
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [isStandupMode, setIsStandupMode] = useState(false);
   const [standupUserId, setStandupUserId] = useState<number | null>(null);
-  // Save filter state before entering standup so we can restore it
+
   const [preStandupFilterState, setPreStandupFilterState] =
     useState<FilterState | null>(null);
 
@@ -45,7 +48,10 @@ const SprintPage = () => {
     error,
     refetch,
   } = useGetSprintQuery(sprintId);
-  const { data: tags = [] } = useGetTagsQuery();
+
+  const { data: tags = [] } = useGetTagsQuery(activeWorkspaceId ?? 0, {
+    skip: !activeWorkspaceId,
+  });
 
   const sprintTasks = sprint?.tasks || [];
   const totalTasks = sprintTasks.length;
@@ -60,7 +66,6 @@ const SprintPage = () => {
 
   const handleToggleStandup = () => {
     if (!isStandupMode) {
-      // Entering standup: save current filters, clear assignee filter
       setPreStandupFilterState(filterState);
       setFilterState({
         ...initialFilterState,
@@ -69,7 +74,6 @@ const SprintPage = () => {
       setStandupUserId(null);
       setShowMyTasks(false);
     } else {
-      // Exiting standup: restore previous filters
       if (preStandupFilterState) {
         setFilterState(preStandupFilterState);
       }
@@ -114,6 +118,7 @@ const SprintPage = () => {
     );
   }
 
+  // The rest of your JSX layout remains unchanged
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <TaskCreateModal

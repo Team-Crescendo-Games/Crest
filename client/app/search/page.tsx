@@ -1,11 +1,12 @@
 "use client";
 
 import Header from "@/components/Header";
-import ProjectCard from "@/components/ProjectCard";
+import BoardCard from "@/components/boards/boardCard";
 import UserCard from "@/components/UserCard";
 import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import TaskCard from "@/components/tasks/taskCard";
 import { Task, useSearchQuery } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Search as SearchIcon,
@@ -13,7 +14,6 @@ import {
   Zap,
   Clock,
   X,
-  LayoutGrid,
   Users,
   CheckSquare,
 } from "lucide-react";
@@ -77,7 +77,42 @@ const removeRecentSearch = (term: string) => {
   }
 };
 
+const CategoryToggle = ({
+  activeCategories,
+  toggleCategory,
+  centered = false,
+}: {
+  activeCategories: Category[];
+  toggleCategory: (category: Category) => void;
+  centered?: boolean;
+}) => (
+  <div className={`flex flex-wrap gap-4 ${centered ? "justify-center" : ""}`}>
+    {CATEGORIES.map((cat) => {
+      const isActive = activeCategories.includes(cat.id);
+      return (
+        <label
+          key={cat.id}
+          className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-neutral-300"
+        >
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={() => toggleCategory(cat.id)}
+            className="h-4 w-4 rounded border-gray-300 accent-gray-800 dark:border-neutral-600 dark:accent-white"
+          />
+          <span className="flex items-center gap-1.5">
+            {cat.icon}
+            {cat.label}
+          </span>
+        </label>
+      );
+    })}
+  </div>
+);
+
 const Search = () => {
+  const { activeWorkspaceId } = useWorkspace();
+
   const [inputValue, setInputValue] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState<{
     query: string;
@@ -93,8 +128,10 @@ const Search = () => {
     "users",
     "sprints",
   ]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const lastSavedQuery = useRef<string | null>(null);
 
   const {
     data: searchResults,
@@ -104,26 +141,39 @@ const Search = () => {
     {
       query: submittedSearch?.query || "",
       categories: submittedSearch?.categories,
+      workspaceId: activeWorkspaceId!,
     },
-    { skip: !submittedSearch || submittedSearch.query.length < 3 },
+    {
+      skip:
+        !submittedSearch ||
+        submittedSearch.query.length < 3 ||
+        !activeWorkspaceId,
+    },
   );
 
   // Load recent searches on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRecentSearches(getRecentSearches());
   }, []);
 
   // Save successful searches
   useEffect(() => {
     if (submittedSearch && submittedSearch.query.length >= 3 && searchResults) {
+      // Check if we've already saved this exact query to prevent loops
+      if (lastSavedQuery.current === submittedSearch.query) return;
+
       const hasResultsCheck =
         (searchResults.tasks?.length ?? 0) > 0 ||
-        (searchResults.projects?.length ?? 0) > 0 ||
+        (searchResults.boards?.length ?? 0) > 0 ||
         (searchResults.users?.length ?? 0) > 0 ||
         (searchResults.sprints?.length ?? 0) > 0;
+
       if (hasResultsCheck) {
         saveRecentSearch(submittedSearch.query);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setRecentSearches(getRecentSearches());
+        lastSavedQuery.current = submittedSearch.query; // Mark as saved
       }
     }
   }, [submittedSearch, searchResults]);
@@ -199,7 +249,7 @@ const Search = () => {
   const hasResults =
     searchResults &&
     ((searchResults.tasks && searchResults.tasks.length > 0) ||
-      (searchResults.projects && searchResults.projects.length > 0) ||
+      (searchResults.boards && searchResults.boards.length > 0) ||
       (searchResults.users && searchResults.users.length > 0) ||
       (searchResults.sprints && searchResults.sprints.length > 0));
 
@@ -222,31 +272,6 @@ const Search = () => {
       year: "numeric",
     });
   };
-
-  const CategoryToggle = ({ centered = false }: { centered?: boolean }) => (
-    <div className={`flex flex-wrap gap-4 ${centered ? "justify-center" : ""}`}>
-      {CATEGORIES.map((cat) => {
-        const isActive = activeCategories.includes(cat.id);
-        return (
-          <label
-            key={cat.id}
-            className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-neutral-300"
-          >
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={() => toggleCategory(cat.id)}
-              className="h-4 w-4 rounded border-gray-300 accent-gray-800 dark:border-neutral-600 dark:accent-white"
-            />
-            <span className="flex items-center gap-1.5">
-              {cat.icon}
-              {cat.label}
-            </span>
-          </label>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col p-8">
@@ -324,7 +349,12 @@ const Search = () => {
             <p className="mb-3 text-center text-sm text-gray-500 dark:text-neutral-400">
               Search in:
             </p>
-            <CategoryToggle centered />
+            {/* UPDATED: Pass required props down */}
+            <CategoryToggle
+              centered
+              activeCategories={activeCategories}
+              toggleCategory={toggleCategory}
+            />
           </div>
         </div>
       ) : (
@@ -397,7 +427,11 @@ const Search = () => {
 
           {/* Category Toggles */}
           <div className="mb-6">
-            <CategoryToggle />
+            {/* UPDATED: Pass required props down */}
+            <CategoryToggle
+              activeCategories={activeCategories}
+              toggleCategory={toggleCategory}
+            />
           </div>
 
           {/* Loading State */}
@@ -455,7 +489,7 @@ const Search = () => {
                       <Link
                         key={sprint.id}
                         href={`/sprints/${sprint.id}`}
-                        className="rounded-md bg-white p-4 shadow transition-all hover:outline hover:outline-2 hover:outline-purple-300 dark:bg-dark-secondary dark:hover:outline-purple-600"
+                        className="rounded-md bg-white p-4 shadow transition-all hover:outline-2 hover:outline-purple-300 dark:bg-dark-secondary dark:hover:outline-purple-600"
                       >
                         <div className="flex items-center gap-2">
                           <Zap
@@ -483,15 +517,15 @@ const Search = () => {
                 </section>
               )}
 
-              {/* Projects Section */}
-              {searchResults.projects && searchResults.projects.length > 0 && (
+              {/* Boards Section */}
+              {searchResults.boards && searchResults.boards.length > 0 && (
                 <section>
                   <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                    Boards ({searchResults.projects.length})
+                    Boards ({searchResults.boards.length})
                   </h2>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {searchResults.projects.map((project) => (
-                      <ProjectCard key={project.id} project={project} />
+                    {searchResults.boards.map((board) => (
+                      <BoardCard key={board.id} board={board} />
                     ))}
                   </div>
                 </section>

@@ -8,26 +8,35 @@ import {
   useDeleteTagMutation,
   Tag,
 } from "@/state/api";
-import { Pencil, Plus, Trash2, X, Check, ChevronDown, Pipette } from "lucide-react";
+import { useWorkspace } from "@/lib/useWorkspace";
+import {
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+  Check,
+  ChevronDown,
+  Pipette,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const TAG_COLORS = [
-  "#ef4444", // red
-  "#f97316", // orange
-  "#f59e0b", // amber
-  "#eab308", // yellow
-  "#84cc16", // lime
-  "#22c55e", // green
-  "#14b8a6", // teal
-  "#06b6d4", // cyan
-  "#3b82f6", // blue
-  "#6366f1", // indigo
-  "#8b5cf6", // violet
-  "#a855f7", // purple
-  "#d946ef", // fuchsia
-  "#ec4899", // pink
-  "#64748b", // slate
-  "#78716c", // stone
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#a855f7",
+  "#d946ef",
+  "#ec4899",
+  "#64748b",
+  "#78716c",
 ];
 
 type ColorPickerProps = {
@@ -44,7 +53,6 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // Don't close if currently using the native color picker
       if (isUsingColorPicker.current) return;
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setIsOpen(false);
@@ -66,7 +74,7 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`${sizeClasses} dark:border-dark-tertiary flex cursor-pointer items-center justify-center rounded border border-gray-300 transition-colors hover:border-gray-400`}
+        className={`${sizeClasses} flex cursor-pointer items-center justify-center rounded border border-gray-300 transition-colors hover:border-gray-400 dark:border-dark-tertiary`}
         style={{ backgroundColor: value }}
         title="Select color"
       >
@@ -76,7 +84,7 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
         />
       </button>
       {isOpen && (
-        <div className="dark:border-dark-tertiary dark:bg-dark-secondary absolute top-full left-0 z-50 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-4 shadow-lg dark:border-dark-tertiary dark:bg-dark-secondary">
           <div className="grid grid-cols-4 gap-4">
             {TAG_COLORS.map((color) => (
               <button
@@ -96,12 +104,11 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
               />
             ))}
           </div>
-          {/* Custom color picker */}
-          <div className="dark:border-dark-tertiary mt-3 border-t border-gray-200 pt-3">
+          <div className="mt-3 border-t border-gray-200 pt-3 dark:border-dark-tertiary">
             <button
               type="button"
               onClick={handleCustomColorClick}
-              className="dark:hover:bg-dark-tertiary flex w-full items-center justify-center gap-2 rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400"
+              className="flex w-full items-center justify-center gap-2 rounded px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
             >
               <Pipette size={14} />
               <span>Custom color</span>
@@ -127,7 +134,12 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
 };
 
 const TagsPage = () => {
-  const { data: tags, isLoading } = useGetTagsQuery();
+  const { activeWorkspaceId } = useWorkspace(); 
+
+  const { data: tags, isLoading } = useGetTagsQuery(activeWorkspaceId ?? 0, {
+    skip: !activeWorkspaceId,
+  });
+
   const [createTag] = useCreateTagMutation();
   const [updateTag] = useUpdateTagMutation();
   const [deleteTag] = useDeleteTagMutation();
@@ -139,8 +151,14 @@ const TagsPage = () => {
   const [editingColor, setEditingColor] = useState("");
 
   const handleCreate = async () => {
-    if (!newTagName.trim()) return;
-    await createTag({ name: newTagName.trim(), color: newTagColor });
+    if (!newTagName.trim() || !activeWorkspaceId) return;
+
+    await createTag({
+      name: newTagName.trim(),
+      color: newTagColor,
+      workspaceId: activeWorkspaceId,
+    });
+
     setNewTagName("");
     setNewTagColor("#3b82f6");
   };
@@ -153,11 +171,14 @@ const TagsPage = () => {
 
   const handleSaveEdit = async () => {
     if (!editingName.trim() || editingId === null) return;
+
+    // updateTag does not require workspaceId per your API slice
     await updateTag({
       tagId: editingId,
       name: editingName.trim(),
       color: editingColor,
     });
+
     setEditingId(null);
     setEditingName("");
     setEditingColor("");
@@ -171,9 +192,13 @@ const TagsPage = () => {
 
   const handleDelete = async (tagId: number, tagName: string) => {
     if (!confirm(`Delete tag "${tagName}"?`)) return;
+    // deleteTag only requires the tagId
     await deleteTag(tagId);
   };
 
+  // We can also return early or show a "Select a workspace" message if activeWorkspaceId is null
+  if (!activeWorkspaceId)
+    return <div className="p-8">Please select a workspace.</div>;
   if (isLoading) return <div className="p-8">Loading...</div>;
 
   return (
@@ -181,11 +206,11 @@ const TagsPage = () => {
       <Header name="Tags" />
 
       {/* Create new tag */}
-      <div className="mt-4 mb-6 flex max-w-md items-center gap-2">
+      <div className="mb-6 mt-4 flex max-w-md items-center gap-2">
         <input
           type="text"
           placeholder="New tag name..."
-          className="dark:border-dark-tertiary dark:bg-dark-tertiary flex-1 rounded border border-gray-300 p-2 shadow-sm focus:border-gray-400 focus:outline-none dark:text-white"
+          className="flex-1 rounded border border-gray-300 p-2 shadow-sm focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
           value={newTagName}
           onChange={(e) => setNewTagName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -210,13 +235,13 @@ const TagsPage = () => {
         {tags?.map((tag) => (
           <div
             key={tag.id}
-            className="dark:bg-dark-secondary flex items-center justify-between rounded-lg bg-white p-3 shadow"
+            className="flex items-center justify-between rounded-lg bg-white p-3 shadow dark:bg-dark-secondary"
           >
             {editingId === tag.id ? (
               <div className="flex flex-1 items-center gap-2">
                 <input
                   type="text"
-                  className="dark:border-dark-tertiary dark:bg-dark-tertiary flex-1 rounded border border-gray-300 p-1.5 text-sm focus:border-gray-400 focus:outline-none dark:text-white"
+                  className="flex-1 rounded border border-gray-300 p-1.5 text-sm focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   onKeyDown={(e) => {
