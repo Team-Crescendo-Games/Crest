@@ -14,6 +14,7 @@ import {
 import { BiColumns } from "react-icons/bi";
 import { MdTimeline } from "react-icons/md";
 import { useRouter } from "next/navigation";
+import { formatUTCDate } from "@/lib/dateUtils";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { SPRINT_MAIN_COLOR } from "@/lib/entityColors";
 import {
@@ -119,12 +120,7 @@ const SprintHeader = ({
   };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return formatUTCDate(dateString);
   };
 
   return (

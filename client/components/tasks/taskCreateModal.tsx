@@ -21,7 +21,8 @@ import {
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace"; // ADDED
-import { formatISO, format } from "date-fns";
+import { localDateToUTC } from "@/lib/dateUtils";
+import { format } from "date-fns";
 
 type Props = {
   isOpen: boolean;
@@ -144,10 +145,10 @@ export default function TaskCreateModal({
     if (!formData.title || !authorUserId || !finalBoardId) return;
 
     const formattedStartDate = formData.startDate
-      ? formatISO(new Date(formData.startDate), { representation: "complete" })
+      ? localDateToUTC(formData.startDate)
       : undefined;
     const formattedDueDate = formData.dueDate
-      ? formatISO(new Date(formData.dueDate), { representation: "complete" })
+      ? localDateToUTC(formData.dueDate)
       : undefined;
 
     const newTask = await createTask({

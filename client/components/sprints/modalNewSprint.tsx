@@ -2,6 +2,7 @@
 
 import Modal from "@/components/Modal";
 import { useCreateSprintMutation } from "@/state/api";
+import { localDateToUTC } from "@/lib/dateUtils";
 import { useState } from "react";
 import { useWorkspace } from "@/lib/useWorkspace"; 
 
@@ -54,8 +55,8 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
     try {
       await createSprint({
         title: trimmedTitle,
-        startDate,
-        dueDate,
+        startDate: localDateToUTC(startDate),
+        dueDate: localDateToUTC(dueDate),
         workspaceId: activeWorkspaceId, 
       });
       setTitle("");

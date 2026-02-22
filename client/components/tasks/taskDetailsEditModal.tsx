@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Modal from "@/components/Modal";
 import TaskForm, { TaskFormData } from "@/components/tasks/taskForm";
+import { localDateToUTC, utcToDateInputValue } from "@/lib/dateUtils";
 import {
   Task,
   Priority,
@@ -112,10 +113,10 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
         status: (task.status as Status) || Status.InputQueue,
         priority: (task.priority as Priority) || Priority.Backlog,
         startDate: task.startDate
-          ? new Date(task.startDate).toISOString().split("T")[0]
+          ? utcToDateInputValue(task.startDate)
           : "",
         dueDate: task.dueDate
-          ? new Date(task.dueDate).toISOString().split("T")[0]
+          ? utcToDateInputValue(task.dueDate)
           : "",
         points: task.points?.toString() || "",
         selectedTagIds: task.taskTags?.map((tt) => tt.tag.id) || [],
@@ -143,8 +144,8 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
       description: formData.description,
       status: formData.status,
       priority: formData.priority,
-      startDate: formData.startDate || undefined,
-      dueDate: formData.dueDate || undefined,
+      startDate: formData.startDate ? localDateToUTC(formData.startDate) : undefined,
+      dueDate: formData.dueDate ? localDateToUTC(formData.dueDate) : undefined,
       points: formData.points ? Number(formData.points) : undefined,
       assigneeIds: formData.selectedAssignees
         .map((a) => a.userId)

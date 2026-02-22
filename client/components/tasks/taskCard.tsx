@@ -15,6 +15,7 @@ import {
   useGetTagsQuery,
 } from "@/state/api";
 import { useWorkspace } from "@/lib/useWorkspace";
+import { localDateToUTC } from "@/lib/dateUtils";
 import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
 import { APP_ACCENT_LIGHT } from "@/lib/entityColors";
 import RadialProgress from "@/components/RadialProgress";
@@ -274,7 +275,7 @@ const TaskCard = ({
   };
 
   const handleDueDateChange = async (newDate: string) => {
-    await updateTask({ id: task.id, dueDate: newDate || undefined });
+    await updateTask({ id: task.id, dueDate: newDate ? localDateToUTC(newDate) : undefined });
     setIsEditingDueDate(false);
   };
 

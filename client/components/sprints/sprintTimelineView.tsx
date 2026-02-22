@@ -8,7 +8,7 @@ import { PRIORITY_COLORS_BY_NAME } from "@/lib/priorityColors";
 import { STATUS_BG_CLASSES } from "@/lib/statusColors";
 import { APP_ACCENT_LIGHT, SPRINT_MAIN_COLOR } from "@/lib/entityColors";
 import { applyFilters, applySorting } from "@/lib/filterUtils";
-import { parseLocalDate } from "@/lib/dateUtils";
+import { parseLocalDate, localDateObjToUTC } from "@/lib/dateUtils";
 import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import UserIcon from "@/components/UserIcon";
 import { Plus } from "lucide-react";
@@ -291,8 +291,8 @@ const TimelineView = ({
     try {
       await updateTask({
         id: dragging.taskId,
-        startDate: dragPreview.startDate.toISOString(),
-        dueDate: dragPreview.dueDate.toISOString(),
+        startDate: localDateObjToUTC(dragPreview.startDate),
+        dueDate: localDateObjToUTC(dragPreview.dueDate),
       });
     } catch (error) {
       console.error("Failed to update task dates:", error);

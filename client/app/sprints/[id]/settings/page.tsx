@@ -4,6 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
+import { localDateToUTC, utcToDateInputValue } from "@/lib/dateUtils";
 import {
   useGetSprintQuery,
   useUpdateSprintMutation,
@@ -40,12 +41,12 @@ const SprintSettings = ({ params }: Props) => {
       setTitle(sprint.title);
       setStartDate(
         sprint.startDate
-          ? new Date(sprint.startDate).toISOString().split("T")[0]
+          ? utcToDateInputValue(sprint.startDate)
           : "",
       );
       setDueDate(
         sprint.dueDate
-          ? new Date(sprint.dueDate).toISOString().split("T")[0]
+          ? utcToDateInputValue(sprint.dueDate)
           : "",
       );
     }
@@ -56,8 +57,8 @@ const SprintSettings = ({ params }: Props) => {
     await updateSprint({
       sprintId: Number(id),
       title: title.trim(),
-      startDate: startDate || undefined,
-      dueDate: dueDate || undefined,
+      startDate: startDate ? localDateToUTC(startDate) : undefined,
+      dueDate: dueDate ? localDateToUTC(dueDate) : undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

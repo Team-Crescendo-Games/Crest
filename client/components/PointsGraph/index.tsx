@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { BarChart3, LineChart, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { formatUTCDate } from "@/lib/dateUtils";
 import DatePicker from "@/components/DatePicker";
 
 interface PointsDataPoint {
@@ -97,7 +98,7 @@ const PointsGraph: React.FC<PointsGraphProps> = ({
   };
 
   const formatDisplayDate = (dateStr: string) => {
-    return format(new Date(dateStr), "MMM d, yyyy");
+    return formatUTCDate(dateStr);
   };
 
   useEffect(() => {

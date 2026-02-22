@@ -7,6 +7,7 @@ import TaskDetailModal from "@/components/tasks/taskDetailModal";
 import TaskCard from "@/components/tasks/taskCard";
 import { Task, useSearchQuery } from "@/state/api";
 import { useWorkspace } from "@/lib/useWorkspace";
+import { formatUTCDate } from "@/lib/dateUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Search as SearchIcon,
@@ -266,11 +267,7 @@ const Search = () => {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return formatUTCDate(dateString);
   };
 
   return (
