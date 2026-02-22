@@ -65,8 +65,8 @@ export const updateRole = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        if (existingRole.name === "Admin") {
-            res.status(400).json({ error: "Cannot modify or delete the default Admin role" });
+        if (existingRole.name === "Admin" || existingRole.name === "Member") {
+            res.status(400).json({ error: `Cannot modify or delete the default ${existingRole.name} role` });
             return;
         }
 
@@ -115,8 +115,8 @@ export const deleteRole = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        if (role.name === "Admin") {
-            res.status(400).json({ error: "Cannot modify or delete the default Admin role" });
+        if (role.name === "Admin" || role.name === "Member") {
+            res.status(400).json({ error: `Cannot modify or delete the default ${role.name} role` });
             return;
         }
 

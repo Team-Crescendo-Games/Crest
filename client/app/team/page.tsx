@@ -477,7 +477,7 @@ function RolesTab({
                     Members
                   </span>
                 </div>
-                {canEditMemberRoles && role.name !== "Admin" && (
+                {canEditMemberRoles && role.name !== "Admin" && role.name !== "Member" && (
                   <>
                     <div className="group relative">
                       <button
@@ -521,7 +521,7 @@ function RolesTab({
         }}
         onSave={handleSave}
         initialRole={editingRole}
-        readOnly={!canEditMemberRoles || editingRole?.name === "Admin"}
+        readOnly={!canEditMemberRoles || editingRole?.name === "Admin" || editingRole?.name === "Member"}
       />
 
       {membersModalRole && (
