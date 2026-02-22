@@ -1,5 +1,17 @@
 [
   { "id": 1, "name": "Art", "color": "#ef4444", "workspaceId": 1 },
   { "id": 2, "name": "Engineering", "color": "#3b82f6", "workspaceId": 1 },
-  { "id": 3, "name": "Design", "color": "#a855f7", "workspaceId": 1 }
+  { "id": 3, "name": "Design", "color": "#a855f7", "workspaceId": 1 },
+
+  { "id": 4, "name": "Social Media", "color": "#f59e0b", "workspaceId": 2 },
+  { "id": 5, "name": "Blog", "color": "#10b981", "workspaceId": 2 },
+  { "id": 6, "name": "Email", "color": "#6366f1", "workspaceId": 2 },
+
+  { "id": 7, "name": "UI", "color": "#ec4899", "workspaceId": 3 },
+  { "id": 8, "name": "UX Research", "color": "#14b8a6", "workspaceId": 3 },
+  { "id": 9, "name": "Accessibility", "color": "#8b5cf6", "workspaceId": 3 },
+
+  { "id": 10, "name": "Bug", "color": "#ef4444", "workspaceId": 4 },
+  { "id": 11, "name": "Feature", "color": "#22c55e", "workspaceId": 4 },
+  { "id": 12, "name": "Docs", "color": "#0ea5e9", "workspaceId": 4 }
 ]

@@ -1,3 +1,6 @@
 [
-  { "id": 1, "name": "TaskManager" }
+  { "id": 1, "name": "TaskManager", "description": "Main product development workspace", "joinPolicy": 0, "createdById": 1 },
+  { "id": 2, "name": "Marketing Hub", "description": "Marketing campaigns and content planning", "joinPolicy": 1, "createdById": 3 },
+  { "id": 3, "name": "Design Studio", "description": "UI/UX design projects and assets", "joinPolicy": 2, "createdById": 5 },
+  { "id": 4, "name": "Open Source", "description": "Community-driven open source projects", "joinPolicy": 2, "createdById": 2 }
 ]

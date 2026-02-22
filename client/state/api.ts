@@ -325,7 +325,7 @@ export const api = createApi({
     }),
     adminUpdateWorkspace: build.mutation<
       Workspace,
-      { workspaceId: number; name?: string; description?: string; joinPolicy?: number }
+      { workspaceId: number; name?: string; description?: string; joinPolicy?: number; createdById?: number | null }
     >({
       query: ({ workspaceId, ...body }) => ({
         url: `workspaces/admin/${workspaceId}`,

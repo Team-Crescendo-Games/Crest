@@ -27,11 +27,19 @@ export const adminGetAllWorkspaces = async (_req: Request, res: Response) => {
 export const adminUpdateWorkspace = async (req: Request, res: Response) => {
     try {
         const { workspaceId } = req.params;
-        const { name, description, joinPolicy } = req.body;
+        const { name, description, joinPolicy, createdById } = req.body;
 
         if (name !== undefined && name.length > 64) {
             res.status(400).json({ error: "Workspace name must be 64 characters or fewer" });
             return;
+        }
+
+        if (createdById !== undefined && createdById !== null) {
+            const user = await getPrismaClient().user.findUnique({ where: { userId: Number(createdById) } });
+            if (!user) {
+                res.status(400).json({ error: `User with ID ${createdById} not found` });
+                return;
+            }
         }
 
         const workspace = await getPrismaClient().workspace.update({
@@ -40,6 +48,7 @@ export const adminUpdateWorkspace = async (req: Request, res: Response) => {
                 ...(name !== undefined && { name }),
                 ...(description !== undefined && { description }),
                 ...(joinPolicy !== undefined && { joinPolicy: Number(joinPolicy) }),
+                ...(createdById !== undefined && { createdById: createdById ? Number(createdById) : null }),
             },
         });
 

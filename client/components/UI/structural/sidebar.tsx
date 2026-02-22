@@ -30,6 +30,8 @@ import {
   Folder,
   Home,
   LucideIcon,
+  Maximize2,
+  Minimize2,
   Moon,
   Plus,
   Search,
@@ -76,6 +78,7 @@ const Sidebar = () => {
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const [showActiveSprintsOnly, setShowActiveSprintsOnly] = useState(true);
   const [showActiveBoardsOnly, setShowActiveBoardsOnly] = useState(true);
+  const [fullscreenSection, setFullscreenSection] = useState<"boards" | "sprints" | null>(null);
 
   const [isModalNewBoardOpen, setIsModalNewBoardOpen] = useState(false);
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
@@ -386,29 +389,26 @@ const Sidebar = () => {
                     </button>
                   ))}
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-700">
-                  <div className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-neutral-500">
-                    Add Workspace
-                  </div>
+                <div className="flex gap-2 border-t border-gray-200 p-2 dark:border-gray-700">
                   <button
                     onClick={() => {
                       setIsWorkspaceDropdownOpen(false);
                       setIsModalFindWorkspacesOpen(true);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-dark-secondary"
                   >
-                    <Search className="h-4 w-4" />
-                    Find Workspaces
+                    <Search className="h-3.5 w-3.5" />
+                    Find
                   </button>
                   <button
                     onClick={() => {
                       setIsWorkspaceDropdownOpen(false);
                       setIsModalNewWorkspaceOpen(true);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
                   >
-                    <Plus className="h-4 w-4" />
-                    Create a New Workspace
+                    <Plus className="h-3.5 w-3.5" />
+                    Create
                   </button>
                 </div>
               </div>
@@ -483,6 +483,136 @@ const Sidebar = () => {
       </div>
 
       {!isSidebarCollapsed && (
+        <>
+          {fullscreenSection === "boards" ? (
+            /* FULLSCREEN BOARDS */
+            <div className="animate-fade-in flex min-h-0 flex-1 flex-col pt-3">
+              <div className="flex shrink-0 items-center gap-2 bg-gray-50 px-4 py-2 dark:bg-dark-bg">
+                <button
+                  onClick={() => setFullscreenSection(null)}
+                  className="rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <BiColumns className="h-4 w-4" style={{ color: BOARD_MAIN_COLOR }} />
+                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">Boards</span>
+                <span
+                  role="button"
+                  onClick={() => setShowActiveBoardsOnly((prev) => !prev)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  {showActiveBoardsOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    {showActiveBoardsOnly ? "Show archived" : "Hide archived"}
+                  </span>
+                </span>
+                <span
+                  role="button"
+                  onClick={() => setIsModalNewBoardOpen(true)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    New board
+                  </span>
+                </span>
+                <button
+                  onClick={() => setFullscreenSection(null)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    Collapse
+                  </span>
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                {filteredBoards?.map((board, index) => (
+                  <div
+                    key={board.id}
+                    className="animate-slide-down opacity-0"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <DraggableBoardLink
+                      boardId={board.id}
+                      index={index}
+                      label={board.name}
+                      href={`/boards/${board.id}`}
+                      isInactive={board.isActive === false}
+                      onDropTask={handleMoveTaskToBoard}
+                      onReorder={handleReorderBoards}
+                    />
+                  </div>
+                ))}
+                {(!filteredBoards || filteredBoards.length === 0) && (
+                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">No boards</p>
+                )}
+              </div>
+            </div>
+          ) : fullscreenSection === "sprints" ? (
+            /* FULLSCREEN SPRINTS */
+            <div className="animate-fade-in flex min-h-0 flex-1 flex-col pt-3">
+              <div className="flex shrink-0 items-center gap-2 bg-gray-50 px-4 py-2 dark:bg-dark-bg">
+                <button
+                  onClick={() => setFullscreenSection(null)}
+                  className="rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
+                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">Sprints</span>
+                <span
+                  role="button"
+                  onClick={() => setShowActiveSprintsOnly((prev) => !prev)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  {showActiveSprintsOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    {showActiveSprintsOnly ? "Show archived" : "Hide archived"}
+                  </span>
+                </span>
+                <span
+                  role="button"
+                  onClick={() => setIsModalNewSprintOpen(true)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    New sprint
+                  </span>
+                </span>
+                <button
+                  onClick={() => setFullscreenSection(null)}
+                  className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                  <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                    Collapse
+                  </span>
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                {filteredSprints?.map((sprint, index) => (
+                  <div
+                    key={sprint.id}
+                    className="animate-slide-down opacity-0"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <DroppableSprintLink
+                      sprintId={sprint.id}
+                      label={sprint.title}
+                      href={`/sprints/${sprint.id}`}
+                      isInactive={sprint.isActive === false}
+                      onDropTask={handleAddTaskToSprint}
+                    />
+                  </div>
+                ))}
+                {(!filteredSprints || filteredSprints.length === 0) && (
+                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">No sprints</p>
+                )}
+              </div>
+            </div>
+          ) : (
         <>
           {/* OVERVIEW SECTION */}
           <div className="shrink-0 pt-3">
@@ -675,13 +805,16 @@ const Sidebar = () => {
                         e.stopPropagation();
                         setShowActiveBoardsOnly((prev) => !prev);
                       }}
-                      className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
                     >
                       {showActiveBoardsOnly ? (
                         <Eye className="h-4 w-4" />
                       ) : (
                         <EyeOff className="h-4 w-4" />
                       )}
+                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                        {showActiveBoardsOnly ? "Show archived" : "Hide archived"}
+                      </span>
                     </span>
                   )}
                   <span
@@ -690,10 +823,28 @@ const Sidebar = () => {
                       e.stopPropagation();
                       setIsModalNewBoardOpen(true);
                     }}
-                    className="rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
                   >
                     <Plus className="h-4 w-4" />
+                    <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                      New board
+                    </span>
                   </span>
+                  {filteredBoards && filteredBoards.length > 0 && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenSection("boards");
+                      }}
+                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                        Expand
+                      </span>
+                    </span>
+                  )}
                   {filteredBoards && filteredBoards.length > 0 && (
                     <ChevronDown
                       className={`h-5 w-5 transition-transform duration-300 ${showBoards ? "rotate-180" : "rotate-0"}`}
@@ -748,13 +899,16 @@ const Sidebar = () => {
                         e.stopPropagation();
                         setShowActiveSprintsOnly((prev) => !prev);
                       }}
-                      className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
                     >
                       {showActiveSprintsOnly ? (
                         <Eye className="h-4 w-4" />
                       ) : (
                         <EyeOff className="h-4 w-4" />
                       )}
+                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                        {showActiveSprintsOnly ? "Show archived" : "Hide archived"}
+                      </span>
                     </span>
                   )}
                   <span
@@ -763,10 +917,28 @@ const Sidebar = () => {
                       e.stopPropagation();
                       setIsModalNewSprintOpen(true);
                     }}
-                    className="rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
                   >
                     <Plus className="h-4 w-4" />
+                    <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                      New sprint
+                    </span>
                   </span>
+                  {filteredSprints && filteredSprints.length > 0 && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenSection("sprints");
+                      }}
+                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                        Expand
+                      </span>
+                    </span>
+                  )}
                   {filteredSprints && filteredSprints.length > 0 && (
                     <ChevronDown
                       className={`h-5 w-5 transition-transform duration-300 ${showSprints ? "rotate-180" : "rotate-0"}`}
@@ -796,6 +968,8 @@ const Sidebar = () => {
             </div>
           </div>
         </>
+          )}
+      </>
       )}
 
       {/* BOTTOM SECTION */}

@@ -51,6 +51,12 @@ const WorkspaceSettingsPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const headerFileInputRef = useRef<HTMLInputElement>(null);
 
+  const hasUnsavedChanges =
+    !!activeWorkspace &&
+    (name !== activeWorkspace.name ||
+      description !== (activeWorkspace.description || "") ||
+      joinPolicy !== (activeWorkspace.joinPolicy ?? 0));
+
   const { canEditInfo, canDelete } = usePermissions();
 
   useEffect(() => {
@@ -194,12 +200,10 @@ const WorkspaceSettingsPage = () => {
 
   return (
     <div className="h-full p-8">
-      <Header name={activeWorkspace.name} />
       <div className="mt-6 max-w-lg space-y-6">
-        {/* Workspace Icon */}
-        <div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
+        {/* Workspace Icon + Title */}
+        <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
               {activeWorkspace.iconExt ? (
                 <S3Image
                   s3Key={`workspaces/${activeWorkspace.id}/icon.${activeWorkspace.iconExt}`}
@@ -225,9 +229,12 @@ const WorkspaceSettingsPage = () => {
                 </button>
               )}
             </div>
-            {isUploadingIcon && (
-              <span className="text-sm text-gray-500 dark:text-neutral-400">Uploading...</span>
-            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{activeWorkspace.name}</h1>
+              {isUploadingIcon && (
+                <span className="text-sm text-gray-500 dark:text-neutral-400">Uploading icon...</span>
+              )}
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -235,9 +242,7 @@ const WorkspaceSettingsPage = () => {
               onChange={handleIconFileSelect}
               className="hidden"
             />
-          </div>
         </div>
-
         {/* Crop Modal */}
         {cropImageSrc && (
           <ImageCropModal
@@ -353,13 +358,25 @@ const WorkspaceSettingsPage = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
-              disabled={!name.trim() || isSaving}
+              disabled={!name.trim() || isSaving || !hasUnsavedChanges}
               className={`rounded bg-gray-800 px-4 py-2 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-                !name.trim() || isSaving ? "cursor-not-allowed opacity-50" : ""
+                !name.trim() || isSaving || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
               }`}
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
+            {hasUnsavedChanges && (
+              <button
+                onClick={() => {
+                  setName(activeWorkspace.name);
+                  setDescription(activeWorkspace.description || "");
+                  setJoinPolicy(activeWorkspace.joinPolicy ?? 0);
+                }}
+                className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-stroke-dark dark:text-gray-400 dark:hover:bg-dark-tertiary"
+              >
+                Reset
+              </button>
+            )}
             {saved && (
               <span className="text-sm text-green-600 dark:text-green-400">
                 Saved

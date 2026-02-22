@@ -2,7 +2,6 @@
 
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import {
   useGetBoardsQuery,
@@ -61,6 +60,10 @@ export default function BoardSettings({ params }: Props) {
 
   if (!board) return <ErrorComponent />;
 
+  const hasUnsavedChanges =
+    name !== board.name ||
+    description !== (board.description || "");
+
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none focus:outline-none focus:border-gray-400";
 
@@ -73,7 +76,6 @@ export default function BoardSettings({ params }: Props) {
         >
           <ArrowLeft className="h-4 w-4" /> Back to board
         </Link>
-        <Header name={`${board.name} — Settings`} />
       </div>
 
       <div className="max-w-lg space-y-6">
@@ -104,13 +106,24 @@ export default function BoardSettings({ params }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
-            disabled={isUpdating || !name.trim()}
+            disabled={isUpdating || !name.trim() || !hasUnsavedChanges}
             className={`rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-              isUpdating || !name.trim() ? "cursor-not-allowed opacity-50" : ""
+              isUpdating || !name.trim() || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
             {isUpdating ? "Saving..." : "Save Changes"}
           </button>
+          {hasUnsavedChanges && (
+            <button
+              onClick={() => {
+                setName(board.name);
+                setDescription(board.description || "");
+              }}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-stroke-dark dark:text-gray-400 dark:hover:bg-dark-tertiary"
+            >
+              Reset
+            </button>
+          )}
           {saved && (
             <span className="text-sm text-green-600 dark:text-green-400">
               Saved!

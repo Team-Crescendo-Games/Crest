@@ -83,6 +83,7 @@ const AdminWorkspacesPage = () => {
     name: "",
     description: "",
     joinPolicy: 0,
+    createdById: "",
   });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -117,6 +118,7 @@ const AdminWorkspacesPage = () => {
       name: ws.name,
       description: ws.description || "",
       joinPolicy: ws.joinPolicy ?? 0,
+      createdById: ws.createdById?.toString() || "",
     });
     setError(null);
   };
@@ -135,6 +137,7 @@ const AdminWorkspacesPage = () => {
         name: editForm.name,
         description: editForm.description,
         joinPolicy: editForm.joinPolicy,
+        createdById: editForm.createdById ? Number(editForm.createdById) : null,
       }).unwrap();
       setEditingId(null);
     } catch (err: any) {
@@ -207,11 +210,13 @@ const AdminWorkspacesPage = () => {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      {ws.createdBy ? (
-                        <span className="text-gray-600 dark:text-gray-400">{ws.createdBy.username}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
+                      <input
+                        type="number"
+                        value={editForm.createdById}
+                        onChange={(e) => setEditForm({ ...editForm, createdById: e.target.value })}
+                        placeholder="User ID"
+                        className={inputClass}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">

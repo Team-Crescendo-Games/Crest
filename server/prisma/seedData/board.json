@@ -3,5 +3,15 @@
   { "id": 2, "name": "Beacon", "description": "Developing advanced navigation systems.", "displayOrder": 1, "workspaceId": 1 },
   { "id": 3, "name": "Catalyst", "description": "A project to boost renewable energy use.", "displayOrder": 2, "workspaceId": 1 },
   { "id": 4, "name": "Legacy Platform", "description": "Deprecated platform migration project.", "isActive": false, "displayOrder": 3, "workspaceId": 1 },
-  { "id": 5, "name": "Q3 Initiative", "description": "Completed quarterly initiative.", "isActive": false, "displayOrder": 4, "workspaceId": 1 }
+  { "id": 5, "name": "Q3 Initiative", "description": "Completed quarterly initiative.", "isActive": false, "displayOrder": 4, "workspaceId": 1 },
+
+  { "id": 6, "name": "Brand Campaign", "description": "Q1 brand awareness campaign.", "displayOrder": 0, "workspaceId": 2 },
+  { "id": 7, "name": "Content Calendar", "description": "Blog posts, social media, and newsletters.", "displayOrder": 1, "workspaceId": 2 },
+  { "id": 8, "name": "SEO Backlog", "description": "SEO improvements and keyword tracking.", "displayOrder": 2, "workspaceId": 2 },
+
+  { "id": 9, "name": "Mobile App Redesign", "description": "Redesigning the mobile experience.", "displayOrder": 0, "workspaceId": 3 },
+  { "id": 10, "name": "Design System", "description": "Component library and design tokens.", "displayOrder": 1, "workspaceId": 3 },
+
+  { "id": 11, "name": "CLI Tool", "description": "Command-line interface for the platform.", "displayOrder": 0, "workspaceId": 4 },
+  { "id": 12, "name": "Documentation", "description": "Public docs and API reference.", "displayOrder": 1, "workspaceId": 4 }
 ]

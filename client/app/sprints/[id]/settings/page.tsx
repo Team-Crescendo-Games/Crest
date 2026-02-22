@@ -1,16 +1,17 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
-import { localDateToUTC, utcToDateInputValue } from "@/lib/dateUtils";
+import DatePicker from "@/components/DatePicker";
+import { localDateToUTC, utcToDateInputValue, parseLocalDate } from "@/lib/dateUtils";
+import { format } from "date-fns";
 import {
   useGetSprintQuery,
   useUpdateSprintMutation,
   useDeleteSprintMutation,
 } from "@/state/api";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -21,7 +22,6 @@ const SprintSettings = ({ params }: Props) => {
   const { id } = use(params);
   const router = useRouter();
 
-  // Swapped to query just the specific sprint
   const { data: sprint, isLoading: isSprintLoading } = useGetSprintQuery(
     Number(id),
   );
@@ -34,21 +34,17 @@ const SprintSettings = ({ params }: Props) => {
   const [dueDate, setDueDate] = useState("");
   const [saved, setSaved] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showDuePicker, setShowDuePicker] = useState(false);
+
+  const startDateRef = useRef<HTMLButtonElement>(null);
+  const dueDateRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (sprint) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(sprint.title);
-      setStartDate(
-        sprint.startDate
-          ? utcToDateInputValue(sprint.startDate)
-          : "",
-      );
-      setDueDate(
-        sprint.dueDate
-          ? utcToDateInputValue(sprint.dueDate)
-          : "",
-      );
+      setStartDate(sprint.startDate ? utcToDateInputValue(sprint.startDate) : "");
+      setDueDate(sprint.dueDate ? utcToDateInputValue(sprint.dueDate) : "");
     }
   }, [sprint]);
 
@@ -71,8 +67,17 @@ const SprintSettings = ({ params }: Props) => {
 
   if (isSprintLoading || !sprint) return <div className="p-8">Loading...</div>;
 
+  const originalStartDate = sprint.startDate ? utcToDateInputValue(sprint.startDate) : "";
+  const originalDueDate = sprint.dueDate ? utcToDateInputValue(sprint.dueDate) : "";
+  const hasUnsavedChanges =
+    title !== sprint.title ||
+    startDate !== originalStartDate ||
+    dueDate !== originalDueDate;
+
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none focus:outline-none focus:border-gray-400";
+
+  const dateButtonStyles = `${inputStyles} flex items-center gap-2 text-left`;
 
   return (
     <div className="p-8">
@@ -83,7 +88,6 @@ const SprintSettings = ({ params }: Props) => {
         >
           <ArrowLeft className="h-4 w-4" /> Back to sprint
         </Link>
-        <Header name={`${sprint.title} — Settings`} />
       </div>
 
       <div className="max-w-lg space-y-6">
@@ -99,40 +103,93 @@ const SprintSettings = ({ params }: Props) => {
           />
         </div>
 
+        {/* Start Date */}
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
             Start Date
           </label>
-          <input
-            type="date"
-            className={inputStyles}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+          <button
+            ref={startDateRef}
+            type="button"
+            onClick={() => { setShowStartPicker(!showStartPicker); setShowDuePicker(false); }}
+            className={dateButtonStyles}
+          >
+            <Calendar className="h-4 w-4 text-gray-400" />
+            {startDate
+              ? format(parseLocalDate(startDate), "MMM d, yyyy")
+              : "Select start date"}
+          </button>
+          {showStartPicker && (
+            <DatePicker
+              value={startDate || undefined}
+              onChange={(date) => {
+                setStartDate(date || "");
+                if (date && dueDate && parseLocalDate(date) > parseLocalDate(dueDate)) {
+                  setDueDate("");
+                }
+                setShowStartPicker(false);
+              }}
+              onClose={() => setShowStartPicker(false)}
+              anchorRef={startDateRef}
+            />
+          )}
         </div>
 
+        {/* Due Date */}
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300">
             Due Date
           </label>
-          <input
-            type="date"
-            className={inputStyles}
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
+          <button
+            ref={dueDateRef}
+            type="button"
+            onClick={() => { setShowDuePicker(!showDuePicker); setShowStartPicker(false); }}
+            className={dateButtonStyles}
+          >
+            <Calendar className="h-4 w-4 text-gray-400" />
+            {dueDate
+              ? format(parseLocalDate(dueDate), "MMM d, yyyy")
+              : "Select due date"}
+          </button>
+          {showDuePicker && (
+            <DatePicker
+              value={dueDate || undefined}
+              onChange={(date) => {
+                if (date && startDate && parseLocalDate(date) < parseLocalDate(startDate)) {
+                  return;
+                }
+                setDueDate(date || "");
+                setShowDuePicker(false);
+              }}
+              onClose={() => setShowDuePicker(false)}
+              minDate={startDate || undefined}
+              anchorRef={dueDateRef}
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
-            disabled={isUpdating || !title.trim()}
+            disabled={isUpdating || !title.trim() || !hasUnsavedChanges}
             className={`rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-              isUpdating || !title.trim() ? "cursor-not-allowed opacity-50" : ""
+              isUpdating || !title.trim() || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
             {isUpdating ? "Saving..." : "Save Changes"}
           </button>
+          {hasUnsavedChanges && (
+            <button
+              onClick={() => {
+                setTitle(sprint.title);
+                setStartDate(originalStartDate);
+                setDueDate(originalDueDate);
+              }}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-stroke-dark dark:text-gray-400 dark:hover:bg-dark-tertiary"
+            >
+              Reset
+            </button>
+          )}
           {saved && (
             <span className="text-sm text-green-600 dark:text-green-400">
               Saved!
