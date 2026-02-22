@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const getS3Client = () =>
@@ -99,13 +99,76 @@ export const getPresignedUploadUrl = async (req: Request, res: Response) => {
             return;
         }
 
+        const s3Key = getS3Key(key);
+        const s3 = getS3Client();
+
+        // If uploading a profile picture, delete any existing profile.* files first
+        const profileMatch = key.match(/^(users\/\d+\/)profile\.\w+$/);
+        if (profileMatch) {
+            const prefix = getS3Key(profileMatch[1] + "profile.");
+            const listCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix,
+            });
+            const listed = await s3.send(listCommand);
+            if (listed.Contents && listed.Contents.length > 0) {
+                const deleteCommand = new DeleteObjectsCommand({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: listed.Contents.map((obj) => ({ Key: obj.Key })),
+                    },
+                });
+                await s3.send(deleteCommand);
+            }
+        }
+
+        // If uploading a workspace icon, delete any existing icon.* files first
+        const iconMatch = key.match(/^(workspaces\/\d+\/)icon\.\w+$/);
+        if (iconMatch) {
+            const prefix = getS3Key(iconMatch[1] + "icon.");
+            const listCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix,
+            });
+            const listed = await s3.send(listCommand);
+            if (listed.Contents && listed.Contents.length > 0) {
+                const deleteCommand = new DeleteObjectsCommand({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: listed.Contents.map((obj) => ({ Key: obj.Key })),
+                    },
+                });
+                await s3.send(deleteCommand);
+            }
+        }
+
+        // If uploading a workspace header, delete any existing header.* files first
+        const headerMatch = key.match(/^(workspaces\/\d+\/)header\.\w+$/);
+        if (headerMatch) {
+            const prefix = getS3Key(headerMatch[1] + "header.");
+            const listCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix,
+            });
+            const listed = await s3.send(listCommand);
+            if (listed.Contents && listed.Contents.length > 0) {
+                const deleteCommand = new DeleteObjectsCommand({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: listed.Contents.map((obj) => ({ Key: obj.Key })),
+                    },
+                });
+                await s3.send(deleteCommand);
+            }
+        }
+
         const command = new PutObjectCommand({
             Bucket: bucketName,
-            Key: getS3Key(key),
+            Key: s3Key,
             ContentType: contentType,
         });
 
-        const url = await getSignedUrl(getS3Client(), command, {
+        const url = await getSignedUrl(s3, command, {
             expiresIn: 300,
         });
         res.json({ url });

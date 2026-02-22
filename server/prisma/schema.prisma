@@ -15,8 +15,10 @@ model User {
   email             String?
   profilePictureExt String?
 
-  workspaceMembers WorkspaceMember[]
-  authoredTasks    Task[]            @relation("TaskAuthor")
+  workspaceMembers  WorkspaceMember[]
+  workspaceApplications WorkspaceApplication[]
+  createdWorkspaces Workspace[]       @relation("WorkspaceCreator")
+  authoredTasks     Task[]            @relation("TaskAuthor")
   taskAssignments  TaskAssignment[]
   attachments      Attachment[]
   comments         Comment[]
@@ -26,20 +28,57 @@ model User {
 }
 
 model Workspace {
-  id   Int    @id @default(autoincrement())
-  name String
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  joinPolicy  Int     @default(0) // 0=INVITE_ONLY, 1=APPLY_TO_JOIN, 2=DISCOVERABLE
+  iconExt     String?
+  headerExt   String?
+  createdById Int?
 
-  members WorkspaceMember[]
-  boards  Board[]
-  sprints Sprint[]
-  tags    Tag[] 
+  createdBy User?             @relation("WorkspaceCreator", fields: [createdById], references: [userId])
+  members      WorkspaceMember[]
+  applications WorkspaceApplication[]
+  boards       Board[]
+  sprints   Sprint[]
+  tags      Tag[]
+  roles     Role[]
+}
+
+model Role {
+  id          Int    @id @default(autoincrement())
+  name        String
+  color       String @default("#6B7280")
+  permissions Int    @default(0)
+  workspaceId Int
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   WorkspaceMember[]
+
+  @@unique([workspaceId, name])
 }
 
 model WorkspaceMember {
   id          Int    @id @default(autoincrement())
   userId      Int
   workspaceId Int
-  role        String @default("MEMBER") // ADMIN, MEMBER
+  roleId      Int
+
+  user      User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, workspaceId])
+}
+
+model WorkspaceApplication {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  workspaceId Int
+  message     String?
+  status      Int      @default(0) // 0=PENDING, 1=APPROVED, 2=REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user      User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

@@ -66,3 +66,29 @@ export const adminUpdateUser = async (req: Request, res: Response): Promise<void
         res.status(500).json({ message: `Error updating user: ${error.message}` });
     }
 };
+
+/**
+ * DELETE /admin/users/:userId - Admin delete a user
+ */
+export const adminDeleteUser = async (req: Request, res: Response): Promise<void> => {
+    const { userId } = req.params;
+    const id = Number(userId);
+
+    if (isNaN(id)) {
+        res.status(400).json({ message: "Invalid userId parameter" });
+        return;
+    }
+
+    try {
+        await getPrismaClient().user.delete({
+            where: { userId: id },
+        });
+        res.status(204).send();
+    } catch (error: any) {
+        if (error.code === "P2025") {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+        res.status(500).json({ message: `Error deleting user: ${error.message}` });
+    }
+};

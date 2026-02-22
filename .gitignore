@@ -72,5 +72,4 @@ Thumbs.db
 # -----------------------------
 # PRISMA
 # -----------------------------
-server/prisma/migrations/
 server/prisma/generated/

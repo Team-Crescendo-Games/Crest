@@ -18,7 +18,6 @@ import {
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
-import { signOut } from "aws-amplify/auth";
 import {
   BarChart3,
   Bell,
@@ -42,10 +41,8 @@ import {
   Zap,
   LogOut,
   Building2,
-  UserPlus,
 } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -54,6 +51,7 @@ import ModalNewBoard from "@/components/boards/modalNewBoard";
 import ModalNewSprint from "@/components/sprints/modalNewSprint";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
+import ModalFindWorkspaces from "@/components/workspaces/ModalFindWorkspaces";
 import S3Image from "@/components/S3Image";
 import {
   BOARD_MAIN_COLOR,
@@ -67,10 +65,10 @@ import {
   DraggedSidebarBoard,
 } from "@/lib/dndTypes";
 import { isAdminUser } from "@/lib/adminAllowlist";
-import ModalInviteMember from "@/components/workspaces/modalInviteMember";
 
 const Sidebar = () => {
   const [showOverview, setShowOverview] = useState(true);
+  const [showAdmin, setShowAdmin] = useState(false);
   const [showBoards, setShowBoards] = useState(true);
   const [showSprints, setShowSprints] = useState(true);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(true);
@@ -83,7 +81,7 @@ const Sidebar = () => {
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
   const [isModalNewWorkspaceOpen, setIsModalNewWorkspaceOpen] = useState(false);
-  const [isModalInviteMemberOpen, setIsModalInviteMemberOpen] = useState(false);
+  const [isModalFindWorkspacesOpen, setIsModalFindWorkspacesOpen] = useState(false);
 
   const createMenuRef = useRef<HTMLDivElement>(null);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
@@ -171,15 +169,15 @@ const Sidebar = () => {
 
   const activeWorkspace = workspaces?.find((w) => w.id === activeWorkspaceId);
 
+  // Update browser tab title with workspace name
+  useEffect(() => {
+    document.title = activeWorkspace?.name
+      ? `Crest - ${activeWorkspace.name}`
+      : "Crest";
+  }, [activeWorkspace?.name]);
+
   // --- HANDLERS ---
   const handleStopImpersonating = () => dispatch(setImpersonatedUser(null));
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -226,7 +224,6 @@ const Sidebar = () => {
     else if (option === "sprint") setIsModalNewSprintOpen(true);
     else if (option === "board") setIsModalNewBoardOpen(true);
     else if (option === "workspace") setIsModalNewWorkspaceOpen(true);
-    else if (option === "invite") setIsModalInviteMemberOpen(true);
   };
 
   const handleMoveTaskToBoard = async (
@@ -293,9 +290,9 @@ const Sidebar = () => {
         // If they have 0 workspaces, force them to create one (hide close button)
         canCancel={!!workspaces && workspaces.length > 0}
       />
-      <ModalInviteMember
-        isOpen={isModalInviteMemberOpen}
-        onClose={() => setIsModalInviteMemberOpen(false)}
+      <ModalFindWorkspaces
+        isOpen={isModalFindWorkspacesOpen}
+        onClose={() => setIsModalFindWorkspacesOpen(false)}
       />
 
       {/* Impersonation banner */}
@@ -313,90 +310,139 @@ const Sidebar = () => {
         </div>
       )}
 
-      {/* LOGO & TITLE */}
+      {/* WORKSPACE ICON & NAME */}
       <div
-        className={`flex shrink-0 items-center border-b border-gray-100 dark:border-gray-800 ${isSidebarCollapsed ? "justify-center px-2 py-4" : "gap-3 px-6 py-4"}`}
+        className="relative shrink-0 border-b border-gray-100 dark:border-gray-800"
+        ref={workspaceDropdownRef}
       >
-        <Image
-          src="/favicon.ico"
-          alt="Logo"
-          width={32}
-          height={32}
-          className="h-8 w-8 object-contain"
-        />
-        {!isSidebarCollapsed && (
-          <span className="text-xl font-semibold text-gray-900 dark:text-white">
-            Crest
-          </span>
-        )}
-      </div>
-
-      {/* WORKSPACE SWITCHER */}
-      {!isSidebarCollapsed && (
-        <div
-          className="relative shrink-0 px-6 pb-2 pt-4"
-          ref={workspaceDropdownRef}
-        >
-          <button
-            onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
-            className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-dark-tertiary dark:text-gray-200 dark:hover:bg-dark-secondary"
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Building2 className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span className="truncate">
-                {activeWorkspace?.name || "Select Workspace"}
-              </span>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${isWorkspaceDropdownOpen ? "rotate-180" : ""}`}
+        {/* Hero header background — bleeds behind icon & title */}
+        {!isSidebarCollapsed && activeWorkspace?.headerExt && (
+          <div className="absolute inset-0 overflow-hidden">
+            <S3Image
+              s3Key={`workspaces/${activeWorkspace.id}/header.${activeWorkspace.headerExt}`}
+              alt=""
+              width={256}
+              height={160}
+              className="h-full w-full object-cover"
+              fallbackType="image"
             />
-          </button>
+            {/* Liquid glass gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/15 to-white/50 backdrop-blur-[1px] dark:from-dark-secondary/30 dark:via-dark-secondary/15 dark:to-dark-secondary/50" />
+          </div>
+        )}
 
-          {isWorkspaceDropdownOpen && (
-            <div className="absolute left-6 right-6 top-full z-50 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary">
-              <div className="max-h-48 overflow-y-auto">
-                {workspaces?.map((ws) => (
+        <div
+          className={`relative flex shrink-0 items-center ${isSidebarCollapsed ? "justify-center px-2 py-4" : "gap-3 px-6 py-6"}`}
+        >
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+              className="shrink-0 cursor-pointer rounded-lg transition-opacity hover:opacity-80"
+            >
+              {activeWorkspace?.iconExt ? (
+                <S3Image
+                  s3Key={`workspaces/${activeWorkspace.id}/icon.${activeWorkspace.iconExt}`}
+                  alt={activeWorkspace.name || "Workspace"}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-lg object-cover"
+                  fallbackType="image"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200/80 backdrop-blur-sm dark:bg-dark-tertiary/80">
+                  <Building2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </div>
+              )}
+            </button>
+            {isWorkspaceDropdownOpen && (
+              <div className={`absolute z-50 mt-1 animate-scale-in overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary ${isSidebarCollapsed ? "left-full top-0 ml-1 w-48" : "left-0 top-full w-48"}`}>
+                <div className="max-h-48 overflow-y-auto">
+                  {workspaces?.map((ws) => (
+                    <button
+                      key={ws.id}
+                      onClick={() => {
+                        setWorkspace(ws.id);
+                        setIsWorkspaceDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                        activeWorkspaceId === ws.id
+                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                      }`}
+                    >
+                      {ws.iconExt ? (
+                        <S3Image
+                          s3Key={`workspaces/${ws.id}/icon.${ws.iconExt}`}
+                          alt={ws.name}
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 shrink-0 rounded object-cover"
+                          fallbackType="image"
+                        />
+                      ) : (
+                        <Building2 className="h-4 w-4 shrink-0 text-gray-400" />
+                      )}
+                      <span className="truncate">{ws.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700">
+                  <div className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-neutral-500">
+                    Add Workspace
+                  </div>
                   <button
-                    key={ws.id}
                     onClick={() => {
-                      setWorkspace(ws.id);
                       setIsWorkspaceDropdownOpen(false);
+                      setIsModalFindWorkspacesOpen(true);
                     }}
-                    className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors ${
-                      activeWorkspaceId === ws.id
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
-                    }`}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
                   >
-                    <span className="truncate">{ws.name}</span>
+                    <Search className="h-4 w-4" />
+                    Find Workspaces
                   </button>
-                ))}
+                  <button
+                    onClick={() => {
+                      setIsWorkspaceDropdownOpen(false);
+                      setIsModalNewWorkspaceOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create a New Workspace
+                  </button>
+                </div>
               </div>
-              <div className="border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => {
-                    setIsWorkspaceDropdownOpen(false);
-                    setIsModalNewWorkspaceOpen(true);
-                  }}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Workspace
-                </button>
-              </div>
-            </div>
+            )}
+          </div>
+          {!isSidebarCollapsed && (
+            <>
+              <span
+                className="min-w-0 flex-1 truncate text-base font-semibold text-gray-900 drop-shadow-sm dark:text-white dark:drop-shadow-md"
+                title={activeWorkspace?.name || "Workspace"}
+              >
+                {(activeWorkspace?.name || "Workspace").slice(0, 64)}
+              </span>
+              <Link
+                href="/settings/workspace"
+                className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-dark-tertiary dark:hover:text-gray-300"
+                title="Workspace settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Link>
+            </>
           )}
         </div>
-      )}
+
+      </div>
 
       {/* CREATE BUTTON */}
       <div
-        className={`relative shrink-0 ${isSidebarCollapsed ? "px-2 py-3" : "px-6 py-3"}`}
+        className={`relative shrink-0 ${isSidebarCollapsed ? "px-2 py-3" : "px-6 pb-1 pt-5"}`}
         ref={createMenuRef}
       >
         <button
           onClick={() => setShowCreateMenu((prev) => !prev)}
-          className={`flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90 ${isSidebarCollapsed ? "w-full p-2" : "w-full px-4 py-1.5"}`}
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90 ${isSidebarCollapsed ? "w-full p-2" : "w-full px-4 py-1.5"}`}
           style={{
             backgroundColor: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK,
             color: isDarkMode ? "#1f2937" : "#ffffff",
@@ -407,7 +453,7 @@ const Sidebar = () => {
         </button>
         {showCreateMenu && (
           <div
-            className={`absolute z-50 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary ${isSidebarCollapsed ? "left-full top-0 ml-1" : "left-6 right-6 top-full w-auto"}`}
+            className={`absolute z-50 mt-1 w-40 animate-scale-in overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary ${isSidebarCollapsed ? "left-full top-0 ml-1" : "left-6 right-6 top-full w-auto"}`}
           >
             <button
               onClick={() => handleCreateOption("task")}
@@ -432,13 +478,6 @@ const Sidebar = () => {
               />
               Board
             </button>
-            <button
-              onClick={() => handleCreateOption("invite")}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 dark:text-gray-200 dark:hover:bg-green-900/20"
-            >
-              <UserPlus className="h-4 w-4 text-green-600 dark:text-green-500" />
-              Invite Member
-            </button>
           </div>
         )}
       </div>
@@ -446,19 +485,54 @@ const Sidebar = () => {
       {!isSidebarCollapsed && (
         <>
           {/* OVERVIEW SECTION */}
-          <div className="shrink-0">
+          <div className="shrink-0 pt-3">
             {isAdmin && (
-              <SidebarLink
-                icon={Settings}
-                label="Admin"
-                href="/admin/users"
-                isDarkMode={isDarkMode}
-                variant="admin"
-              />
+              <div className="shrink-0">
+                <button
+                  onClick={() => setShowAdmin((prev) => !prev)}
+                  className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-red-500 transition-all hover:pl-7 hover:text-red-600 hover:scale-[1.01] dark:bg-dark-bg dark:text-red-400 dark:hover:text-red-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>SYSTEM ADMIN</span>
+                  </div>
+                  <ChevronDown
+                    className={`h-5 w-5 transition-transform duration-300 ${showAdmin ? "rotate-180" : "rotate-0"}`}
+                  />
+                </button>
+                {showAdmin && (
+                  <div className="overflow-hidden">
+                    <div
+                      className="animate-slide-down opacity-0"
+                      style={{ animationDelay: "0ms" }}
+                    >
+                      <SidebarSubLinkWithIcon
+                        icon={Users}
+                        label="Users"
+                        href="/admin/users"
+                        isDarkMode={isDarkMode}
+                        variant="admin"
+                      />
+                    </div>
+                    <div
+                      className="animate-slide-down opacity-0"
+                      style={{ animationDelay: "50ms" }}
+                    >
+                      <SidebarSubLinkWithIcon
+                        icon={Building2}
+                        label="Workspaces"
+                        href="/admin/workspaces"
+                        isDarkMode={isDarkMode}
+                        variant="admin"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             <button
               onClick={() => setShowOverview((prev) => !prev)}
-              className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
+              className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
             >
               <div className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
@@ -515,11 +589,11 @@ const Sidebar = () => {
           <div className="relative z-0 shrink-0">
             <button
               onClick={() => setShowWorkspaceMenu((prev) => !prev)}
-              className="flex w-full items-center justify-between px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300"
+              className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
             >
               <div className="flex items-center gap-2">
                 <Folder className="h-4 w-4" />
-                <span>Workspace Details</span>
+                <span>Workspace</span>
               </div>
               <ChevronDown
                 className={`h-5 w-5 transition-transform duration-300 ${showWorkspaceMenu ? "rotate-180" : "rotate-0"}`}
@@ -556,7 +630,18 @@ const Sidebar = () => {
                   <SidebarSubLinkWithIcon
                     icon={Users}
                     label="Team"
-                    href="/users"
+                    href="/team"
+                    isDarkMode={isDarkMode}
+                  />
+                </div>
+                <div
+                  className="animate-slide-down opacity-0"
+                  style={{ animationDelay: "150ms" }}
+                >
+                  <SidebarSubLinkWithIcon
+                    icon={Settings}
+                    label="Settings"
+                    href="/settings/workspace"
                     isDarkMode={isDarkMode}
                   />
                 </div>
@@ -569,11 +654,11 @@ const Sidebar = () => {
             {/* BOARDS */}
             <div
               className="flex min-h-0 flex-col"
-              style={{ maxHeight: showBoards ? "50%" : "auto" }}
+              style={{ maxHeight: showBoards && filteredBoards && filteredBoards.length > 0 ? "50%" : "auto" }}
             >
               <button
-                onClick={() => setShowBoards((prev) => !prev)}
-                className="relative z-20 flex w-full shrink-0 items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
+                onClick={() => filteredBoards && filteredBoards.length > 0 && setShowBoards((prev) => !prev)}
+                className="relative z-20 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
               >
                 <div className="flex items-center gap-2">
                   <BiColumns
@@ -583,20 +668,22 @@ const Sidebar = () => {
                   <span>Boards</span>
                 </div>
                 <div className="flex items-center gap-1 overflow-visible">
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowActiveBoardsOnly((prev) => !prev);
-                    }}
-                    className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                  >
-                    {showActiveBoardsOnly ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </span>
+                  {filteredBoards && filteredBoards.length > 0 && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowActiveBoardsOnly((prev) => !prev);
+                      }}
+                      className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    >
+                      {showActiveBoardsOnly ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </span>
+                  )}
                   <span
                     role="button"
                     onClick={(e) => {
@@ -607,14 +694,16 @@ const Sidebar = () => {
                   >
                     <Plus className="h-4 w-4" />
                   </span>
-                  <ChevronDown
-                    className={`h-5 w-5 transition-transform duration-300 ${showBoards ? "rotate-180" : "rotate-0"}`}
-                  />
+                  {filteredBoards && filteredBoards.length > 0 && (
+                    <ChevronDown
+                      className={`h-5 w-5 transition-transform duration-300 ${showBoards ? "rotate-180" : "rotate-0"}`}
+                    />
+                  )}
                 </div>
               </button>
-              {showBoards && (
+              {showBoards && filteredBoards && filteredBoards.length > 0 && (
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {filteredBoards?.map((board, index) => (
+                  {filteredBoards.map((board, index) => (
                     <div
                       key={board.id}
                       className="animate-slide-down opacity-0"
@@ -638,11 +727,11 @@ const Sidebar = () => {
             {/* SPRINTS */}
             <div
               className="flex min-h-0 flex-col"
-              style={{ maxHeight: showSprints ? "50%" : "auto" }}
+              style={{ maxHeight: showSprints && filteredSprints && filteredSprints.length > 0 ? "50%" : "auto" }}
             >
               <button
-                onClick={() => setShowSprints((prev) => !prev)}
-                className="relative z-10 flex w-full shrink-0 items-center justify-between overflow-visible bg-white px-6 py-2 text-gray-500 transition-colors hover:text-gray-700 dark:bg-dark-secondary dark:hover:text-gray-300"
+                onClick={() => filteredSprints && filteredSprints.length > 0 && setShowSprints((prev) => !prev)}
+                className="relative z-10 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
               >
                 <div className="flex items-center gap-2">
                   <Zap
@@ -652,20 +741,22 @@ const Sidebar = () => {
                   <span>Sprints</span>
                 </div>
                 <div className="flex items-center gap-1 overflow-visible">
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowActiveSprintsOnly((prev) => !prev);
-                    }}
-                    className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                  >
-                    {showActiveSprintsOnly ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </span>
+                  {filteredSprints && filteredSprints.length > 0 && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowActiveSprintsOnly((prev) => !prev);
+                      }}
+                      className="group relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                    >
+                      {showActiveSprintsOnly ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </span>
+                  )}
                   <span
                     role="button"
                     onClick={(e) => {
@@ -676,14 +767,16 @@ const Sidebar = () => {
                   >
                     <Plus className="h-4 w-4" />
                   </span>
-                  <ChevronDown
-                    className={`h-5 w-5 transition-transform duration-300 ${showSprints ? "rotate-180" : "rotate-0"}`}
-                  />
+                  {filteredSprints && filteredSprints.length > 0 && (
+                    <ChevronDown
+                      className={`h-5 w-5 transition-transform duration-300 ${showSprints ? "rotate-180" : "rotate-0"}`}
+                    />
+                  )}
                 </div>
               </button>
-              {showSprints && (
+              {showSprints && filteredSprints && filteredSprints.length > 0 && (
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {filteredSprints?.map((sprint, index) => (
+                  {filteredSprints.map((sprint, index) => (
                     <div
                       key={sprint.id}
                       className="animate-slide-down opacity-0"
@@ -725,7 +818,7 @@ const Sidebar = () => {
           </button>
           <Link
             href="/profile"
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+            className="flex items-center gap-2 rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
           >
             {currentUserDetails?.userId &&
             currentUserDetails?.profilePictureExt ? (
@@ -734,10 +827,15 @@ const Sidebar = () => {
                 alt={currentUserDetails?.username || "User Profile Picture"}
                 width={20}
                 height={20}
-                className="h-5 w-5 rounded-full object-cover"
+                className="h-5 w-5 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <User className="h-5 w-5" />
+              <User className="h-5 w-5 shrink-0" />
+            )}
+            {!isSidebarCollapsed && (
+              <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+                {currentUserDetails?.fullName || currentUserDetails?.username || "Profile"}
+              </span>
             )}
           </Link>
           <button
@@ -750,14 +848,6 @@ const Sidebar = () => {
               <Moon className="h-5 w-5" />
             )}
           </button>
-          {!isSidebarCollapsed && (
-            <button
-              onClick={handleSignOut}
-              className="ml-auto rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600"
-            >
-              Sign out
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -900,6 +990,7 @@ interface SidebarSubLinkWithIconProps {
   isDarkMode: boolean;
   badge?: number;
   isActiveOverride?: boolean;
+  variant?: "default" | "admin";
 }
 
 const SidebarSubLinkWithIcon = ({
@@ -909,18 +1000,26 @@ const SidebarSubLinkWithIcon = ({
   isDarkMode,
   badge,
   isActiveOverride,
+  variant = "default",
 }: SidebarSubLinkWithIconProps) => {
   const pathname = usePathname();
 
   const isActive =
     isActiveOverride !== undefined ? isActiveOverride : pathname === href;
-  const activeColor = isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK;
+  const isAdmin = variant === "admin";
+  const activeColor = isAdmin
+    ? "#dc2626"
+    : isDarkMode
+      ? APP_ACCENT_LIGHT
+      : APP_ACCENT_DARK;
 
   return (
     <Link href={href} className="w-full">
       <div
-        className={`relative flex cursor-pointer items-center gap-2 transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
-          isActive ? "bg-gray-100 dark:bg-dark-tertiary" : ""
+        className={`relative flex cursor-pointer items-center gap-2 transition-colors ${
+          isAdmin ? "hover:bg-red-50 dark:hover:bg-red-900/20" : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+        } ${
+          isActive ? (isAdmin ? "bg-red-50 dark:bg-red-900/20" : "bg-gray-100 dark:bg-dark-tertiary") : ""
         } justify-start px-6 py-2 pl-10`}
       >
         {isActive && (
@@ -930,9 +1029,13 @@ const SidebarSubLinkWithIcon = ({
           />
         )}
 
-        <Icon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+        <Icon
+          className={isAdmin ? "h-4 w-4 text-red-500 dark:text-red-400" : "h-4 w-4 text-gray-600 dark:text-gray-300"}
+        />
 
-        <span className="text-sm text-gray-700 dark:text-gray-200">
+        <span
+          className={isAdmin ? "text-sm text-red-600 dark:text-red-400" : "text-sm text-gray-700 dark:text-gray-200"}
+        >
           {label}
         </span>
 

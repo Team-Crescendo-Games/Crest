@@ -1,14 +1,11 @@
 "use client";
 
 import Modal from "@/components/Modal";
-import {
-  useAddWorkspaceMemberMutation,
-  useGetUsersQuery,
-  useGetWorkspaceMembersQuery,
-} from "@/state/api";
+import { useAddWorkspaceMemberMutation } from "@/state/api";
 import { useWorkspace } from "@/lib/useWorkspace";
+import { useAuthUser } from "@/lib/useAuthUser";
 import { useState } from "react";
-import { User } from "lucide-react";
+import { Mail } from "lucide-react";
 
 type Props = {
   isOpen: boolean;
@@ -17,73 +14,61 @@ type Props = {
 
 const ModalInviteMember = ({ isOpen, onClose }: Props) => {
   const { activeWorkspaceId } = useWorkspace();
-
-  // Fetch users and current members
-  const { data: allUsers, isLoading: isLoadingUsers } = useGetUsersQuery();
-  const { data: currentMembers } = useGetWorkspaceMembersQuery(
-    activeWorkspaceId ?? 0,
-    {
-      skip: !activeWorkspaceId,
-    },
-  );
+  const { data: authData } = useAuthUser();
+  const currentUserId = authData?.userDetails?.userId;
 
   const [addWorkspaceMember, { isLoading: isInviting }] =
     useAddWorkspaceMemberMutation();
 
-  const [selectedUserId, setSelectedUserId] = useState<number | "">("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-
-  // Filter out users who are already members of this workspace
-  const availableUsers =
-    allUsers?.filter(
-      (user) =>
-        !currentMembers?.some((member) => member.userId === user.userId),
-    ) || [];
-
   const handleSubmit = async () => {
-    if (!selectedUserId) {
-      setError("Please select a user to invite.");
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Please enter an email address.");
       return;
     }
-
-    if (!activeWorkspaceId) {
+    if (!activeWorkspaceId || !currentUserId) {
       setError("No active workspace selected.");
       return;
     }
-
     setError("");
-
     try {
       await addWorkspaceMember({
         workspaceId: activeWorkspaceId,
-        userId: Number(selectedUserId),
-        role: "MEMBER",
+        email: trimmed,
+        userId: currentUserId,
       }).unwrap();
-
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-        setSelectedUserId("");
+        setEmail("");
         onClose();
       }, 2000);
-    } catch (err) {
-      console.error("Failed to add member:", err);
-      setError("Failed to add user to the workspace.");
+    } catch (err: any) {
+      const message = err?.data?.error;
+      if (message === "User does not exist") {
+        setError("User does not exist.");
+      } else if (message === "User is already a member of this workspace") {
+        setError("This user is already a member.");
+      } else {
+        setError("Failed to invite user.");
+      }
     }
   };
 
   const handleClose = () => {
-    setSelectedUserId("");
+    setEmail("");
     setError("");
     setSuccess(false);
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} name="Add Member to Workspace">
+    <Modal isOpen={isOpen} onClose={handleClose} name="Invite Member">
       <div className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
-        Select an existing user to add them to this workspace.
+        Enter the email address of the user you want to invite.
       </div>
       <form
         className="space-y-4"
@@ -94,63 +79,40 @@ const ModalInviteMember = ({ isOpen, onClose }: Props) => {
       >
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Select User
+            Email Address
           </label>
           <div className="relative">
-            <select
-              className={`w-full appearance-none rounded border bg-white p-2 pl-9 shadow-sm focus:outline-none dark:bg-dark-tertiary dark:text-white ${
+            <input
+              type="email"
+              className={`w-full rounded border bg-white p-2 pl-9 shadow-sm focus:outline-none dark:bg-dark-tertiary dark:text-white ${
                 error
                   ? "border-red-500 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500 dark:border-gray-600"
               }`}
-              value={selectedUserId}
+              value={email}
               onChange={(e) => {
-                setSelectedUserId(Number(e.target.value));
+                setEmail(e.target.value);
                 if (error) setError("");
               }}
-              disabled={isLoadingUsers || availableUsers.length === 0}
-            >
-              <option value="" disabled>
-                {isLoadingUsers
-                  ? "Loading users..."
-                  : availableUsers.length === 0
-                    ? "No new users available"
-                    : "Choose a user..."}
-              </option>
-              {availableUsers.map((user) => (
-                <option key={user.userId} value={user.userId}>
-                  {user.username} {user.email ? `(${user.email})` : ""}
-                </option>
-              ))}
-            </select>
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              placeholder="user@example.com"
+            />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
           {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
           {success && (
-            <p className="mt-1 text-sm text-green-500">
-              User added successfully!
-            </p>
+            <p className="mt-1 text-sm text-green-500">Successfully added member</p>
           )}
         </div>
-
         <button
           type="submit"
           className={`mt-4 flex w-full justify-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-            !selectedUserId ||
-            isInviting ||
-            success ||
-            availableUsers.length === 0
+            !email.trim() || isInviting || success
               ? "cursor-not-allowed opacity-50"
               : ""
           }`}
-          disabled={
-            !selectedUserId ||
-            isInviting ||
-            success ||
-            availableUsers.length === 0
-          }
+          disabled={!email.trim() || isInviting || success}
         >
-          {isInviting ? "Adding..." : "Add Member"}
+          {isInviting ? "Inviting..." : "Invite"}
         </button>
       </form>
     </Modal>

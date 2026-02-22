@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { adminUpdateUser } from "../controllers/adminController.ts";
+import { adminUpdateUser, adminDeleteUser } from "../controllers/adminController.ts";
+import { requireSystemAdmin } from "../middleware/requireSystemAdmin.ts";
 
 const router = Router();
+
+// All admin routes require system admin authentication
+router.use(requireSystemAdmin());
 
 /**
  * @openapi
@@ -42,5 +46,6 @@ const router = Router();
  *         description: Server error
  */
 router.patch("/users/:userId", adminUpdateUser);
+router.delete("/users/:userId", adminDeleteUser);
 
 export default router;

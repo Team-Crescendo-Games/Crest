@@ -40,7 +40,7 @@ export function useCollaboration(room: string | null) {
     if (!room || !currentUser?.cognitoId) return;
 
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-    const socket = io(apiBase, { transports: ["websocket", "polling"] });
+    const socket = io(apiBase, { transports: ["polling"] });
     socketRef.current = socket;
 
     socket.on("connect", () => {

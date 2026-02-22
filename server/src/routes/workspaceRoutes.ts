@@ -1,5 +1,8 @@
 import { Router } from "express";
 import {
+    adminGetAllWorkspaces,
+    adminUpdateWorkspace,
+    adminDeleteWorkspace,
     getUserWorkspaces,
     createWorkspace,
     updateWorkspace,
@@ -7,7 +10,14 @@ import {
     getWorkspaceMembers,
     addWorkspaceMember,
     removeWorkspaceMember,
+    updateMemberRole,
+    updateWorkspaceIcon,
+    updateWorkspaceHeader,
 } from "../controllers/workspaceController.ts";
+import { requirePermission, requireAdmin } from "../middleware/permissionMiddleware.ts";
+import { requireSystemAdmin } from "../middleware/requireSystemAdmin.ts";
+import { PERMISSIONS } from "../lib/permissions.ts";
+import roleRoutes from "./roleRoutes.ts";
 
 const router = Router();
 
@@ -39,6 +49,9 @@ const router = Router();
  *               userId:
  *                 type: integer
  */
+router.get("/admin/all", requireSystemAdmin(), adminGetAllWorkspaces);
+router.patch("/admin/:workspaceId", requireSystemAdmin(), adminUpdateWorkspace);
+router.delete("/admin/:workspaceId", requireSystemAdmin(), adminDeleteWorkspace);
 router.get("/", getUserWorkspaces);
 router.post("/", createWorkspace);
 
@@ -52,8 +65,10 @@ router.post("/", createWorkspace);
  *     tags: [Workspaces]
  *     summary: Delete a workspace
  */
-router.patch("/:workspaceId", updateWorkspace);
-router.delete("/:workspaceId", deleteWorkspace);
+router.patch("/:workspaceId", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspace);
+router.patch("/:workspaceId/icon", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspaceIcon);
+router.patch("/:workspaceId/header", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspaceHeader);
+router.delete("/:workspaceId", requireAdmin(), deleteWorkspace);
 
 /**
  * @openapi
@@ -78,7 +93,7 @@ router.delete("/:workspaceId", deleteWorkspace);
  *                 type: string
  */
 router.get("/:workspaceId/members", getWorkspaceMembers);
-router.post("/:workspaceId/members", addWorkspaceMember);
+router.post("/:workspaceId/members", requirePermission(PERMISSIONS.INVITE), addWorkspaceMember);
 
 /**
  * @openapi
@@ -88,5 +103,27 @@ router.post("/:workspaceId/members", addWorkspaceMember);
  *     summary: Remove a user from a workspace
  */
 router.delete("/:workspaceId/members/:userId", removeWorkspaceMember);
+
+/**
+ * @openapi
+ * /workspaces/{workspaceId}/members/{userId}/role:
+ *   patch:
+ *     tags: [Workspace Members]
+ *     summary: Update a member's role in the workspace
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roleId]
+ *             properties:
+ *               roleId:
+ *                 type: integer
+ */
+router.patch("/:workspaceId/members/:userId/role", requirePermission(PERMISSIONS.EDIT_MEMBER_ROLES), updateMemberRole);
+
+// Role routes nested under workspace
+router.use("/:workspaceId/roles", roleRoutes);
 
 export default router;

@@ -24,6 +24,7 @@ import attachmentRoutes from "./routes/attachmentRoutes.ts";
 import notificationRoutes from "./routes/notificationRoutes.ts";
 import adminRoutes from "./routes/adminRoutes.ts";
 import analyticsRoutes from "./routes/analyticsRoutes.ts";
+import applicationRoutes from "./routes/applicationRoutes.ts";
 import { postUser } from "./controllers/userController.ts";
 
 const app = express();
@@ -42,6 +43,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/workspaces", workspaceRoutes);
+app.use("/workspaces", applicationRoutes);
 app.use("/boards", boardRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);

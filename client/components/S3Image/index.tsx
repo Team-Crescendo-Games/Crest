@@ -17,6 +17,7 @@ type Props = {
   fallbackType?: FallbackType;
   version?: number; // Cache buster - change to force refetch
   style?: React.CSSProperties;
+  priority?: boolean;
 };
 
 // S3 configuration from environment variables
@@ -61,6 +62,7 @@ const S3Image = ({
   fallbackType = "user",
   version = 0,
   style,
+  priority,
 }: Props) => {
   const [hasError, setHasError] = useState(false);
 
@@ -148,6 +150,7 @@ const S3Image = ({
       className={className}
       style={{ width, height, ...style }}
       unoptimized
+      priority={priority}
       onError={() => setHasError(true)}
     />
   );

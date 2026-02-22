@@ -5,6 +5,8 @@ import {
   useGetAuthUserQuery,
   useGetUsersQuery,
   useAdminUpdateUserMutation,
+  useAdminCreateUserMutation,
+  useAdminDeleteUserMutation,
   User,
 } from "@/state/api";
 import { useAppDispatch, useAppSelector } from "@/app/redux";
@@ -20,6 +22,10 @@ import {
   LogOut,
   Copy,
   Check,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
 } from "lucide-react";
 
 const CopyableCell = ({
@@ -71,16 +77,29 @@ const AdminUsersPage = () => {
   });
   const { data: users, isLoading: usersLoading } = useGetUsersQuery();
   const [adminUpdateUser] = useAdminUpdateUserMutation();
+  const [adminCreateUser] = useAdminCreateUserMutation();
+  const [adminDeleteUser] = useAdminDeleteUserMutation();
 
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({
     username: "",
     fullName: "",
     cognitoId: "",
     email: "",
   });
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: "",
+    fullName: "",
+    cognitoId: "",
+    email: "",
+  });
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   // Use the real auth user's email for admin check (not impersonated)
   const currentUserEmail = authData?.userDetails?.email;
@@ -158,6 +177,39 @@ const AdminUsersPage = () => {
   const inputClass =
     "w-full rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-dark-tertiary dark:text-white";
 
+  const handleCreateUser = async () => {
+    if (!createForm.username || !createForm.cognitoId) {
+      setError("Username and Cognito ID are required");
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    try {
+      await adminCreateUser({
+        username: createForm.username,
+        cognitoId: createForm.cognitoId,
+        fullName: createForm.fullName || undefined,
+        email: createForm.email || undefined,
+      }).unwrap();
+      setCreateForm({ username: "", fullName: "", cognitoId: "", email: "" });
+      setShowCreateForm(false);
+    } catch (err: any) {
+      setError(err.data?.message || "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    setError(null);
+    try {
+      await adminDeleteUser(userId).unwrap();
+      setDeletingUserId(null);
+    } catch (err: any) {
+      setError(err.data?.message || "Failed to delete user");
+    }
+  };
+
   return (
     <div className="p-8">
       <Header name="Admin: User Management" />
@@ -184,9 +236,92 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      <div className="dark:bg-dark-secondary overflow-x-auto rounded-lg bg-white shadow">
+      <div className="mb-4">
+        {!showCreateForm ? (
+          <button
+            onClick={() => { setShowCreateForm(true); setError(null); }}
+            className="flex items-center gap-2 rounded bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+          >
+            <Plus className="h-4 w-4" />
+            Create User
+          </button>
+        ) : (
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-dark-secondary">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">New User</span>
+              <button
+                onClick={() => { setShowCreateForm(false); setError(null); }}
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-tertiary dark:hover:text-gray-300"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Username *</label>
+                <input
+                  type="text"
+                  value={createForm.username}
+                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                  placeholder="johndoe"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Cognito ID *</label>
+                <input
+                  type="text"
+                  value={createForm.cognitoId}
+                  onChange={(e) => setCreateForm({ ...createForm, cognitoId: e.target.value })}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  className={`${inputClass} font-mono text-xs`}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Full Name</label>
+                <input
+                  type="text"
+                  value={createForm.fullName}
+                  onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                  placeholder="John Doe"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Email</label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  placeholder="john@example.com"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={handleCreateUser}
+                disabled={creating}
+                className="flex items-center gap-2 rounded bg-green-500 px-4 py-1.5 text-sm text-white hover:bg-green-600 disabled:opacity-50"
+              >
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Create
+              </button>
+              <button
+                onClick={() => { setShowCreateForm(false); setError(null); }}
+                className="rounded bg-gray-500 px-4 py-1.5 text-sm text-white hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-x-auto rounded-lg bg-white shadow dark:bg-dark-secondary">
+        <div className="max-h-[70vh] overflow-y-auto">
         <table className="w-full text-left text-sm">
-          <thead className="dark:bg-dark-tertiary border-b border-gray-200 bg-gray-50 dark:border-gray-700">
+          <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-dark-tertiary">
             <tr>
               <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-200">
                 ID
@@ -209,7 +344,7 @@ const AdminUsersPage = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {users?.map((user) => (
+            {users?.slice(page * pageSize, (page + 1) * pageSize).map((user) => (
               <tr
                 key={user.userId}
                 className="dark:hover:bg-dark-tertiary hover:bg-gray-50"
@@ -335,6 +470,30 @@ const AdminUsersPage = () => {
                             <UserCheck className="h-4 w-4" />
                           </button>
                         )}
+                        {deletingUserId === user.userId ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDeleteUser(user.userId!)}
+                              className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeletingUserId(null)}
+                              className="rounded bg-gray-500 px-2 py-1 text-xs text-white hover:bg-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeletingUserId(user.userId!)}
+                            className="rounded bg-red-500 p-1.5 text-white hover:bg-red-600"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </>
@@ -343,6 +502,30 @@ const AdminUsersPage = () => {
             ))}
           </tbody>
         </table>
+        </div>
+        {users && users.length > pageSize && (
+          <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, users.length)} of {users.length}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="rounded border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-40 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => ((p + 1) * pageSize < users.length ? p + 1 : p))}
+                disabled={(page + 1) * pageSize >= users.length}
+                className="rounded border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-40 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

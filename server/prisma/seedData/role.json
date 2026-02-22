@@ -1,0 +1,4 @@
+[
+  { "id": 1, "name": "Admin", "color": "#EF4444", "permissions": 31, "workspaceId": 1 },
+  { "id": 2, "name": "Member", "color": "#6B7280", "permissions": 2, "workspaceId": 1 }
+]

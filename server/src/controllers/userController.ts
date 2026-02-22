@@ -42,8 +42,12 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
                 }
 
                 // Use the cognitoId from the request (the actual logged-in user's sub)
-                user = await getPrismaClient().user.create({
-                    data: {
+                user = await getPrismaClient().user.upsert({
+                    where: { username: devUsername },
+                    update: {
+                        cognitoId: cognitoId,
+                    },
+                    create: {
                         cognitoId: cognitoId,
                         username: devUsername,
                         fullName: devFullName || null,
@@ -94,12 +98,34 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
 export const postUser = async (req: Request, res: Response) => {
     try {
         const { username, fullName, cognitoId, email } = req.body;
+
+        if (!username || !cognitoId) {
+            res.status(400).json({ message: "username and cognitoId are required" });
+            return;
+        }
+
+        // Check for existing user with same cognitoId or username
+        const existing = await getPrismaClient().user.findFirst({
+            where: {
+                OR: [
+                    { cognitoId },
+                    { username },
+                ],
+            },
+        });
+
+        if (existing) {
+            const field = existing.cognitoId === cognitoId ? "cognitoId" : "username";
+            res.status(409).json({ message: `A user with that ${field} already exists` });
+            return;
+        }
+
         const newUser = await getPrismaClient().user.create({
             data: {
                 username,
                 fullName: fullName || null,
                 cognitoId,
-                email,
+                email: email || null,
                 profilePictureExt: "jpg",
             },
         });

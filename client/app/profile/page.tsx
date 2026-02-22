@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import S3Image from "@/components/S3Image";
+import ImageCropModal from "@/components/ImageCropModal";
 
 const ProfilePage = () => {
   const { data: authData, isLoading, refetch } = useAuthUser();
@@ -33,6 +34,7 @@ const ProfilePage = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageVersion, setImageVersion] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
@@ -57,7 +59,7 @@ const ProfilePage = () => {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !authData?.userDetails?.userId || !authData?.userSub) return;
+    if (!file) return;
 
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
@@ -72,22 +74,33 @@ const ProfilePage = () => {
       return;
     }
 
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => setCropImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropImageSrc(null);
+    if (!authData?.userDetails?.userId || !authData?.userSub) return;
+
     setIsUploading(true);
     setUploadError(null);
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = "jpg"; // cropped output is always JPEG
       const s3Key = `users/${authData.userDetails.userId}/profile.${ext}`;
 
       const { url } = await getPresignedUploadUrl({
         key: s3Key,
-        contentType: file.type,
+        contentType: "image/jpeg",
       }).unwrap();
 
       const uploadResponse = await fetch(url, {
         method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
+        body: croppedBlob,
+        headers: { "Content-Type": "image/jpeg" },
       });
 
       if (!uploadResponse.ok) throw new Error("Failed to upload image");
@@ -104,7 +117,6 @@ const ProfilePage = () => {
       setUploadError(error.message || "Failed to upload image");
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -186,6 +198,13 @@ const ProfilePage = () => {
     <div className="p-8">
       <Header name="Profile" />
 
+      <ImageCropModal
+        isOpen={!!cropImageSrc}
+        onClose={() => setCropImageSrc(null)}
+        imageSrc={cropImageSrc || ""}
+        onCropComplete={handleCropComplete}
+      />
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Card */}
         <div className="lg:col-span-1">
@@ -201,6 +220,7 @@ const ProfilePage = () => {
                     height={96}
                     className="h-24 w-24 rounded-full object-cover"
                     version={imageVersion}
+                    priority
                   />
                 ) : (
                   <div className="dark:bg-dark-tertiary flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">

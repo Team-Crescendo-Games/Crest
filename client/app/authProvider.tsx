@@ -15,11 +15,22 @@ Amplify.configure({
       userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "",
       userPoolClientId:
         process.env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID || "",
+      loginWith: {
+        email: true,
+        username: true,
+      },
     },
   },
 });
 
 const formFields = {
+  signIn: {
+    username: {
+      placeholder: "Enter your username or email",
+      label: "Username or Email",
+      isRequired: true,
+    },
+  },
   signUp: {
     username: {
       order: 1,

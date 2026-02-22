@@ -61,7 +61,7 @@ const UserHeader = ({
     <div className="px-4 xl:px-6">
       <div className="pt-4">
         <Link
-          href="/users"
+          href="/team"
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
         >
           <ArrowLeft className="h-4 w-4" />

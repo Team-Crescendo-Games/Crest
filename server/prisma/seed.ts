@@ -45,6 +45,7 @@ async function resetSequences() {
         { table: "SprintTask", column: "id" },
         { table: "Activity", column: "id" },
         { table: "Notification", column: "id" },
+        { table: "Role", column: "id" },
     ];
 
     for (const { table, column } of sequences) {
@@ -76,6 +77,7 @@ async function main() {
         "tag.json",
         "board.json",
         "workspaceMember.json",
+        "role.json",
         "workspace.json",
         "user.json",
     ];
@@ -86,6 +88,7 @@ async function main() {
     const seedOrder = [
         "user.json",
         "workspace.json",
+        "role.json",
         "workspaceMember.json",
         "tag.json",
         "board.json",
