@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Modal from "@/components/Modal";
 import TaskForm, { TaskFormData } from "@/components/tasks/taskForm";
 import { localDateToUTC, utcToDateInputValue } from "@/lib/dateUtils";
@@ -10,7 +10,7 @@ import {
   Status,
   useUpdateTaskMutation,
   useGetTagsQuery,
-  useGetUsersQuery,
+  useGetWorkspaceMembersQuery,
   useGetBoardsQuery,
   useGetSprintsQuery,
   useGetTasksQuery,
@@ -45,7 +45,13 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
   const { data: sprints = [] } = useGetSprintsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,
   });
-  const { data: users = [] } = useGetUsersQuery(); // Consider scoping to Workspace Members later
+  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const users = useMemo(
+    () => workspaceMembers.map((m) => m.user).filter((u): u is User => u !== undefined),
+    [workspaceMembers],
+  );
 
   const { data: authData } = useAuthUser();
   const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();

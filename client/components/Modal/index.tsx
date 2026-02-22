@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import Header from "../Header";
 import { X } from "lucide-react";
@@ -58,10 +58,7 @@ const Modal = ({
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <div
-      className="animate-fade-in fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <Backdrop onClose={onClose}>
       <div
         className={`flex flex-col gap-3 ${rightPanel || leftPanel ? "max-w-5xl" : "max-w-2xl"} w-full`}
       >
@@ -131,8 +128,28 @@ const Modal = ({
           )}
         </div>
       </div>
-    </div>,
+    </Backdrop>,
     document.body,
+  );
+};
+
+/** Only fires onClose when both mousedown and mouseup happen on the backdrop itself. */
+const Backdrop = ({ onClose, children }: { onClose: () => void; children: React.ReactNode }) => {
+  const mouseDownTarget = useRef<EventTarget | null>(null);
+
+  return (
+    <div
+      className="animate-fade-in fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm"
+      onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+      onMouseUp={(e) => {
+        if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) {
+          onClose();
+        }
+        mouseDownTarget.current = null;
+      }}
+    >
+      {children}
+    </div>
   );
 };
 

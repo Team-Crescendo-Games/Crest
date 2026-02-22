@@ -51,15 +51,49 @@ const DatePicker = ({
 
   const selectedDate = value ? parseLocalDate(value) : null;
 
-  // Calculate position based on anchor element
+  // Position the picker relative to the anchor button using fixed positioning.
+  // Prefer below; flip above only when the picker would clip the viewport bottom.
   useEffect(() => {
-    if (anchorRef?.current) {
-      const rect = anchorRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-      });
-    }
+    if (!anchorRef?.current) return;
+
+    const updatePosition = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+
+      const rect = anchor.getBoundingClientRect();
+      const pickerWidth = 256;
+      const pickerHeight = containerRef.current?.offsetHeight || 320;
+
+      let top: number;
+      if (rect.bottom + 4 + pickerHeight <= window.innerHeight) {
+        // Fits below
+        top = rect.bottom + 4;
+      } else if (rect.top - 4 - pickerHeight >= 0) {
+        // Doesn't fit below, but fits above
+        top = rect.top - pickerHeight - 4;
+      } else {
+        // Doesn't fit either way — pin to bottom edge
+        top = window.innerHeight - pickerHeight - 8;
+      }
+
+      let left = rect.left;
+      if (left + pickerWidth > window.innerWidth) {
+        left = window.innerWidth - pickerWidth - 8;
+      }
+
+      setPosition({ top, left });
+    };
+
+    // Run after a frame so containerRef has measured the actual height
+    const frame = requestAnimationFrame(updatePosition);
+
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
   }, [anchorRef]);
 
   // Delay visibility until after first render to prevent position flicker
@@ -162,7 +196,7 @@ const DatePicker = ({
   const pickerContent = (
     <div
       ref={containerRef}
-      style={anchorRef ? { position: "absolute", top: position.top, left: position.left, zIndex: 9999 } : undefined}
+      style={anchorRef ? { position: "fixed", top: position.top, left: position.left, zIndex: 9999 } : undefined}
       className={`dark:border-dark-tertiary dark:bg-dark-secondary w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg transition-opacity duration-75 ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
       onClick={(e) => e.stopPropagation()}
     >

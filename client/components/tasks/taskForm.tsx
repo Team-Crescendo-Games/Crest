@@ -549,7 +549,7 @@ export default function TaskForm({
             {formData.selectedAssignees.map((user) => (
               <span
                 key={user.userId}
-                className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-sm text-gray-700 dark:bg-dark-tertiary dark:text-gray-300"
+                className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-100"
               >
                 {user.fullName || user.username}
                 <button

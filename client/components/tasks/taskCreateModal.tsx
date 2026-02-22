@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Modal from "@/components/Modal";
 import TaskForm, { TaskFormData } from "@/components/tasks/taskForm"; 
 import {
@@ -9,7 +9,7 @@ import {
   useCreateTaskMutation,
   useUpdateTaskMutation,
   useGetTagsQuery,
-  useGetUsersQuery,
+  useGetWorkspaceMembersQuery,
   useGetBoardsQuery, // REPLACED: Projects -> Boards
   useGetSprintsQuery,
   useGetTasksQuery,
@@ -57,8 +57,14 @@ export default function TaskCreateModal({
     skip: !activeWorkspaceId,
   });
 
-  // Users are currently fetched globally, but you might want to scope this to workspace members later!
-  const { data: users = [] } = useGetUsersQuery();
+  // Users scoped to the active workspace
+  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(activeWorkspaceId!, {
+    skip: !activeWorkspaceId,
+  });
+  const users = useMemo(
+    () => workspaceMembers.map((m) => m.user).filter((u): u is User => u !== undefined),
+    [workspaceMembers],
+  );
   const { data: authData } = useAuthUser();
 
   const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();
@@ -93,9 +99,10 @@ export default function TaskCreateModal({
   });
 
   // Update board ID for task fetching when board changes
+  const selectedBoardId = formData.selectedBoard?.id || null;
   useEffect(() => {
-    setSelectedBoardIdForTasks(formData.selectedBoard?.id || null);
-  }, [formData.selectedBoard]);
+    setSelectedBoardIdForTasks(selectedBoardId);
+  }, [selectedBoardId]);
 
   // Set defaults when modal opens
   useEffect(() => {
