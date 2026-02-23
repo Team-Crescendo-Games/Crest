@@ -70,6 +70,7 @@ type TaskFormProps = {
   availableTasks?: Task[];
   currentTaskId?: number;
   inputClassName?: string;
+  renderBeforeSubtasks?: React.ReactNode;
 };
 
 export default function TaskForm({
@@ -87,6 +88,7 @@ export default function TaskForm({
   availableTasks = [],
   currentTaskId,
   inputClassName,
+  renderBeforeSubtasks,
 }: TaskFormProps) {
   // Dropdown states
   const [assigneeSearch, setAssigneeSearch] = useState("");
@@ -298,13 +300,18 @@ export default function TaskForm({
   return (
     <div className="space-y-4">
       {/* Title */}
-      <input
-        type="text"
-        className={inputStyles}
-        placeholder="Title"
-        value={formData.title}
-        onChange={(e) => onChange({ title: e.target.value })}
-      />
+      <div>
+        <label className={pillStyles}>
+          Title <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          className={inputStyles}
+          placeholder="Title"
+          value={formData.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+        />
+      </div>
 
       {/* Description */}
       <textarea
@@ -439,7 +446,11 @@ export default function TaskForm({
         boards={activeBoards}
         selectedBoard={formData.selectedBoard}
         onSelect={(board) => onChange({ selectedBoard: board })}
-        label="Board"
+        label={
+          <>
+            Board <span className="text-red-500">*</span>
+          </>
+        }
         placeholder="Search boards..."
         inputClassName={inputStyles}
         usePortal
@@ -750,7 +761,7 @@ export default function TaskForm({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:border-stroke-dark dark:text-neutral-400 dark:hover:border-gray-500 dark:hover:bg-dark-tertiary"
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50 dark:border-stroke-dark dark:text-neutral-400 dark:hover:border-gray-500 dark:hover:bg-dark-tertiary"
             >
               <Upload size={16} />
               Add file (max {MAX_FILE_SIZE_MB}MB)
@@ -786,6 +797,9 @@ export default function TaskForm({
           )}
         </div>
       )}
+
+      {/* Render slot before subtasks (e.g. existing attachments) */}
+      {renderBeforeSubtasks}
 
       {/* Subtasks */}
       {showSubtasks && availableSubtasks.length > 0 && (

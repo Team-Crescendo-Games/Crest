@@ -9,7 +9,11 @@ import {
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useAppDispatch } from "@/app/redux";
 import { showNotification } from "@/state";
-import { signOut, updateUserAttributes } from "aws-amplify/auth";
+import {
+  signOut,
+  updateUserAttributes,
+  confirmUserAttribute,
+} from "aws-amplify/auth";
 import {
   User,
   Mail,
@@ -36,16 +40,27 @@ const ProfilePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false);
+  // Per-field edit state
+  const [editingField, setEditingField] = useState<"name" | "email" | null>(
+    null,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
+  // Email verification state
+  const [pendingEmailVerification, setPendingEmailVerification] =
+    useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   // Initialize form when user data loads
   useEffect(() => {
     if (authData?.userDetails) {
       setEditFullName(authData.userDetails.fullName || "");
+      setEditEmail(authData.userDetails.email || "");
     }
   }, [authData?.userDetails]);
 
@@ -120,58 +135,113 @@ const ProfilePage = () => {
     }
   };
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
+  const handleStartEditName = () => {
+    setEditingField("name");
     setSaveError(null);
+    setEditFullName(authData?.userDetails?.fullName || "");
+  };
+
+  const handleStartEditEmail = () => {
+    setEditingField("email");
+    setSaveError(null);
+    setEditEmail(authData?.userDetails?.email || "");
   };
 
   const handleCancelEdit = () => {
-    setIsEditing(false);
+    setEditingField(null);
     setSaveError(null);
     if (authData?.userDetails) {
       setEditFullName(authData.userDetails.fullName || "");
+      setEditEmail(authData.userDetails.email || "");
     }
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveName = async () => {
     if (!authData?.userSub) return;
-
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      // Update Cognito user attributes (name)
-      await updateUserAttributes({
-        userAttributes: {
-          name: editFullName,
-        },
-      });
-
-      // Update our database
+      await updateUserAttributes({ userAttributes: { name: editFullName } });
       await updateProfile({
         cognitoId: authData.userSub,
         fullName: editFullName || undefined,
       }).unwrap();
 
       refetch();
-      setIsEditing(false);
+      setEditingField(null);
+      dispatch(showNotification({ message: "Name updated", type: "success" }));
+    } catch (error) {
+      console.error("Save error:", error);
+      const err = error as { data?: { message?: string }; message?: string };
+      setSaveError(err.data?.message || err.message || "Failed to save");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    if (!authData?.userSub) return;
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      await updateUserAttributes({ userAttributes: { email: editEmail } });
+
+      // Cognito sends a verification code
+      setPendingEmailVerification(true);
+      setVerificationCode("");
+      setVerifyError(null);
+      setEditingField(null);
       dispatch(
-        showNotification({ message: "Profile updated", type: "success" }),
+        showNotification({
+          message: "Verification code sent to your new email",
+          type: "success",
+        }),
       );
     } catch (error) {
       console.error("Save error:", error);
       const err = error as { data?: { message?: string }; message?: string };
       setSaveError(
-        err.data?.message || err.message || "Failed to save profile",
-      );
-      dispatch(
-        showNotification({
-          message: "Failed to update profile",
-          type: "error",
-        }),
+        err.data?.message || err.message || "Failed to update email",
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!authData?.userSub || !verificationCode) return;
+
+    setIsVerifying(true);
+    setVerifyError(null);
+
+    try {
+      await confirmUserAttribute({
+        userAttributeKey: "email",
+        confirmationCode: verificationCode,
+      });
+
+      // Now update the DB with the verified email
+      await updateProfile({
+        cognitoId: authData.userSub,
+        email: editEmail,
+      }).unwrap();
+
+      refetch();
+      setPendingEmailVerification(false);
+      dispatch(
+        showNotification({
+          message: "Email verified and updated",
+          type: "success",
+        }),
+      );
+    } catch (error) {
+      console.error("Verification error:", error);
+      const err = error as { message?: string };
+      setVerifyError(err.message || "Invalid verification code");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -231,7 +301,7 @@ const ProfilePage = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg ring-2 ring-white transition-colors hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:ring-dark-secondary dark:hover:bg-gray-200"
+                  className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gray-800 text-white shadow-lg ring-2 ring-white transition-colors hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:ring-dark-secondary dark:hover:bg-gray-200"
                   title="Change profile picture"
                 >
                   {isUploading ? (
@@ -275,42 +345,10 @@ const ProfilePage = () => {
         {/* Account Details */}
         <div className="lg:col-span-2">
           <div className="rounded-lg bg-white p-6 shadow dark:bg-dark-secondary">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Account Details
               </h3>
-              {!isEditing ? (
-                <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-dark-tertiary"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-lg bg-gray-800 px-3 py-1.5 text-sm text-white transition-colors hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    Save
-                  </button>
-                </div>
-              )}
             </div>
 
             {saveError && (
@@ -327,20 +365,51 @@ const ProfilePage = () => {
                   <p className="text-xs text-gray-500 dark:text-neutral-400">
                     Full Name
                   </p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editFullName}
-                      onChange={(e) => setEditFullName(e.target.value)}
-                      placeholder="Enter your full name"
-                      className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
-                    />
+                  {editingField === "name" ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editFullName}
+                        onChange={(e) => setEditFullName(e.target.value)}
+                        placeholder="Enter your full name"
+                        className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
+                      />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={isSaving}
+                        className="rounded p-1 text-green-600 hover:bg-green-50 disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                        title="Save"
+                      >
+                        {isSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-secondary"
+                        title="Cancel"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   ) : (
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                       {userDetails?.fullName || "—"}
                     </p>
                   )}
                 </div>
+                {editingField !== "name" && (
+                  <button
+                    onClick={handleStartEditName}
+                    className="shrink-0 rounded p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
+                    title="Edit name"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Username - read-only (synced from Cognito) */}
@@ -356,18 +425,99 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* Email - read-only (synced from Cognito) */}
+              {/* Email - editable */}
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 dark:bg-dark-tertiary">
                 <Mail className="h-5 w-5 shrink-0 text-gray-500 dark:text-neutral-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500 dark:text-neutral-400">
                     Email
                   </p>
-                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {userDetails?.email || "—"}
-                  </p>
+                  {editingField === "email" ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
+                      />
+                      <button
+                        onClick={handleSaveEmail}
+                        disabled={isSaving}
+                        className="rounded p-1 text-green-600 hover:bg-green-50 disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                        title="Save"
+                      >
+                        {isSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-secondary"
+                        title="Cancel"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      {userDetails?.email || "—"}
+                    </p>
+                  )}
                 </div>
+                {editingField !== "email" && !pendingEmailVerification && (
+                  <button
+                    onClick={handleStartEditEmail}
+                    className="shrink-0 rounded p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-dark-secondary dark:hover:text-neutral-300"
+                    title="Edit email"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
+
+              {/* Email verification code */}
+              {pendingEmailVerification && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                  <p className="mb-2 text-sm text-amber-800 dark:text-amber-300">
+                    A verification code was sent to {editEmail}. Enter it below
+                    to confirm your new email.
+                  </p>
+                  {verifyError && (
+                    <p className="mb-2 text-sm text-red-600 dark:text-red-400">
+                      {verifyError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      placeholder="Verification code"
+                      className="flex-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-gray-400 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
+                    />
+                    <button
+                      onClick={handleVerifyEmail}
+                      disabled={isVerifying || !verificationCode}
+                      className="rounded bg-gray-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+                    >
+                      {isVerifying ? "Verifying..." : "Verify"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPendingEmailVerification(false);
+                        setEditEmail(authData?.userDetails?.email || "");
+                      }}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:border-dark-tertiary dark:text-neutral-400 dark:hover:bg-dark-tertiary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

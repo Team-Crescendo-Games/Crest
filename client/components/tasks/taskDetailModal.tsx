@@ -37,7 +37,7 @@ import {
   Link2,
   Download,
 } from "lucide-react";
-import { isTextFile, isImageFile } from "@/lib/attachmentUtils";
+import { isTextFile, isImageFile, isVideoFile } from "@/lib/attachmentUtils";
 import UserIcon from "@/components/UserIcon";
 import AssigneeAvatarGroup from "@/components/AssigneeAvatarGroup";
 import S3Image from "@/components/S3Image";
@@ -161,6 +161,7 @@ const TaskDetailModal = ({
   );
   const [textPreviewLoading, setTextPreviewLoading] = useState(false);
   const [textPreviewError, setTextPreviewError] = useState<string | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (task) {
@@ -173,6 +174,7 @@ const TaskDetailModal = ({
   useEffect(() => {
     setPreviewAttachmentId(null);
     setTextPreviewContent(null);
+    setVideoPreviewUrl(null);
   }, [displayedTaskId]);
 
   const handleTaskNavigation = (taskId: number) => {
@@ -220,6 +222,9 @@ const TaskDetailModal = ({
   const handleEditSave = (updatedTask: Task) => {
     setLocalTaskOverride(updatedTask);
     setIsEditing(false);
+    // If attachments were uploaded, the updatedTask is stale (pre-upload).
+    // Clear the override after a short delay so RTK Query's invalidated cache takes over.
+    setTimeout(() => setLocalTaskOverride(null), 500);
   };
 
   const handleDuplicate = async () => {
@@ -337,6 +342,7 @@ const TaskDetailModal = ({
               ? currentTask.taskAssignments.map((ta) => ({
                   userId: ta.user.userId,
                   username: ta.user.username,
+                  fullName: ta.user.fullName,
                   profilePictureExt: ta.user.profilePictureExt,
                 }))
               : []
@@ -352,7 +358,7 @@ const TaskDetailModal = ({
           fullName={currentTask.author?.fullName}
           profilePictureExt={currentTask.author?.profilePictureExt}
           size={32}
-          tooltipLabel="Author"
+          tooltipLabel="Created by"
           opacity="opacity-75"
         />
       </div>
@@ -576,17 +582,40 @@ const TaskDetailModal = ({
                                 <Download size={14} />
                               </button>
                               {(isImageFile(attachment.fileExt) ||
-                                isTextFile(attachment.fileExt)) && (
+                                isTextFile(attachment.fileExt) ||
+                                isVideoFile(attachment.fileExt)) && (
                                 <button
                                   onClick={() => {
                                     if (previewAttachmentId === attachment.id) {
                                       setPreviewAttachmentId(null);
                                       setTextPreviewContent(null);
                                       setTextPreviewError(null);
+                                      setVideoPreviewUrl(null);
                                     } else {
                                       setPreviewAttachmentId(attachment.id);
                                       if (isTextFile(attachment.fileExt)) {
                                         handlePreviewTextFile(attachment);
+                                      } else if (
+                                        isVideoFile(attachment.fileExt)
+                                      ) {
+                                        const s3Key = getAttachmentS3Key(
+                                          attachment.taskId,
+                                          attachment.id,
+                                          attachment.fileExt,
+                                        );
+                                        const apiBaseUrl =
+                                          process.env
+                                            .NEXT_PUBLIC_API_BASE_URL || "";
+                                        fetch(
+                                          `${apiBaseUrl}/s3/presigned/download?key=${encodeURIComponent(s3Key)}`,
+                                        )
+                                          .then((r) => r.json())
+                                          .then(({ url }) =>
+                                            setVideoPreviewUrl(url),
+                                          )
+                                          .catch(() =>
+                                            setVideoPreviewUrl(null),
+                                          );
                                       }
                                     }
                                   }}
@@ -614,6 +643,20 @@ const TaskDetailModal = ({
                                   className="h-auto w-full rounded object-contain"
                                   fallbackType="image"
                                 />
+                              ) : isVideoFile(attachment.fileExt) ? (
+                                videoPreviewUrl ? (
+                                  <video
+                                    controls
+                                    className="w-full rounded"
+                                    src={videoPreviewUrl}
+                                  >
+                                    Your browser does not support the video tag.
+                                  </video>
+                                ) : (
+                                  <p className="text-sm text-gray-500 dark:text-neutral-400">
+                                    Loading video...
+                                  </p>
+                                )
                               ) : isTextFile(attachment.fileExt) ? (
                                 <div className="max-h-96 overflow-auto rounded bg-gray-100 p-3 dark:bg-dark-bg">
                                   {textPreviewLoading ? (

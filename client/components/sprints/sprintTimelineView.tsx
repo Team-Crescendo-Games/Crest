@@ -647,7 +647,7 @@ const TimelineView = ({
                                 task.taskAssignments[0].user.profilePictureExt
                               }
                               size={18}
-                              tooltipLabel="Assignee"
+                              tooltipLabel="Assigned to"
                               className="flex-shrink-0 ring-1 ring-white/30"
                             />
                           )}

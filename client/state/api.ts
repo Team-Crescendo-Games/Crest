@@ -772,7 +772,7 @@ export const api = createApi({
     }),
     updateUserProfile: build.mutation<
       User,
-      { cognitoId: string; fullName?: string }
+      { cognitoId: string; fullName?: string; email?: string }
     >({
       query: ({ cognitoId, ...body }) => ({
         url: `users/${cognitoId}/profile`,

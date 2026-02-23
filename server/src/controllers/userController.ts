@@ -159,23 +159,26 @@ export const updateUserProfilePicture = async (req: Request, res: Response): Pro
 
 export const updateUserProfile = async (req: Request, res: Response): Promise<void> => {
     const { cognitoId } = req.params;
-    const { fullName } = req.body;
+    const { fullName, email } = req.body;
 
     if (!cognitoId || typeof cognitoId !== "string") {
         res.status(400).json({ message: "Invalid cognitoId parameter" });
         return;
     }
 
-    // Only fullName is editable (username and email are synced from Cognito)
-    if (fullName === undefined) {
+    if (fullName === undefined && email === undefined) {
         res.status(400).json({ message: "No fields to update" });
         return;
     }
 
+    const data: Record<string, unknown> = {};
+    if (fullName !== undefined) data.fullName = fullName;
+    if (email !== undefined) data.email = email;
+
     try {
         const user = await getPrismaClient().user.update({
             where: { cognitoId },
-            data: { fullName },
+            data,
         });
         res.json(user);
     } catch (error: any) {

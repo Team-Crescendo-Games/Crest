@@ -77,6 +77,12 @@ const S3Image = ({
     }
   }, [data?.url, s3Key]);
 
+  // Reset error state when s3Key changes (e.g. workspace switch)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasError(false);
+  }, [s3Key]);
+
   // Handle version change (cache bust)
   useEffect(() => {
     if (version > 0 && s3Key) {

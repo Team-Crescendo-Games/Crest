@@ -102,6 +102,11 @@ export function isImageFile(ext: string): boolean {
   return ALLOWED_EXTENSIONS.images.includes(ext.toLowerCase());
 }
 
+// Check if a file extension is a video
+export function isVideoFile(ext: string): boolean {
+  return ALLOWED_EXTENSIONS.videos.includes(ext.toLowerCase());
+}
+
 export function validateFile(file: File): FileValidationResult {
   // Check file size
   if (file.size > MAX_FILE_SIZE_BYTES) {

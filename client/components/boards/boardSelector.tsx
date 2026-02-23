@@ -10,7 +10,7 @@ type BoardSelectorProps = {
   boards: Board[];
   selectedBoard: Board | null;
   onSelect: (board: Board | null) => void;
-  label?: string;
+  label?: React.ReactNode;
   placeholder?: string;
   inputClassName?: string;
   showIcon?: boolean;

@@ -447,7 +447,7 @@ const TaskCard = ({
                   profilePictureExt={ta.user.profilePictureExt}
                   size={24}
                   className="ring-2 ring-white dark:ring-dark-tertiary"
-                  tooltipLabel="Assignee"
+                  tooltipLabel="Assigned to"
                 />
               ))}
               {(task.taskAssignments?.length ?? 0) > 3 && (

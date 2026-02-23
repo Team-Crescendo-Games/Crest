@@ -45,7 +45,7 @@ const AssigneeAvatarGroup = ({
             fullName={assignee.fullName}
             profilePictureExt={assignee.profilePictureExt}
             size={size}
-            tooltipLabel="Assignee"
+            tooltipLabel="Assigned to"
           />
         </div>
       ))}

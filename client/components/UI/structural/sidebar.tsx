@@ -330,6 +330,7 @@ const Sidebar = () => {
         {!isSidebarCollapsed && activeWorkspace?.headerExt && (
           <div className="absolute inset-0 overflow-hidden">
             <S3Image
+              key={`header-${activeWorkspace.id}`}
               s3Key={`workspaces/${activeWorkspace.id}/header.${activeWorkspace.headerExt}`}
               alt=""
               width={256}
@@ -354,6 +355,7 @@ const Sidebar = () => {
             >
               {activeWorkspace?.iconExt ? (
                 <S3Image
+                  key={`icon-${activeWorkspace.id}`}
                   s3Key={`workspaces/${activeWorkspace.id}/icon.${activeWorkspace.iconExt}`}
                   alt={activeWorkspace.name || "Workspace"}
                   width={40}

@@ -338,7 +338,7 @@ const TableView = ({
                                   fullName={ta.user.fullName}
                                   profilePictureExt={ta.user.profilePictureExt}
                                   size={28}
-                                  tooltipLabel="Assignee"
+                                  tooltipLabel="Assigned to"
                                   className="ring-2 ring-white dark:ring-dark-secondary"
                                 />
                               ))}
@@ -363,7 +363,7 @@ const TableView = ({
                             fullName={task.author.fullName}
                             profilePictureExt={task.author.profilePictureExt}
                             size={28}
-                            tooltipLabel="Author"
+                            tooltipLabel="Created by"
                           />
                         ) : (
                           <span className="text-gray-400">—</span>
