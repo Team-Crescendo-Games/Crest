@@ -4,7 +4,11 @@ import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmationMenu from "@/components/ConfirmationMenu";
 import DatePicker from "@/components/DatePicker";
-import { localDateToUTC, utcToDateInputValue, parseLocalDate } from "@/lib/dateUtils";
+import {
+  localDateToUTC,
+  utcToDateInputValue,
+  parseLocalDate,
+} from "@/lib/dateUtils";
 import { format } from "date-fns";
 import {
   useGetSprintQuery,
@@ -42,8 +46,11 @@ const SprintSettings = ({ params }: Props) => {
 
   useEffect(() => {
     if (sprint) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(sprint.title);
-      setStartDate(sprint.startDate ? utcToDateInputValue(sprint.startDate) : "");
+      setStartDate(
+        sprint.startDate ? utcToDateInputValue(sprint.startDate) : "",
+      );
       setDueDate(sprint.dueDate ? utcToDateInputValue(sprint.dueDate) : "");
     }
   }, [sprint]);
@@ -67,8 +74,12 @@ const SprintSettings = ({ params }: Props) => {
 
   if (isSprintLoading || !sprint) return <div className="p-8">Loading...</div>;
 
-  const originalStartDate = sprint.startDate ? utcToDateInputValue(sprint.startDate) : "";
-  const originalDueDate = sprint.dueDate ? utcToDateInputValue(sprint.dueDate) : "";
+  const originalStartDate = sprint.startDate
+    ? utcToDateInputValue(sprint.startDate)
+    : "";
+  const originalDueDate = sprint.dueDate
+    ? utcToDateInputValue(sprint.dueDate)
+    : "";
   const hasUnsavedChanges =
     title !== sprint.title ||
     startDate !== originalStartDate ||
@@ -111,7 +122,10 @@ const SprintSettings = ({ params }: Props) => {
           <button
             ref={startDateRef}
             type="button"
-            onClick={() => { setShowStartPicker(!showStartPicker); setShowDuePicker(false); }}
+            onClick={() => {
+              setShowStartPicker(!showStartPicker);
+              setShowDuePicker(false);
+            }}
             className={dateButtonStyles}
           >
             <Calendar className="h-4 w-4 text-gray-400" />
@@ -124,7 +138,11 @@ const SprintSettings = ({ params }: Props) => {
               value={startDate || undefined}
               onChange={(date) => {
                 setStartDate(date || "");
-                if (date && dueDate && parseLocalDate(date) > parseLocalDate(dueDate)) {
+                if (
+                  date &&
+                  dueDate &&
+                  parseLocalDate(date) > parseLocalDate(dueDate)
+                ) {
                   setDueDate("");
                 }
                 setShowStartPicker(false);
@@ -143,7 +161,10 @@ const SprintSettings = ({ params }: Props) => {
           <button
             ref={dueDateRef}
             type="button"
-            onClick={() => { setShowDuePicker(!showDuePicker); setShowStartPicker(false); }}
+            onClick={() => {
+              setShowDuePicker(!showDuePicker);
+              setShowStartPicker(false);
+            }}
             className={dateButtonStyles}
           >
             <Calendar className="h-4 w-4 text-gray-400" />
@@ -155,7 +176,11 @@ const SprintSettings = ({ params }: Props) => {
             <DatePicker
               value={dueDate || undefined}
               onChange={(date) => {
-                if (date && startDate && parseLocalDate(date) < parseLocalDate(startDate)) {
+                if (
+                  date &&
+                  startDate &&
+                  parseLocalDate(date) < parseLocalDate(startDate)
+                ) {
                   return;
                 }
                 setDueDate(date || "");
@@ -173,7 +198,9 @@ const SprintSettings = ({ params }: Props) => {
             onClick={handleSave}
             disabled={isUpdating || !title.trim() || !hasUnsavedChanges}
             className={`rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-              isUpdating || !title.trim() || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
+              isUpdating || !title.trim() || !hasUnsavedChanges
+                ? "cursor-not-allowed opacity-50"
+                : ""
             }`}
           >
             {isUpdating ? "Saving..." : "Save Changes"}

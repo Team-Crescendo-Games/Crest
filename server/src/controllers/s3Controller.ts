@@ -1,5 +1,11 @@
 import type { Request, Response } from "express";
-import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import {
+    S3Client,
+    GetObjectCommand,
+    PutObjectCommand,
+    ListObjectsV2Command,
+    DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const getS3Client = () =>

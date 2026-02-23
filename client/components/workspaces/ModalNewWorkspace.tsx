@@ -10,7 +10,16 @@ import {
 import { useState } from "react";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
-import { Plus, Search, KeyRound, Building2, Users, Check, Clock, LogIn } from "lucide-react";
+import {
+  Plus,
+  Search,
+  KeyRound,
+  Building2,
+  Users,
+  Check,
+  Clock,
+  LogIn,
+} from "lucide-react";
 import S3Image from "@/components/S3Image";
 
 type Props = {
@@ -49,7 +58,10 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
     const trimmedName = name.trim();
     if (!trimmedName || !userId) return;
     try {
-      const newWorkspace = await createWorkspace({ name: trimmedName, userId }).unwrap();
+      const newWorkspace = await createWorkspace({
+        name: trimmedName,
+        userId,
+      }).unwrap();
       setWorkspace(newWorkspace.id);
       setName("");
       onClose();
@@ -65,12 +77,18 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
     setInvSuccess("");
     setIsJoining(true);
     try {
-      const result = await joinByInvitation({ invitationId: trimmed, userId }).unwrap();
+      const result = await joinByInvitation({
+        invitationId: trimmed,
+        userId,
+      }).unwrap();
       setInvSuccess(`Joined "${result.workspaceName}"!`);
       setWorkspace(result.workspaceId);
       setTimeout(() => resetAndClose(), 1500);
-    } catch (err: any) {
-      setInvError(err?.data?.error || "Failed to join workspace");
+    } catch (err) {
+      setInvError(
+        (err as { data?: { error?: string } })?.data?.error ||
+          "Failed to join workspace",
+      );
     } finally {
       setIsJoining(false);
     }
@@ -80,8 +98,14 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
     if (!userId) return;
     setActionState((s) => ({ ...s, [wsId]: "loading" }));
     try {
-      const result = await applyToWorkspace({ workspaceId: wsId, userId }).unwrap();
-      setActionState((s) => ({ ...s, [wsId]: result.joined ? "joined" : "applied" }));
+      const result = await applyToWorkspace({
+        workspaceId: wsId,
+        userId,
+      }).unwrap();
+      setActionState((s) => ({
+        ...s,
+        [wsId]: result.joined ? "joined" : "applied",
+      }));
     } catch {
       setActionState((s) => ({ ...s, [wsId]: "error" }));
     }
@@ -100,16 +124,27 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
 
-  const fullName = authData?.userDetails?.fullName || authData?.userDetails?.username;
+  const fullName =
+    authData?.userDetails?.fullName || authData?.userDetails?.username;
 
   const modalName =
-    view === "choose" ? (fullName ? `Welcome, ${fullName}` : "Add a Workspace")
-    : view === "create" ? "Create Workspace"
-    : view === "invitation" ? "Join by Invitation"
-    : "Find Workspaces";
+    view === "choose"
+      ? fullName
+        ? `Welcome, ${fullName}`
+        : "Add a Workspace"
+      : view === "create"
+        ? "Create Workspace"
+        : view === "invitation"
+          ? "Join by Invitation"
+          : "Find Workspaces";
 
   return (
-    <Modal isOpen={isOpen} onClose={resetAndClose} name={modalName} hideClose={!canCancel}>
+    <Modal
+      isOpen={isOpen}
+      onClose={resetAndClose}
+      name={modalName}
+      hideClose={!canCancel}
+    >
       {/* Back button for sub-views */}
       {view !== "choose" && (
         <button
@@ -135,8 +170,12 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
                 <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Create a Workspace</p>
-                <p className="text-xs text-gray-500 dark:text-neutral-400">Start fresh with your own workspace</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Create a Workspace
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                  Start fresh with your own workspace
+                </p>
               </div>
             </button>
             <button
@@ -147,8 +186,12 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
                 <Search className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Find a Workspace</p>
-                <p className="text-xs text-gray-500 dark:text-neutral-400">Browse and join existing workspaces</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Find a Workspace
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                  Browse and join existing workspaces
+                </p>
               </div>
             </button>
             <button
@@ -159,8 +202,12 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
                 <KeyRound className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Join by Invitation</p>
-                <p className="text-xs text-gray-500 dark:text-neutral-400">Enter an invitation ID from a team member</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Join by Invitation
+                </p>
+                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                  Enter an invitation ID from a team member
+                </p>
               </div>
             </button>
           </div>
@@ -173,7 +220,13 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
           <div className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
             Create a new workspace for your team.
           </div>
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreate();
+            }}
+          >
             <input
               type="text"
               className={inputStyles}
@@ -201,27 +254,42 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
           <div className="mb-3 text-sm text-gray-500 dark:text-neutral-400">
             Enter the invitation ID you received from a workspace member.
           </div>
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleJoinByInvitation(); }}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleJoinByInvitation();
+            }}
+          >
             <div className="relative">
               <input
                 type="text"
                 className={`w-full rounded border p-2 pl-9 shadow-sm focus:outline-none dark:bg-dark-tertiary dark:text-white ${
-                  invError ? "border-red-500" : "border-gray-300 focus:border-blue-500 dark:border-gray-600"
+                  invError
+                    ? "border-red-500"
+                    : "border-gray-300 focus:border-blue-500 dark:border-gray-600"
                 }`}
                 placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890"
                 value={invitationId}
-                onChange={(e) => { setInvitationId(e.target.value); if (invError) setInvError(""); }}
+                onChange={(e) => {
+                  setInvitationId(e.target.value);
+                  if (invError) setInvError("");
+                }}
                 autoFocus
               />
               <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
             {invError && <p className="text-sm text-red-500">{invError}</p>}
-            {invSuccess && <p className="text-sm text-green-500">{invSuccess}</p>}
+            {invSuccess && (
+              <p className="text-sm text-green-500">{invSuccess}</p>
+            )}
             <button
               type="submit"
               disabled={!invitationId.trim() || isJoining || !!invSuccess}
               className={`flex w-full cursor-pointer justify-center rounded-md bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 ${
-                !invitationId.trim() || isJoining || invSuccess ? "cursor-not-allowed opacity-50" : ""
+                !invitationId.trim() || isJoining || invSuccess
+                  ? "cursor-not-allowed opacity-50"
+                  : ""
               }`}
             >
               {isJoining ? "Joining..." : "Join Workspace"}
@@ -234,7 +302,9 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
       {view === "find" && (
         <>
           {isLoadingDiscover ? (
-            <p className="py-8 text-center text-sm text-gray-500 dark:text-neutral-400">Loading...</p>
+            <p className="py-8 text-center text-sm text-gray-500 dark:text-neutral-400">
+              Loading...
+            </p>
           ) : !discoverableWorkspaces || discoverableWorkspaces.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-500 dark:text-neutral-400">
               No workspaces available to join right now.
@@ -244,7 +314,10 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
               {discoverableWorkspaces.map((ws) => {
                 const state = actionState[ws.id];
                 return (
-                  <div key={ws.id} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-stroke-dark">
+                  <div
+                    key={ws.id}
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-stroke-dark"
+                  >
                     {ws.iconExt ? (
                       <S3Image
                         s3Key={`workspaces/${ws.id}/icon.${ws.iconExt}`}
@@ -260,21 +333,33 @@ const ModalNewWorkspace = ({ isOpen, onClose, canCancel = true }: Props) => {
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{ws.name}</p>
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        {ws.name}
+                      </p>
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-neutral-400">
                         <Users className="h-3 w-3" />
                         <span>{ws.memberCount} members</span>
-                        <span className="text-gray-300 dark:text-gray-600">·</span>
-                        <span>{ws.joinPolicy === 2 ? "Open" : "Apply to Join"}</span>
+                        <span className="text-gray-300 dark:text-gray-600">
+                          ·
+                        </span>
+                        <span>
+                          {ws.joinPolicy === 2 ? "Open" : "Apply to Join"}
+                        </span>
                       </div>
                     </div>
                     <div className="shrink-0">
                       {state === "joined" ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><Check className="h-3 w-3" /> Joined</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                          <Check className="h-3 w-3" /> Joined
+                        </span>
                       ) : state === "applied" ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"><Clock className="h-3 w-3" /> Applied</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                          <Clock className="h-3 w-3" /> Applied
+                        </span>
                       ) : ws.hasPendingApplication ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"><Clock className="h-3 w-3" /> Pending</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                          <Clock className="h-3 w-3" /> Pending
+                        </span>
                       ) : (
                         <button
                           onClick={() => handleJoinOrApply(ws.id)}

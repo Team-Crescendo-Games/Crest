@@ -19,7 +19,7 @@ const PresenceAvatars = ({ collaborators }: Props) => {
           title={user.fullName}
         >
           {getInitials(user.fullName)}
-          <span className="pointer-events-none absolute -bottom-7 left-1/2 z-50 -translate-x-1/2 rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="pointer-events-none absolute -bottom-7 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
             {user.fullName}
           </span>
         </div>
@@ -35,7 +35,8 @@ const PresenceAvatars = ({ collaborators }: Props) => {
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length >= 2)
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
 

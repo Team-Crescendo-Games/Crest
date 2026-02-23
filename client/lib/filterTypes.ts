@@ -49,11 +49,7 @@ export interface TimeRange {
 /**
  * Type representing task status options.
  */
-export type TaskStatus =
-  | "Input Queue"
-  | "Work In Progress"
-  | "Review"
-  | "Done";
+export type TaskStatus = "Input Queue" | "Work In Progress" | "Review" | "Done";
 
 /**
  * Interface representing the current state of all active filters.

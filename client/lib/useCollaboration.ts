@@ -32,14 +32,17 @@ export function useCollaboration(room: string | null) {
   const { data: authData } = useAuthUser();
   const dispatch = useAppDispatch();
   const roomRef = useRef(room);
-  roomRef.current = room;
+  roomRef.current = room; // eslint-disable-line react-hooks/refs
 
   const currentUser = authData?.userDetails;
 
   useEffect(() => {
     if (!room || !currentUser?.cognitoId) return;
 
-    const wsBase = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+    const wsBase =
+      process.env.NEXT_PUBLIC_WS_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      "http://localhost:8000";
     const socket = io(wsBase, { transports: ["websocket", "polling"] });
     socketRef.current = socket;
 
@@ -71,7 +74,9 @@ export function useCollaboration(room: string | null) {
     });
 
     socket.on("user-left", (data: { cognitoId: string }) => {
-      setCollaborators((prev) => prev.filter((u) => u.cognitoId !== data.cognitoId));
+      setCollaborators((prev) =>
+        prev.filter((u) => u.cognitoId !== data.cognitoId),
+      );
     });
 
     socket.on("task-selected", (data: TaskSelection) => {
@@ -100,7 +105,14 @@ export function useCollaboration(room: string | null) {
       socketRef.current = null;
       setCollaborators([]);
     };
-  }, [room, currentUser?.cognitoId, currentUser?.userId, currentUser?.username, currentUser?.fullName, dispatch]);
+  }, [
+    room,
+    currentUser?.cognitoId,
+    currentUser?.userId,
+    currentUser?.username,
+    currentUser?.fullName,
+    dispatch,
+  ]);
 
   const selectTask = useCallback((taskId: number | null) => {
     socketRef.current?.emit("select-task", taskId);
@@ -108,7 +120,10 @@ export function useCollaboration(room: string | null) {
 
   const notifyTaskUpdate = useCallback((taskId: number) => {
     if (roomRef.current) {
-      socketRef.current?.emit("task-updated", { room: roomRef.current, taskId });
+      socketRef.current?.emit("task-updated", {
+        room: roomRef.current,
+        taskId,
+      });
     }
   }, []);
 

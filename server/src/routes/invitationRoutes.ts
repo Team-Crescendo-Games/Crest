@@ -13,7 +13,11 @@ const workspaceInvitationRouter = Router({ mergeParams: true });
 
 workspaceInvitationRouter.get("/", requirePermission(PERMISSIONS.INVITE), getInvitations);
 workspaceInvitationRouter.post("/", requirePermission(PERMISSIONS.INVITE), createInvitation);
-workspaceInvitationRouter.delete("/:invitationId", requirePermission(PERMISSIONS.INVITE), deleteInvitation);
+workspaceInvitationRouter.delete(
+    "/:invitationId",
+    requirePermission(PERMISSIONS.INVITE),
+    deleteInvitation
+);
 
 // Standalone: /invitations/:invitationId/join (no workspace permission needed)
 const joinRouter = Router();

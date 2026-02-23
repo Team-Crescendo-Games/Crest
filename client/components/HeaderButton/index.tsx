@@ -29,7 +29,7 @@ const HeaderButton = ({
   const content = (
     <>
       {icon}
-      <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs font-normal whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs font-normal text-white opacity-0 transition-opacity group-hover:opacity-100">
         {tooltip}
       </div>
     </>
@@ -37,10 +37,15 @@ const HeaderButton = ({
 
   if (href) {
     // Dynamic import to avoid pulling in next/link when not needed
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Link = require("next/link").default;
     return (
       <div className="group relative cursor-pointer">
-        <Link href={href} className={`inline-flex ${resolvedClass}`} aria-label={tooltip}>
+        <Link
+          href={href}
+          className={`inline-flex ${resolvedClass}`}
+          aria-label={tooltip}
+        >
           {content}
         </Link>
       </div>

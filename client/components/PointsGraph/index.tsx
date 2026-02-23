@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { BarChart3, LineChart, Calendar } from "lucide-react";
-import { format } from "date-fns";
 import { formatUTCDate } from "@/lib/dateUtils";
 import DatePicker from "@/components/DatePicker";
 

@@ -26,13 +26,13 @@ import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 /* REDUX PERSISTENCE */
 const createNoopStorage = () => {
   return {
-    getItem(_key: any) {
+    getItem(_key: string) {
       return Promise.resolve(null);
     },
-    setItem(_key: any, value: any) {
+    setItem(_key: string, value: string) {
       return Promise.resolve(value);
     },
-    removeItem(_key: any) {
+    removeItem(_key: string) {
       return Promise.resolve();
     },
   };
@@ -50,7 +50,7 @@ const persistConfig = {
   blacklist: [],
 };
 
-// Migration to handle adding new fields to persisted state
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const migrateState = (state: any) => {
   if (state && state.global) {
     return {
@@ -87,7 +87,7 @@ export const makeStore = () => {
         serializableCheck: {
           ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
         },
-      }).concat(api.middleware as any),
+      }).concat(api.middleware as ReturnType<typeof getDefault>[number]),
   });
 };
 
@@ -105,14 +105,16 @@ export default function StoreProvider({
   children: React.ReactNode;
 }) {
   const storeRef = useRef<AppStore | null>(null);
-  if (!storeRef.current) {
+  /* eslint-disable react-hooks/refs */
+  if (storeRef.current == null) {
     storeRef.current = makeStore();
     setupListeners(storeRef.current.dispatch);
   }
-  const persistor = persistStore(storeRef.current!);
+  const persistor = persistStore(storeRef.current);
 
   return (
-    <Provider store={storeRef.current!}>
+    <Provider store={storeRef.current}>
+      {/* eslint-enable react-hooks/refs */}
       <PersistGate loading={null} persistor={persistor}>
         {children}
       </PersistGate>

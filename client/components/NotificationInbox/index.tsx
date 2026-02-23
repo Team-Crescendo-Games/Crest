@@ -204,7 +204,7 @@ const NotificationItem = ({
           type="checkbox"
           checked={isSelected}
           onChange={handleCheckboxChange}
-          className="dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
           aria-label={`Select notification for ${notification.task?.title || "task"}`}
         />
       </div>
@@ -323,7 +323,7 @@ const EmbeddedNotificationItem = ({
 
   return (
     <div
-      className={`group dark:hover:bg-dark-tertiary flex cursor-pointer items-center gap-2 px-6 py-2 transition-colors hover:bg-gray-100 ${
+      className={`group flex cursor-pointer items-center gap-2 px-6 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${
         !notification.isRead ? "bg-blue-50/30 dark:bg-blue-900/10" : ""
       } ${severityColors.border}`}
       onClick={handleClick}
@@ -342,7 +342,7 @@ const EmbeddedNotificationItem = ({
           type="checkbox"
           checked={isSelected}
           onChange={handleCheckboxChange}
-          className="dark:bg-dark-tertiary h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+          className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
         />
       </div>
 
@@ -517,7 +517,7 @@ const NotificationInbox = ({
                     if (el) el.indeterminate = isIndeterminate;
                   }}
                   onChange={handleSelectAll}
-                  className="dark:bg-dark-tertiary h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                  className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
                   aria-label="Select all"
                 />
               )}
@@ -606,12 +606,12 @@ const NotificationInbox = ({
   return (
     <div
       ref={dropdownRef}
-      className="dark:bg-dark-secondary absolute bottom-full left-0 z-50 mb-2 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-white shadow-lg"
+      className="absolute bottom-full left-0 z-50 mb-2 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-white shadow-lg dark:bg-dark-secondary"
       role="dialog"
       aria-label="Notifications"
     >
       {/* Header */}
-      <div className="dark:border-stroke-dark flex items-center justify-between border-b border-gray-200 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-stroke-dark">
         <div className="flex items-center gap-2">
           {/* Select all checkbox - only show when there are notifications */}
           {notificationCount > 0 && (
@@ -624,7 +624,7 @@ const NotificationInbox = ({
                 }
               }}
               onChange={handleSelectAll}
-              className="dark:bg-dark-tertiary h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-dark-tertiary"
               aria-label="Select all notifications"
               title={isAllSelected ? "Deselect all" : "Select all"}
             />

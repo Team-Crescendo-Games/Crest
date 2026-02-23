@@ -3,7 +3,7 @@
 import { useGetTasksAssignedToUserQuery, useGetBoardsQuery } from "@/state/api"; // REPLACED
 import TableView from "@/components/TableView";
 import { FilterState, SortState } from "@/lib/filterTypes";
-import { useWorkspace } from "@/lib/useWorkspace"; 
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type Props = {
   userId: number;
@@ -18,7 +18,7 @@ const UserTableView = ({
   filterState,
   sortState,
 }: Props) => {
-  const { activeWorkspaceId } = useWorkspace(); 
+  const { activeWorkspaceId } = useWorkspace();
 
   const {
     data: tasks,
@@ -53,7 +53,7 @@ const UserTableView = ({
   return (
     <TableView
       tasks={activeTasks}
-      setIsModalNewTaskOpen={setIsModalNewTaskOpen} 
+      setIsModalNewTaskOpen={setIsModalNewTaskOpen}
       filterState={filterState}
       sortState={sortState}
       showCreateButton={false}

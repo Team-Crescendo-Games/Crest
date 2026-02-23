@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Header from "@/components/Header";
 import { useWorkspace } from "@/lib/useWorkspace";
 import {
   useGetWorkspacesQuery,
@@ -35,9 +34,10 @@ const WorkspaceSettingsPage = () => {
   const [updateWorkspaceIcon] = useUpdateWorkspaceIconMutation();
   const [updateWorkspaceHeader] = useUpdateWorkspaceHeaderMutation();
   const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();
-  const [leaveWorkspace, { isLoading: isLeaving }] = useLeaveWorkspaceMutation();
+  const [leaveWorkspace, { isLoading: isLeaving }] =
+    useLeaveWorkspaceMutation();
 
-  const { canEditInfo, canDelete } = usePermissions();
+  const { canEditInfo, canDelete, isOwner } = usePermissions();
 
   const activeWorkspace = workspaces?.find((w) => w.id === activeWorkspaceId);
 
@@ -90,7 +90,10 @@ const WorkspaceSettingsPage = () => {
   const handleDelete = async () => {
     if (!activeWorkspaceId || !userId) return;
     try {
-      await deleteWorkspace({ workspaceId: activeWorkspaceId, userId }).unwrap();
+      await deleteWorkspace({
+        workspaceId: activeWorkspaceId,
+        userId,
+      }).unwrap();
       setWorkspace(null);
       router.push("/dashboard");
     } catch (err) {
@@ -206,45 +209,49 @@ const WorkspaceSettingsPage = () => {
       <div className="mt-6 max-w-lg space-y-6">
         {/* Workspace Icon + Title */}
         <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              {activeWorkspace.iconExt ? (
-                <S3Image
-                  s3Key={`workspaces/${activeWorkspace.id}/icon.${activeWorkspace.iconExt}`}
-                  alt={activeWorkspace.name}
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 rounded-xl object-cover"
-                  fallbackType="image"
-                  version={iconVersion}
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-200 dark:bg-dark-tertiary">
-                  <Building2 className="h-6 w-6 text-gray-400 dark:text-gray-500" />
-                </div>
-              )}
-              {canEditInfo && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingIcon}
-                  className="absolute -bottom-1 -right-1 rounded-full bg-gray-800 p-1.5 text-white shadow hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
-                >
-                  <Camera className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{activeWorkspace.name}</h1>
-              {isUploadingIcon && (
-                <span className="text-sm text-gray-500 dark:text-neutral-400">Uploading icon...</span>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleIconFileSelect}
-              className="hidden"
-            />
+          <div className="relative shrink-0">
+            {activeWorkspace.iconExt ? (
+              <S3Image
+                s3Key={`workspaces/${activeWorkspace.id}/icon.${activeWorkspace.iconExt}`}
+                alt={activeWorkspace.name}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-xl object-cover"
+                fallbackType="image"
+                version={iconVersion}
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-200 dark:bg-dark-tertiary">
+                <Building2 className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+              </div>
+            )}
+            {canEditInfo && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingIcon}
+                className="absolute -bottom-1 -right-1 rounded-full bg-gray-800 p-1.5 text-white shadow hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+              >
+                <Camera className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+              {activeWorkspace.name}
+            </h1>
+            {isUploadingIcon && (
+              <span className="text-sm text-gray-500 dark:text-neutral-400">
+                Uploading icon...
+              </span>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleIconFileSelect}
+            className="hidden"
+          />
         </div>
         {/* Crop Modal */}
         {cropImageSrc && (
@@ -325,9 +332,21 @@ const WorkspaceSettingsPage = () => {
           </p>
           <div className="flex flex-col gap-2">
             {[
-              { value: 0, label: "Invite Only", desc: "Members can only join via invitation" },
-              { value: 1, label: "Apply to Join", desc: "Users can request to join, admins approve" },
-              { value: 2, label: "Discoverable", desc: "Anyone can find and join this workspace" },
+              {
+                value: 0,
+                label: "Invite Only",
+                desc: "Members can only join via invitation",
+              },
+              {
+                value: 1,
+                label: "Apply to Join",
+                desc: "Users can request to join, admins approve",
+              },
+              {
+                value: 2,
+                label: "Discoverable",
+                desc: "Anyone can find and join this workspace",
+              },
             ].map((option) => (
               <label
                 key={option.value}
@@ -363,7 +382,9 @@ const WorkspaceSettingsPage = () => {
               onClick={handleSave}
               disabled={!name.trim() || isSaving || !hasUnsavedChanges}
               className={`rounded bg-gray-800 px-4 py-2 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-                !name.trim() || isSaving || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
+                !name.trim() || isSaving || !hasUnsavedChanges
+                  ? "cursor-not-allowed opacity-50"
+                  : ""
               }`}
             >
               {isSaving ? "Saving..." : "Save Changes"}
@@ -388,52 +409,58 @@ const WorkspaceSettingsPage = () => {
           </div>
         )}
 
-        {/* Leave Workspace */}
-        {activeWorkspace && activeWorkspace.createdById !== userId && (
-          <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-              Leave Workspace
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-              You will lose access to all boards, tasks, and sprints in this workspace.
-            </p>
-            {!showLeaveConfirm ? (
-              <button
-                onClick={() => setShowLeaveConfirm(true)}
-                className="mt-3 rounded border border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
-              >
+        {/* Leave Workspace — hidden for owners */}
+        {activeWorkspace &&
+          activeWorkspace.createdById !== userId &&
+          !isOwner && (
+            <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                 Leave Workspace
-              </button>
-            ) : (
-              <div className="mt-3 flex items-center gap-3">
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
+                You will lose access to all boards, tasks, and sprints in this
+                workspace.
+              </p>
+              {!showLeaveConfirm ? (
                 <button
-                  onClick={async () => {
-                    if (!activeWorkspaceId || !userId) return;
-                    try {
-                      await leaveWorkspace({ workspaceId: activeWorkspaceId, userId }).unwrap();
-                      setWorkspace(null);
-                      router.push("/dashboard");
-                    } catch (err: any) {
-                      console.error("Failed to leave workspace:", err);
-                    }
-                  }}
-                  disabled={isLeaving}
-                  className={`rounded bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700 ${
-                    isLeaving ? "cursor-not-allowed opacity-50" : ""
-                  }`}
+                  onClick={() => setShowLeaveConfirm(true)}
+                  className="mt-3 rounded border border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
                 >
-                  {isLeaving ? "Leaving..." : "Yes, leave this workspace"}
+                  Leave Workspace
                 </button>
-                <button
-                  onClick={() => setShowLeaveConfirm(false)}
-                  className="rounded px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      if (!activeWorkspaceId || !userId) return;
+                      try {
+                        await leaveWorkspace({
+                          workspaceId: activeWorkspaceId,
+                          userId,
+                        }).unwrap();
+                        setWorkspace(null);
+                        router.push("/dashboard");
+                      } catch (err) {
+                        console.error("Failed to leave workspace:", err);
+                      }
+                    }}
+                    disabled={isLeaving}
+                    className={`rounded bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700 ${
+                      isLeaving ? "cursor-not-allowed opacity-50" : ""
+                    }`}
+                  >
+                    {isLeaving ? "Leaving..." : "Yes, leave this workspace"}
+                  </button>
+                  <button
+                    onClick={() => setShowLeaveConfirm(false)}
+                    className="rounded px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Danger Zone */}
         {canDelete && (

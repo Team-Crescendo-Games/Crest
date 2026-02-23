@@ -61,7 +61,7 @@ const ReactionBadge = ({
         className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-all ${
           isReactedByCurrentUser
             ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
-            : "dark:bg-dark-tertiary bg-gray-100 text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-tertiary dark:text-gray-400 dark:hover:bg-gray-600"
         } ${isAnimating ? "scale-125" : "scale-100"}`}
         style={{
           transition: "transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -80,9 +80,9 @@ const ReactionBadge = ({
 
       {/* Tooltip showing usernames */}
       {showTooltip && users.length > 0 && (
-        <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg dark:bg-gray-700">
+        <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg dark:bg-gray-700">
           {users.map((u) => u.username).join(", ")}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
         </div>
       )}
     </div>

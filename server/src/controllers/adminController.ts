@@ -7,7 +7,8 @@ const ADMIN_EMAILS: string[] = [
     // Add more admin emails here
 ];
 
-const isAdminEmail = (email: string | undefined | null): boolean => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _isAdminEmail = (email: string | undefined | null): boolean => {
     if (!email) return false;
     return ADMIN_EMAILS.includes(email.toLowerCase());
 };
@@ -20,7 +21,7 @@ export const adminUpdateUser = async (req: Request, res: Response): Promise<void
     const { username, fullName, cognitoId, email } = req.body;
 
     // Get admin email from request header (set by auth middleware or passed from frontend)
-    const adminEmail = req.headers["x-admin-email"] as string;
+    const _adminEmail = req.headers["x-admin-email"] as string;
 
     // For now, we'll trust the frontend admin check since we don't have full auth middleware
     // In production, you'd verify the JWT token and extract the email from it

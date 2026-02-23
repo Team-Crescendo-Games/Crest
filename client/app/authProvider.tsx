@@ -260,12 +260,13 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { signUp } = await import("aws-amplify/auth");
       try {
         return await signUp(input);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Extract the actual error message from Cognito's wrapper
-        if (error.message?.includes("PreSignUp failed with error")) {
-          const match = error.message.match(/PreSignUp failed with error (.+)/);
+        const err = error as Error & { message: string };
+        if (err.message?.includes("PreSignUp failed with error")) {
+          const match = err.message.match(/PreSignUp failed with error (.+)/);
           if (match) {
-            error.message = match[1];
+            err.message = match[1];
           }
         }
         throw error;
@@ -274,9 +275,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div
-      className={`${isDarkMode ? "dark bg-dark-bg" : "bg-gray-50"}`}
-    >
+    <div className={`${isDarkMode ? "dark bg-dark-bg" : "bg-gray-50"}`}>
       <ThemeProvider theme={currentTheme}>
         <Authenticator
           formFields={formFields}
@@ -314,29 +313,32 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             },
           }}
         >
-          {({ user }) => user ? <>{children}</> : <div />}
+          {({ user }) => (user ? <>{children}</> : <div />)}
         </Authenticator>
         {/* Branded left panel — only on sign-in/sign-up */}
         {!isAuthenticated && (
-          <div className="auth-brand-panel pointer-events-none fixed inset-y-0 left-0 z-10 hidden w-[45%] flex-col items-center justify-center md:flex"
-          style={{
-            background: isDarkMode
-              ? "linear-gradient(135deg, #0a0a0b 0%, #111113 50%, #0d0d0f 100%)"
-              : "linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%)",
-          }}
-        >
-          <div className="flex flex-col items-center gap-4 px-12 text-center">
-            <Image
-              src="/favicon.ico"
-              alt="Crest Logo"
-              width={56}
-              height={56}
-              className="opacity-90"
-            />
-            <h2 className="text-3xl font-bold text-white">Crest</h2>
-            <p className="text-sm text-gray-400">Team Crescendo project manager</p>
+          <div
+            className="auth-brand-panel pointer-events-none fixed inset-y-0 left-0 z-10 hidden w-[45%] flex-col items-center justify-center md:flex"
+            style={{
+              background: isDarkMode
+                ? "linear-gradient(135deg, #0a0a0b 0%, #111113 50%, #0d0d0f 100%)"
+                : "linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%)",
+            }}
+          >
+            <div className="flex flex-col items-center gap-4 px-12 text-center">
+              <Image
+                src="/favicon.ico"
+                alt="Crest Logo"
+                width={56}
+                height={56}
+                className="opacity-90"
+              />
+              <h2 className="text-3xl font-bold text-white">Crest</h2>
+              <p className="text-sm text-gray-400">
+                Team Crescendo project manager
+              </p>
+            </div>
           </div>
-        </div>
         )}
       </ThemeProvider>
     </div>

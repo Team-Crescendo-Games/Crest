@@ -68,11 +68,11 @@ const ConfirmationMenu = ({
 
   return ReactDOM.createPortal(
     <div
-      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="dark:bg-dark-secondary animate-scale-in w-full max-w-sm rounded-lg bg-white p-6 shadow-lg"
+        className="w-full max-w-sm animate-scale-in rounded-lg bg-white p-6 shadow-lg dark:bg-dark-secondary"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
@@ -98,7 +98,7 @@ const ConfirmationMenu = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="dark:border-stroke-dark dark:hover:bg-dark-tertiary rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300"
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-stroke-dark dark:text-gray-300 dark:hover:bg-dark-tertiary"
           >
             {cancelLabel}
           </button>

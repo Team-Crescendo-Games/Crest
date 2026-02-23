@@ -82,7 +82,8 @@ export interface FormattedActivity {
  * // Returns: { username: "john", action: "moved the card from", highlightedParts: [...] }
  */
 export function formatActivityMessage(activity: Activity): FormattedActivity {
-  const username = activity.user?.fullName || activity.user?.username || "Unknown user";
+  const username =
+    activity.user?.fullName || activity.user?.username || "Unknown user";
 
   switch (activity.activityType) {
     case ActivityType.CREATE_TASK:
@@ -102,7 +103,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
       };
     case ActivityType.EDIT_TASK: {
       const editField = activity.editField || "edited the card";
-      
+
       // Parse edit field to extract and highlight values
       // Pattern: "updated the points to X"
       const pointsMatch = editField.match(/^(updated the points to )(.+)$/);
@@ -113,7 +114,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: pointsMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "added to sprint: X"
       const sprintAddMatch = editField.match(/^(added to sprint: )(.+)$/);
       if (sprintAddMatch) {
@@ -123,9 +124,11 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: sprintAddMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "removed from sprint: X"
-      const sprintRemoveMatch = editField.match(/^(removed from sprint: )(.+)$/);
+      const sprintRemoveMatch = editField.match(
+        /^(removed from sprint: )(.+)$/,
+      );
       if (sprintRemoveMatch) {
         return {
           username,
@@ -133,7 +136,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: sprintRemoveMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "changed the priority to X"
       const priorityMatch = editField.match(/^(changed the priority to )(.+)$/);
       if (priorityMatch) {
@@ -143,7 +146,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: priorityMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "changed the status to X"
       const statusMatch = editField.match(/^(changed the status to )(.+)$/);
       if (statusMatch) {
@@ -153,7 +156,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: statusMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "updated the due date to X"
       const dueDateMatch = editField.match(/^(updated the due date to )(.+)$/);
       if (dueDateMatch) {
@@ -163,7 +166,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: dueDateMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "moved to board: X"
       const boardMatch = editField.match(/^(moved to board: )(.+)$/);
       if (boardMatch) {
@@ -173,7 +176,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: boardMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "assigned to X"
       const assignMatch = editField.match(/^(assigned to )(.+)$/);
       if (assignMatch) {
@@ -183,7 +186,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: assignMatch[2], highlight: true }],
         };
       }
-      
+
       // Pattern: "unassigned X"
       const unassignMatch = editField.match(/^(unassigned )(.+)$/);
       if (unassignMatch) {
@@ -193,7 +196,7 @@ export function formatActivityMessage(activity: Activity): FormattedActivity {
           highlightedParts: [{ text: unassignMatch[2], highlight: true }],
         };
       }
-      
+
       // Default: no highlighting
       return {
         username,

@@ -13,10 +13,7 @@ type Props = {
   cropShape?: "round" | "rect";
 };
 
-async function getCroppedImg(
-  imageSrc: string,
-  pixelCrop: Area,
-): Promise<Blob> {
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = new Image();
   image.crossOrigin = "anonymous";
   await new Promise<void>((resolve, reject) => {
@@ -55,7 +52,14 @@ async function getCroppedImg(
   });
 }
 
-const ImageCropModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspectRatio = 1, cropShape = "round" }: Props) => {
+const ImageCropModal = ({
+  isOpen,
+  onClose,
+  imageSrc,
+  onCropComplete,
+  aspectRatio = 1,
+  cropShape = "round",
+}: Props) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -71,7 +75,11 @@ const ImageCropModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspectRatio
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} name={cropShape === "round" ? "Crop Profile Picture" : "Crop Image"}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      name={cropShape === "round" ? "Crop Profile Picture" : "Crop Image"}
+    >
       <div className="relative h-72 w-full">
         <Cropper
           image={imageSrc}

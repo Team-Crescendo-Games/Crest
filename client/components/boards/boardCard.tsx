@@ -1,10 +1,10 @@
-import { Board } from "@/state/api"; 
+import { Board } from "@/state/api";
 import { BiColumns } from "react-icons/bi";
 import Link from "next/link";
 import { BOARD_MAIN_COLOR } from "@/lib/entityColors";
 
 type Props = {
-  board: Board; 
+  board: Board;
 };
 
 const BoardCard = ({ board }: Props) => {

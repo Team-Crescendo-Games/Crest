@@ -14,7 +14,6 @@ import {
   useAddTaskToSprintMutation,
   useReorderBoardsMutation,
   useGetWorkspacesQuery,
-  useAddWorkspaceMemberMutation,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
@@ -73,7 +72,9 @@ const Sidebar = () => {
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const [showActiveSprintsOnly, setShowActiveSprintsOnly] = useState(true);
   const [showActiveBoardsOnly, setShowActiveBoardsOnly] = useState(true);
-  const [fullscreenSection, setFullscreenSection] = useState<"boards" | "sprints" | null>(null);
+  const [fullscreenSection, setFullscreenSection] = useState<
+    "boards" | "sprints" | null
+  >(null);
 
   const [isModalNewBoardOpen, setIsModalNewBoardOpen] = useState(false);
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
@@ -138,6 +139,7 @@ const Sidebar = () => {
       }
       if (!hasShownWelcomeRef.current) {
         hasShownWelcomeRef.current = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsModalNewWorkspaceOpen(true);
       }
     }
@@ -345,7 +347,9 @@ const Sidebar = () => {
         >
           <div className="relative shrink-0">
             <button
-              onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+              onClick={() =>
+                setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)
+              }
               className="shrink-0 cursor-pointer rounded-lg transition-opacity hover:opacity-80"
             >
               {activeWorkspace?.iconExt ? (
@@ -364,7 +368,9 @@ const Sidebar = () => {
               )}
             </button>
             {isWorkspaceDropdownOpen && (
-              <div className={`absolute z-50 mt-1 animate-scale-in overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary ${isSidebarCollapsed ? "left-full top-0 ml-1 w-48" : "left-0 top-full w-48"}`}>
+              <div
+                className={`absolute z-50 mt-1 animate-scale-in overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-tertiary ${isSidebarCollapsed ? "left-full top-0 ml-1 w-48" : "left-0 top-full w-48"}`}
+              >
                 <div className="max-h-48 overflow-y-auto">
                   {workspaces?.map((ws) => (
                     <button
@@ -403,7 +409,9 @@ const Sidebar = () => {
                     }}
                     className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-90"
                     style={{
-                      backgroundColor: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK,
+                      backgroundColor: isDarkMode
+                        ? APP_ACCENT_LIGHT
+                        : APP_ACCENT_DARK,
                       color: isDarkMode ? "#1f2937" : "#ffffff",
                     }}
                   >
@@ -432,7 +440,6 @@ const Sidebar = () => {
             </>
           )}
         </div>
-
       </div>
 
       {/* CREATE BUTTON */}
@@ -486,7 +493,7 @@ const Sidebar = () => {
         <>
           {fullscreenSection === "boards" ? (
             /* FULLSCREEN BOARDS */
-            <div className="animate-fade-in flex min-h-0 flex-1 flex-col pt-3">
+            <div className="flex min-h-0 flex-1 animate-fade-in flex-col pt-3">
               <div className="flex shrink-0 items-center gap-2 bg-gray-50 px-4 py-2 dark:bg-dark-bg">
                 <button
                   onClick={() => setFullscreenSection(null)}
@@ -494,14 +501,23 @@ const Sidebar = () => {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <BiColumns className="h-4 w-4" style={{ color: BOARD_MAIN_COLOR }} />
-                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">Boards</span>
+                <BiColumns
+                  className="h-4 w-4"
+                  style={{ color: BOARD_MAIN_COLOR }}
+                />
+                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Boards
+                </span>
                 <span
                   role="button"
                   onClick={() => setShowActiveBoardsOnly((prev) => !prev)}
                   className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
                 >
-                  {showActiveBoardsOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {showActiveBoardsOnly ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
                   <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
                     {showActiveBoardsOnly ? "Show archived" : "Hide archived"}
                   </span>
@@ -545,13 +561,15 @@ const Sidebar = () => {
                   </div>
                 ))}
                 {(!filteredBoards || filteredBoards.length === 0) && (
-                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">No boards</p>
+                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">
+                    No boards
+                  </p>
                 )}
               </div>
             </div>
           ) : fullscreenSection === "sprints" ? (
             /* FULLSCREEN SPRINTS */
-            <div className="animate-fade-in flex min-h-0 flex-1 flex-col pt-3">
+            <div className="flex min-h-0 flex-1 animate-fade-in flex-col pt-3">
               <div className="flex shrink-0 items-center gap-2 bg-gray-50 px-4 py-2 dark:bg-dark-bg">
                 <button
                   onClick={() => setFullscreenSection(null)}
@@ -560,13 +578,19 @@ const Sidebar = () => {
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <Zap className="h-4 w-4" style={{ color: SPRINT_MAIN_COLOR }} />
-                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">Sprints</span>
+                <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Sprints
+                </span>
                 <span
                   role="button"
                   onClick={() => setShowActiveSprintsOnly((prev) => !prev)}
                   className="group/tip relative rounded p-0.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-dark-tertiary"
                 >
-                  {showActiveSprintsOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {showActiveSprintsOnly ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
                   <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
                     {showActiveSprintsOnly ? "Show archived" : "Hide archived"}
                   </span>
@@ -608,311 +632,341 @@ const Sidebar = () => {
                   </div>
                 ))}
                 {(!filteredSprints || filteredSprints.length === 0) && (
-                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">No sprints</p>
+                  <p className="px-6 py-4 text-sm text-gray-400 dark:text-neutral-500">
+                    No sprints
+                  </p>
                 )}
               </div>
             </div>
           ) : (
-        <>
-          {/* OVERVIEW SECTION */}
-          <div className="shrink-0 pt-3">
-            {isAdmin && (
-              <div className="shrink-0">
-                <button
-                  onClick={() => setShowAdmin((prev) => !prev)}
-                  className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-red-500 transition-all hover:pl-7 hover:text-red-600 hover:scale-[1.01] dark:bg-dark-bg dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>SYSTEM ADMIN</span>
-                  </div>
-                  <ChevronDown
-                    className={`h-5 w-5 transition-transform duration-300 ${showAdmin ? "rotate-180" : "rotate-0"}`}
-                  />
-                </button>
-                {showAdmin && (
-                  <div className="overflow-hidden">
-                    <div
-                      className="animate-slide-down opacity-0"
-                      style={{ animationDelay: "0ms" }}
+            <>
+              {/* OVERVIEW SECTION */}
+              <div className="shrink-0 pt-3">
+                {isAdmin && (
+                  <div className="shrink-0">
+                    <button
+                      onClick={() => setShowAdmin((prev) => !prev)}
+                      className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-red-500 transition-all hover:scale-[1.01] hover:pl-7 hover:text-red-600 dark:bg-dark-bg dark:text-red-400 dark:hover:text-red-300"
                     >
-                      <SidebarSubLinkWithIcon
-                        icon={Users}
-                        label="Users"
-                        href="/admin/users"
-                        isDarkMode={isDarkMode}
-                        variant="admin"
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>SYSTEM ADMIN</span>
+                      </div>
+                      <ChevronDown
+                        className={`h-5 w-5 transition-transform duration-300 ${showAdmin ? "rotate-180" : "rotate-0"}`}
                       />
-                    </div>
-                    <div
-                      className="animate-slide-down opacity-0"
-                      style={{ animationDelay: "50ms" }}
-                    >
-                      <SidebarSubLinkWithIcon
-                        icon={Building2}
-                        label="Workspaces"
-                        href="/admin/workspaces"
-                        isDarkMode={isDarkMode}
-                        variant="admin"
-                      />
-                    </div>
+                    </button>
+                    {showAdmin && (
+                      <div className="overflow-hidden">
+                        <div
+                          className="animate-slide-down opacity-0"
+                          style={{ animationDelay: "0ms" }}
+                        >
+                          <SidebarSubLinkWithIcon
+                            icon={Users}
+                            label="Users"
+                            href="/admin/users"
+                            isDarkMode={isDarkMode}
+                            variant="admin"
+                          />
+                        </div>
+                        <div
+                          className="animate-slide-down opacity-0"
+                          style={{ animationDelay: "50ms" }}
+                        >
+                          <SidebarSubLinkWithIcon
+                            icon={Building2}
+                            label="Workspaces"
+                            href="/admin/workspaces"
+                            isDarkMode={isDarkMode}
+                            variant="admin"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
+                <div className="px-6 pb-1 pt-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Overview
+                  </span>
+                </div>
+                <SidebarSubLinkWithIcon
+                  icon={BarChart3}
+                  label="Dashboard"
+                  href="/dashboard"
+                  isDarkMode={isDarkMode}
+                />
+                <SidebarSubLinkWithIcon
+                  icon={ClipboardList}
+                  label="My Tasks"
+                  href={userId ? `/users/${userId}` : "/users"}
+                  isDarkMode={isDarkMode}
+                  isActiveOverride={
+                    userId ? pathname === `/users/${userId}` : false
+                  }
+                />
+                <SidebarSubLinkWithIcon
+                  icon={Bell}
+                  label="Inbox"
+                  href="/inbox"
+                  isDarkMode={isDarkMode}
+                  badge={unreadCount}
+                />
               </div>
-            )}
-            <div className="px-6 pb-1 pt-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Overview
-              </span>
-            </div>
-            <SidebarSubLinkWithIcon
-              icon={BarChart3}
-              label="Dashboard"
-              href="/dashboard"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={ClipboardList}
-              label="My Tasks"
-              href={userId ? `/users/${userId}` : "/users"}
-              isDarkMode={isDarkMode}
-              isActiveOverride={
-                userId ? pathname === `/users/${userId}` : false
-              }
-            />
-            <SidebarSubLinkWithIcon
-              icon={Bell}
-              label="Inbox"
-              href="/inbox"
-              isDarkMode={isDarkMode}
-              badge={unreadCount}
-            />
-          </div>
 
-          {/* WORKSPACE SECTION */}
-          <div className="relative z-0 shrink-0">
-            <div className="px-6 pb-1 pt-3">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Workspace
-              </span>
-            </div>
-            <SidebarSubLinkWithIcon
-              icon={Search}
-              label="Search"
-              href="/search"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Tag}
-              label="Tags"
-              href="/tags"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Users}
-              label="Team"
-              href="/team"
-              isDarkMode={isDarkMode}
-            />
-            <SidebarSubLinkWithIcon
-              icon={Settings}
-              label="Settings"
-              href="/settings/workspace"
-              isDarkMode={isDarkMode}
-            />
-          </div>
-
-          {/* BOARDS & SPRINTS */}
-          <div className="flex min-h-0 flex-1 flex-col">
-            {/* BOARDS */}
-            <div
-              className="flex min-h-0 flex-col"
-              style={{ maxHeight: showBoards && filteredBoards && filteredBoards.length > 0 ? "50%" : "auto" }}
-            >
-              <button
-                onClick={() => filteredBoards && filteredBoards.length > 0 && setShowBoards((prev) => !prev)}
-                className="relative z-20 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
-              >
-                <div className="flex items-center gap-2">
-                  <BiColumns
-                    className="h-4 w-4"
-                    style={{ color: BOARD_MAIN_COLOR }}
-                  />
-                  <span>Boards</span>
-                </div>
-                <div className="flex items-center gap-1 overflow-visible">
-                  {filteredBoards && filteredBoards.length > 0 && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowActiveBoardsOnly((prev) => !prev);
-                      }}
-                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                    >
-                      {showActiveBoardsOnly ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                        {showActiveBoardsOnly ? "Show archived" : "Hide archived"}
-                      </span>
-                    </span>
-                  )}
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsModalNewBoardOpen(true);
-                    }}
-                    className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                      New board
-                    </span>
+              {/* WORKSPACE SECTION */}
+              <div className="relative z-0 shrink-0">
+                <div className="px-6 pb-1 pt-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Workspace
                   </span>
-                  {filteredBoards && filteredBoards.length > 0 && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFullscreenSection("boards");
-                      }}
-                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                    >
-                      <Maximize2 className="h-3.5 w-3.5" />
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                        Expand
-                      </span>
-                    </span>
-                  )}
-                  {filteredBoards && filteredBoards.length > 0 && (
-                    <ChevronDown
-                      className={`h-5 w-5 transition-transform duration-300 ${showBoards ? "rotate-180" : "rotate-0"}`}
-                    />
-                  )}
                 </div>
-              </button>
-              {showBoards && filteredBoards && filteredBoards.length > 0 && (
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {filteredBoards.map((board, index) => (
-                    <div
-                      key={board.id}
-                      className="animate-slide-down opacity-0"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <DraggableBoardLink
-                        boardId={board.id}
-                        index={index}
-                        label={board.name}
-                        href={`/boards/${board.id}`}
-                        isInactive={board.isActive === false}
-                        onDropTask={handleMoveTaskToBoard}
-                        onReorder={handleReorderBoards}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                <SidebarSubLinkWithIcon
+                  icon={Search}
+                  label="Search"
+                  href="/search"
+                  isDarkMode={isDarkMode}
+                />
+                <SidebarSubLinkWithIcon
+                  icon={Tag}
+                  label="Tags"
+                  href="/tags"
+                  isDarkMode={isDarkMode}
+                />
+                <SidebarSubLinkWithIcon
+                  icon={Users}
+                  label="Team"
+                  href="/team"
+                  isDarkMode={isDarkMode}
+                />
+                <SidebarSubLinkWithIcon
+                  icon={Settings}
+                  label="Settings"
+                  href="/settings/workspace"
+                  isDarkMode={isDarkMode}
+                />
+              </div>
 
-            {/* SPRINTS */}
-            <div
-              className="flex min-h-0 flex-col"
-              style={{ maxHeight: showSprints && filteredSprints && filteredSprints.length > 0 ? "50%" : "auto" }}
-            >
-              <button
-                onClick={() => filteredSprints && filteredSprints.length > 0 && setShowSprints((prev) => !prev)}
-                className="relative z-10 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
-              >
-                <div className="flex items-center gap-2">
-                  <Zap
-                    className="h-4 w-4"
-                    style={{ color: SPRINT_MAIN_COLOR }}
-                  />
-                  <span>Sprints</span>
-                </div>
-                <div className="flex items-center gap-1 overflow-visible">
-                  {filteredSprints && filteredSprints.length > 0 && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowActiveSprintsOnly((prev) => !prev);
-                      }}
-                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                    >
-                      {showActiveSprintsOnly ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                        {showActiveSprintsOnly ? "Show archived" : "Hide archived"}
-                      </span>
-                    </span>
-                  )}
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsModalNewSprintOpen(true);
-                    }}
-                    className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+              {/* BOARDS & SPRINTS */}
+              <div className="flex min-h-0 flex-1 flex-col">
+                {/* BOARDS */}
+                <div
+                  className="flex min-h-0 flex-col"
+                  style={{
+                    maxHeight:
+                      showBoards && filteredBoards && filteredBoards.length > 0
+                        ? "50%"
+                        : "auto",
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      filteredBoards &&
+                      filteredBoards.length > 0 &&
+                      setShowBoards((prev) => !prev)
+                    }
+                    className="relative z-20 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:scale-[1.01] hover:pl-7 hover:text-gray-700 dark:bg-dark-bg dark:hover:text-gray-300"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                      New sprint
-                    </span>
-                  </span>
-                  {filteredSprints && filteredSprints.length > 0 && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFullscreenSection("sprints");
-                      }}
-                      className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
-                    >
-                      <Maximize2 className="h-3.5 w-3.5" />
-                      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
-                        Expand
-                      </span>
-                    </span>
-                  )}
-                  {filteredSprints && filteredSprints.length > 0 && (
-                    <ChevronDown
-                      className={`h-5 w-5 transition-transform duration-300 ${showSprints ? "rotate-180" : "rotate-0"}`}
-                    />
-                  )}
-                </div>
-              </button>
-              {showSprints && filteredSprints && filteredSprints.length > 0 && (
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  {filteredSprints.map((sprint, index) => (
-                    <div
-                      key={sprint.id}
-                      className="animate-slide-down opacity-0"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <DroppableSprintLink
-                        sprintId={sprint.id}
-                        label={sprint.title}
-                        href={`/sprints/${sprint.id}`}
-                        isInactive={sprint.isActive === false}
-                        onDropTask={handleAddTaskToSprint}
+                    <div className="flex items-center gap-2">
+                      <BiColumns
+                        className="h-4 w-4"
+                        style={{ color: BOARD_MAIN_COLOR }}
                       />
+                      <span>Boards</span>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-1 overflow-visible">
+                      {filteredBoards && filteredBoards.length > 0 && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActiveBoardsOnly((prev) => !prev);
+                          }}
+                          className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                        >
+                          {showActiveBoardsOnly ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                            {showActiveBoardsOnly
+                              ? "Show archived"
+                              : "Hide archived"}
+                          </span>
+                        </span>
+                      )}
+                      <span
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsModalNewBoardOpen(true);
+                        }}
+                        className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                          New board
+                        </span>
+                      </span>
+                      {filteredBoards && filteredBoards.length > 0 && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFullscreenSection("boards");
+                          }}
+                          className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                        >
+                          <Maximize2 className="h-3.5 w-3.5" />
+                          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                            Expand
+                          </span>
+                        </span>
+                      )}
+                      {filteredBoards && filteredBoards.length > 0 && (
+                        <ChevronDown
+                          className={`h-5 w-5 transition-transform duration-300 ${showBoards ? "rotate-180" : "rotate-0"}`}
+                        />
+                      )}
+                    </div>
+                  </button>
+                  {showBoards &&
+                    filteredBoards &&
+                    filteredBoards.length > 0 && (
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                        {filteredBoards.map((board, index) => (
+                          <div
+                            key={board.id}
+                            className="animate-slide-down opacity-0"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <DraggableBoardLink
+                              boardId={board.id}
+                              index={index}
+                              label={board.name}
+                              href={`/boards/${board.id}`}
+                              isInactive={board.isActive === false}
+                              onDropTask={handleMoveTaskToBoard}
+                              onReorder={handleReorderBoards}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
-              )}
-            </div>
-          </div>
-        </>
+
+                {/* SPRINTS */}
+                <div
+                  className="flex min-h-0 flex-col"
+                  style={{
+                    maxHeight:
+                      showSprints &&
+                      filteredSprints &&
+                      filteredSprints.length > 0
+                        ? "50%"
+                        : "auto",
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      filteredSprints &&
+                      filteredSprints.length > 0 &&
+                      setShowSprints((prev) => !prev)
+                    }
+                    className="relative z-10 flex w-full shrink-0 cursor-pointer items-center justify-between overflow-visible rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:scale-[1.01] hover:pl-7 hover:text-gray-700 dark:bg-dark-bg dark:hover:text-gray-300"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap
+                        className="h-4 w-4"
+                        style={{ color: SPRINT_MAIN_COLOR }}
+                      />
+                      <span>Sprints</span>
+                    </div>
+                    <div className="flex items-center gap-1 overflow-visible">
+                      {filteredSprints && filteredSprints.length > 0 && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActiveSprintsOnly((prev) => !prev);
+                          }}
+                          className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                        >
+                          {showActiveSprintsOnly ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                            {showActiveSprintsOnly
+                              ? "Show archived"
+                              : "Hide archived"}
+                          </span>
+                        </span>
+                      )}
+                      <span
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsModalNewSprintOpen(true);
+                        }}
+                        className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                          New sprint
+                        </span>
+                      </span>
+                      {filteredSprints && filteredSprints.length > 0 && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFullscreenSection("sprints");
+                          }}
+                          className="group/tip relative rounded p-0.5 transition-all duration-200 hover:scale-110 hover:bg-gray-200 active:scale-95 dark:hover:bg-dark-tertiary"
+                        >
+                          <Maximize2 className="h-3.5 w-3.5" />
+                          <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover/tip:opacity-100 dark:bg-gray-700">
+                            Expand
+                          </span>
+                        </span>
+                      )}
+                      {filteredSprints && filteredSprints.length > 0 && (
+                        <ChevronDown
+                          className={`h-5 w-5 transition-transform duration-300 ${showSprints ? "rotate-180" : "rotate-0"}`}
+                        />
+                      )}
+                    </div>
+                  </button>
+                  {showSprints &&
+                    filteredSprints &&
+                    filteredSprints.length > 0 && (
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                        {filteredSprints.map((sprint, index) => (
+                          <div
+                            key={sprint.id}
+                            className="animate-slide-down opacity-0"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <DroppableSprintLink
+                              sprintId={sprint.id}
+                              label={sprint.title}
+                              href={`/sprints/${sprint.id}`}
+                              isInactive={sprint.isActive === false}
+                              onDropTask={handleAddTaskToSprint}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              </div>
+            </>
           )}
-      </>
+        </>
       )}
 
       {/* BOTTOM SECTION */}
@@ -951,7 +1005,9 @@ const Sidebar = () => {
             )}
             {!isSidebarCollapsed && (
               <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
-                {currentUserDetails?.fullName || currentUserDetails?.username || "Profile"}
+                {currentUserDetails?.fullName ||
+                  currentUserDetails?.username ||
+                  "Profile"}
               </span>
             )}
           </Link>
@@ -1045,6 +1101,7 @@ interface SidebarLinkProps {
   variant?: "default" | "admin";
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SidebarLink = ({
   href,
   icon: Icon,
@@ -1134,9 +1191,15 @@ const SidebarSubLinkWithIcon = ({
     <Link href={href} className="w-full">
       <div
         className={`relative flex cursor-pointer items-center gap-2 transition-colors ${
-          isAdmin ? "hover:bg-red-50 dark:hover:bg-red-900/20" : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
+          isAdmin
+            ? "hover:bg-red-50 dark:hover:bg-red-900/20"
+            : "hover:bg-gray-100 dark:hover:bg-dark-tertiary"
         } ${
-          isActive ? (isAdmin ? "bg-red-50 dark:bg-red-900/20" : "bg-gray-100 dark:bg-dark-tertiary") : ""
+          isActive
+            ? isAdmin
+              ? "bg-red-50 dark:bg-red-900/20"
+              : "bg-gray-100 dark:bg-dark-tertiary"
+            : ""
         } justify-start px-6 py-2 pl-10`}
       >
         {isActive && (
@@ -1147,11 +1210,19 @@ const SidebarSubLinkWithIcon = ({
         )}
 
         <Icon
-          className={isAdmin ? "h-4 w-4 text-red-500 dark:text-red-400" : "h-4 w-4 text-gray-600 dark:text-gray-300"}
+          className={
+            isAdmin
+              ? "h-4 w-4 text-red-500 dark:text-red-400"
+              : "h-4 w-4 text-gray-600 dark:text-gray-300"
+          }
         />
 
         <span
-          className={isAdmin ? "text-sm text-red-600 dark:text-red-400" : "text-sm text-gray-700 dark:text-gray-200"}
+          className={
+            isAdmin
+              ? "text-sm text-red-600 dark:text-red-400"
+              : "text-sm text-gray-700 dark:text-gray-200"
+          }
         >
           {label}
         </span>

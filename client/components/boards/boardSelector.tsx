@@ -7,9 +7,9 @@ import { X, ChevronDown } from "lucide-react";
 import { BiColumns } from "react-icons/bi";
 
 type BoardSelectorProps = {
-  boards: Board[]; 
-  selectedBoard: Board | null; 
-  onSelect: (board: Board | null) => void; 
+  boards: Board[];
+  selectedBoard: Board | null;
+  onSelect: (board: Board | null) => void;
   label?: string;
   placeholder?: string;
   inputClassName?: string;

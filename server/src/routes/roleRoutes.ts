@@ -1,10 +1,5 @@
 import { Router } from "express";
-import {
-    getRoles,
-    createRole,
-    updateRole,
-    deleteRole,
-} from "../controllers/roleController.ts";
+import { getRoles, createRole, updateRole, deleteRole } from "../controllers/roleController.ts";
 import { requirePermission } from "../middleware/permissionMiddleware.ts";
 import { PERMISSIONS } from "../lib/permissions.ts";
 

@@ -120,7 +120,12 @@ function generatePeriods(
  * GET /analytics/points?userId=:userId&workspaceId=:workspaceId&groupBy=:groupBy&startDate=:startDate&endDate=:endDate
  */
 export const getPointsAnalytics = async (
-    req: Request<{}, {}, {}, PointsAnalyticsQuery>,
+    req: Request<
+        Record<string, never>,
+        PointsDataPoint[] | { error: string },
+        Record<string, never>,
+        PointsAnalyticsQuery
+    >,
     res: Response<PointsDataPoint[] | { error: string }>
 ): Promise<void> => {
     const { userId, workspaceId, groupBy, startDate, endDate } = req.query;

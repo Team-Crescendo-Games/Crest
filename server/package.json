@@ -11,19 +11,20 @@
     "db-seed": "prisma db seed",
     "db-rs": "prisma migrate reset --force",
     "db-gen": "npx prisma generate",
-    "db-rs-full": "rm -rf prisma/migrations && prisma migrate reset -f && npx prisma migrate dev --name init && prisma db seed && npx prisma generate",
-    "drf": "npm run db-rs-full",
-    "db-rs-prod": "npm run db-rs && npx prisma migrate dev --name init && npx prisma generate",
+    "db-deploy": "npx prisma migrate deploy",
     "aws": "tsx scripts/aws-setup.ts",
     "deploy-dev": "pm2 start ecosystem.config.cjs --only crest-dev",
     "deploy-prod": "pm2 start ecosystem.config.cjs --only crest-prod",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "release": "npm run format && npm run lint && npm run build && vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
@@ -32,6 +33,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "concurrently": "^9.2.1",
+    "eslint": "^10.0.1",
     "fast-check": "^4.5.3",
     "nodemon": "^3.1.11",
     "prettier": "^3.8.1",
@@ -40,6 +42,7 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0",
     "vitest": "^4.0.18"
   },
   "dependencies": {

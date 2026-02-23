@@ -52,7 +52,7 @@ const SubtaskHierarchy = ({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 rounded px-2 py-1 text-left hover:bg-gray-100"
+            className="flex w-full items-center gap-2 rounded px-2 py-1 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
@@ -71,7 +71,7 @@ const SubtaskHierarchy = ({
                   <button
                     type="button"
                     onClick={() => onTaskClick(subtask.id)}
-                    className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 rounded px-2 py-0.5 text-left hover:bg-gray-100"
+                    className="flex w-full items-center gap-2 rounded px-2 py-0.5 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                   >
                     {/* Subtask Title */}
                     <span className="min-w-0 flex-1 truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
@@ -104,7 +104,7 @@ const SubtaskHierarchy = ({
                         className="h-5 w-5 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="dark:bg-dark-tertiary flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary">
                         <User className="h-3 w-3 text-gray-500 dark:text-neutral-500" />
                       </div>
                     )}

@@ -27,7 +27,7 @@ import FilterDropdown from "@/components/UI/generic/FilterDropdown";
 import DatePicker from "@/components/DatePicker";
 import { useAppSelector } from "@/app/redux";
 import { parseLocalDate } from "@/lib/dateUtils";
-import { useWorkspace } from "@/lib/useWorkspace"; 
+import { useWorkspace } from "@/lib/useWorkspace";
 
 type HeaderToolbarProps = {
   filterState: FilterState;

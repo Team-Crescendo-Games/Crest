@@ -1,7 +1,7 @@
 "use client";
 
-import { useGetTasksAssignedToUserQuery, useGetBoardsQuery } from "@/state/api"; 
-import BoardView from "@/components/boards/boardView"; 
+import { useGetTasksAssignedToUserQuery, useGetBoardsQuery } from "@/state/api";
+import BoardView from "@/components/boards/boardView";
 import { FilterState, SortState } from "@/lib/filterTypes";
 import { useWorkspace } from "@/lib/useWorkspace";
 
@@ -18,7 +18,7 @@ const UserBoardView = ({
   filterState,
   sortState,
 }: Props) => {
-  const { activeWorkspaceId } = useWorkspace(); 
+  const { activeWorkspaceId } = useWorkspace();
 
   const {
     data: tasks,
@@ -28,7 +28,7 @@ const UserBoardView = ({
 
   const { data: boards = [] } = useGetBoardsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,
-  }); 
+  });
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;

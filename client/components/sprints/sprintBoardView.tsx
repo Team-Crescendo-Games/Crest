@@ -21,7 +21,7 @@ type Props = {
  * Uses the shared BoardView component with sprint tasks
  */
 const SprintBoardView = ({
-  sprintId, 
+  sprintId,
   tasks,
   setIsModalNewTaskOpen,
   filterState,
@@ -33,7 +33,7 @@ const SprintBoardView = ({
 }: Props) => {
   return (
     <BoardView
-      boardId={`sprint-${sprintId}`} 
+      boardId={`sprint-${sprintId}`}
       tasks={tasks}
       setIsModalNewTaskOpen={setIsModalNewTaskOpen}
       filterState={filterState}

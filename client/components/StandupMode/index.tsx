@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useGetUsersQuery, getUserProfileS3Key, User as UserType } from "@/state/api";
+import {
+  useGetUsersQuery,
+  getUserProfileS3Key,
+  User as UserType,
+} from "@/state/api";
 import S3Image from "@/components/S3Image";
 import { User, Shuffle } from "lucide-react";
 import { SPRINT_MAIN_COLOR } from "@/lib/entityColors";
@@ -27,6 +31,7 @@ const StandupMode = ({ selectedUserId, onSelectUser }: Props) => {
   // Initialize shuffled list when users load
   useEffect(() => {
     if (users.length > 0 && shuffledUsers.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShuffledUsers(shuffleArray(users));
     }
   }, [users, shuffledUsers.length]);
@@ -37,8 +42,8 @@ const StandupMode = ({ selectedUserId, onSelectUser }: Props) => {
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 pt-8 pb-3 xl:px-6">
-      <span className="text-xs font-medium tracking-wide text-purple-600 uppercase dark:text-purple-400">
+    <div className="flex items-center gap-2 px-4 pb-3 pt-8 xl:px-6">
+      <span className="text-xs font-medium uppercase tracking-wide text-purple-600 dark:text-purple-400">
         Standup
       </span>
       <button
@@ -56,7 +61,7 @@ const StandupMode = ({ selectedUserId, onSelectUser }: Props) => {
           className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
             selectedUserId === null
               ? "ring-2 ring-purple-500 ring-offset-1 dark:ring-offset-gray-900"
-              : "dark:bg-dark-tertiary bg-gray-200 text-gray-600 opacity-50 hover:opacity-80 dark:text-gray-300"
+              : "bg-gray-200 text-gray-600 opacity-50 hover:opacity-80 dark:bg-dark-tertiary dark:text-gray-300"
           }`}
           style={
             selectedUserId === null
@@ -99,14 +104,17 @@ const StandupMode = ({ selectedUserId, onSelectUser }: Props) => {
                   />
                 ) : (
                   <div
-                    className="dark:bg-dark-tertiary flex items-center justify-center rounded-full bg-gray-200"
+                    className="flex items-center justify-center rounded-full bg-gray-200 dark:bg-dark-tertiary"
                     style={{ width: 32, height: 32 }}
                   >
-                    <User className="text-gray-500 dark:text-gray-400" size={19} />
+                    <User
+                      className="text-gray-500 dark:text-gray-400"
+                      size={19}
+                    />
                   </div>
                 )}
               </div>
-              <div className="pointer-events-none absolute top-full left-1/2 z-30 mt-1 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
                 {displayName}
               </div>
             </button>

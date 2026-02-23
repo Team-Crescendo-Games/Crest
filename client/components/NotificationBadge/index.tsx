@@ -21,7 +21,7 @@ const NotificationBadge = ({ count, onClick }: NotificationBadgeProps) => {
 
       {/* Badge - only show when count > 0 (Requirement 10.2) */}
       {count > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
           {displayCount}
         </span>
       )}

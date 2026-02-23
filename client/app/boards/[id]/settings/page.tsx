@@ -61,8 +61,7 @@ export default function BoardSettings({ params }: Props) {
   if (!board) return <ErrorComponent />;
 
   const hasUnsavedChanges =
-    name !== board.name ||
-    description !== (board.description || "");
+    name !== board.name || description !== (board.description || "");
 
   const inputStyles =
     "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none focus:outline-none focus:border-gray-400";
@@ -108,7 +107,9 @@ export default function BoardSettings({ params }: Props) {
             onClick={handleSave}
             disabled={isUpdating || !name.trim() || !hasUnsavedChanges}
             className={`rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200 ${
-              isUpdating || !name.trim() || !hasUnsavedChanges ? "cursor-not-allowed opacity-50" : ""
+              isUpdating || !name.trim() || !hasUnsavedChanges
+                ? "cursor-not-allowed opacity-50"
+                : ""
             }`}
           >
             {isUpdating ? "Saving..." : "Save Changes"}

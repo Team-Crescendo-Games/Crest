@@ -369,7 +369,7 @@ export function applyFilters(tasks: Task[], filterState: FilterState): Task[] {
   });
 }
 
-import { SortState, SortField } from "@/lib/filterTypes";
+import { SortState } from "@/lib/filterTypes";
 
 /**
  * Priority order for sorting (lower number = higher priority)

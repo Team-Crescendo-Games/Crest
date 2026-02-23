@@ -17,9 +17,17 @@ router.get("/discover", getDiscoverableWorkspaces);
 router.post("/:workspaceId/apply", applyToWorkspace);
 
 // Protected: get applications for a workspace
-router.get("/:workspaceId/applications", requirePermission(PERMISSIONS.MANAGE_APPLICATIONS), getWorkspaceApplications);
+router.get(
+    "/:workspaceId/applications",
+    requirePermission(PERMISSIONS.MANAGE_APPLICATIONS),
+    getWorkspaceApplications
+);
 
 // Protected: approve/reject an application
-router.patch("/:workspaceId/applications/:applicationId", requirePermission(PERMISSIONS.MANAGE_APPLICATIONS), resolveApplication);
+router.patch(
+    "/:workspaceId/applications/:applicationId",
+    requirePermission(PERMISSIONS.MANAGE_APPLICATIONS),
+    resolveApplication
+);
 
 export default router;

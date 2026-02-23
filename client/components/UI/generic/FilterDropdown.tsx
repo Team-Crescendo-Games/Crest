@@ -9,7 +9,7 @@ import {
   initialFilterState,
 } from "@/lib/filterTypes";
 import { isFilterActive } from "@/lib/filterUtils";
-import { Tag, Priority, Board } from "@/state/api"; 
+import { Tag, Priority, Board } from "@/state/api";
 
 interface FilterDropdownProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface FilterDropdownProps {
   filterState: FilterState;
   onFilterChange: (newState: FilterState) => void;
   tags: Tag[];
-  boards?: Board[]; 
+  boards?: Board[];
 }
 
 const FilterDropdown = ({
@@ -26,7 +26,7 @@ const FilterDropdown = ({
   filterState,
   onFilterChange,
   tags,
-  boards = [], 
+  boards = [],
 }: FilterDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -365,28 +365,24 @@ const FilterDropdown = ({
               <div className="mt-2 space-y-2">
                 {boards
                   .filter((b) => b.isActive)
-                  .map(
-                    (
-                      board,
-                    ) => (
-                      <label
-                        key={board.id}
-                        className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filterState.selectedBoardIds?.includes(
-                            board.id,
-                          )} // Added optional chaining just in case
-                          onChange={(e) =>
-                            handleBoardToggle(board.id, e.target.checked)
-                          }
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
-                        />
-                        <span className="truncate">{board.name}</span>
-                      </label>
-                    ),
-                  )}
+                  .map((board) => (
+                    <label
+                      key={board.id}
+                      className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filterState.selectedBoardIds?.includes(
+                          board.id,
+                        )} // Added optional chaining just in case
+                        onChange={(e) =>
+                          handleBoardToggle(board.id, e.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-dark-tertiary dark:bg-dark-tertiary"
+                      />
+                      <span className="truncate">{board.name}</span>
+                    </label>
+                  ))}
               </div>
             )}
           </div>

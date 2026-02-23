@@ -45,11 +45,17 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
   const { data: sprints = [] } = useGetSprintsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,
   });
-  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(activeWorkspaceId!, {
-    skip: !activeWorkspaceId,
-  });
+  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    {
+      skip: !activeWorkspaceId,
+    },
+  );
   const users = useMemo(
-    () => workspaceMembers.map((m) => m.user).filter((u): u is User => u !== undefined),
+    () =>
+      workspaceMembers
+        .map((m) => m.user)
+        .filter((u): u is User => u !== undefined),
     [workspaceMembers],
   );
 
@@ -118,12 +124,8 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
         description: task.description || "",
         status: (task.status as Status) || Status.InputQueue,
         priority: (task.priority as Priority) || Priority.Backlog,
-        startDate: task.startDate
-          ? utcToDateInputValue(task.startDate)
-          : "",
-        dueDate: task.dueDate
-          ? utcToDateInputValue(task.dueDate)
-          : "",
+        startDate: task.startDate ? utcToDateInputValue(task.startDate) : "",
+        dueDate: task.dueDate ? utcToDateInputValue(task.dueDate) : "",
         points: task.points?.toString() || "",
         selectedTagIds: task.taskTags?.map((tt) => tt.tag.id) || [],
         selectedAssignees: assignees,
@@ -150,7 +152,9 @@ const TaskDetailsEditModal = ({ isOpen, onClose, task, onSave }: Props) => {
       description: formData.description,
       status: formData.status,
       priority: formData.priority,
-      startDate: formData.startDate ? localDateToUTC(formData.startDate) : undefined,
+      startDate: formData.startDate
+        ? localDateToUTC(formData.startDate)
+        : undefined,
       dueDate: formData.dueDate ? localDateToUTC(formData.dueDate) : undefined,
       points: formData.points ? Number(formData.points) : undefined,
       assigneeIds: formData.selectedAssignees

@@ -322,6 +322,7 @@ const TimelineView = ({
       return calculatePosition(today);
     }
     return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDate, maxDate, totalDays]);
 
   const handleTaskClick = (taskId: number) => {

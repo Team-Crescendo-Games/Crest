@@ -275,7 +275,10 @@ const TaskCard = ({
   };
 
   const handleDueDateChange = async (newDate: string) => {
-    await updateTask({ id: task.id, dueDate: newDate ? localDateToUTC(newDate) : undefined });
+    await updateTask({
+      id: task.id,
+      dueDate: newDate ? localDateToUTC(newDate) : undefined,
+    });
     setIsEditingDueDate(false);
   };
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Modal from "@/components/Modal";
-import TaskForm, { TaskFormData } from "@/components/tasks/taskForm"; 
+import TaskForm, { TaskFormData } from "@/components/tasks/taskForm";
 import {
   Priority,
   Status,
@@ -58,11 +58,17 @@ export default function TaskCreateModal({
   });
 
   // Users scoped to the active workspace
-  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(activeWorkspaceId!, {
-    skip: !activeWorkspaceId,
-  });
+  const { data: workspaceMembers = [] } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    {
+      skip: !activeWorkspaceId,
+    },
+  );
   const users = useMemo(
-    () => workspaceMembers.map((m) => m.user).filter((u): u is User => u !== undefined),
+    () =>
+      workspaceMembers
+        .map((m) => m.user)
+        .filter((u): u is User => u !== undefined),
     [workspaceMembers],
   );
   const { data: authData } = useAuthUser();

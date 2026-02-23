@@ -46,8 +46,8 @@ const ModalInviteMember = ({ isOpen, onClose }: Props) => {
         setEmail("");
         onClose();
       }, 2000);
-    } catch (err: any) {
-      const message = err?.data?.error;
+    } catch (err) {
+      const message = (err as { data?: { error?: string } })?.data?.error;
       if (message === "User does not exist") {
         setError("User does not exist.");
       } else if (message === "User is already a member of this workspace") {
@@ -100,7 +100,9 @@ const ModalInviteMember = ({ isOpen, onClose }: Props) => {
           </div>
           {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
           {success && (
-            <p className="mt-1 text-sm text-green-500">Successfully added member</p>
+            <p className="mt-1 text-sm text-green-500">
+              Successfully added member
+            </p>
           )}
         </div>
         <button

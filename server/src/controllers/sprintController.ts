@@ -473,7 +473,7 @@ export const duplicateSprint = async (req: Request, res: Response) => {
                 title: newTitle,
                 startDate: originalSprint.startDate,
                 dueDate: originalSprint.dueDate,
-                workspaceId: originalSprint.workspaceId, 
+                workspaceId: originalSprint.workspaceId,
             },
         });
 

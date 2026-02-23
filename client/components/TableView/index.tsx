@@ -107,8 +107,14 @@ const TableView = ({
   // Apply local sorting
   const displayTasks = localSortField
     ? [...sortedTasks].sort((a, b) => {
-        let aVal: any = a[localSortField];
-        let bVal: any = b[localSortField];
+        let aVal: string | number | null = a[localSortField] as
+          | string
+          | number
+          | null;
+        let bVal: string | number | null = b[localSortField] as
+          | string
+          | number
+          | null;
 
         if (localSortField === "startDate" || localSortField === "dueDate") {
           aVal = aVal ? new Date(aVal).getTime() : 0;
@@ -135,12 +141,15 @@ const TableView = ({
         if (bVal === null || bVal === undefined) return -1;
 
         if (typeof aVal === "string") {
+          const bStr = String(bVal);
           return localSortDirection === "asc"
-            ? aVal.localeCompare(bVal)
-            : bVal.localeCompare(aVal);
+            ? aVal.localeCompare(bStr)
+            : bStr.localeCompare(aVal);
         }
 
-        return localSortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        return localSortDirection === "asc"
+          ? Number(aVal) - Number(bVal)
+          : Number(bVal) - Number(aVal);
       })
     : sortedTasks;
 

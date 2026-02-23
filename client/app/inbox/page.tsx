@@ -160,6 +160,7 @@ const NotificationRow = ({
       const height = row.offsetHeight;
       row.style.height = `${height}px`;
       row.style.transition = "none";
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       row.offsetHeight;
       row.style.transition = "height 250ms ease-out, opacity 200ms ease-out";
       requestAnimationFrame(() => {
@@ -288,7 +289,7 @@ const NotificationRow = ({
 
       {/* Main content */}
       <div
-        className={`group dark:bg-dark-secondary dark:hover:bg-dark-tertiary relative flex cursor-pointer items-center gap-4 bg-white px-6 py-2 hover:bg-gray-50 ${
+        className={`group relative flex cursor-pointer items-center gap-4 bg-white px-6 py-2 hover:bg-gray-50 dark:bg-dark-secondary dark:hover:bg-dark-tertiary ${
           !notification.isRead ? "bg-gray-100/50 dark:bg-white/5" : "opacity-60"
         }`}
         style={{
@@ -307,14 +308,14 @@ const NotificationRow = ({
             type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect(notification.id, e.target.checked)}
-            className="text-accent focus:ring-accent dark:bg-dark-tertiary dark:checked:text-accent h-4 w-4 rounded border-gray-300 bg-white focus:ring-offset-0 dark:border-gray-500 dark:checked:bg-white"
+            className="h-4 w-4 rounded border-gray-300 bg-white text-accent focus:ring-accent focus:ring-offset-0 dark:border-gray-500 dark:bg-dark-tertiary dark:checked:bg-white dark:checked:text-accent"
           />
         </div>
 
         {/* Unread indicator */}
         <div className="w-2">
           {!notification.isRead && (
-            <div className="bg-accent h-2 w-2 rounded-full dark:bg-white" />
+            <div className="h-2 w-2 rounded-full bg-accent dark:bg-white" />
           )}
         </div>
 
@@ -342,7 +343,7 @@ const NotificationRow = ({
         <button
           onClick={handleDelete}
           disabled={isRemoving}
-          className="flex-shrink-0 rounded-full p-2 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+          className="flex-shrink-0 rounded-full p-2 text-gray-400 opacity-0 transition-opacity hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-red-900/30 dark:hover:text-red-400"
           title="Delete (or double-click row)"
         >
           {isRemoving ? (
@@ -454,7 +455,7 @@ const InboxPage = () => {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={isMarkingAllRead}
-                className="dark:bg-dark-tertiary flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-dark-tertiary dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 {isMarkingAllRead ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -470,12 +471,12 @@ const InboxPage = () => {
 
       {/* Select all bar */}
       {notificationCount > 0 && (
-        <div className="dark:bg-dark-secondary flex items-center gap-4 rounded-t-lg border-b border-gray-200 bg-white px-6 py-2 dark:border-gray-700">
+        <div className="flex items-center gap-4 rounded-t-lg border-b border-gray-200 bg-white px-6 py-2 dark:border-gray-700 dark:bg-dark-secondary">
           <input
             type="checkbox"
             checked={isAllSelected}
             onChange={handleSelectAll}
-            className="text-accent focus:ring-accent dark:bg-dark-tertiary dark:checked:text-accent h-4 w-4 rounded border-gray-300 bg-white focus:ring-offset-0 dark:border-gray-500 dark:checked:bg-white"
+            className="h-4 w-4 rounded border-gray-300 bg-white text-accent focus:ring-accent focus:ring-offset-0 dark:border-gray-500 dark:bg-dark-tertiary dark:checked:bg-white dark:checked:text-accent"
           />
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {selectedCount > 0 ? `${selectedCount} selected` : "Select all"}
@@ -484,7 +485,7 @@ const InboxPage = () => {
       )}
 
       {/* Content */}
-      <div className="dark:bg-dark-secondary flex-1 overflow-y-auto rounded-b-lg bg-white">
+      <div className="flex-1 overflow-y-auto rounded-b-lg bg-white dark:bg-dark-secondary">
         {isLoading && (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />

@@ -71,7 +71,11 @@ export const updateRole = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        if (existingRole.name === "Owner" || existingRole.name === "Admin" || existingRole.name === "Member") {
+        if (
+            existingRole.name === "Owner" ||
+            existingRole.name === "Admin" ||
+            existingRole.name === "Member"
+        ) {
             res.status(400).json({ error: `Cannot modify the default ${existingRole.name} role` });
             return;
         }

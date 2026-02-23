@@ -16,8 +16,6 @@ import {
   useDeleteInvitationMutation,
   type Role,
   type WorkspaceMember,
-  type WorkspaceApplication,
-  type WorkspaceInvitation,
 } from "@/state/api";
 import Header from "@/components/Header";
 import UserCard from "@/components/UserCard";
@@ -29,7 +27,19 @@ import { useAuthUser } from "@/lib/useAuthUser";
 import { useAppDispatch } from "@/app/redux";
 import { showNotification } from "@/state";
 import { PERMISSIONS, hasPermission } from "@/lib/permissions";
-import { Plus, Pencil, Trash2, Shield, Users as UsersIcon, X, UserPlus, Check, XCircle, Copy, KeyRound } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Shield,
+  Users as UsersIcon,
+  X,
+  UserPlus,
+  Check,
+  XCircle,
+  Copy,
+  KeyRound,
+} from "lucide-react";
 import ModalInviteMember from "@/components/workspaces/modalInviteMember";
 
 type Tab = "members" | "roles" | "applications" | "invitations";
@@ -97,7 +107,11 @@ function RoleModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} name={readOnly ? "View Role" : initialRole ? "Edit Role" : "Create Role"}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      name={readOnly ? "View Role" : initialRole ? "Edit Role" : "Create Role"}
+    >
       <div className="flex flex-col gap-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -134,7 +148,10 @@ function RoleModal({
           </label>
           <div className="flex flex-col gap-2">
             {PERMISSION_LABELS.map(({ key, label }) => (
-              <label key={key} className={`flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 ${readOnly ? "cursor-default" : ""}`}>
+              <label
+                key={key}
+                className={`flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 ${readOnly ? "cursor-default" : ""}`}
+              >
                 <input
                   type="checkbox"
                   checked={hasPermission(perms, PERMISSIONS[key])}
@@ -200,13 +217,22 @@ function MembersTab({
           </div>
         ))}
       </div>
-      <ModalInviteMember isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
+      <ModalInviteMember
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+      />
     </div>
   );
 }
 
 // --- Member Row (memoized to prevent re-renders that trigger S3 refetches) ---
-const MemberRow = memo(function MemberRow({ m, action }: { m: WorkspaceMember; action: React.ReactNode }) {
+const MemberRow = memo(function MemberRow({
+  m,
+  action,
+}: {
+  m: WorkspaceMember;
+  action: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-3 rounded px-2 py-2 hover:bg-gray-50 dark:hover:bg-dark-tertiary">
       <UserIcon
@@ -275,12 +301,22 @@ function RoleMembersModal({
 
   const handleAssign = async (targetUserId: number) => {
     if (!currentUserId) return;
-    await updateMemberRole({ workspaceId, targetUserId, roleId: role.id, userId: currentUserId });
+    await updateMemberRole({
+      workspaceId,
+      targetUserId,
+      roleId: role.id,
+      userId: currentUserId,
+    });
   };
 
   const handleRemove = async (targetUserId: number, fallbackRoleId: number) => {
     if (!currentUserId) return;
-    await updateMemberRole({ workspaceId, targetUserId, roleId: fallbackRoleId, userId: currentUserId });
+    await updateMemberRole({
+      workspaceId,
+      targetUserId,
+      roleId: fallbackRoleId,
+      userId: currentUserId,
+    });
   };
 
   const memberRole = allMembers.find((m) => m.role?.name === "Member")?.role;
@@ -315,7 +351,10 @@ function RoleMembersModal({
                   key={m.userId}
                   m={m}
                   action={
-                    !readOnly && m.userId !== creatorUserId && m.userId !== currentUserId && memberRole ? (
+                    !readOnly &&
+                    m.userId !== creatorUserId &&
+                    m.userId !== currentUserId &&
+                    memberRole ? (
                       <button
                         onClick={() => handleRemove(m.userId, memberRole.id)}
                         className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500 dark:hover:bg-dark-tertiary dark:hover:text-red-400"
@@ -338,7 +377,9 @@ function RoleMembersModal({
               Add members
             </h4>
             {filteredUnassigned.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-neutral-500">No matches</p>
+              <p className="text-sm text-gray-400 dark:text-neutral-500">
+                No matches
+              </p>
             ) : (
               <div className="flex flex-col gap-0.5">
                 {filteredUnassigned.map((m) => (
@@ -386,7 +427,9 @@ function RolesTab({
   const [deleteRole] = useDeleteRoleMutation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | undefined>(undefined);
-  const [membersModalRole, setMembersModalRole] = useState<Role | undefined>(undefined);
+  const [membersModalRole, setMembersModalRole] = useState<Role | undefined>(
+    undefined,
+  );
   const dispatch = useAppDispatch();
 
   const handleCreate = () => {
@@ -404,14 +447,29 @@ function RolesTab({
     try {
       await deleteRole({ workspaceId, roleId, userId: currentUserId }).unwrap();
     } catch {
-      dispatch(showNotification({ message: "Cannot delete this role — reassign its members to another role first.", type: "error" }));
+      dispatch(
+        showNotification({
+          message:
+            "Cannot delete this role — reassign its members to another role first.",
+          type: "error",
+        }),
+      );
     }
   };
 
-  const handleSave = async (data: { name: string; color: string; permissions: number }) => {
+  const handleSave = async (data: {
+    name: string;
+    color: string;
+    permissions: number;
+  }) => {
     if (!currentUserId) return;
     if (editingRole) {
-      await updateRole({ workspaceId, roleId: editingRole.id, userId: currentUserId, ...data });
+      await updateRole({
+        workspaceId,
+        roleId: editingRole.id,
+        userId: currentUserId,
+        ...data,
+      });
     } else {
       await createRole({ workspaceId, userId: currentUserId, ...data });
     }
@@ -420,7 +478,6 @@ function RolesTab({
   };
 
   const currentMember = allMembers.find((m) => m.userId === currentUserId);
-  const currentRoleId = currentMember?.roleId;
 
   return (
     <div>
@@ -469,7 +526,10 @@ function RolesTab({
                   {role.name}
                 </span>
               </div>
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="group relative">
                   <button
                     onClick={() => setMembersModalRole(role)}
@@ -481,32 +541,35 @@ function RolesTab({
                     Members
                   </span>
                 </div>
-                {canEditMemberRoles && role.name !== "Owner" && role.name !== "Admin" && role.name !== "Member" && (
-                  <>
-                    <div className="group relative">
-                      <button
-                        onClick={() => handleEdit(role)}
-                        className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        Edit
-                      </span>
-                    </div>
-                    <div className="group relative">
-                      <button
-                        onClick={() => handleDelete(role.id)}
-                        className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        Delete
-                      </span>
-                    </div>
-                  </>
-                )}
+                {canEditMemberRoles &&
+                  role.name !== "Owner" &&
+                  role.name !== "Admin" &&
+                  role.name !== "Member" && (
+                    <>
+                      <div className="group relative">
+                        <button
+                          onClick={() => handleEdit(role)}
+                          className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Edit
+                        </span>
+                      </div>
+                      <div className="group relative">
+                        <button
+                          onClick={() => handleDelete(role.id)}
+                          className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Delete
+                        </span>
+                      </div>
+                    </>
+                  )}
               </div>
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-neutral-400">
@@ -525,7 +588,12 @@ function RolesTab({
         }}
         onSave={handleSave}
         initialRole={editingRole}
-        readOnly={!canEditMemberRoles || editingRole?.name === "Owner" || editingRole?.name === "Admin" || editingRole?.name === "Member"}
+        readOnly={
+          !canEditMemberRoles ||
+          editingRole?.name === "Owner" ||
+          editingRole?.name === "Admin" ||
+          editingRole?.name === "Member"
+        }
       />
 
       {membersModalRole && (
@@ -557,14 +625,29 @@ function ApplicationsTab({
   );
   const [resolveApplication] = useResolveApplicationMutation();
 
-  const handleResolve = async (applicationId: number, action: "approve" | "reject") => {
+  const handleResolve = async (
+    applicationId: number,
+    action: "approve" | "reject",
+  ) => {
     if (!currentUserId) return;
-    await resolveApplication({ workspaceId, applicationId, action, userId: currentUserId });
+    await resolveApplication({
+      workspaceId,
+      applicationId,
+      action,
+      userId: currentUserId,
+    });
   };
 
-  if (isLoading) return <p className="text-sm text-gray-500 dark:text-neutral-400">Loading...</p>;
+  if (isLoading)
+    return (
+      <p className="text-sm text-gray-500 dark:text-neutral-400">Loading...</p>
+    );
   if (!applications || applications.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-neutral-400">No pending applications.</p>;
+    return (
+      <p className="text-sm text-gray-500 dark:text-neutral-400">
+        No pending applications.
+      </p>
+    );
   }
 
   return (
@@ -589,7 +672,7 @@ function ApplicationsTab({
               {app.user?.email}
             </p>
             {app.message && (
-              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 italic">
+              <p className="mt-1 text-xs italic text-gray-600 dark:text-gray-400">
                 &ldquo;{app.message}&rdquo;
               </p>
             )}
@@ -628,7 +711,8 @@ const InvitationsTab = ({
     { workspaceId, userId },
     { skip: !workspaceId || !userId },
   );
-  const [createInvitation, { isLoading: isCreating }] = useCreateInvitationMutation();
+  const [createInvitation, { isLoading: isCreating }] =
+    useCreateInvitationMutation();
   const [deleteInvitation] = useDeleteInvitationMutation();
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -644,14 +728,18 @@ const InvitationsTab = ({
   return (
     <div>
       <div className="mb-4 flex items-center gap-3">
-        <label className="text-xs text-gray-500 dark:text-neutral-400">Expires in</label>
+        <label className="text-xs text-gray-500 dark:text-neutral-400">
+          Expires in
+        </label>
         <select
           value={expiresInDays}
           onChange={(e) => setExpiresInDays(Number(e.target.value))}
           className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
         >
           {[1, 3, 7, 14, 30, 60, 90].map((d) => (
-            <option key={d} value={d}>{d} day{d > 1 ? "s" : ""}</option>
+            <option key={d} value={d}>
+              {d} day{d > 1 ? "s" : ""}
+            </option>
           ))}
         </select>
         <button
@@ -688,8 +776,12 @@ const InvitationsTab = ({
                 <span className="shrink-0 text-xs text-gray-500 dark:text-neutral-400">
                   {inv.createdBy?.username && `by ${inv.createdBy.username}`}
                 </span>
-                <span className={`shrink-0 text-xs ${isExpired ? "text-red-500" : "text-gray-500 dark:text-neutral-400"}`}>
-                  {isExpired ? "Expired" : `Expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                <span
+                  className={`shrink-0 text-xs ${isExpired ? "text-red-500" : "text-gray-500 dark:text-neutral-400"}`}
+                >
+                  {isExpired
+                    ? "Expired"
+                    : `Expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
                 </span>
                 <button
                   onClick={() => {
@@ -700,12 +792,20 @@ const InvitationsTab = ({
                   className="shrink-0 cursor-pointer rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-tertiary dark:hover:text-gray-200"
                   title="Copy invitation ID"
                 >
-                  {copiedId === inv.id ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedId === inv.id ? (
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
                 </button>
                 <button
                   onClick={async () => {
                     try {
-                      await deleteInvitation({ workspaceId, invitationId: inv.id, userId }).unwrap();
+                      await deleteInvitation({
+                        workspaceId,
+                        invitationId: inv.id,
+                        userId,
+                      }).unwrap();
                     } catch (err) {
                       console.error("Failed to delete invitation:", err);
                     }
@@ -728,7 +828,8 @@ const InvitationsTab = ({
 const Users = () => {
   const [activeTab, setActiveTab] = useState<Tab>("members");
   const { activeWorkspaceId } = useWorkspace();
-  const { canEditMemberRoles, canInvite, canManageApplications } = usePermissions();
+  const { canEditMemberRoles, canInvite, canManageApplications } =
+    usePermissions();
   const { data: authData } = useAuthUser();
   const userId = authData?.userDetails?.userId;
 
@@ -752,8 +853,10 @@ const Users = () => {
   const activeWorkspace = workspaces?.find((w) => w.id === activeWorkspaceId);
   const creatorUserId = activeWorkspace?.createdById ?? undefined;
 
-  if (membersLoading || rolesLoading) return <div className="p-8">Loading...</div>;
-  if (membersError || !members) return <div className="p-8">Error fetching users</div>;
+  if (membersLoading || rolesLoading)
+    return <div className="p-8">Loading...</div>;
+  if (membersError || !members)
+    return <div className="p-8">Error fetching users</div>;
 
   const tabClass = (tab: Tab) =>
     `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -775,19 +878,31 @@ const Users = () => {
 
       {/* Tabs */}
       <div className="mb-6 flex border-b border-gray-200 dark:border-stroke-dark">
-        <button className={tabClass("members")} onClick={() => setActiveTab("members")}>
+        <button
+          className={tabClass("members")}
+          onClick={() => setActiveTab("members")}
+        >
           Members
         </button>
-        <button className={tabClass("roles")} onClick={() => setActiveTab("roles")}>
+        <button
+          className={tabClass("roles")}
+          onClick={() => setActiveTab("roles")}
+        >
           Roles
         </button>
         {canManageApplications && (
-          <button className={tabClass("applications")} onClick={() => setActiveTab("applications")}>
+          <button
+            className={tabClass("applications")}
+            onClick={() => setActiveTab("applications")}
+          >
             Applications
           </button>
         )}
         {canInvite && (
-          <button className={tabClass("invitations")} onClick={() => setActiveTab("invitations")}>
+          <button
+            className={tabClass("invitations")}
+            onClick={() => setActiveTab("invitations")}
+          >
             Invitations
           </button>
         )}
@@ -795,10 +910,7 @@ const Users = () => {
 
       {/* Tab content */}
       {activeTab === "members" && (
-        <MembersTab
-          members={members}
-          canInvite={canInvite}
-        />
+        <MembersTab members={members} canInvite={canInvite} />
       )}
       {activeTab === "roles" && (
         <RolesTab
@@ -817,10 +929,7 @@ const Users = () => {
         />
       )}
       {activeTab === "invitations" && canInvite && (
-        <InvitationsTab
-          workspaceId={activeWorkspaceId!}
-          userId={userId!}
-        />
+        <InvitationsTab workspaceId={activeWorkspaceId!} userId={userId!} />
       )}
     </div>
   );

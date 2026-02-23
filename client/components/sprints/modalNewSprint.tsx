@@ -117,7 +117,10 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
           <button
             ref={startDateRef}
             type="button"
-            onClick={() => { setShowStartPicker(!showStartPicker); setShowDuePicker(false); }}
+            onClick={() => {
+              setShowStartPicker(!showStartPicker);
+              setShowDuePicker(false);
+            }}
             className={`${inputStyles} flex items-center gap-2 text-left ${dateError ? "border-red-500 dark:border-red-500" : ""}`}
           >
             <Calendar className="h-4 w-4 text-gray-400" />
@@ -130,7 +133,11 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
               value={startDate || undefined}
               onChange={(date) => {
                 setStartDate(date || "");
-                if (date && dueDate && parseLocalDate(date) > parseLocalDate(dueDate)) {
+                if (
+                  date &&
+                  dueDate &&
+                  parseLocalDate(date) > parseLocalDate(dueDate)
+                ) {
                   setDueDate("");
                 }
                 if (dateError) setDateError("");
@@ -150,7 +157,10 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
           <button
             ref={dueDateRef}
             type="button"
-            onClick={() => { setShowDuePicker(!showDuePicker); setShowStartPicker(false); }}
+            onClick={() => {
+              setShowDuePicker(!showDuePicker);
+              setShowStartPicker(false);
+            }}
             className={`${inputStyles} flex items-center gap-2 text-left ${dateError ? "border-red-500 dark:border-red-500" : ""}`}
           >
             <Calendar className="h-4 w-4 text-gray-400" />
@@ -162,7 +172,11 @@ const ModalNewSprint = ({ isOpen, onClose }: Props) => {
             <DatePicker
               value={dueDate || undefined}
               onChange={(date) => {
-                if (date && startDate && parseLocalDate(date) < parseLocalDate(startDate)) {
+                if (
+                  date &&
+                  startDate &&
+                  parseLocalDate(date) < parseLocalDate(startDate)
+                ) {
                   return;
                 }
                 setDueDate(date || "");

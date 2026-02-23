@@ -76,6 +76,7 @@ export function parseMentions(text: string): string[] {
         return [];
     }
 
+    // eslint-disable-next-line no-useless-escape
     const mentionRegex = /(?:^|[\s.,!?;:()\[\]{}])@(\w+)/g;
 
     const mentions: string[] = [];

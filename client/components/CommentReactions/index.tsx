@@ -84,7 +84,7 @@ const CommentReactions = ({
           <button
             ref={triggerRef}
             onClick={() => setShowPicker(!showPicker)}
-            className="dark:hover:bg-dark-tertiary flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:text-gray-300"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-tertiary dark:hover:text-gray-300"
             title="Add reaction"
           >
             <Smile size={14} />

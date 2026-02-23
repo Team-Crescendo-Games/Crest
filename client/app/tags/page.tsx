@@ -134,7 +134,7 @@ const ColorPicker = ({ value, onChange, size = "md" }: ColorPickerProps) => {
 };
 
 const TagsPage = () => {
-  const { activeWorkspaceId } = useWorkspace(); 
+  const { activeWorkspaceId } = useWorkspace();
 
   const { data: tags, isLoading } = useGetTagsQuery(activeWorkspaceId ?? 0, {
     skip: !activeWorkspaceId,

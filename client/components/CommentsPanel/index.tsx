@@ -196,7 +196,7 @@ const CommentsPanel = ({
   return (
     <div className="flex h-full max-h-[calc(70vh-4rem)] flex-col">
       {/* Header */}
-      <div className="dark:border-stroke-dark flex flex-shrink-0 items-center gap-2 border-b border-gray-200 px-4 py-3">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-stroke-dark">
         <MessageSquareMore className="h-4 w-4 text-gray-600 dark:text-neutral-400" />
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {numberOfComments} {numberOfComments === 1 ? "comment" : "comments"}
@@ -250,7 +250,9 @@ const CommentsPanel = ({
                     />
                   ) : (
                     <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-medium text-white">
-                      {(comment.user?.fullName || comment.user?.username)?.charAt(0).toUpperCase() || "?"}
+                      {(comment.user?.fullName || comment.user?.username)
+                        ?.charAt(0)
+                        .toUpperCase() || "?"}
                     </div>
                   )}
                   <div className="min-w-0">
@@ -258,7 +260,9 @@ const CommentsPanel = ({
                       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         {isCurrentUser
                           ? "You"
-                          : comment.user?.fullName || comment.user?.username || "Unknown"}
+                          : comment.user?.fullName ||
+                            comment.user?.username ||
+                            "Unknown"}
                       </span>
                       {comment.createdAt && (
                         <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -267,12 +271,12 @@ const CommentsPanel = ({
                       )}
                     </div>
                     <div
-                      className={`dark:bg-dark-tertiary relative inline-block rounded-2xl bg-gray-100 px-3 py-2 ${
+                      className={`relative inline-block rounded-2xl bg-gray-100 px-3 py-2 dark:bg-dark-tertiary ${
                         comment.isResolved ? "ring-2 ring-green-500" : ""
                       }`}
                     >
                       {/* Floating buttons on bubble corner */}
-                      <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <div className="absolute -right-2 -top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                         <button
                           onClick={() =>
                             toggleCommentResolved({ commentId: comment.id })
@@ -280,7 +284,7 @@ const CommentsPanel = ({
                           className={`flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-200 hover:scale-110 ${
                             comment.isResolved
                               ? "bg-green-500 text-white hover:bg-green-600"
-                              : "dark:bg-dark-secondary dark:hover:bg-dark-tertiary bg-white text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:text-green-400"
+                              : "bg-white text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:bg-dark-secondary dark:text-gray-500 dark:hover:bg-dark-tertiary dark:hover:text-green-400"
                           }`}
                           title={
                             comment.isResolved
@@ -298,7 +302,7 @@ const CommentsPanel = ({
                         />
                       </div>
                       <p
-                        className="text-sm break-all text-gray-800 dark:text-neutral-200"
+                        className="break-all text-sm text-gray-800 dark:text-neutral-200"
                         style={{ overflowWrap: "anywhere" }}
                       >
                         {renderCommentWithMentions(comment.text, users)}
@@ -329,7 +333,7 @@ const CommentsPanel = ({
       </div>
 
       {/* Add comment input */}
-      <div className="dark:border-stroke-dark flex-shrink-0 border-t border-gray-200 p-3">
+      <div className="flex-shrink-0 border-t border-gray-200 p-3 dark:border-stroke-dark">
         <div className="flex gap-2">
           {currentUser?.profilePictureExt && currentUser?.userId ? (
             <S3Image
@@ -351,7 +355,7 @@ const CommentsPanel = ({
             <input
               ref={commentInputRef}
               type="text"
-              className="dark:bg-dark-secondary w-full rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:text-white dark:placeholder-gray-500"
+              className="w-full rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-dark-secondary dark:text-white dark:placeholder-gray-500"
               placeholder="Add a comment..."
               value={newComment}
               onChange={handleCommentChange}
@@ -363,12 +367,12 @@ const CommentsPanel = ({
 
             {/* Mention dropdown */}
             {showMentionDropdown && filteredMentionUsers.length > 0 && (
-              <div className="dark:bg-dark-secondary absolute bottom-full left-0 z-50 mb-1 max-h-40 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700">
+              <div className="absolute bottom-full left-0 z-50 mb-1 max-h-40 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-dark-secondary">
                 {filteredMentionUsers.map((user) => (
                   <button
                     key={user.userId}
                     type="button"
-                    className="dark:hover:bg-dark-tertiary flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-100"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       selectMention(user.username);
@@ -387,7 +391,9 @@ const CommentsPanel = ({
                       />
                     ) : (
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
-                        {(user.fullName || user.username).charAt(0).toUpperCase()}
+                        {(user.fullName || user.username)
+                          .charAt(0)
+                          .toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">

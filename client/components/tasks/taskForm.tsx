@@ -80,7 +80,8 @@ export default function TaskForm({
   sprints,
   tags,
   showPoints = false,
-  filterActiveOnly = true,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  filterActiveOnly: _filterActiveOnly = true,
   showSubtasks = false,
   showAttachments = false,
   availableTasks = [],

@@ -68,7 +68,11 @@ router.post("/", createWorkspace);
  */
 router.patch("/:workspaceId", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspace);
 router.patch("/:workspaceId/icon", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspaceIcon);
-router.patch("/:workspaceId/header", requirePermission(PERMISSIONS.EDIT_INFO), updateWorkspaceHeader);
+router.patch(
+    "/:workspaceId/header",
+    requirePermission(PERMISSIONS.EDIT_INFO),
+    updateWorkspaceHeader
+);
 router.delete("/:workspaceId", requireAdmin(), deleteWorkspace);
 
 /**
@@ -122,7 +126,11 @@ router.delete("/:workspaceId/members/:userId", removeWorkspaceMember);
  *               roleId:
  *                 type: integer
  */
-router.patch("/:workspaceId/members/:userId/role", requirePermission(PERMISSIONS.EDIT_MEMBER_ROLES), updateMemberRole);
+router.patch(
+    "/:workspaceId/members/:userId/role",
+    requirePermission(PERMISSIONS.EDIT_MEMBER_ROLES),
+    updateMemberRole
+);
 
 // Role routes nested under workspace
 router.use("/:workspaceId/roles", roleRoutes);

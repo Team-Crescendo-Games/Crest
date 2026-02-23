@@ -88,7 +88,7 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
         left: position.left,
         zIndex: 9999,
       }}
-      className="dark:border-stroke-dark dark:bg-dark-secondary rounded-lg border border-gray-200 bg-white shadow-lg"
+      className="rounded-lg border border-gray-200 bg-white shadow-lg dark:border-stroke-dark dark:bg-dark-secondary"
     >
       <div className="max-h-52 overflow-y-auto p-2">
         <table className="border-collapse">
@@ -104,7 +104,7 @@ const EmojiPicker = ({ onSelect, onClose, triggerRef }: EmojiPickerProps) => {
                             onSelect(emoji.id);
                             onClose();
                           }}
-                          className="dark:hover:bg-dark-tertiary flex h-9 w-9 items-center justify-center rounded hover:bg-gray-100"
+                          className="flex h-9 w-9 items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-dark-tertiary"
                           title={emoji.label}
                         >
                           <Image

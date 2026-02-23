@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import Sidebar from "@/components/UI/structural/sidebar";
@@ -14,7 +14,9 @@ import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
-  const isSidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+  const isSidebarCollapsed = useAppSelector(
+    (state) => state.global.isSidebarCollapsed,
+  );
   const { activeWorkspaceId, setWorkspace } = useWorkspace();
   const { data: authData } = useAuthUser();
   const userId = authData?.userDetails?.userId;
@@ -39,7 +41,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   // No workspace state — show only the welcome modal, nothing else
   if (hasNoWorkspaces) {
     return (
-      <div className="dark:bg-dark-bg flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-dark-bg">
         <div
           className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40"
           style={{
@@ -47,11 +49,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             backgroundSize: "20px 20px",
           }}
         />
-        <ModalNewWorkspace
-          isOpen={true}
-          onClose={() => {}}
-          canCancel={false}
-        />
+        <ModalNewWorkspace isOpen={true} onClose={() => {}} canCancel={false} />
         <AppNotification />
       </div>
     );
@@ -61,7 +59,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen w-full bg-gray-50 text-gray-900">
         <Sidebar />
-        <main className={`dark:bg-dark-bg relative flex h-screen w-full flex-col bg-gray-50 transition-all duration-300 ${isSidebarCollapsed ? "pl-16" : "pl-64"}`}>
+        <main
+          className={`relative flex h-screen w-full flex-col bg-gray-50 transition-all duration-300 dark:bg-dark-bg ${isSidebarCollapsed ? "pl-16" : "pl-64"}`}
+        >
           <div
             className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40"
             style={{

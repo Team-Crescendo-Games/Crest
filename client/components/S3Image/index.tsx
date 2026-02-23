@@ -20,11 +20,6 @@ type Props = {
   priority?: boolean;
 };
 
-// S3 configuration from environment variables
-const S3_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET;
-const S3_REGION = process.env.NEXT_PUBLIC_S3_REGION;
-const S3_STAGE = process.env.NEXT_PUBLIC_S3_STAGE || "dev";
-
 // Cache for presigned URLs
 // Key: s3Key, Value: { url: string, expiresAt: number }
 const presignedUrlCache = new Map<string, { url: string; expiresAt: number }>();
@@ -86,6 +81,7 @@ const S3Image = ({
   useEffect(() => {
     if (version > 0 && s3Key) {
       presignedUrlCache.delete(s3Key);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasError(false);
     }
   }, [version, s3Key]);
@@ -131,7 +127,7 @@ const S3Image = ({
         <div
           className={
             fallbackClassName ||
-            `dark:bg-dark-tertiary flex items-center justify-center rounded-lg bg-gray-200 ${className}`
+            `flex items-center justify-center rounded-lg bg-gray-200 dark:bg-dark-tertiary ${className}`
           }
           style={{ width: fallbackWidth, height: fallbackHeight }}
         >

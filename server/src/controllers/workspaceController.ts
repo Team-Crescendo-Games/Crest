@@ -35,7 +35,9 @@ export const adminUpdateWorkspace = async (req: Request, res: Response) => {
         }
 
         if (createdById !== undefined && createdById !== null) {
-            const user = await getPrismaClient().user.findUnique({ where: { userId: Number(createdById) } });
+            const user = await getPrismaClient().user.findUnique({
+                where: { userId: Number(createdById) },
+            });
             if (!user) {
                 res.status(400).json({ error: `User with ID ${createdById} not found` });
                 return;
@@ -48,7 +50,9 @@ export const adminUpdateWorkspace = async (req: Request, res: Response) => {
                 ...(name !== undefined && { name }),
                 ...(description !== undefined && { description }),
                 ...(joinPolicy !== undefined && { joinPolicy: Number(joinPolicy) }),
-                ...(createdById !== undefined && { createdById: createdById ? Number(createdById) : null }),
+                ...(createdById !== undefined && {
+                    createdById: createdById ? Number(createdById) : null,
+                }),
             },
         });
 
@@ -322,10 +326,19 @@ export const removeWorkspaceMember = async (req: Request, res: Response) => {
         const wsId = Number(workspaceId);
         const targetUserId = Number(userId);
 
-        // Prevent removing the workspace creator
+        // Prevent removing the workspace owner (by creator flag OR Owner role)
         const workspace = await prisma.workspace.findUnique({ where: { id: wsId } });
         if (workspace?.createdById === targetUserId) {
-            res.status(400).json({ error: "Cannot remove the workspace owner" });
+            res.status(403).json({ error: "Cannot remove the workspace owner" });
+            return;
+        }
+
+        const membership = await prisma.workspaceMember.findUnique({
+            where: { userId_workspaceId: { userId: targetUserId, workspaceId: wsId } },
+            include: { role: true },
+        });
+        if (membership?.role?.name === "Owner") {
+            res.status(403).json({ error: "Cannot remove the workspace owner" });
             return;
         }
 
@@ -415,7 +428,6 @@ export const updateMemberRole = async (req: Request, res: Response) => {
     }
 };
 
-
 /**
  * Update a workspace's icon extension
  * PATCH /workspaces/:workspaceId/icon
@@ -453,4 +465,3 @@ export const updateWorkspaceHeader = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to update workspace header: " + error.message });
     }
 };
-

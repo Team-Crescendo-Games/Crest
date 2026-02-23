@@ -20,7 +20,6 @@ import { useAuthUser } from "@/lib/useAuthUser";
 import { useWorkspace } from "@/lib/useWorkspace";
 import { PRIORITY_BADGE_STYLES } from "@/lib/priorityColors";
 import { STATUS_BADGE_STYLES } from "@/lib/statusColors";
-import { format } from "date-fns";
 import { formatUTCDate } from "@/lib/dateUtils";
 import {
   Calendar,
@@ -202,10 +201,18 @@ const TaskDetailModal = ({
     (currentTask.subtasks != null && currentTask.subtasks.length > 0);
 
   const formattedStartDate = currentTask.startDate
-    ? formatUTCDate(currentTask.startDate, { month: "2-digit", day: "2-digit", year: "numeric" })
+    ? formatUTCDate(currentTask.startDate, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      })
     : "Not set";
   const formattedDueDate = currentTask.dueDate
-    ? formatUTCDate(currentTask.dueDate, { month: "2-digit", day: "2-digit", year: "numeric" })
+    ? formatUTCDate(currentTask.dueDate, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      })
     : "Not set";
 
   const handleEditClick = () => setIsEditing(true);

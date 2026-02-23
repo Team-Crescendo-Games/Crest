@@ -69,7 +69,7 @@ const Modal = ({
             {leftPanel && <div className="w-48 flex-shrink-0" />}
             {/* Floating actions */}
             <div
-              className="animate-scale-in flex items-center gap-2"
+              className="flex animate-scale-in items-center gap-2"
               onClick={(e) => e.stopPropagation()}
             >
               {floatingActions}
@@ -83,7 +83,7 @@ const Modal = ({
           {/* Left floating panel */}
           {leftPanel && (
             <div
-              className="animate-scale-in max-h-full w-48 flex-shrink-0 overflow-visible"
+              className="max-h-full w-48 flex-shrink-0 animate-scale-in overflow-visible"
               onClick={(e) => e.stopPropagation()}
             >
               {leftPanel}
@@ -91,11 +91,11 @@ const Modal = ({
           )}
           {/* Main modal */}
           <div
-            className="dark:bg-dark-secondary animate-scale-in flex max-h-full min-w-0 flex-1 flex-col rounded-lg bg-white shadow-lg"
+            className="flex max-h-full min-w-0 flex-1 animate-scale-in flex-col rounded-lg bg-white shadow-lg dark:bg-dark-secondary"
             onClick={(e) => e.stopPropagation()}
           >
             {!hideHeader && (
-              <div className="dark:border-stroke-dark flex-shrink-0 border-b border-gray-200 px-4 py-3">
+              <div className="flex-shrink-0 border-b border-gray-200 px-4 py-3 dark:border-stroke-dark">
                 <Header
                   name={name}
                   buttonComponent={
@@ -120,7 +120,7 @@ const Modal = ({
           {/* Right floating panel */}
           {rightPanel && (
             <div
-              className="dark:bg-dark-secondary animate-scale-in max-h-[70vh] w-80 flex-shrink-0 overflow-hidden rounded-lg bg-white shadow-lg"
+              className="max-h-[70vh] w-80 flex-shrink-0 animate-scale-in overflow-hidden rounded-lg bg-white shadow-lg dark:bg-dark-secondary"
               onClick={(e) => e.stopPropagation()}
             >
               {rightPanel}
@@ -134,15 +134,26 @@ const Modal = ({
 };
 
 /** Only fires onClose when both mousedown and mouseup happen on the backdrop itself. */
-const Backdrop = ({ onClose, children }: { onClose: () => void; children: React.ReactNode }) => {
+const Backdrop = ({
+  onClose,
+  children,
+}: {
+  onClose: () => void;
+  children: React.ReactNode;
+}) => {
   const mouseDownTarget = useRef<EventTarget | null>(null);
 
   return (
     <div
-      className="animate-fade-in fixed inset-0 z-50 flex h-full w-full items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm"
-      onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+      className="fixed inset-0 z-50 flex h-full w-full animate-fade-in items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm"
+      onMouseDown={(e) => {
+        mouseDownTarget.current = e.target;
+      }}
       onMouseUp={(e) => {
-        if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) {
+        if (
+          e.target === e.currentTarget &&
+          mouseDownTarget.current === e.currentTarget
+        ) {
           onClose();
         }
         mouseDownTarget.current = null;

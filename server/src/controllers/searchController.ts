@@ -10,7 +10,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 
-    // Parse categories - default to all if not specified 
+    // Parse categories - default to all if not specified
     const categoryList = categories
         ? (categories as string).split(",")
         : ["tasks", "boards", "users", "sprints"];
@@ -18,7 +18,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
     try {
         const results: {
             tasks?: any[];
-            boards?: any[]; 
+            boards?: any[];
             users?: any[];
             sprints?: any[];
         } = {};
@@ -66,7 +66,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
         if (categoryList.includes("boards")) {
             results.boards = await getPrismaClient().board.findMany({
                 where: {
-                    workspaceId: Number(workspaceId), 
+                    workspaceId: Number(workspaceId),
                     OR: [
                         { name: { contains: query as string, mode: "insensitive" } },
                         { description: { contains: query as string, mode: "insensitive" } },

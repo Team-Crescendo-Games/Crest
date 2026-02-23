@@ -107,10 +107,7 @@ export const postUser = async (req: Request, res: Response) => {
         // Check for existing user with same cognitoId or username
         const existing = await getPrismaClient().user.findFirst({
             where: {
-                OR: [
-                    { cognitoId },
-                    { username },
-                ],
+                OR: [{ cognitoId }, { username }],
             },
         });
 

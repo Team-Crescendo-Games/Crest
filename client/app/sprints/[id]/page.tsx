@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useGetSprintQuery, useGetTagsQuery } from "@/state/api";
-import { useWorkspace } from "@/lib/useWorkspace"; 
+import { useWorkspace } from "@/lib/useWorkspace";
 import {
   FilterState,
   initialFilterState,
@@ -23,7 +23,7 @@ const SprintPage = () => {
   const params = useParams();
   const sprintId = Number(params.id);
 
-  const { activeWorkspaceId } = useWorkspace(); 
+  const { activeWorkspaceId } = useWorkspace();
 
   const [activeTab, setActiveTab] = useState<"Board" | "Table" | "Timeline">(
     "Board",

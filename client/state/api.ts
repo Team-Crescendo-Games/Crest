@@ -336,7 +336,13 @@ export const api = createApi({
     }),
     adminUpdateWorkspace: build.mutation<
       Workspace,
-      { workspaceId: number; name?: string; description?: string; joinPolicy?: number; createdById?: number | null }
+      {
+        workspaceId: number;
+        name?: string;
+        description?: string;
+        joinPolicy?: number;
+        createdById?: number | null;
+      }
     >({
       query: ({ workspaceId, ...body }) => ({
         url: `workspaces/admin/${workspaceId}`,
@@ -367,7 +373,10 @@ export const api = createApi({
       }),
       invalidatesTags: ["Workspaces"],
     }),
-    deleteWorkspace: build.mutation<void, { workspaceId: number; userId: number }>({
+    deleteWorkspace: build.mutation<
+      void,
+      { workspaceId: number; userId: number }
+    >({
       query: ({ workspaceId, userId }) => ({
         url: `workspaces/${workspaceId}?userId=${userId}`,
         method: "DELETE",
@@ -376,7 +385,13 @@ export const api = createApi({
     }),
     updateWorkspace: build.mutation<
       Workspace,
-      { workspaceId: number; userId: number; name?: string; description?: string; joinPolicy?: number }
+      {
+        workspaceId: number;
+        userId: number;
+        name?: string;
+        description?: string;
+        joinPolicy?: number;
+      }
     >({
       query: ({ workspaceId, ...body }) => ({
         url: `workspaces/${workspaceId}`,
@@ -422,7 +437,10 @@ export const api = createApi({
       }),
       invalidatesTags: ["WorkspaceMembers"],
     }),
-    leaveWorkspace: build.mutation<void, { workspaceId: number; userId: number }>({
+    leaveWorkspace: build.mutation<
+      void,
+      { workspaceId: number; userId: number }
+    >({
       query: ({ workspaceId, userId }) => ({
         url: `workspaces/${workspaceId}/members/${userId}`,
         method: "DELETE",
@@ -436,7 +454,11 @@ export const api = createApi({
       providesTags: ["Workspaces"],
     }),
     applyToWorkspace: build.mutation<
-      { joined: boolean; member?: WorkspaceMember; application?: WorkspaceApplication },
+      {
+        joined: boolean;
+        member?: WorkspaceMember;
+        application?: WorkspaceApplication;
+      },
       { workspaceId: number; userId: number; message?: string }
     >({
       query: ({ workspaceId, ...body }) => ({
@@ -456,7 +478,12 @@ export const api = createApi({
     }),
     resolveApplication: build.mutation<
       WorkspaceApplication,
-      { workspaceId: number; applicationId: number; action: "approve" | "reject"; userId: number }
+      {
+        workspaceId: number;
+        applicationId: number;
+        action: "approve" | "reject";
+        userId: number;
+      }
     >({
       query: ({ workspaceId, applicationId, ...body }) => ({
         url: `workspaces/${workspaceId}/applications/${applicationId}`,
@@ -473,7 +500,13 @@ export const api = createApi({
     }),
     createRole: build.mutation<
       Role,
-      { workspaceId: number; name: string; color: string; permissions: number; userId: number }
+      {
+        workspaceId: number;
+        name: string;
+        color: string;
+        permissions: number;
+        userId: number;
+      }
     >({
       query: ({ workspaceId, ...body }) => ({
         url: `workspaces/${workspaceId}/roles`,
@@ -484,7 +517,14 @@ export const api = createApi({
     }),
     updateRole: build.mutation<
       Role,
-      { workspaceId: number; roleId: number; userId: number; name?: string; color?: string; permissions?: number }
+      {
+        workspaceId: number;
+        roleId: number;
+        userId: number;
+        name?: string;
+        color?: string;
+        permissions?: number;
+      }
     >({
       query: ({ workspaceId, roleId, ...body }) => ({
         url: `workspaces/${workspaceId}/roles/${roleId}`,
@@ -493,7 +533,10 @@ export const api = createApi({
       }),
       invalidatesTags: ["Roles"],
     }),
-    deleteRole: build.mutation<void, { workspaceId: number; roleId: number; userId: number }>({
+    deleteRole: build.mutation<
+      void,
+      { workspaceId: number; roleId: number; userId: number }
+    >({
       query: ({ workspaceId, roleId, userId }) => ({
         url: `workspaces/${workspaceId}/roles/${roleId}?userId=${userId}`,
         method: "DELETE",
@@ -502,7 +545,12 @@ export const api = createApi({
     }),
     updateMemberRole: build.mutation<
       WorkspaceMember,
-      { workspaceId: number; targetUserId: number; roleId: number; userId: number }
+      {
+        workspaceId: number;
+        targetUserId: number;
+        roleId: number;
+        userId: number;
+      }
     >({
       query: ({ workspaceId, targetUserId, ...body }) => ({
         url: `workspaces/${workspaceId}/members/${targetUserId}/role`,
@@ -699,7 +747,10 @@ export const api = createApi({
           return {
             error: {
               status: "CUSTOM_ERROR" as const,
-              error: error instanceof Error ? error.message : String(error) || "Could not fetch user data",
+              error:
+                error instanceof Error
+                  ? error.message
+                  : String(error) || "Could not fetch user data",
             },
           };
         }

@@ -49,7 +49,7 @@ const UserIcon = ({
         />
       ) : (
         <div
-          className={`dark:bg-dark-tertiary flex cursor-pointer items-center justify-center rounded-full bg-gray-200 transition-all duration-200 ${className}`}
+          className={`flex cursor-pointer items-center justify-center rounded-full bg-gray-200 transition-all duration-200 dark:bg-dark-tertiary ${className}`}
           style={{ width: size, height: size, boxShadow: hoverRingStyle }}
         >
           <User
@@ -60,7 +60,7 @@ const UserIcon = ({
       )}
 
       {/* Tooltip */}
-      <div className="pointer-events-none absolute top-1/2 left-full z-10 ml-2 -translate-y-1/2 transform rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <div className="pointer-events-none absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 transform whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         {tooltipLabel}: {displayName || "Unknown"}
       </div>
     </div>

@@ -19,7 +19,7 @@ export interface initialStateTypes {
   isDarkMode: boolean;
   impersonatedUser: ImpersonatedUser | null;
   notifications: AppNotification[];
-  activeWorkspaceId: number | null; 
+  activeWorkspaceId: number | null;
 }
 
 const initialState: initialStateTypes = {
@@ -27,7 +27,7 @@ const initialState: initialStateTypes = {
   isDarkMode: false,
   impersonatedUser: null,
   notifications: [],
-  activeWorkspaceId: null, 
+  activeWorkspaceId: null,
 };
 
 export const globalSlice = createSlice({
@@ -47,7 +47,7 @@ export const globalSlice = createSlice({
       state.impersonatedUser = action.payload;
     },
     setActiveWorkspaceId: (state, action: PayloadAction<number | null>) => {
-      state.activeWorkspaceId = action.payload; 
+      state.activeWorkspaceId = action.payload;
     },
     showNotification: (
       state,
@@ -80,6 +80,7 @@ export const globalSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     builder.addCase(REHYDRATE, (state, action: any) => {
       if (action.payload?.global) {
         return {
@@ -97,7 +98,7 @@ export const {
   setIsSidebarCollapsed,
   setIsDarkMode,
   setImpersonatedUser,
-  setActiveWorkspaceId, 
+  setActiveWorkspaceId,
   showNotification,
   dismissNotification,
 } = globalSlice.actions;

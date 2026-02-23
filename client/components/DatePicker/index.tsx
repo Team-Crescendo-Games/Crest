@@ -107,6 +107,7 @@ const DatePicker = ({
   // Update input value when value prop changes
   useEffect(() => {
     if (value) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInputValue(format(parseLocalDate(value), "MM/dd/yyyy"));
       setViewDate(parseLocalDate(value));
     } else {
@@ -196,8 +197,17 @@ const DatePicker = ({
   const pickerContent = (
     <div
       ref={containerRef}
-      style={anchorRef ? { position: "fixed", top: position.top, left: position.left, zIndex: 9999 } : undefined}
-      className={`dark:border-dark-tertiary dark:bg-dark-secondary w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg transition-opacity duration-75 ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
+      style={
+        anchorRef
+          ? {
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              zIndex: 9999,
+            }
+          : undefined
+      }
+      className={`w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg transition-opacity duration-75 dark:border-dark-tertiary dark:bg-dark-secondary ${isReady ? "opacity-100" : "opacity-0"} ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Manual input field */}
@@ -209,7 +219,7 @@ const DatePicker = ({
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
           placeholder="MM/DD/YYYY"
-          className="dark:border-dark-tertiary dark:bg-dark-tertiary w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:text-white dark:placeholder-gray-500"
+          className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:placeholder-gray-500"
         />
       </div>
 
@@ -217,7 +227,7 @@ const DatePicker = ({
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={handlePrevMonth}
-          className="dark:hover:bg-dark-tertiary rounded p-1 hover:bg-gray-100"
+          className="rounded p-1 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
         >
           <ChevronLeft size={16} className="text-gray-600 dark:text-gray-300" />
         </button>
@@ -226,7 +236,7 @@ const DatePicker = ({
         </span>
         <button
           onClick={handleNextMonth}
-          className="dark:hover:bg-dark-tertiary rounded p-1 hover:bg-gray-100"
+          className="rounded p-1 hover:bg-gray-100 dark:hover:bg-dark-tertiary"
         >
           <ChevronRight
             size={16}
@@ -275,7 +285,7 @@ const DatePicker = ({
                     : isTodayDate
                       ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       : isCurrentMonth
-                        ? "dark:hover:bg-dark-tertiary text-gray-700 hover:bg-gray-100 dark:text-gray-200"
+                        ? "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-tertiary"
                         : "text-gray-400 dark:text-gray-500"
               }`}
             >
@@ -287,7 +297,7 @@ const DatePicker = ({
 
       {/* Footer with clear button */}
       {selectedDate && (
-        <div className="dark:border-dark-tertiary mt-2 border-t border-gray-200 pt-2">
+        <div className="mt-2 border-t border-gray-200 pt-2 dark:border-dark-tertiary">
           <button
             onClick={handleClear}
             className="flex w-full items-center justify-center gap-1 rounded py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
