@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import {
-  useGetUsersQuery,
+  useGetWorkspaceMembersQuery,
   getUserProfileS3Key,
   User as UserType,
 } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace";
 import S3Image from "@/components/S3Image";
 import { User, Shuffle } from "lucide-react";
 import { SPRINT_MAIN_COLOR } from "@/lib/entityColors";
@@ -25,7 +26,14 @@ const shuffleArray = <T,>(arr: T[]): T[] => {
 };
 
 const StandupMode = ({ selectedUserId, onSelectUser }: Props) => {
-  const { data: users = [] } = useGetUsersQuery();
+  const { activeWorkspaceId } = useWorkspace();
+  const { data: workspaceMembers } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    { skip: !activeWorkspaceId },
+  );
+  const users: UserType[] =
+    workspaceMembers?.map((m) => m.user).filter((u): u is UserType => !!u) ??
+    [];
   const [shuffledUsers, setShuffledUsers] = useState<UserType[]>([]);
 
   // Initialize shuffled list when users load

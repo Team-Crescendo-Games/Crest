@@ -12,7 +12,7 @@ import {
   Task,
   useDeleteTaskMutation,
   useCreateTaskMutation,
-  useGetUsersQuery,
+  useGetWorkspaceMembersQuery,
   useGetBoardsQuery,
   getAttachmentS3Key,
 } from "@/state/api";
@@ -146,7 +146,13 @@ const TaskDetailModal = ({
   const [deleteTask, { isLoading: isDeleting }] = useDeleteTaskMutation();
   const [createTask, { isLoading: isDuplicating }] = useCreateTaskMutation();
 
-  const { data: users } = useGetUsersQuery();
+  const { data: workspaceMembers } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    { skip: !activeWorkspaceId },
+  );
+  const users = workspaceMembers
+    ?.map((m) => m.user)
+    .filter((u): u is NonNullable<typeof u> => !!u);
   const { data: boards } = useGetBoardsQuery(activeWorkspaceId!, {
     skip: !activeWorkspaceId,
   });

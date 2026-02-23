@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
-import { useGetUsersQuery, User as UserType } from "@/state/api";
+import { useGetWorkspaceMembersQuery, User as UserType } from "@/state/api";
+import { useWorkspace } from "@/lib/useWorkspace";
 import { FilterState } from "@/lib/filterTypes";
 
 type SearchInputProps = {
@@ -24,7 +25,14 @@ const SearchInput = ({
   const isUserSearch = searchInput.startsWith("@");
   const userSearchTerm = isUserSearch ? searchInput.slice(1) : "";
 
-  const { data: users = [] } = useGetUsersQuery();
+  const { activeWorkspaceId } = useWorkspace();
+  const { data: workspaceMembers } = useGetWorkspaceMembersQuery(
+    activeWorkspaceId!,
+    { skip: !activeWorkspaceId },
+  );
+  const users: UserType[] =
+    workspaceMembers?.map((m) => m.user).filter((u): u is UserType => !!u) ??
+    [];
 
   // Sync local input with filter state searchText (for external changes like clear all)
   useEffect(() => {
