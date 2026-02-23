@@ -11,6 +11,10 @@ export const ALL_PERMISSIONS =
   PERMISSIONS.INVITE | PERMISSIONS.EDIT_MEMBER_ROLES |
   PERMISSIONS.MANAGE_APPLICATIONS; // 31
 
+export const ADMIN_PERMISSIONS =
+  PERMISSIONS.EDIT_INFO | PERMISSIONS.INVITE |
+  PERMISSIONS.EDIT_MEMBER_ROLES | PERMISSIONS.MANAGE_APPLICATIONS; // 30
+
 export type PermissionKey = keyof typeof PERMISSIONS;
 
 export function hasPermission(userPermissions: number, requiredPermission: number): boolean {

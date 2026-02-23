@@ -18,6 +18,7 @@ model User {
   workspaceMembers  WorkspaceMember[]
   workspaceApplications WorkspaceApplication[]
   createdWorkspaces Workspace[]       @relation("WorkspaceCreator")
+  createdInvitations WorkspaceInvitation[] @relation("InvitationCreator")
   authoredTasks     Task[]            @relation("TaskAuthor")
   taskAssignments  TaskAssignment[]
   attachments      Attachment[]
@@ -39,6 +40,7 @@ model Workspace {
   createdBy User?             @relation("WorkspaceCreator", fields: [createdById], references: [userId])
   members      WorkspaceMember[]
   applications WorkspaceApplication[]
+  invitations  WorkspaceInvitation[]
   boards       Board[]
   sprints   Sprint[]
   tags      Tag[]
@@ -84,6 +86,19 @@ model WorkspaceApplication {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
+}
+
+model WorkspaceInvitation {
+  id          String    @id @default(uuid())
+  workspaceId Int
+  createdById Int
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("InvitationCreator", fields: [createdById], references: [userId], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model Board {

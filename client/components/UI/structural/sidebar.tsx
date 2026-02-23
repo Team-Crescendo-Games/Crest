@@ -27,8 +27,6 @@ import {
   ClipboardList,
   Eye,
   EyeOff,
-  Folder,
-  Home,
   LucideIcon,
   Maximize2,
   Minimize2,
@@ -53,7 +51,6 @@ import ModalNewBoard from "@/components/boards/modalNewBoard";
 import ModalNewSprint from "@/components/sprints/modalNewSprint";
 import TaskCreateModal from "@/components/tasks/taskCreateModal";
 import ModalNewWorkspace from "@/components/workspaces/ModalNewWorkspace";
-import ModalFindWorkspaces from "@/components/workspaces/ModalFindWorkspaces";
 import S3Image from "@/components/S3Image";
 import {
   BOARD_MAIN_COLOR,
@@ -69,11 +66,9 @@ import {
 import { isAdminUser } from "@/lib/adminAllowlist";
 
 const Sidebar = () => {
-  const [showOverview, setShowOverview] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showBoards, setShowBoards] = useState(true);
   const [showSprints, setShowSprints] = useState(true);
-  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(true);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const [showActiveSprintsOnly, setShowActiveSprintsOnly] = useState(true);
@@ -84,8 +79,8 @@ const Sidebar = () => {
   const [isModalNewSprintOpen, setIsModalNewSprintOpen] = useState(false);
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
   const [isModalNewWorkspaceOpen, setIsModalNewWorkspaceOpen] = useState(false);
-  const [isModalFindWorkspacesOpen, setIsModalFindWorkspacesOpen] = useState(false);
 
+  const hasShownWelcomeRef = useRef(false);
   const createMenuRef = useRef<HTMLDivElement>(null);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -122,13 +117,29 @@ const Sidebar = () => {
   useEffect(() => {
     if (workspaces && workspaces.length > 0 && !activeWorkspaceId) {
       setWorkspace(workspaces[0].id);
+      hasShownWelcomeRef.current = false;
+    } else if (
+      workspaces &&
+      workspaces.length > 0 &&
+      activeWorkspaceId &&
+      !workspaces.find((w) => w.id === activeWorkspaceId)
+    ) {
+      // Active workspace no longer in user's list — switch to first available
+      setWorkspace(workspaces[0].id);
     } else if (
       workspaces &&
       workspaces.length === 0 &&
       !isLoadingWorkspaces &&
       !isFetchingWorkspaces
     ) {
-      setIsModalNewWorkspaceOpen(true);
+      // Clear stale workspace ID when user has no workspaces
+      if (activeWorkspaceId) {
+        setWorkspace(null);
+      }
+      if (!hasShownWelcomeRef.current) {
+        hasShownWelcomeRef.current = true;
+        setIsModalNewWorkspaceOpen(true);
+      }
     }
   }, [
     workspaces,
@@ -290,12 +301,7 @@ const Sidebar = () => {
       <ModalNewWorkspace
         isOpen={isModalNewWorkspaceOpen}
         onClose={() => setIsModalNewWorkspaceOpen(false)}
-        // If they have 0 workspaces, force them to create one (hide close button)
         canCancel={!!workspaces && workspaces.length > 0}
-      />
-      <ModalFindWorkspaces
-        isOpen={isModalFindWorkspacesOpen}
-        onClose={() => setIsModalFindWorkspacesOpen(false)}
       />
 
       {/* Impersonation banner */}
@@ -369,7 +375,7 @@ const Sidebar = () => {
                       }}
                       className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors ${
                         activeWorkspaceId === ws.id
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                          ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-dark-secondary"
                       }`}
                     >
@@ -393,22 +399,16 @@ const Sidebar = () => {
                   <button
                     onClick={() => {
                       setIsWorkspaceDropdownOpen(false);
-                      setIsModalFindWorkspacesOpen(true);
-                    }}
-                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-dark-secondary"
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    Find
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsWorkspaceDropdownOpen(false);
                       setIsModalNewWorkspaceOpen(true);
                     }}
-                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: isDarkMode ? APP_ACCENT_LIGHT : APP_ACCENT_DARK,
+                      color: isDarkMode ? "#1f2937" : "#ffffff",
+                    }}
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Create
+                    Add
                   </button>
                 </div>
               </div>
@@ -482,7 +482,7 @@ const Sidebar = () => {
         )}
       </div>
 
-      {!isSidebarCollapsed && (
+      {!isSidebarCollapsed && activeWorkspaceId && (
         <>
           {fullscreenSection === "boards" ? (
             /* FULLSCREEN BOARDS */
@@ -660,123 +660,66 @@ const Sidebar = () => {
                 )}
               </div>
             )}
-            <button
-              onClick={() => setShowOverview((prev) => !prev)}
-              className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
-            >
-              <div className="flex items-center gap-2">
-                <Home className="h-4 w-4" />
-                <span>Overview</span>
-              </div>
-              <ChevronDown
-                className={`h-5 w-5 transition-transform duration-300 ${showOverview ? "rotate-180" : "rotate-0"}`}
-              />
-            </button>
-            {showOverview && (
-              <div className="overflow-hidden">
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "0ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={BarChart3}
-                    label="Dashboard"
-                    href="/dashboard"
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "50ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={ClipboardList}
-                    label="My Tasks"
-                    href={userId ? `/users/${userId}` : "/users"}
-                    isDarkMode={isDarkMode}
-                    isActiveOverride={
-                      userId ? pathname === `/users/${userId}` : false
-                    }
-                  />
-                </div>
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "100ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={Bell}
-                    label="Inbox"
-                    href="/inbox"
-                    isDarkMode={isDarkMode}
-                    badge={unreadCount}
-                  />
-                </div>
-              </div>
-            )}
+            <div className="px-6 pb-1 pt-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Overview
+              </span>
+            </div>
+            <SidebarSubLinkWithIcon
+              icon={BarChart3}
+              label="Dashboard"
+              href="/dashboard"
+              isDarkMode={isDarkMode}
+            />
+            <SidebarSubLinkWithIcon
+              icon={ClipboardList}
+              label="My Tasks"
+              href={userId ? `/users/${userId}` : "/users"}
+              isDarkMode={isDarkMode}
+              isActiveOverride={
+                userId ? pathname === `/users/${userId}` : false
+              }
+            />
+            <SidebarSubLinkWithIcon
+              icon={Bell}
+              label="Inbox"
+              href="/inbox"
+              isDarkMode={isDarkMode}
+              badge={unreadCount}
+            />
           </div>
 
           {/* WORKSPACE SECTION */}
           <div className="relative z-0 shrink-0">
-            <button
-              onClick={() => setShowWorkspaceMenu((prev) => !prev)}
-              className="flex w-full cursor-pointer items-center justify-between rounded-md bg-gray-50 px-6 py-2 text-gray-500 transition-all hover:pl-7 hover:text-gray-700 hover:scale-[1.01] dark:bg-dark-bg dark:hover:text-gray-300"
-            >
-              <div className="flex items-center gap-2">
-                <Folder className="h-4 w-4" />
-                <span>Workspace</span>
-              </div>
-              <ChevronDown
-                className={`h-5 w-5 transition-transform duration-300 ${showWorkspaceMenu ? "rotate-180" : "rotate-0"}`}
-              />
-            </button>
-            {showWorkspaceMenu && (
-              <div className="overflow-hidden">
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "0ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={Search}
-                    label="Search"
-                    href="/search"
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "50ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={Tag}
-                    label="Tags"
-                    href="/tags"
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "100ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={Users}
-                    label="Team"
-                    href="/team"
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-                <div
-                  className="animate-slide-down opacity-0"
-                  style={{ animationDelay: "150ms" }}
-                >
-                  <SidebarSubLinkWithIcon
-                    icon={Settings}
-                    label="Settings"
-                    href="/settings/workspace"
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-              </div>
-            )}
+            <div className="px-6 pb-1 pt-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Workspace
+              </span>
+            </div>
+            <SidebarSubLinkWithIcon
+              icon={Search}
+              label="Search"
+              href="/search"
+              isDarkMode={isDarkMode}
+            />
+            <SidebarSubLinkWithIcon
+              icon={Tag}
+              label="Tags"
+              href="/tags"
+              isDarkMode={isDarkMode}
+            />
+            <SidebarSubLinkWithIcon
+              icon={Users}
+              label="Team"
+              href="/team"
+              isDarkMode={isDarkMode}
+            />
+            <SidebarSubLinkWithIcon
+              icon={Settings}
+              label="Settings"
+              href="/settings/workspace"
+              isDarkMode={isDarkMode}
+            />
           </div>
 
           {/* BOARDS & SPRINTS */}

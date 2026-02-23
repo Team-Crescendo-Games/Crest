@@ -1,11 +1,15 @@
 [
-  { "id": 1, "name": "Admin", "color": "#EF4444", "permissions": 31, "workspaceId": 1 },
-  { "id": 2, "name": "Member", "color": "#6B7280", "permissions": 2, "workspaceId": 1 },
-  { "id": 3, "name": "Admin", "color": "#EF4444", "permissions": 31, "workspaceId": 2 },
-  { "id": 4, "name": "Member", "color": "#6B7280", "permissions": 2, "workspaceId": 2 },
-  { "id": 5, "name": "Admin", "color": "#EF4444", "permissions": 31, "workspaceId": 3 },
-  { "id": 6, "name": "Member", "color": "#6B7280", "permissions": 2, "workspaceId": 3 },
-  { "id": 7, "name": "Viewer", "color": "#3B82F6", "permissions": 0, "workspaceId": 3 },
-  { "id": 8, "name": "Admin", "color": "#EF4444", "permissions": 31, "workspaceId": 4 },
-  { "id": 9, "name": "Member", "color": "#6B7280", "permissions": 2, "workspaceId": 4 }
+  { "id": 1, "name": "Owner", "color": "#F59E0B", "permissions": 31, "workspaceId": 1 },
+  { "id": 2, "name": "Admin", "color": "#EF4444", "permissions": 30, "workspaceId": 1 },
+  { "id": 3, "name": "Member", "color": "#6B7280", "permissions": 4, "workspaceId": 1 },
+  { "id": 4, "name": "Owner", "color": "#F59E0B", "permissions": 31, "workspaceId": 2 },
+  { "id": 5, "name": "Admin", "color": "#EF4444", "permissions": 30, "workspaceId": 2 },
+  { "id": 6, "name": "Member", "color": "#6B7280", "permissions": 4, "workspaceId": 2 },
+  { "id": 7, "name": "Owner", "color": "#F59E0B", "permissions": 31, "workspaceId": 3 },
+  { "id": 8, "name": "Admin", "color": "#EF4444", "permissions": 30, "workspaceId": 3 },
+  { "id": 9, "name": "Member", "color": "#6B7280", "permissions": 4, "workspaceId": 3 },
+  { "id": 10, "name": "Viewer", "color": "#3B82F6", "permissions": 0, "workspaceId": 3 },
+  { "id": 11, "name": "Owner", "color": "#F59E0B", "permissions": 31, "workspaceId": 4 },
+  { "id": 12, "name": "Admin", "color": "#EF4444", "permissions": 30, "workspaceId": 4 },
+  { "id": 13, "name": "Member", "color": "#6B7280", "permissions": 4, "workspaceId": 4 }
 ]

@@ -18,6 +18,7 @@ import { requirePermission, requireAdmin } from "../middleware/permissionMiddlew
 import { requireSystemAdmin } from "../middleware/requireSystemAdmin.ts";
 import { PERMISSIONS } from "../lib/permissions.ts";
 import roleRoutes from "./roleRoutes.ts";
+import { workspaceInvitationRouter } from "./invitationRoutes.ts";
 
 const router = Router();
 
@@ -125,5 +126,8 @@ router.patch("/:workspaceId/members/:userId/role", requirePermission(PERMISSIONS
 
 // Role routes nested under workspace
 router.use("/:workspaceId/roles", roleRoutes);
+
+// Invitation routes nested under workspace
+router.use("/:workspaceId/invitations", workspaceInvitationRouter);
 
 export default router;

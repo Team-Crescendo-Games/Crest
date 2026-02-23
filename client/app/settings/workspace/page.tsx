@@ -10,6 +10,7 @@ import {
   useUpdateWorkspaceIconMutation,
   useUpdateWorkspaceHeaderMutation,
   useGetPresignedUploadUrlMutation,
+  useLeaveWorkspaceMutation,
 } from "@/state/api";
 import { useAuthUser } from "@/lib/useAuthUser";
 import { useRouter } from "next/navigation";
@@ -34,6 +35,9 @@ const WorkspaceSettingsPage = () => {
   const [updateWorkspaceIcon] = useUpdateWorkspaceIconMutation();
   const [updateWorkspaceHeader] = useUpdateWorkspaceHeaderMutation();
   const [getPresignedUploadUrl] = useGetPresignedUploadUrlMutation();
+  const [leaveWorkspace, { isLoading: isLeaving }] = useLeaveWorkspaceMutation();
+
+  const { canEditInfo, canDelete } = usePermissions();
 
   const activeWorkspace = workspaces?.find((w) => w.id === activeWorkspaceId);
 
@@ -42,6 +46,7 @@ const WorkspaceSettingsPage = () => {
   const [joinPolicy, setJoinPolicy] = useState(0);
   const [saved, setSaved] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [cropTarget, setCropTarget] = useState<"icon" | "header">("icon");
   const [isUploadingIcon, setIsUploadingIcon] = useState(false);
@@ -56,8 +61,6 @@ const WorkspaceSettingsPage = () => {
     (name !== activeWorkspace.name ||
       description !== (activeWorkspace.description || "") ||
       joinPolicy !== (activeWorkspace.joinPolicy ?? 0));
-
-  const { canEditInfo, canDelete } = usePermissions();
 
   useEffect(() => {
     if (activeWorkspace) {
@@ -199,7 +202,7 @@ const WorkspaceSettingsPage = () => {
   }
 
   return (
-    <div className="h-full p-8">
+    <div className="h-full overflow-y-auto p-8">
       <div className="mt-6 max-w-lg space-y-6">
         {/* Workspace Icon + Title */}
         <div className="flex items-center gap-4">
@@ -381,6 +384,53 @@ const WorkspaceSettingsPage = () => {
               <span className="text-sm text-green-600 dark:text-green-400">
                 Saved
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Leave Workspace */}
+        {activeWorkspace && activeWorkspace.createdById !== userId && (
+          <div className="border-t border-gray-200 pt-6 dark:border-stroke-dark">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+              Leave Workspace
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
+              You will lose access to all boards, tasks, and sprints in this workspace.
+            </p>
+            {!showLeaveConfirm ? (
+              <button
+                onClick={() => setShowLeaveConfirm(true)}
+                className="mt-3 rounded border border-amber-300 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
+              >
+                Leave Workspace
+              </button>
+            ) : (
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    if (!activeWorkspaceId || !userId) return;
+                    try {
+                      await leaveWorkspace({ workspaceId: activeWorkspaceId, userId }).unwrap();
+                      setWorkspace(null);
+                      router.push("/dashboard");
+                    } catch (err: any) {
+                      console.error("Failed to leave workspace:", err);
+                    }
+                  }}
+                  disabled={isLeaving}
+                  className={`rounded bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700 ${
+                    isLeaving ? "cursor-not-allowed opacity-50" : ""
+                  }`}
+                >
+                  {isLeaving ? "Leaving..." : "Yes, leave this workspace"}
+                </button>
+                <button
+                  onClick={() => setShowLeaveConfirm(false)}
+                  className="rounded px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
             )}
           </div>
         )}

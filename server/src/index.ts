@@ -25,6 +25,7 @@ import notificationRoutes from "./routes/notificationRoutes.ts";
 import adminRoutes from "./routes/adminRoutes.ts";
 import analyticsRoutes from "./routes/analyticsRoutes.ts";
 import applicationRoutes from "./routes/applicationRoutes.ts";
+import { joinRouter } from "./routes/invitationRoutes.ts";
 import { postUser } from "./controllers/userController.ts";
 
 const app = express();
@@ -58,6 +59,7 @@ app.use("/attachments", attachmentRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/admin", adminRoutes);
 app.use("/analytics", analyticsRoutes);
+app.use("/invitations", joinRouter);
 app.post("/create-user", postUser);
 
 import { createServer } from "http";

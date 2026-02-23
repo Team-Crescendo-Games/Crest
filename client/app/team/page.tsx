@@ -11,9 +11,13 @@ import {
   useUpdateMemberRoleMutation,
   useGetWorkspaceApplicationsQuery,
   useResolveApplicationMutation,
+  useGetInvitationsQuery,
+  useCreateInvitationMutation,
+  useDeleteInvitationMutation,
   type Role,
   type WorkspaceMember,
   type WorkspaceApplication,
+  type WorkspaceInvitation,
 } from "@/state/api";
 import Header from "@/components/Header";
 import UserCard from "@/components/UserCard";
@@ -25,10 +29,10 @@ import { useAuthUser } from "@/lib/useAuthUser";
 import { useAppDispatch } from "@/app/redux";
 import { showNotification } from "@/state";
 import { PERMISSIONS, hasPermission } from "@/lib/permissions";
-import { Plus, Pencil, Trash2, Shield, Users as UsersIcon, X, UserPlus, Check, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Users as UsersIcon, X, UserPlus, Check, XCircle, Copy, KeyRound } from "lucide-react";
 import ModalInviteMember from "@/components/workspaces/modalInviteMember";
 
-type Tab = "members" | "roles" | "applications";
+type Tab = "members" | "roles" | "applications" | "invitations";
 
 const PERMISSION_LABELS: { key: keyof typeof PERMISSIONS; label: string }[] = [
   { key: "DELETE", label: "Delete Workspace" },
@@ -477,7 +481,7 @@ function RolesTab({
                     Members
                   </span>
                 </div>
-                {canEditMemberRoles && role.name !== "Admin" && role.name !== "Member" && (
+                {canEditMemberRoles && role.name !== "Owner" && role.name !== "Admin" && role.name !== "Member" && (
                   <>
                     <div className="group relative">
                       <button
@@ -521,7 +525,7 @@ function RolesTab({
         }}
         onSave={handleSave}
         initialRole={editingRole}
-        readOnly={!canEditMemberRoles || editingRole?.name === "Admin" || editingRole?.name === "Member"}
+        readOnly={!canEditMemberRoles || editingRole?.name === "Owner" || editingRole?.name === "Admin" || editingRole?.name === "Member"}
       />
 
       {membersModalRole && (
@@ -612,6 +616,114 @@ function ApplicationsTab({
   );
 }
 
+// --- Invitations Tab ---
+const InvitationsTab = ({
+  workspaceId,
+  userId,
+}: {
+  workspaceId: number;
+  userId: number;
+}) => {
+  const { data: invitations } = useGetInvitationsQuery(
+    { workspaceId, userId },
+    { skip: !workspaceId || !userId },
+  );
+  const [createInvitation, { isLoading: isCreating }] = useCreateInvitationMutation();
+  const [deleteInvitation] = useDeleteInvitationMutation();
+  const [expiresInDays, setExpiresInDays] = useState(7);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCreate = async () => {
+    try {
+      await createInvitation({ workspaceId, userId, expiresInDays }).unwrap();
+    } catch (err) {
+      console.error("Failed to create invitation:", err);
+    }
+  };
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center gap-3">
+        <label className="text-xs text-gray-500 dark:text-neutral-400">Expires in</label>
+        <select
+          value={expiresInDays}
+          onChange={(e) => setExpiresInDays(Number(e.target.value))}
+          className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white"
+        >
+          {[1, 3, 7, 14, 30, 60, 90].map((d) => (
+            <option key={d} value={d}>{d} day{d > 1 ? "s" : ""}</option>
+          ))}
+        </select>
+        <button
+          onClick={handleCreate}
+          disabled={isCreating}
+          className="inline-flex cursor-pointer items-center gap-1 rounded bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-50 dark:bg-white dark:text-gray-800 dark:hover:bg-gray-200"
+        >
+          <Plus className="h-3 w-3" />
+          {isCreating ? "Creating..." : "Generate Link"}
+        </button>
+      </div>
+
+      {!invitations || invitations.length === 0 ? (
+        <p className="py-8 text-center text-sm text-gray-500 dark:text-neutral-400">
+          No invitation links yet. Generate one to share with others.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {invitations.map((inv) => {
+            const isExpired = new Date(inv.expiresAt) < new Date();
+            return (
+              <div
+                key={inv.id}
+                className={`flex items-center gap-3 rounded-md border p-3 ${
+                  isExpired
+                    ? "border-red-200 bg-red-50/50 dark:border-red-500/20 dark:bg-red-500/5"
+                    : "border-gray-200 dark:border-stroke-dark"
+                }`}
+              >
+                <KeyRound className="h-4 w-4 shrink-0 text-gray-400" />
+                <code className="min-w-0 flex-1 truncate text-xs text-gray-700 dark:text-gray-300">
+                  {inv.id}
+                </code>
+                <span className="shrink-0 text-xs text-gray-500 dark:text-neutral-400">
+                  {inv.createdBy?.username && `by ${inv.createdBy.username}`}
+                </span>
+                <span className={`shrink-0 text-xs ${isExpired ? "text-red-500" : "text-gray-500 dark:text-neutral-400"}`}>
+                  {isExpired ? "Expired" : `Expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(inv.id);
+                    setCopiedId(inv.id);
+                    setTimeout(() => setCopiedId(null), 2000);
+                  }}
+                  className="shrink-0 cursor-pointer rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-tertiary dark:hover:text-gray-200"
+                  title="Copy invitation ID"
+                >
+                  {copiedId === inv.id ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await deleteInvitation({ workspaceId, invitationId: inv.id, userId }).unwrap();
+                    } catch (err) {
+                      console.error("Failed to delete invitation:", err);
+                    }
+                  }}
+                  className="shrink-0 cursor-pointer rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                  title="Revoke invitation"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- Main Page ---
 const Users = () => {
   const [activeTab, setActiveTab] = useState<Tab>("members");
@@ -674,6 +786,11 @@ const Users = () => {
             Applications
           </button>
         )}
+        {canInvite && (
+          <button className={tabClass("invitations")} onClick={() => setActiveTab("invitations")}>
+            Invitations
+          </button>
+        )}
       </div>
 
       {/* Tab content */}
@@ -697,6 +814,12 @@ const Users = () => {
         <ApplicationsTab
           workspaceId={activeWorkspaceId!}
           currentUserId={userId}
+        />
+      )}
+      {activeTab === "invitations" && canInvite && (
+        <InvitationsTab
+          workspaceId={activeWorkspaceId!}
+          userId={userId!}
         />
       )}
     </div>

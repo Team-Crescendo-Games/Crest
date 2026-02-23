@@ -26,6 +26,12 @@ export const createRole = async (req: Request, res: Response): Promise<void> => 
         const { workspaceId } = req.params;
         const { name, color, permissions } = req.body;
 
+        const reservedNames = ["Owner", "Admin", "Member"];
+        if (reservedNames.includes(name)) {
+            res.status(400).json({ error: `"${name}" is a reserved role name` });
+            return;
+        }
+
         const role = await getPrismaClient().role.create({
             data: {
                 name,
@@ -65,8 +71,8 @@ export const updateRole = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        if (existingRole.name === "Admin" || existingRole.name === "Member") {
-            res.status(400).json({ error: `Cannot modify or delete the default ${existingRole.name} role` });
+        if (existingRole.name === "Owner" || existingRole.name === "Admin" || existingRole.name === "Member") {
+            res.status(400).json({ error: `Cannot modify the default ${existingRole.name} role` });
             return;
         }
 
@@ -115,8 +121,8 @@ export const deleteRole = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        if (role.name === "Admin" || role.name === "Member") {
-            res.status(400).json({ error: `Cannot modify or delete the default ${role.name} role` });
+        if (role.name === "Owner" || role.name === "Admin" || role.name === "Member") {
+            res.status(400).json({ error: `Cannot delete the default ${role.name} role` });
             return;
         }
 

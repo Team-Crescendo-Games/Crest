@@ -32,6 +32,16 @@ export interface WorkspaceApplication {
   user?: User;
 }
 
+export interface WorkspaceInvitation {
+  id: string;
+  workspaceId: number;
+  createdById: number;
+  expiresAt: string;
+  createdAt: string;
+  workspace?: { name: string };
+  createdBy?: { username: string };
+}
+
 export interface Role {
   id: number;
   name: string;
@@ -316,6 +326,7 @@ export const api = createApi({
     "Analytics",
     "Roles",
     "WorkspaceApplications",
+    "Invitations",
   ],
   endpoints: (build) => ({
     // --- WORKSPACES ---
@@ -410,6 +421,13 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: ["WorkspaceMembers"],
+    }),
+    leaveWorkspace: build.mutation<void, { workspaceId: number; userId: number }>({
+      query: ({ workspaceId, userId }) => ({
+        url: `workspaces/${workspaceId}/members/${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Workspaces", "WorkspaceMembers"],
     }),
 
     // --- APPLICATIONS ---
@@ -1010,6 +1028,48 @@ export const api = createApi({
       invalidatesTags: ["Tasks", "Sprints"],
     }),
 
+    // --- INVITATIONS ---
+    getInvitations: build.query<
+      WorkspaceInvitation[],
+      { workspaceId: number; userId: number }
+    >({
+      query: ({ workspaceId, userId }) =>
+        `workspaces/${workspaceId}/invitations?userId=${userId}`,
+      providesTags: ["Invitations"],
+    }),
+    createInvitation: build.mutation<
+      WorkspaceInvitation,
+      { workspaceId: number; userId: number; expiresInDays?: number }
+    >({
+      query: ({ workspaceId, ...body }) => ({
+        url: `workspaces/${workspaceId}/invitations`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Invitations"],
+    }),
+    deleteInvitation: build.mutation<
+      void,
+      { workspaceId: number; invitationId: string; userId: number }
+    >({
+      query: ({ workspaceId, invitationId, userId }) => ({
+        url: `workspaces/${workspaceId}/invitations/${invitationId}?userId=${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Invitations"],
+    }),
+    joinByInvitation: build.mutation<
+      { joined: boolean; workspaceId: number; workspaceName: string },
+      { invitationId: string; userId: number }
+    >({
+      query: ({ invitationId, ...body }) => ({
+        url: `invitations/${invitationId}/join`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Workspaces"],
+    }),
+
     // --- ANALYTICS ---
     getPointsAnalytics: build.query<PointsDataPoint[], PointsAnalyticsParams>({
       query: ({ userId, workspaceId, groupBy, startDate, endDate }) =>
@@ -1032,6 +1092,7 @@ export const {
   useUpdateWorkspaceHeaderMutation,
   useGetWorkspaceMembersQuery,
   useAddWorkspaceMemberMutation,
+  useLeaveWorkspaceMutation,
   // Applications
   useGetDiscoverableWorkspacesQuery,
   useApplyToWorkspaceMutation,
@@ -1093,7 +1154,7 @@ export const {
   useRemoveTaskFromSprintMutation,
   useDuplicateSprintMutation,
   useArchiveSprintMutation,
-  // Activities, Notifications, Analytics, Attachments
+  // Activities, Notifications, Analytics, Attachments, Invitations
   useGetActivitiesByTaskQuery,
   useGetNotificationsQuery,
   useGetUnreadCountQuery,
@@ -1104,4 +1165,8 @@ export const {
   useGetPointsAnalyticsQuery,
   useCreateAttachmentMutation,
   useDeleteAttachmentMutation,
+  useGetInvitationsQuery,
+  useCreateInvitationMutation,
+  useDeleteInvitationMutation,
+  useJoinByInvitationMutation,
 } = api;

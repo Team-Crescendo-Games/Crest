@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { getPrismaClient } from "../lib/prisma.ts";
-import { ALL_PERMISSIONS, PERMISSIONS } from "../lib/permissions.ts";
+import { ALL_PERMISSIONS, ADMIN_PERMISSIONS, PERMISSIONS } from "../lib/permissions.ts";
 
 /**
  * Admin: Get all workspaces with creator info
@@ -105,8 +105,8 @@ export const getUserWorkspaces = async (req: Request, res: Response) => {
 };
 
 /**
- * Create a new workspace AND automatically add the creator as an ADMIN.
- * Also creates default "Admin" (permissions=31) and "Member" (permissions=2) roles.
+ * Create a new workspace AND automatically add the creator as Owner.
+ * Creates default roles: Owner (all permissions), Admin (all except delete), Member (invite only).
  */
 export const createWorkspace = async (req: Request, res: Response) => {
     try {
@@ -135,11 +135,20 @@ export const createWorkspace = async (req: Request, res: Response) => {
             });
 
             // 2. Create default roles
-            const adminRole = await tx.role.create({
+            const ownerRole = await tx.role.create({
+                data: {
+                    name: "Owner",
+                    color: "#F59E0B",
+                    permissions: ALL_PERMISSIONS,
+                    workspaceId: ws.id,
+                },
+            });
+
+            await tx.role.create({
                 data: {
                     name: "Admin",
                     color: "#EF4444",
-                    permissions: ALL_PERMISSIONS,
+                    permissions: ADMIN_PERMISSIONS,
                     workspaceId: ws.id,
                 },
             });
@@ -148,17 +157,17 @@ export const createWorkspace = async (req: Request, res: Response) => {
                 data: {
                     name: "Member",
                     color: "#6B7280",
-                    permissions: PERMISSIONS.EDIT_INFO, // 4
+                    permissions: PERMISSIONS.INVITE,
                     workspaceId: ws.id,
                 },
             });
 
-            // 3. Add the creator as a member with the Admin role
+            // 3. Add the creator as a member with the Owner role
             await tx.workspaceMember.create({
                 data: {
                     userId: numericUserId,
                     workspaceId: ws.id,
-                    roleId: adminRole.id,
+                    roleId: ownerRole.id,
                 },
             });
 
@@ -309,14 +318,22 @@ export const addWorkspaceMember = async (req: Request, res: Response) => {
 export const removeWorkspaceMember = async (req: Request, res: Response) => {
     try {
         const { workspaceId, userId } = req.params;
+        const prisma = getPrismaClient();
+        const wsId = Number(workspaceId);
+        const targetUserId = Number(userId);
 
-        // Because we set up a composite unique key (@@unique([userId, workspaceId])),
-        // we can query by it directly to delete the exact join record.
-        await getPrismaClient().workspaceMember.delete({
+        // Prevent removing the workspace creator
+        const workspace = await prisma.workspace.findUnique({ where: { id: wsId } });
+        if (workspace?.createdById === targetUserId) {
+            res.status(400).json({ error: "Cannot remove the workspace owner" });
+            return;
+        }
+
+        await prisma.workspaceMember.delete({
             where: {
                 userId_workspaceId: {
-                    userId: Number(userId),
-                    workspaceId: Number(workspaceId),
+                    userId: targetUserId,
+                    workspaceId: wsId,
                 },
             },
         });
