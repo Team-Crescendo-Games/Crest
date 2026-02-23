@@ -29,6 +29,7 @@ const formFields = {
       placeholder: "Enter your username or email",
       label: "Username or Email",
       isRequired: true,
+      type: "text",
     },
   },
   signUp: {
