@@ -40,6 +40,7 @@ export function SubtaskSection({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -78,19 +79,22 @@ export function SubtaskSection({
   }, [query, isAdding, boardId, taskId, subtasks]);
 
   function handleAdd(subtaskId: string) {
+    setError(null);
     startTransition(async () => {
       const formData = new FormData();
       formData.set("parentTaskId", taskId);
       formData.set("subtaskId", subtaskId);
       const result = await addSubtask(null, formData);
       if (result?.error) {
-        // Could show a toast here; for now just log
-        console.error(result.error);
+        setError(result.error);
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => setError(null), 5000);
       }
     });
   }
 
   function handleRemove(subtaskId: string) {
+    setError(null);
     // Optimistic removal
     setSubtasks((prev) => prev.filter((s) => s.id !== subtaskId));
     startTransition(async () => {
@@ -99,7 +103,8 @@ export function SubtaskSection({
       formData.set("subtaskId", subtaskId);
       const result = await removeSubtask(null, formData);
       if (result?.error) {
-        console.error(result.error);
+        setError(result.error);
+        setTimeout(() => setError(null), 5000);
         // Revert on error
         setSubtasks(initialSubtasks);
       }
@@ -136,6 +141,19 @@ export function SubtaskSection({
           )}
         </button>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mt-2 flex items-center justify-between rounded-md border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs text-red-400">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 shrink-0 rounded p-0.5 transition-colors hover:bg-red-400/20"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Existing subtasks */}
       {subtasks.length > 0 && (

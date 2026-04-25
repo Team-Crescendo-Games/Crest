@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
   TaskPriority,
+  TaskStatus,
 } from "@/prisma/generated/prisma/enums";
 import {
   TASK_PRIORITIES,
@@ -88,18 +89,40 @@ export default async function MemberTasksPage({
     }));
   }
 
-  // Fetch tasks assigned to this member within this workspace
-  const [assignedTasks, boards, sprints, allMembers, allTags] = await Promise.all([
-    prisma.task.findMany({
-      where: taskWhere,
-      orderBy: { createdAt: "desc" },
-      include: {
-        assignees: { select: { id: true, name: true, image: true } },
-        tags: { select: { name: true, color: true } },
-        board: { select: { id: true, name: true } },
-        _count: { select: { comments: true } },
-      },
-    }),
+  // Page sizes per column type
+  const PAGE_SIZE_DEFAULT = 20;
+  const PAGE_SIZE_COMPLETED = 10;
+
+  const taskInclude = {
+    assignees: { select: { id: true, name: true, image: true } },
+    tags: { select: { name: true, color: true } },
+    board: { select: { id: true, name: true } },
+    subtasks: { select: { id: true, status: true } },
+    _count: { select: { comments: true } },
+  } as const;
+
+  // Build per-status where clauses for assignee-scoped tasks
+  const statusWhere = (status: TaskStatus) => ({
+    ...taskWhere,
+    status,
+  });
+
+  // Fetch tasks assigned to this member within this workspace, paginated per status
+  const [
+    notStartedTasks, notStartedCount,
+    inProgressTasks, inProgressCount,
+    inReviewTasks, inReviewCount,
+    completedTasksList, completedCountVal,
+    boards, sprints, allMembers, allTags,
+  ] = await Promise.all([
+    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     prisma.board.findMany({
       where: { workspaceId, isActive: true },
       select: { id: true, name: true },
@@ -122,26 +145,55 @@ export default async function MemberTasksPage({
     }),
   ]);
 
-  const completedTasks = assignedTasks.filter(
-    (t) => t.status === "COMPLETED",
-  ).length;
-  const totalPoints = assignedTasks.reduce(
-    (sum, t) => sum + (t.points ?? 0),
-    0,
-  );
+  const totalAssigned = notStartedCount + inProgressCount + inReviewCount + completedCountVal;
+  const completedTasks = completedCountVal;
+
+  // Use a typed helper to get the correct Prisma return type with includes
+  type TaskWithIncludes = Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number];
+
+  const allPagedTasks = [
+    ...notStartedTasks as TaskWithIncludes[],
+    ...inProgressTasks as TaskWithIncludes[],
+    ...inReviewTasks as TaskWithIncludes[],
+    ...completedTasksList as TaskWithIncludes[],
+  ];
+  const totalPoints = allPagedTasks.reduce((sum, t) => sum + (t.points ?? 0), 0);
+
+  const mapTask = (t: TaskWithIncludes) => ({
+    ...t,
+    boardId: t.board.id,
+    commentCount: t._count.comments,
+    subtaskTotal: t.subtasks.length,
+    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
+  });
+
+  const tasksByStatus: Record<string, ReturnType<typeof mapTask>[]> = {
+    NOT_STARTED: (notStartedTasks as TaskWithIncludes[]).map(mapTask),
+    IN_PROGRESS: (inProgressTasks as TaskWithIncludes[]).map(mapTask),
+    IN_REVIEW: (inReviewTasks as TaskWithIncludes[]).map(mapTask),
+    COMPLETED: (completedTasksList as TaskWithIncludes[]).map(mapTask),
+  };
 
   const columns = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: assignedTasks
-      .filter((t) => t.status === status)
-      .map((t) => ({
-        ...t,
-        boardId: t.board.id,
-        commentCount: t._count.comments,
-      })),
+    tasks: tasksByStatus[status] ?? [],
   }));
+
+  const columnCounts: Record<string, number> = {
+    NOT_STARTED: notStartedCount,
+    IN_PROGRESS: inProgressCount,
+    IN_REVIEW: inReviewCount,
+    COMPLETED: completedCountVal,
+  };
+
+  const columnPageSizes: Record<string, number> = {
+    NOT_STARTED: PAGE_SIZE_DEFAULT,
+    IN_PROGRESS: PAGE_SIZE_DEFAULT,
+    IN_REVIEW: PAGE_SIZE_DEFAULT,
+    COMPLETED: PAGE_SIZE_COMPLETED,
+  };
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -181,7 +233,7 @@ export default async function MemberTasksPage({
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-3 gap-3">
-        <StatCard label="Assigned" value={assignedTasks.length} barColor="#f0a468" />
+        <StatCard label="Assigned" value={totalAssigned} barColor="#f0a468" />
         <StatCard label="Completed" value={completedTasks} barColor="#6bc96b" />
         <StatCard label="Points" value={totalPoints} barColor="#9c9c98" />
       </div>
@@ -205,7 +257,7 @@ export default async function MemberTasksPage({
         </div>
 
         <div className="mt-4">
-          {assignedTasks.length === 0 ? (
+          {totalAssigned === 0 ? (
             <p className="py-8 text-center text-xs text-fg-muted">
               No tasks assigned to {member.user.name} in this workspace.
             </p>
@@ -221,6 +273,14 @@ export default async function MemberTasksPage({
               sprints={sprints}
               members={allMembers.map((m) => m.user)}
               tags={allTags}
+              columnCounts={columnCounts}
+              columnPageSizes={columnPageSizes}
+              columnFilters={{
+                q,
+                priorities,
+                tagFilters,
+                assigneeUserId: member.user.id,
+              }}
             />
           )}
         </div>

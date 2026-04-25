@@ -1,14 +1,14 @@
 [
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "uploadedBy": "dave",
-    "fileName": "board-profiling-report.pdf",
-    "fileUrl": "https://example.com/dev/attachments/board-profiling-report.pdf",
+    "fileName": "profiling-report.pdf",
+    "fileUrl": "https://example.com/dev/attachments/profiling-report.pdf",
     "fileSize": 234567,
     "mimeType": "application/pdf"
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "uploadedBy": "dave",
     "fileName": "query-timings.csv",
     "fileUrl": "https://example.com/dev/attachments/query-timings.csv",
@@ -16,15 +16,15 @@
     "mimeType": "text/csv"
   },
   {
-    "task": "bolt-onboarding-flow",
+    "task": "bolt-task-0",
     "uploadedBy": "eve",
-    "fileName": "onboarding-wireframes-v1.png",
-    "fileUrl": "https://example.com/dev/attachments/onboarding-wireframes-v1.png",
+    "fileName": "wireframes-v1.png",
+    "fileUrl": "https://example.com/dev/attachments/wireframes-v1.png",
     "fileSize": 1245678,
     "mimeType": "image/png"
   },
   {
-    "task": "bolt-empty-states",
+    "task": "bolt-task-1",
     "uploadedBy": "eve",
     "fileName": "empty-state-illustrations.png",
     "fileUrl": "https://example.com/dev/attachments/empty-state-illustrations.png",

@@ -81,6 +81,7 @@ interface SprintFixture {
   title: string;
   startOffsetDays: number;
   endOffsetDays: number;
+  isActive?: boolean;
 }
 
 interface TaskFixture {
@@ -332,6 +333,7 @@ async function main() {
         title: s.title,
         startDate: daysFromNow(s.startOffsetDays),
         endDate: daysFromNow(s.endOffsetDays),
+        isActive: s.isActive !== undefined ? s.isActive : true,
         workspaceId,
       },
     });

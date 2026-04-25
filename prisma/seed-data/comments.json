@@ -1,42 +1,47 @@
 [
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "bob",
-    "text": "Reproduced on Safari 17 — looks like a cookie SameSite issue. Going to try SameSite=None with Secure next."
+    "text": "Reproduced the issue — looks like a cookie SameSite problem. Going to try SameSite=None with Secure next."
   },
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "alice",
     "text": "That should work. Make sure we only set Secure in production so local dev still works over http."
   },
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "bob",
     "text": "Good point. Pushed a fix to the branch, running it through QA now."
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "user": "dave",
     "text": "Profiling confirms N+1 queries when loading tags. We should use Prisma's include with a single query."
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "user": "alice",
     "text": "Pagination subtask is in flight. Should cut initial load time by 70% based on local testing."
   },
   {
-    "task": "bolt-onboarding-flow",
+    "task": "acme-task-5",
+    "user": "carol",
+    "text": "Finished the first pass. Dark mode contrast looks much better now across all pages."
+  },
+  {
+    "task": "bolt-task-0",
     "user": "eve",
     "text": "First round of wireframes shared in Figma. Would love feedback before I spend more time on visuals."
   },
   {
-    "task": "bolt-onboarding-flow",
+    "task": "bolt-task-0",
     "user": "bob",
     "text": "Looking great! Can we make step 2 optional? Users can always fill it in later from settings."
   },
   {
-    "task": "play-ai-summary",
+    "task": "play-task-0",
     "user": "carol",
-    "text": "Early prototype working with a small local model. Quality is decent for threads under 20 comments."
+    "text": "Early prototype working. Quality is decent for the initial experiment."
   }
 ]

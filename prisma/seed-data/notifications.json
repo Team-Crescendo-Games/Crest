@@ -1,50 +1,43 @@
 [
   {
     "user": "bob",
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "type": "TASK_ASSIGNED",
-    "message": "Alice assigned you to \"Fix infinite redirect loop after sign-in on Safari...\"",
+    "message": "Alice assigned you to a task",
     "isRead": false
   },
   {
     "user": "carol",
-    "task": "acme-csv-export",
+    "task": "acme-task-1",
     "type": "TASK_ASSIGNED",
-    "message": "Alice assigned you to \"Add CSV export functionality for tasks...\"",
+    "message": "Alice assigned you to a task",
     "isRead": false
   },
   {
     "user": "alice",
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "type": "TASK_STATUS_CHANGED",
-    "message": "Bob moved \"Investigate and resolve slow board load times...\" to In Review",
+    "message": "Bob moved a task to In Review",
     "isRead": true
   },
   {
     "user": "alice",
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "type": "TASK_COMMENTED",
-    "message": "Dave commented on \"Investigate and resolve slow board load times...\"",
+    "message": "Dave commented on a task",
     "isRead": false
   },
   {
     "user": "eve",
-    "task": "bolt-onboarding-flow",
+    "task": "bolt-task-0",
     "type": "TASK_COMMENTED",
-    "message": "Bob commented on \"Redesign the new-user onboarding flow...\"",
+    "message": "Bob commented on a task",
     "isRead": false
   },
   {
     "user": "dave",
     "type": "WORKSPACE_INVITATION",
     "message": "You were added to workspace \"Acme Engineering\"",
-    "isRead": true
-  },
-  {
-    "user": "alice",
-    "task": "acme-notif-center",
-    "type": "TASK_UPDATED",
-    "message": "Bob updated \"Build in-app notification center...\"",
     "isRead": true
   }
 ]

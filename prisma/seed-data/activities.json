@@ -1,17 +1,17 @@
 [
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "alice",
     "type": "CREATED"
   },
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "alice",
     "type": "ASSIGNED",
     "newValue": "bob"
   },
   {
-    "task": "acme-login-bug",
+    "task": "acme-task-0",
     "user": "bob",
     "type": "STATUS_CHANGED",
     "field": "status",
@@ -19,12 +19,12 @@
     "newValue": "IN_PROGRESS"
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "user": "bob",
     "type": "CREATED"
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "user": "bob",
     "type": "PRIORITY_CHANGED",
     "field": "priority",
@@ -32,7 +32,7 @@
     "newValue": "URGENT"
   },
   {
-    "task": "acme-slow-boards",
+    "task": "acme-task-2",
     "user": "bob",
     "type": "STATUS_CHANGED",
     "field": "status",
@@ -40,18 +40,12 @@
     "newValue": "IN_REVIEW"
   },
   {
-    "task": "acme-slow-boards",
-    "user": "dave",
-    "type": "ATTACHMENT_ADDED",
-    "newValue": "board-profiling-report.pdf"
-  },
-  {
-    "task": "acme-dark-mode",
+    "task": "acme-task-5",
     "user": "alice",
     "type": "CREATED"
   },
   {
-    "task": "acme-dark-mode",
+    "task": "acme-task-5",
     "user": "carol",
     "type": "STATUS_CHANGED",
     "field": "status",
@@ -59,18 +53,12 @@
     "newValue": "COMPLETED"
   },
   {
-    "task": "bolt-onboarding-flow",
+    "task": "bolt-task-0",
     "user": "bob",
     "type": "CREATED"
   },
   {
-    "task": "bolt-onboarding-flow",
-    "user": "eve",
-    "type": "ATTACHMENT_ADDED",
-    "newValue": "onboarding-wireframes-v1.png"
-  },
-  {
-    "task": "bolt-onboarding-flow",
+    "task": "bolt-task-0",
     "user": "bob",
     "type": "COMMENTED"
   }

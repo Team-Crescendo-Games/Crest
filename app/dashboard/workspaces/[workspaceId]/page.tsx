@@ -11,17 +11,25 @@ import {
   Tag,
   Shield,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/tag-manager";
 import { RoleManager } from "@/components/role-manager";
 
+const SPRINTS_PER_PAGE = 5;
+
 export default async function WorkspaceOverviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { workspaceId } = await params;
+  const { sprintPage } = await searchParams;
+  const currentSprintPage = Math.max(1, parseInt(String(sprintPage ?? "1"), 10) || 1);
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -33,10 +41,6 @@ export default async function WorkspaceOverviewPage({
         include: {
           boards: {
             orderBy: { displayOrder: "asc" },
-            include: { _count: { select: { tasks: true } } },
-          },
-          sprints: {
-            orderBy: { createdAt: "desc" },
             include: { _count: { select: { tasks: true } } },
           },
           tags: { orderBy: { name: "asc" } },
@@ -53,6 +57,19 @@ export default async function WorkspaceOverviewPage({
   if (!membership) notFound();
 
   const { workspace } = membership;
+
+  const [sprints, totalSprints] = await Promise.all([
+    prisma.sprint.findMany({
+      where: { workspaceId },
+      orderBy: [{ isActive: "desc" }, { startDate: "desc" }, { createdAt: "desc" }],
+      include: { _count: { select: { tasks: true } } },
+      skip: (currentSprintPage - 1) * SPRINTS_PER_PAGE,
+      take: SPRINTS_PER_PAGE,
+    }),
+    prisma.sprint.count({ where: { workspaceId } }),
+  ]);
+
+  const totalSprintPages = Math.max(1, Math.ceil(totalSprints / SPRINTS_PER_PAGE));
   const effectivePerms = getEffectivePermissions(
     membership.role.permissions,
     userId,
@@ -166,6 +183,11 @@ export default async function WorkspaceOverviewPage({
           <h2 className="flex items-center gap-2 font-mono text-sm font-medium text-fg-primary">
             <Timer size={14} className="text-accent" />
             Sprints
+            {totalSprints > 0 && (
+              <span className="text-[11px] font-normal text-fg-muted">
+                ({totalSprints})
+              </span>
+            )}
           </h2>
           <Link
             href={`/dashboard/workspaces/${workspaceId}/sprints/new`}
@@ -175,46 +197,85 @@ export default async function WorkspaceOverviewPage({
             New Sprint
           </Link>
         </div>
-        {workspace.sprints.length === 0 ? (
+        {sprints.length === 0 && currentSprintPage === 1 ? (
           <p className="mt-4 text-xs text-fg-muted">
             No sprints yet. Create one to organize tasks into time-based cycles.
           </p>
         ) : (
-          <div className="mt-3 space-y-2">
-            {workspace.sprints.map((sprint) => (
-              <Link
-                key={sprint.id}
-                href={`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`}
-                className="group flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-all hover:border-accent/40"
-              >
-                <div>
-                  <p className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
-                    {sprint.title}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-fg-muted">
-                    {sprint._count.tasks} task
-                    {sprint._count.tasks !== 1 && "s"}
-                    {sprint.startDate && sprint.endDate && (
-                      <>
-                        {" · "}
-                        {new Date(sprint.startDate).toLocaleDateString()} –{" "}
-                        {new Date(sprint.endDate).toLocaleDateString()}
-                      </>
-                    )}
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                    sprint.isActive
-                      ? "bg-accent/10 text-accent"
-                      : "bg-bg-secondary text-fg-muted"
-                  }`}
+          <>
+            <div className="mt-3 space-y-2">
+              {sprints.map((sprint) => (
+                <Link
+                  key={sprint.id}
+                  href={`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`}
+                  className="group flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-all hover:border-accent/40"
                 >
-                  {sprint.isActive ? "Active" : "Closed"}
-                </span>
-              </Link>
-            ))}
-          </div>
+                  <div>
+                    <p className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
+                      {sprint.title}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-fg-muted">
+                      {sprint._count.tasks} task
+                      {sprint._count.tasks !== 1 && "s"}
+                      {sprint.startDate && sprint.endDate && (
+                        <>
+                          {" · "}
+                          {new Date(sprint.startDate).toLocaleDateString()} –{" "}
+                          {new Date(sprint.endDate).toLocaleDateString()}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      sprint.isActive
+                        ? "bg-accent/10 text-accent"
+                        : "bg-bg-secondary text-fg-muted"
+                    }`}
+                  >
+                    {sprint.isActive ? "Active" : "Closed"}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {totalSprintPages > 1 && (
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-[11px] text-fg-muted">
+                  Page {currentSprintPage} of {totalSprintPages}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  {currentSprintPage > 1 ? (
+                    <Link
+                      href={`/dashboard/workspaces/${workspaceId}?sprintPage=${currentSprintPage - 1}`}
+                      className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
+                    >
+                      <ChevronLeft size={12} />
+                      Prev
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-muted/50 cursor-not-allowed">
+                      <ChevronLeft size={12} />
+                      Prev
+                    </span>
+                  )}
+                  {currentSprintPage < totalSprintPages ? (
+                    <Link
+                      href={`/dashboard/workspaces/${workspaceId}?sprintPage=${currentSprintPage + 1}`}
+                      className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
+                    >
+                      Next
+                      <ChevronRight size={12} />
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-muted/50 cursor-not-allowed">
+                      Next
+                      <ChevronRight size={12} />
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

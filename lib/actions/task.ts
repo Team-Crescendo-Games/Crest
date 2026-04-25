@@ -64,11 +64,12 @@ async function logActivity(
   });
 }
 
-// ─── Load completed tasks (pagination) ──────────────────────────────────────
+// ─── Load paginated tasks for any column ────────────────────────────────────
 
-export async function loadCompletedTasks(
+export async function loadColumnTasks(
   boardId: string,
   workspaceId: string,
+  status: string,
   offset: number,
   limit: number,
   filters?: {
@@ -76,6 +77,10 @@ export async function loadCompletedTasks(
     priorities?: string[];
     tagFilters?: string[];
     assigneeFilters?: string[];
+    /** Scope to a specific sprint instead of a board */
+    sprintId?: string;
+    /** Scope to tasks assigned to a specific user (workspace-wide) */
+    assigneeUserId?: string;
   },
 ) {
   const session = await auth();
@@ -88,11 +93,22 @@ export async function loadCompletedTasks(
   });
   if (!membership) throw new Error("Not a member");
 
-  // Build the same filter where-clause the board page uses
+  // Build the where-clause based on the scoping mode
   const taskWhere: Record<string, unknown> = {
-    boardId,
-    status: "COMPLETED" as TaskStatus,
+    status: status as TaskStatus,
   };
+
+  if (filters?.sprintId) {
+    // Sprint-scoped: tasks belonging to a specific sprint
+    taskWhere.sprints = { some: { id: filters.sprintId } };
+  } else if (filters?.assigneeUserId) {
+    // Assignee-scoped: tasks assigned to a user within the workspace
+    taskWhere.assignees = { some: { id: filters.assigneeUserId } };
+    taskWhere.board = { workspaceId };
+  } else {
+    // Board-scoped (default)
+    taskWhere.boardId = boardId;
+  }
 
   if (filters?.q) {
     taskWhere.OR = [
@@ -115,7 +131,8 @@ export async function loadCompletedTasks(
     }));
   }
 
-  if (filters?.assigneeFilters && filters.assigneeFilters.length > 0) {
+  // Only apply assignee filters when NOT in assignee-scoped mode
+  if (!filters?.assigneeUserId && filters?.assigneeFilters && filters.assigneeFilters.length > 0) {
     const hasUnassigned = filters.assigneeFilters.includes("unassigned");
     const userIds = filters.assigneeFilters.filter((v) => v !== "unassigned");
 
@@ -141,12 +158,29 @@ export async function loadCompletedTasks(
       author: { select: { name: true } },
       assignees: { select: { id: true, name: true, image: true } },
       tags: { select: { name: true, color: true } },
+      board: { select: { id: true, name: true } },
       subtasks: { select: { id: true, status: true } },
       _count: { select: { comments: true } },
     },
   });
 
-  return tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
+  return tasks.map((t) => ({ ...t, boardId: t.board.id, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
+}
+
+/** @deprecated Use loadColumnTasks instead */
+export async function loadCompletedTasks(
+  boardId: string,
+  workspaceId: string,
+  offset: number,
+  limit: number,
+  filters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    assigneeFilters?: string[];
+  },
+) {
+  return loadColumnTasks(boardId, workspaceId, "COMPLETED", offset, limit, filters);
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -827,6 +861,15 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
   }
 
   if (subtask.parentTaskId) {
+    // Create a notification for the user so they see this in their feed
+    await prisma.notification.create({
+      data: {
+        type: "TASK_UPDATED",
+        message: `Could not add subtask: the task is already a subtask of another task.`,
+        userId: session.user.id,
+        taskId: parentTaskId,
+      },
+    });
     return { error: "This task is already a subtask of another task" };
   }
 
@@ -915,4 +958,182 @@ export async function getAvailableSubtasks(
   });
 
   return tasks;
+}
+
+// ─── Set parent (cross-board, for sprint flow view) ─────────────────────────
+
+export async function setTaskParent(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const childId = formData.get("childId") as string;
+  const parentId = formData.get("parentId") as string | null;
+  const workspaceId = formData.get("workspaceId") as string;
+
+  if (!childId || !workspaceId) return { error: "Invalid request" };
+
+  // Verify membership
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) return { error: "Not authorized" };
+
+  // Verify child task belongs to this workspace
+  const child = await prisma.task.findUnique({
+    where: { id: childId },
+    include: { board: { select: { workspaceId: true, id: true } } },
+  });
+  if (!child || child.board.workspaceId !== workspaceId) {
+    return { error: "Task not found in workspace" };
+  }
+
+  // If removing parent (parentId is null or empty)
+  if (!parentId) {
+    await prisma.task.update({
+      where: { id: childId },
+      data: { parentTaskId: null },
+    });
+    revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+    return { success: true };
+  }
+
+  if (childId === parentId) return { error: "A task cannot be its own parent" };
+
+  // Verify parent task belongs to this workspace
+  const parent = await prisma.task.findUnique({
+    where: { id: parentId },
+    include: { board: { select: { workspaceId: true, id: true } } },
+  });
+  if (!parent || parent.board.workspaceId !== workspaceId) {
+    return { error: "Parent task not found in workspace" };
+  }
+
+  // Check if child already has a parent
+  if (child.parentTaskId && child.parentTaskId !== parentId) {
+    return { error: "This task already has a parent. Remove the existing parent first." };
+  }
+
+  // Prevent circular references: walk up from parentId, ensure we never hit childId
+  const visited = new Set<string>();
+  let current: string | null = parentId;
+  while (current) {
+    if (current === childId) {
+      return { error: "Circular reference detected" };
+    }
+    if (visited.has(current)) break; // already visited, stop
+    visited.add(current);
+    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
+      where: { id: current },
+      select: { parentTaskId: true },
+    });
+    current = ancestor?.parentTaskId ?? null;
+  }
+
+  await prisma.task.update({
+    where: { id: childId },
+    data: { parentTaskId: parentId },
+  });
+
+  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  return { success: true };
+}
+
+// ─── Flow graph (full dependency tree) ──────────────────────────────────────
+
+/**
+ * Fetch the full dependency graph for a task, following parent/subtask edges
+ * recursively across the entire workspace (not limited to a sprint).
+ */
+export async function getFlowGraphTasks(
+  rootTaskId: string,
+  workspaceId: string,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const taskSelect = {
+    id: true,
+    title: true,
+    description: true,
+    status: true,
+    priority: true,
+    boardId: true,
+    parentTaskId: true,
+    board: { select: { id: true, name: true } },
+    assignees: { select: { id: true, name: true } },
+    tags: { select: { name: true, color: true } },
+    subtasks: { select: { id: true } },
+  } as const;
+
+  // BFS: fetch connected tasks in batches
+  const visited = new Set<string>();
+  const queue = [rootTaskId];
+  const results: {
+    id: string;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    priority: TaskPriority;
+    boardId: string;
+    parentTaskId: string | null;
+    board: { id: string; name: string };
+    assignees: { id: string; name: string | null }[];
+    tags: { name: string; color: string | null }[];
+    subtasks: { id: string }[];
+  }[] = [];
+
+  while (queue.length > 0) {
+    // Collect up to 50 unvisited IDs per batch
+    const batch: string[] = [];
+    while (queue.length > 0 && batch.length < 50) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      batch.push(id);
+    }
+    if (batch.length === 0) continue;
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        id: { in: batch },
+        board: { workspaceId },
+      },
+      select: taskSelect,
+    });
+
+    for (const task of tasks) {
+      results.push(task);
+
+      // Queue parent
+      if (task.parentTaskId && !visited.has(task.parentTaskId)) {
+        queue.push(task.parentTaskId);
+      }
+
+      // Queue subtasks
+      for (const sub of task.subtasks) {
+        if (!visited.has(sub.id)) {
+          queue.push(sub.id);
+        }
+      }
+    }
+  }
+
+  return results.map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    priority: t.priority,
+    boardId: t.boardId,
+    parentTaskId: t.parentTaskId,
+    board: t.board,
+    assignees: t.assignees,
+    tags: t.tags,
+    subtaskIds: t.subtasks.map((s) => s.id),
+  }));
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Columns3, GanttChart } from "lucide-react";
+import { Columns3, GanttChart, Workflow } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
+import { FlowView } from "@/components/flow-view";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Task {
@@ -19,6 +20,8 @@ interface Task {
   assignees: { id: string; name: string | null }[];
   tags: { name: string; color: string | null }[];
   board: { id: string; name: string };
+  parentTaskId?: string | null;
+  subtaskIds?: string[];
 }
 
 interface Column {
@@ -40,6 +43,9 @@ export function SprintViews({
   canCreate,
   members,
   tags,
+  columnCounts,
+  columnPageSizes,
+  columnFilters,
 }: {
   columns: Column[];
   tasks: Task[];
@@ -52,8 +58,18 @@ export function SprintViews({
   canCreate: boolean;
   members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
   tags?: { id: string; name: string; color: string | null }[];
+  columnCounts?: Record<string, number>;
+  columnPageSizes?: Record<string, number>;
+  columnFilters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    assigneeFilters?: string[];
+    sprintId?: string;
+    assigneeUserId?: string;
+  };
 }) {
-  const [view, setView] = useState<"columns" | "timeline">("columns");
+  const [view, setView] = useState<"columns" | "timeline" | "flow">("columns");
 
   return (
     <div>
@@ -91,10 +107,33 @@ export function SprintViews({
               </div>
             )}
           </div>
+          <button
+            onClick={() => setView("flow")}
+            className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "flow"
+                ? "bg-bg-elevated text-fg-primary shadow-sm"
+                : "text-fg-muted hover:text-fg-secondary"
+            }`}
+          >
+            <Workflow size={13} />
+            Flow
+          </button>
         </div>
       </div>
 
-      {view === "columns" || !hasTimeline ? (
+      {view === "flow" ? (
+        <FlowView
+          tasks={tasks}
+          workspaceId={workspaceId}
+        />
+      ) : view === "timeline" && hasTimeline ? (
+        <SprintTimeline
+          tasks={tasks}
+          sprintStart={sprintStart!}
+          sprintEnd={sprintEnd!}
+          workspaceId={workspaceId}
+        />
+      ) : (
         <KanbanBoard
           columns={columns}
           boardId=""
@@ -105,13 +144,9 @@ export function SprintViews({
           sprintId={sprintId}
           members={members}
           tags={tags}
-        />
-      ) : (
-        <SprintTimeline
-          tasks={tasks}
-          sprintStart={sprintStart!}
-          sprintEnd={sprintEnd!}
-          workspaceId={workspaceId}
+          columnCounts={columnCounts}
+          columnPageSizes={columnPageSizes}
+          columnFilters={columnFilters}
         />
       )}
     </div>

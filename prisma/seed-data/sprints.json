@@ -1,23 +1,446 @@
 [
   {
-    "key": "acme-sprint-current",
+    "key": "acme-sprint-0",
     "workspace": "acme",
-    "title": "Q2 Sprint 3 — Auth hardening & perf",
-    "startOffsetDays": -3,
-    "endOffsetDays": 11
+    "title": "Q1 Sprint 1 \u2014 Foundation",
+    "startOffsetDays": -120,
+    "endOffsetDays": -107,
+    "isActive": false
   },
   {
-    "key": "acme-sprint-next",
+    "key": "acme-sprint-1",
     "workspace": "acme",
-    "title": "Q2 Sprint 4 — Notifications",
-    "startOffsetDays": 12,
-    "endOffsetDays": 26
+    "title": "Q1 Sprint 2 \u2014 Velocity",
+    "startOffsetDays": -106,
+    "endOffsetDays": -93,
+    "isActive": false
   },
   {
-    "key": "bolt-sprint",
+    "key": "acme-sprint-2",
+    "workspace": "acme",
+    "title": "Q1 Sprint 3 \u2014 Hardening",
+    "startOffsetDays": -92,
+    "endOffsetDays": -79,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-3",
+    "workspace": "acme",
+    "title": "Q1 Sprint 4 \u2014 Polish",
+    "startOffsetDays": -78,
+    "endOffsetDays": -65,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-4",
+    "workspace": "acme",
+    "title": "Q1 Sprint 5 \u2014 Launch Prep",
+    "startOffsetDays": -64,
+    "endOffsetDays": -51,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-5",
+    "workspace": "acme",
+    "title": "Q1 Sprint 6 \u2014 Cleanup",
+    "startOffsetDays": -50,
+    "endOffsetDays": -37,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-6",
+    "workspace": "acme",
+    "title": "Q2 Sprint 1 \u2014 Growth",
+    "startOffsetDays": -36,
+    "endOffsetDays": -23,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-7",
+    "workspace": "acme",
+    "title": "Q2 Sprint 2 \u2014 Stability",
+    "startOffsetDays": -22,
+    "endOffsetDays": -9,
+    "isActive": false
+  },
+  {
+    "key": "acme-sprint-8",
+    "workspace": "acme",
+    "title": "Q2 Sprint 3 \u2014 Innovation",
+    "startOffsetDays": -8,
+    "endOffsetDays": 5
+  },
+  {
+    "key": "acme-sprint-9",
+    "workspace": "acme",
+    "title": "Q2 Sprint 4 \u2014 Scale",
+    "startOffsetDays": 6,
+    "endOffsetDays": 19
+  },
+  {
+    "key": "acme-sprint-10",
+    "workspace": "acme",
+    "title": "Q2 Sprint 5 \u2014 Resilience",
+    "startOffsetDays": 20,
+    "endOffsetDays": 33
+  },
+  {
+    "key": "acme-sprint-11",
+    "workspace": "acme",
+    "title": "Q2 Sprint 6 \u2014 Refinement",
+    "startOffsetDays": 34,
+    "endOffsetDays": 47
+  },
+  {
+    "key": "acme-sprint-12",
+    "workspace": "acme",
+    "title": "Q3 Sprint 1 \u2014 Discovery",
+    "startOffsetDays": 48,
+    "endOffsetDays": 61
+  },
+  {
+    "key": "acme-sprint-13",
+    "workspace": "acme",
+    "title": "Q3 Sprint 2 \u2014 Delivery",
+    "startOffsetDays": 62,
+    "endOffsetDays": 75
+  },
+  {
+    "key": "acme-sprint-14",
+    "workspace": "acme",
+    "title": "Q3 Sprint 3 \u2014 Integration",
+    "startOffsetDays": 76,
+    "endOffsetDays": 89
+  },
+  {
+    "key": "acme-sprint-15",
+    "workspace": "acme",
+    "title": "Q3 Sprint 4 \u2014 Migration",
+    "startOffsetDays": 90,
+    "endOffsetDays": 103
+  },
+  {
+    "key": "acme-sprint-16",
+    "workspace": "acme",
+    "title": "Q3 Sprint 5 \u2014 Optimization",
+    "startOffsetDays": 104,
+    "endOffsetDays": 117
+  },
+  {
+    "key": "acme-sprint-17",
+    "workspace": "acme",
+    "title": "Q3 Sprint 6 \u2014 Security",
+    "startOffsetDays": 118,
+    "endOffsetDays": 131
+  },
+  {
+    "key": "acme-sprint-18",
+    "workspace": "acme",
+    "title": "Q4 Sprint 1 \u2014 Accessibility",
+    "startOffsetDays": 132,
+    "endOffsetDays": 145
+  },
+  {
+    "key": "acme-sprint-19",
+    "workspace": "acme",
+    "title": "Q4 Sprint 2 \u2014 Performance",
+    "startOffsetDays": 146,
+    "endOffsetDays": 159
+  },
+  {
+    "key": "bolt-sprint-0",
     "workspace": "bolt",
-    "title": "Design Sprint — Onboarding redesign",
-    "startOffsetDays": 0,
-    "endOffsetDays": 14
+    "title": "Q1 Sprint 1 \u2014 Foundation",
+    "startOffsetDays": -120,
+    "endOffsetDays": -107,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-1",
+    "workspace": "bolt",
+    "title": "Q1 Sprint 2 \u2014 Velocity",
+    "startOffsetDays": -106,
+    "endOffsetDays": -93,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-2",
+    "workspace": "bolt",
+    "title": "Q1 Sprint 3 \u2014 Hardening",
+    "startOffsetDays": -92,
+    "endOffsetDays": -79,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-3",
+    "workspace": "bolt",
+    "title": "Q1 Sprint 4 \u2014 Polish",
+    "startOffsetDays": -78,
+    "endOffsetDays": -65,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-4",
+    "workspace": "bolt",
+    "title": "Q1 Sprint 5 \u2014 Launch Prep",
+    "startOffsetDays": -64,
+    "endOffsetDays": -51,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-5",
+    "workspace": "bolt",
+    "title": "Q1 Sprint 6 \u2014 Cleanup",
+    "startOffsetDays": -50,
+    "endOffsetDays": -37,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-6",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 1 \u2014 Growth",
+    "startOffsetDays": -36,
+    "endOffsetDays": -23,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-7",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 2 \u2014 Stability",
+    "startOffsetDays": -22,
+    "endOffsetDays": -9,
+    "isActive": false
+  },
+  {
+    "key": "bolt-sprint-8",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 3 \u2014 Innovation",
+    "startOffsetDays": -8,
+    "endOffsetDays": 5
+  },
+  {
+    "key": "bolt-sprint-9",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 4 \u2014 Scale",
+    "startOffsetDays": 6,
+    "endOffsetDays": 19
+  },
+  {
+    "key": "bolt-sprint-10",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 5 \u2014 Resilience",
+    "startOffsetDays": 20,
+    "endOffsetDays": 33
+  },
+  {
+    "key": "bolt-sprint-11",
+    "workspace": "bolt",
+    "title": "Q2 Sprint 6 \u2014 Refinement",
+    "startOffsetDays": 34,
+    "endOffsetDays": 47
+  },
+  {
+    "key": "bolt-sprint-12",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 1 \u2014 Discovery",
+    "startOffsetDays": 48,
+    "endOffsetDays": 61
+  },
+  {
+    "key": "bolt-sprint-13",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 2 \u2014 Delivery",
+    "startOffsetDays": 62,
+    "endOffsetDays": 75
+  },
+  {
+    "key": "bolt-sprint-14",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 3 \u2014 Integration",
+    "startOffsetDays": 76,
+    "endOffsetDays": 89
+  },
+  {
+    "key": "bolt-sprint-15",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 4 \u2014 Migration",
+    "startOffsetDays": 90,
+    "endOffsetDays": 103
+  },
+  {
+    "key": "bolt-sprint-16",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 5 \u2014 Optimization",
+    "startOffsetDays": 104,
+    "endOffsetDays": 117
+  },
+  {
+    "key": "bolt-sprint-17",
+    "workspace": "bolt",
+    "title": "Q3 Sprint 6 \u2014 Security",
+    "startOffsetDays": 118,
+    "endOffsetDays": 131
+  },
+  {
+    "key": "bolt-sprint-18",
+    "workspace": "bolt",
+    "title": "Q4 Sprint 1 \u2014 Accessibility",
+    "startOffsetDays": 132,
+    "endOffsetDays": 145
+  },
+  {
+    "key": "bolt-sprint-19",
+    "workspace": "bolt",
+    "title": "Q4 Sprint 2 \u2014 Performance",
+    "startOffsetDays": 146,
+    "endOffsetDays": 159
+  },
+  {
+    "key": "playground-sprint-0",
+    "workspace": "playground",
+    "title": "Q1 Sprint 1 \u2014 Foundation",
+    "startOffsetDays": -120,
+    "endOffsetDays": -107,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-1",
+    "workspace": "playground",
+    "title": "Q1 Sprint 2 \u2014 Velocity",
+    "startOffsetDays": -106,
+    "endOffsetDays": -93,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-2",
+    "workspace": "playground",
+    "title": "Q1 Sprint 3 \u2014 Hardening",
+    "startOffsetDays": -92,
+    "endOffsetDays": -79,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-3",
+    "workspace": "playground",
+    "title": "Q1 Sprint 4 \u2014 Polish",
+    "startOffsetDays": -78,
+    "endOffsetDays": -65,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-4",
+    "workspace": "playground",
+    "title": "Q1 Sprint 5 \u2014 Launch Prep",
+    "startOffsetDays": -64,
+    "endOffsetDays": -51,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-5",
+    "workspace": "playground",
+    "title": "Q1 Sprint 6 \u2014 Cleanup",
+    "startOffsetDays": -50,
+    "endOffsetDays": -37,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-6",
+    "workspace": "playground",
+    "title": "Q2 Sprint 1 \u2014 Growth",
+    "startOffsetDays": -36,
+    "endOffsetDays": -23,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-7",
+    "workspace": "playground",
+    "title": "Q2 Sprint 2 \u2014 Stability",
+    "startOffsetDays": -22,
+    "endOffsetDays": -9,
+    "isActive": false
+  },
+  {
+    "key": "playground-sprint-8",
+    "workspace": "playground",
+    "title": "Q2 Sprint 3 \u2014 Innovation",
+    "startOffsetDays": -8,
+    "endOffsetDays": 5
+  },
+  {
+    "key": "playground-sprint-9",
+    "workspace": "playground",
+    "title": "Q2 Sprint 4 \u2014 Scale",
+    "startOffsetDays": 6,
+    "endOffsetDays": 19
+  },
+  {
+    "key": "playground-sprint-10",
+    "workspace": "playground",
+    "title": "Q2 Sprint 5 \u2014 Resilience",
+    "startOffsetDays": 20,
+    "endOffsetDays": 33
+  },
+  {
+    "key": "playground-sprint-11",
+    "workspace": "playground",
+    "title": "Q2 Sprint 6 \u2014 Refinement",
+    "startOffsetDays": 34,
+    "endOffsetDays": 47
+  },
+  {
+    "key": "playground-sprint-12",
+    "workspace": "playground",
+    "title": "Q3 Sprint 1 \u2014 Discovery",
+    "startOffsetDays": 48,
+    "endOffsetDays": 61
+  },
+  {
+    "key": "playground-sprint-13",
+    "workspace": "playground",
+    "title": "Q3 Sprint 2 \u2014 Delivery",
+    "startOffsetDays": 62,
+    "endOffsetDays": 75
+  },
+  {
+    "key": "playground-sprint-14",
+    "workspace": "playground",
+    "title": "Q3 Sprint 3 \u2014 Integration",
+    "startOffsetDays": 76,
+    "endOffsetDays": 89
+  },
+  {
+    "key": "playground-sprint-15",
+    "workspace": "playground",
+    "title": "Q3 Sprint 4 \u2014 Migration",
+    "startOffsetDays": 90,
+    "endOffsetDays": 103
+  },
+  {
+    "key": "playground-sprint-16",
+    "workspace": "playground",
+    "title": "Q3 Sprint 5 \u2014 Optimization",
+    "startOffsetDays": 104,
+    "endOffsetDays": 117
+  },
+  {
+    "key": "playground-sprint-17",
+    "workspace": "playground",
+    "title": "Q3 Sprint 6 \u2014 Security",
+    "startOffsetDays": 118,
+    "endOffsetDays": 131
+  },
+  {
+    "key": "playground-sprint-18",
+    "workspace": "playground",
+    "title": "Q4 Sprint 1 \u2014 Accessibility",
+    "startOffsetDays": 132,
+    "endOffsetDays": 145
+  },
+  {
+    "key": "playground-sprint-19",
+    "workspace": "playground",
+    "title": "Q4 Sprint 2 \u2014 Performance",
+    "startOffsetDays": 146,
+    "endOffsetDays": 159
   }
 ]

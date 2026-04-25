@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
 import {
   TaskPriority,
+  TaskStatus,
 } from "@/prisma/generated/prisma/enums";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import {
@@ -109,20 +110,48 @@ export default async function SprintDetailPage({
     assignees: { select: { id: true, name: true, image: true } },
     tags: { select: { name: true, color: true } },
     board: { select: { id: true, name: true } },
+    subtasks: { select: { id: true, status: true } },
     _count: { select: { comments: true } },
   } as const;
 
-  const [sprint, totalTaskCount, tags, members] = await Promise.all([
+  // Page sizes per column type
+  const PAGE_SIZE_DEFAULT = 20;
+  const PAGE_SIZE_COMPLETED = 10;
+
+  // Build per-status where clauses for sprint-scoped tasks
+  const statusWhere = (status: TaskStatus) => ({
+    sprints: { some: { id: sprintId } },
+    ...taskWhere,
+    status,
+  });
+
+  const [
+    sprint,
+    notStartedTasks, notStartedCount,
+    inProgressTasks, inProgressCount,
+    inReviewTasks, inReviewCount,
+    completedTasks, completedCount,
+    totalTaskCount,
+    tags, members,
+  ] = await Promise.all([
     prisma.sprint.findUnique({
       where: { id: sprintId },
       include: {
         tasks: {
+          select: { id: true, status: true, startDate: true, dueDate: true, title: true, description: true, priority: true, boardId: true, parentTaskId: true },
           where: hasTaskFilter ? taskWhere : undefined,
           orderBy: { createdAt: "desc" },
-          include: taskInclude,
         },
       },
     }),
+    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
+    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     // Always get total count for the sprint (unfiltered)
     prisma.task.count({
       where: { sprints: { some: { id: sprintId } } },
@@ -144,7 +173,6 @@ export default async function SprintDetailPage({
   if (!sprint || sprint.workspaceId !== workspaceId) notFound();
 
   // For completion stats, we need unfiltered completed count
-  // When filters are active, fetch separately
   let totalCompletedCount: number;
   if (hasTaskFilter) {
     totalCompletedCount = await prisma.task.count({
@@ -154,9 +182,7 @@ export default async function SprintDetailPage({
       },
     });
   } else {
-    totalCompletedCount = sprint.tasks.filter(
-      (t) => t.status === "COMPLETED",
-    ).length;
+    totalCompletedCount = completedCount;
   }
 
   // Get unassigned tasks for the assign picker
@@ -185,14 +211,44 @@ export default async function SprintDetailPage({
   const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
   const canEdit = hasPermission(effectivePerms, Permission.EDIT_CONTENT);
 
+  const mapTask = (t: Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number]) => ({
+    ...t,
+    boardId: t.board.id,
+    commentCount: t._count.comments,
+    subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
+    subtaskTotal: t.subtasks.length,
+    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
+  });
+
+  type MappedTask = ReturnType<typeof mapTask>;
+
+  const tasksByStatus: Record<string, MappedTask[]> = {
+    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+    IN_REVIEW: (inReviewTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+    COMPLETED: (completedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+  };
+
   const columns = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: sprint.tasks
-      .filter((t) => t.status === status)
-      .map((t) => ({ ...t, commentCount: t._count.comments })),
+    tasks: tasksByStatus[status] ?? [],
   }));
+
+  const columnCounts: Record<string, number> = {
+    NOT_STARTED: notStartedCount,
+    IN_PROGRESS: inProgressCount,
+    IN_REVIEW: inReviewCount,
+    COMPLETED: completedCount,
+  };
+
+  const columnPageSizes: Record<string, number> = {
+    NOT_STARTED: PAGE_SIZE_DEFAULT,
+    IN_PROGRESS: PAGE_SIZE_DEFAULT,
+    IN_REVIEW: PAGE_SIZE_DEFAULT,
+    COMPLETED: PAGE_SIZE_COMPLETED,
+  };
 
   // Timeline
   const now = new Date();
@@ -214,7 +270,7 @@ export default async function SprintDetailPage({
       ? Math.round((totalCompletedCount / totalTaskCount) * 100)
       : 0;
 
-  const filteredCount = sprint.tasks.length;
+  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -343,8 +399,11 @@ export default async function SprintDetailPage({
           columns={columns}
           tasks={sprint.tasks.map((t) => ({
             ...t,
-            boardId: t.board.id,
-            commentCount: t._count.comments,
+            author: { name: null },
+            assignees: [],
+            tags: [],
+            board: { id: t.boardId, name: "" },
+            subtaskIds: [],
           }))}
           sprintId={sprintId}
           sprintStart={sprint.startDate}
@@ -355,6 +414,15 @@ export default async function SprintDetailPage({
           canCreate={canEdit}
           members={members.map((m) => m.user)}
           tags={tags}
+          columnCounts={columnCounts}
+          columnPageSizes={columnPageSizes}
+          columnFilters={{
+            q,
+            priorities,
+            tagFilters,
+            assigneeFilters,
+            sprintId,
+          }}
         />
       </div>
     </div>
