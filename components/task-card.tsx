@@ -19,6 +19,7 @@ export interface TaskCardData {
   boardId?: string;
   workspaceId?: string;
   commentCount?: number;
+  subtaskIds?: string[];
 }
 
 /* ── Color helpers ─────────────────────────────────────────────────────── */
@@ -114,12 +115,16 @@ export function TaskCard({
   workspaceId,
   href,
   className = "",
+  highlighted = false,
+  onHoverChange,
 }: {
   task: TaskCardData;
   variant?: "simple" | "detailed";
   workspaceId: string;
   href?: string;
   className?: string;
+  highlighted?: boolean;
+  onHoverChange?: (taskId: string | null) => void;
 }) {
   const resolvedWorkspaceId =
     task.workspaceId || task.board?.workspaceId || workspaceId;
@@ -132,8 +137,14 @@ export function TaskCard({
   return (
     <Link
       href={link}
-      className={`group relative block overflow-hidden rounded-md border border-border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${className}`}
+      className={`group relative block overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${
+        highlighted
+          ? "border-accent/50 ring-1 ring-accent/30 shadow-sm shadow-accent/10"
+          : "border-border"
+      } ${className}`}
       style={tagTint ? { backgroundColor: tagTint } : undefined}
+      onMouseEnter={() => onHoverChange?.(task.id)}
+      onMouseLeave={() => onHoverChange?.(null)}
     >
       {/* Left priority bar (omitted when priority is NONE) */}
       {task.priority !== "NONE" && (

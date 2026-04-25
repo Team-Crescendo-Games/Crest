@@ -47,8 +47,17 @@ function describeActivity(a: ActivityItem): string {
   return `${who} ${base}`;
 }
 
-export function ActivityLog({ activities }: { activities: ActivityItem[] }) {
+export function ActivityLog({
+  activities,
+  createdAt,
+  createdByName,
+}: {
+  activities: ActivityItem[];
+  createdAt: Date;
+  createdByName: string | null;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const totalCount = activities.length + 1; // +1 for the "created" entry
 
   return (
     <div className="mt-8 opacity-50">
@@ -63,7 +72,7 @@ export function ActivityLog({ activities }: { activities: ActivityItem[] }) {
         />
         <Activity size={13} />
         Activity
-        <span className="text-[11px]">({activities.length})</span>
+        <span className="text-[11px]">({totalCount})</span>
       </button>
 
       {expanded && (
@@ -80,6 +89,17 @@ export function ActivityLog({ activities }: { activities: ActivityItem[] }) {
               </span>
             </div>
           ))}
+          {/* Task creation — always the last entry */}
+          <div className="text-[10px] text-fg-muted">
+            <span>{createdByName ?? "Someone"} created this task</span>
+            <span className="ml-1.5 text-fg-muted/60">
+              {new Date(createdAt).toLocaleDateString()}{" "}
+              {new Date(createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
         </div>
       )}
     </div>

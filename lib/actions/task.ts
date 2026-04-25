@@ -141,11 +141,12 @@ export async function loadCompletedTasks(
       author: { select: { name: true } },
       assignees: { select: { id: true, name: true, image: true } },
       tags: { select: { name: true, color: true } },
+      subtasks: { select: { id: true } },
       _count: { select: { comments: true } },
     },
   });
 
-  return tasks.map((t) => ({ ...t, commentCount: t._count.comments }));
+  return tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id) }));
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -256,6 +257,9 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const points = formData.get("points") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
   const tagIds = formData.getAll("tagIds") as string[];
+  const newBoardId = formData.get("boardId") as string | null;
+  const sprintIds = formData.getAll("sprintIds") as string[];
+  const workspaceId = formData.get("workspaceId") as string;
 
   if (!taskId || !title?.trim()) return { error: "Task title is required" };
 
@@ -276,11 +280,35 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     }
   }
 
+  // Validate board belongs to the same workspace
+  let boardId = info.task.boardId;
+  if (newBoardId && newBoardId !== boardId) {
+    const targetBoard = await prisma.board.findUnique({
+      where: { id: newBoardId },
+      select: { workspaceId: true },
+    });
+    if (!targetBoard || targetBoard.workspaceId !== info.workspaceId) {
+      return { error: "Target board not found in this workspace" };
+    }
+    boardId = newBoardId;
+  }
+
+  // Validate sprints belong to the same workspace
+  if (sprintIds.length > 0) {
+    const validSprintCount = await prisma.sprint.count({
+      where: { id: { in: sprintIds }, workspaceId: info.workspaceId },
+    });
+    if (validSprintCount !== sprintIds.length) {
+      return { error: "Invalid sprint selection" };
+    }
+  }
+
   // Fetch old values for activity logging
   const oldTask = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
       assignees: { select: { id: true } },
+      sprints: { select: { id: true } },
     },
   });
 
@@ -294,8 +322,10 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       startDate: startDate ? new Date(startDate) : null,
       dueDate: dueDate ? new Date(dueDate) : null,
       points: points ? parseInt(points) || null : null,
+      boardId,
       assignees: { set: assigneeIds.map((id) => ({ id })) },
       tags: { set: tagIds.map((id) => ({ id })) },
+      sprints: { set: sprintIds.map((id) => ({ id })) },
     },
   });
 
@@ -330,13 +360,39 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       await logActivity(taskId, session.user.id, "UNASSIGNED", { oldValue: id });
     }
 
+    if (boardId !== info.task.boardId) {
+      await logActivity(taskId, session.user.id, "EDITED", {
+        field: "board",
+        oldValue: info.task.boardId,
+        newValue: boardId,
+      });
+    }
+
+    const oldSprintIds = oldTask.sprints.map((s) => s.id).sort();
+    const newSprintIds = [...sprintIds].sort();
+    const addedSprints = newSprintIds.filter((id) => !oldSprintIds.includes(id));
+    const removedSprints = oldSprintIds.filter((id) => !newSprintIds.includes(id));
+    for (const id of addedSprints) {
+      await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", { newValue: id });
+    }
+    for (const id of removedSprints) {
+      await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", { oldValue: id });
+    }
+
     if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
       await logActivity(taskId, session.user.id, "EDITED");
     }
   }
 
+  // Revalidate old and new board paths
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
-  return { success: true };
+  if (boardId !== info.task.boardId) {
+    revalidateTask(info.workspaceId, boardId, taskId);
+    revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards`);
+  }
+
+  // Return the new boardId so the client can redirect if the board changed
+  return { success: true, newBoardId: boardId !== info.task.boardId ? boardId : undefined };
 }
 
 // ─── Update status (drag-and-drop) ──────────────────────────────────────────
@@ -380,7 +436,276 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
   return { success: true };
 }
 
+// ─── Update priority ────────────────────────────────────────────────────────
+
+export async function updateTaskPriority(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+  const priority = formData.get("priority") as TaskPriority;
+
+  if (!taskId || !priority || !VALID_PRIORITIES.includes(priority)) {
+    return { error: "Invalid request" };
+  }
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  const oldPriority = info.task.priority;
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { priority },
+  });
+
+  if (oldPriority !== priority) {
+    await logActivity(taskId, session.user.id, "PRIORITY_CHANGED", {
+      field: "priority",
+      oldValue: oldPriority,
+      newValue: priority,
+    });
+  }
+
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  return { success: true };
+}
+
 // ─── Delete ─────────────────────────────────────────────────────────────────
+
+export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const newBoardId = formData.get("boardId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+
+  if (!taskId || !newBoardId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  if (info.task.boardId === newBoardId) return { success: true };
+
+  // Verify the target board belongs to the same workspace
+  const targetBoard = await prisma.board.findUnique({
+    where: { id: newBoardId },
+    select: { workspaceId: true },
+  });
+  if (!targetBoard || targetBoard.workspaceId !== info.workspaceId) {
+    return { error: "Target board not found in this workspace" };
+  }
+
+  const oldBoardId = info.task.boardId;
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { boardId: newBoardId },
+  });
+
+  await logActivity(taskId, session.user.id, "EDITED", {
+    field: "board",
+    oldValue: oldBoardId,
+    newValue: newBoardId,
+  });
+
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${oldBoardId}`);
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${newBoardId}`);
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+
+  return { success: true, newBoardId };
+}
+
+export async function updateTaskSprints(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const sprintIds = formData.getAll("sprintIds") as string[];
+  const workspaceId = formData.get("workspaceId") as string;
+
+  if (!taskId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  // Validate all sprints belong to the same workspace
+  if (sprintIds.length > 0) {
+    const validCount = await prisma.sprint.count({
+      where: { id: { in: sprintIds }, workspaceId: info.workspaceId },
+    });
+    if (validCount !== sprintIds.length) {
+      return { error: "Invalid sprint selection" };
+    }
+  }
+
+  // Get old sprints for activity logging
+  const oldTask = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { sprints: { select: { id: true } } },
+  });
+  const oldSprintIds = oldTask?.sprints.map((s) => s.id) ?? [];
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      sprints: { set: sprintIds.map((id) => ({ id })) },
+    },
+  });
+
+  // Log added/removed sprints
+  const added = sprintIds.filter((id) => !oldSprintIds.includes(id));
+  const removed = oldSprintIds.filter((id) => !sprintIds.includes(id));
+  for (const id of added) {
+    await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", { newValue: id });
+  }
+  for (const id of removed) {
+    await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", { oldValue: id });
+  }
+
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  // Also revalidate affected sprint pages
+  for (const id of [...added, ...removed]) {
+    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${id}`);
+  }
+
+  return { success: true };
+}
+
+// ─── Update due date ────────────────────────────────────────────────────────
+
+export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+  const dueDateStr = formData.get("dueDate") as string;
+
+  if (!taskId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { dueDate },
+  });
+
+  await logActivity(taskId, session.user.id, "EDITED", {
+    field: "dueDate",
+    oldValue: info.task.dueDate?.toISOString() ?? null,
+    newValue: dueDate?.toISOString() ?? null,
+  });
+
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  return { success: true };
+}
+
+// ─── Update assignees ───────────────────────────────────────────────────────
+
+export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+  const assigneeIds = formData.getAll("assigneeIds") as string[];
+
+  if (!taskId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  const oldTask = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { assignees: { select: { id: true } } },
+  });
+  const oldAssigneeIds = oldTask?.assignees.map((a) => a.id) ?? [];
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { assignees: { set: assigneeIds.map((id) => ({ id })) } },
+  });
+
+  const added = assigneeIds.filter((id) => !oldAssigneeIds.includes(id));
+  const removed = oldAssigneeIds.filter((id) => !assigneeIds.includes(id));
+  for (const id of added) {
+    await logActivity(taskId, session.user.id, "ASSIGNED", { newValue: id });
+  }
+  for (const id of removed) {
+    await logActivity(taskId, session.user.id, "UNASSIGNED", { oldValue: id });
+  }
+
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  return { success: true };
+}
+
+// ─── Update tags ────────────────────────────────────────────────────────────
+
+export async function updateTaskTags(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const taskId = formData.get("taskId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+  const tagIds = formData.getAll("tagIds") as string[];
+
+  if (!taskId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  // Validate tags belong to the workspace
+  if (tagIds.length > 0) {
+    const validCount = await prisma.tag.count({
+      where: { id: { in: tagIds }, workspaceId: info.workspaceId },
+    });
+    if (validCount !== tagIds.length) {
+      return { error: "Invalid tag selection" };
+    }
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { tags: { set: tagIds.map((id) => ({ id })) } },
+  });
+
+  await logActivity(taskId, session.user.id, "EDITED", { field: "tags" });
+
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  return { success: true };
+}
 
 export async function deleteTask(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -461,4 +786,124 @@ export async function deleteComment(_prev: unknown, formData: FormData) {
     comment.taskId
   );
   return { success: true };
+}
+
+// ─── Subtasks ───────────────────────────────────────────────────────────────
+
+export async function addSubtask(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parentTaskId = formData.get("parentTaskId") as string;
+  const subtaskId = formData.get("subtaskId") as string;
+
+  if (!parentTaskId || !subtaskId) return { error: "Invalid request" };
+  if (parentTaskId === subtaskId) return { error: "A task cannot be its own subtask" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, parentTaskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  // Verify the subtask exists and belongs to the same board
+  const subtask = await prisma.task.findUnique({
+    where: { id: subtaskId },
+    select: { id: true, boardId: true, parentTaskId: true },
+  });
+
+  if (!subtask || subtask.boardId !== info.task.boardId) {
+    return { error: "Subtask must be on the same board" };
+  }
+
+  if (subtask.parentTaskId) {
+    return { error: "This task is already a subtask of another task" };
+  }
+
+  // Prevent circular references: the subtask must not be an ancestor of the parent
+  let current: string | null = parentTaskId;
+  while (current) {
+    if (current === subtaskId) {
+      return { error: "Circular subtask reference detected" };
+    }
+    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
+      where: { id: current },
+      select: { parentTaskId: true },
+    });
+    current = ancestor?.parentTaskId ?? null;
+  }
+
+  await prisma.task.update({
+    where: { id: subtaskId },
+    data: { parentTaskId },
+  });
+
+  revalidateTask(info.workspaceId, info.task.boardId, parentTaskId);
+  return { success: true };
+}
+
+export async function removeSubtask(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parentTaskId = formData.get("parentTaskId") as string;
+  const subtaskId = formData.get("subtaskId") as string;
+
+  if (!parentTaskId || !subtaskId) return { error: "Invalid request" };
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, parentTaskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  // Verify the subtask actually belongs to this parent
+  const subtask = await prisma.task.findUnique({
+    where: { id: subtaskId },
+    select: { parentTaskId: true },
+  });
+
+  if (!subtask || subtask.parentTaskId !== parentTaskId) {
+    return { error: "This task is not a subtask of the specified parent" };
+  }
+
+  await prisma.task.update({
+    where: { id: subtaskId },
+    data: { parentTaskId: null },
+  });
+
+  revalidateTask(info.workspaceId, info.task.boardId, parentTaskId);
+  return { success: true };
+}
+
+/** Fetch tasks on the same board that can be added as subtasks. */
+export async function getAvailableSubtasks(
+  boardId: string,
+  parentTaskId: string,
+  query: string,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      boardId,
+      id: { not: parentTaskId },
+      parentTaskId: null, // not already a subtask
+      title: query ? { contains: query, mode: "insensitive" } : undefined,
+      // Exclude tasks that are ancestors of the parent (prevent cycles)
+      NOT: { subtasks: { some: { id: parentTaskId } } },
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  return tasks;
 }

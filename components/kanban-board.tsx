@@ -6,7 +6,7 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, useMemo } from "react";
 import { updateTaskStatus, loadCompletedTasks } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
@@ -67,6 +67,21 @@ export function KanbanBoard({
   const [isPageLoading, setIsPageLoading] = useState(false);
   // Cache fetched pages so navigating back doesn't re-fetch
   const [pageCache, setPageCache] = useState<Record<number, TaskCardData[]>>({});
+
+  // Track which task is hovered to highlight its subtasks
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+
+  // Build a set of subtask IDs for the currently hovered task
+  const highlightedIds = useMemo(() => {
+    if (!hoveredTaskId) return new Set<string>();
+    for (const col of localColumns) {
+      const task = col.tasks.find((t) => t.id === hoveredTaskId);
+      if (task?.subtaskIds && task.subtaskIds.length > 0) {
+        return new Set(task.subtaskIds);
+      }
+    }
+    return new Set<string>();
+  }, [hoveredTaskId, localColumns]);
 
   // Sync local state when server data changes (after revalidation)
   useEffect(() => {
@@ -269,6 +284,8 @@ export function KanbanBoard({
                               task={task}
                               variant={variant}
                               workspaceId={workspaceId}
+                              highlighted={highlightedIds.has(task.id)}
+                              onHoverChange={setHoveredTaskId}
                               className={
                                 snapshot.isDragging
                                   ? "border-accent/40 shadow-lg shadow-accent/10"

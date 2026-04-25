@@ -11,7 +11,6 @@ export interface SourceTask {
   description: string | null;
   status: string;
   priority: string;
-  startDate: string; // YYYY-MM-DD or ""
   dueDate: string; // YYYY-MM-DD or ""
   points: number | null;
   assigneeIds: string[];
@@ -218,30 +217,17 @@ function DuplicateTaskModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-[11px] font-medium text-fg-muted">
-              Start Date
-            </label>
-            <input
-              name="startDate"
-              type="date"
-              defaultValue={source.startDate}
-              className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-medium text-fg-muted">
-              Due Date
-            </label>
-            <input
-              name="dueDate"
-              type="date"
-              required
-              defaultValue={source.dueDate}
-              className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-            />
-          </div>
+        <div>
+          <label className="block text-[11px] font-medium text-fg-muted">
+            Due Date
+          </label>
+          <input
+            name="dueDate"
+            type="date"
+            required
+            defaultValue={source.dueDate}
+            className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
+          />
         </div>
 
         <div>
