@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   LayoutGrid,
   ChevronDown,
@@ -13,6 +13,8 @@ import {
   LayoutList,
   Timer,
   Users,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
@@ -21,11 +23,13 @@ import { UserAvatar } from "@/components/user-avatar";
 interface Board {
   id: string;
   name: string;
+  isActive: boolean;
 }
 
 interface Sprint {
   id: string;
   title: string;
+  isActive: boolean;
 }
 
 interface Workspace {
@@ -48,11 +52,47 @@ const userNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
 ];
 
+const MIN_WIDTH = 180;
+const MAX_WIDTH = 400;
+const DEFAULT_WIDTH = 224; // w-56 = 14rem = 224px
+
 export function Sidebar({ user, workspaces }: SidebarProps) {
   const pathname = usePathname();
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [boardsExpanded, setBoardsExpanded] = useState(true);
   const [sprintsExpanded, setSprintsExpanded] = useState(true);
+  const [showArchivedBoards, setShowArchivedBoards] = useState(false);
+  const [showArchivedSprints, setShowArchivedSprints] = useState(false);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const isResizing = useRef(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return;
+      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX));
+      setWidth(newWidth);
+    }
+    function onMouseUp() {
+      if (!isResizing.current) return;
+      isResizing.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
   const [lastWorkspaceId, setLastWorkspaceId] = useState<string | undefined>(
     undefined,
   );
@@ -75,7 +115,16 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
   const boardsActive = pathname.includes("/boards");
 
   return (
-    <aside className="flex w-56 flex-col border-r border-border bg-bg-elevated/60 backdrop-blur-sm">
+    <aside
+      ref={sidebarRef}
+      className="relative flex flex-col border-r border-border bg-bg-elevated/60 backdrop-blur-sm"
+      style={{ width, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH }}
+    >
+      {/* Resize handle */}
+      <div
+        onMouseDown={startResize}
+        className="absolute inset-y-0 right-0 z-30 w-1 cursor-col-resize transition-colors hover:bg-accent/30"
+      />
       {/* Logo */}
       <div className="flex h-12 items-center justify-between border-b border-border px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
@@ -210,24 +259,40 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                   <LayoutList size={13} />
                   Boards
                 </Link>
+                <button
+                  onClick={() => setShowArchivedBoards(!showArchivedBoards)}
+                  className={`shrink-0 rounded p-0.5 transition-colors ${
+                    showArchivedBoards
+                      ? "text-accent hover:text-accent-emphasis"
+                      : "text-fg-muted hover:text-fg-secondary"
+                  }`}
+                  title={showArchivedBoards ? "Hide archived boards" : "Show archived boards"}
+                >
+                  {showArchivedBoards ? <Eye size={11} /> : <EyeOff size={11} />}
+                </button>
               </div>
 
-              {boardsExpanded && activeWorkspace.boards.length > 0 && (
+              {boardsExpanded && activeWorkspace.boards.filter((b) => showArchivedBoards || b.isActive).length > 0 && (
                 <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-                  {activeWorkspace.boards.map((board) => {
+                  {activeWorkspace.boards
+                    .filter((b) => showArchivedBoards || b.isActive)
+                    .map((board) => {
                     const boardHref = `/dashboard/workspaces/${activeWorkspaceId}/boards/${board.id}`;
                     const isBoardActive = pathname.startsWith(boardHref);
                     return (
                       <Link
                         key={board.id}
                         href={boardHref}
-                        className={`block truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                        className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isBoardActive
                             ? "text-accent"
                             : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                        }`}
+                        } ${!board.isActive ? "italic opacity-60" : ""}`}
                       >
                         {board.name}
+                        {!board.isActive && (
+                          <span className="text-[8px] text-fg-muted">(archived)</span>
+                        )}
                       </Link>
                     );
                   })}
@@ -261,24 +326,40 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                   <Timer size={13} />
                   Sprints
                 </Link>
+                <button
+                  onClick={() => setShowArchivedSprints(!showArchivedSprints)}
+                  className={`shrink-0 rounded p-0.5 transition-colors ${
+                    showArchivedSprints
+                      ? "text-accent hover:text-accent-emphasis"
+                      : "text-fg-muted hover:text-fg-secondary"
+                  }`}
+                  title={showArchivedSprints ? "Hide archived sprints" : "Show archived sprints"}
+                >
+                  {showArchivedSprints ? <Eye size={11} /> : <EyeOff size={11} />}
+                </button>
               </div>
 
-              {sprintsExpanded && activeWorkspace.sprints.length > 0 && (
+              {sprintsExpanded && activeWorkspace.sprints.filter((s) => showArchivedSprints || s.isActive).length > 0 && (
                 <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-                  {activeWorkspace.sprints.map((sprint) => {
+                  {activeWorkspace.sprints
+                    .filter((s) => showArchivedSprints || s.isActive)
+                    .map((sprint) => {
                     const sprintHref = `/dashboard/workspaces/${activeWorkspaceId}/sprints/${sprint.id}`;
                     const isSprintActive = pathname.startsWith(sprintHref);
                     return (
                       <Link
                         key={sprint.id}
                         href={sprintHref}
-                        className={`block truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                        className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isSprintActive
                             ? "text-accent"
                             : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                        }`}
+                        } ${!sprint.isActive ? "italic opacity-60" : ""}`}
                       >
                         {sprint.title}
+                        {!sprint.isActive && (
+                          <span className="text-[8px] text-fg-muted">(archived)</span>
+                        )}
                       </Link>
                     );
                   })}

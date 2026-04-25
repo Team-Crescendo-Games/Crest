@@ -237,3 +237,64 @@ export async function removeTaskFromSprint(
   revalidateSprint(workspaceId, sprintId);
   return { success: true };
 }
+
+// ─── Migrate (carry over incomplete tasks to a new sprint) ──────────────────
+
+export async function migrateSprint(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const sourceSprintId = formData.get("sourceSprintId") as string;
+  const workspaceId = formData.get("workspaceId") as string;
+  const title = formData.get("title") as string;
+
+  if (!sourceSprintId || !workspaceId || !title?.trim()) {
+    return { error: "Sprint title is required" };
+  }
+
+  try {
+    await requireMemberWithPerms(
+      session.user.id,
+      workspaceId,
+      Permission.EDIT_CONTENT,
+    );
+  } catch {
+    return { error: "No permission" };
+  }
+
+  const source = await prisma.sprint.findUnique({
+    where: { id: sourceSprintId },
+    select: { workspaceId: true },
+  });
+
+  if (!source || source.workspaceId !== workspaceId) {
+    return { error: "Sprint not found" };
+  }
+
+  // Find all non-completed tasks in the source sprint
+  const incompleteTasks = await prisma.task.findMany({
+    where: {
+      sprints: { some: { id: sourceSprintId } },
+      status: { not: "COMPLETED" },
+    },
+    select: { id: true },
+  });
+
+  // Create a new sprint, connecting incomplete tasks if any exist
+  const newSprint = await prisma.sprint.create({
+    data: {
+      title: title.trim(),
+      workspaceId,
+      ...(incompleteTasks.length > 0 && {
+        tasks: {
+          connect: incompleteTasks.map((t) => ({ id: t.id })),
+        },
+      }),
+    },
+  });
+
+  revalidateSprint(workspaceId, sourceSprintId);
+  revalidateSprint(workspaceId, newSprint.id);
+
+  redirect(`/dashboard/workspaces/${workspaceId}/sprints/${newSprint.id}`);
+}

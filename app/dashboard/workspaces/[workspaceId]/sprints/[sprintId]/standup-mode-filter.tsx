@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Users } from "lucide-react";
+import { useState } from "react";
+import { Users, Shuffle } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 
 interface Member {
@@ -14,6 +15,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [order, setOrder] = useState<Member[]>(members);
 
   const currentAssignee = searchParams.get("assignee");
 
@@ -21,7 +23,6 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
     const params = new URLSearchParams(searchParams.toString());
 
     if (memberId === null || memberId === currentAssignee) {
-      // Clicking the active member again, or "All", clears the filter
       params.delete("assignee");
     } else {
       params.set("assignee", memberId);
@@ -31,9 +32,30 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
     router.push(`${pathname}${qs ? `?${qs}` : ""}`);
   }
 
+  function shuffle() {
+    setOrder((prev) => {
+      const shuffled = [...prev];
+      // Fisher-Yates shuffle
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    });
+  }
+
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[11px] text-fg-muted mr-0.5">Standup</span>
+      <button
+        type="button"
+        onClick={shuffle}
+        disabled={members.length < 2}
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-secondary text-fg-muted transition-all hover:bg-accent/10 hover:text-accent disabled:opacity-40"
+        title="Shuffle order"
+      >
+        <Shuffle size={12} />
+      </button>
       <button
         type="button"
         onClick={() => select(null)}
@@ -48,7 +70,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
           <Users size={12} className="text-fg-muted" />
         </span>
       </button>
-      {members.map((member) => {
+      {order.map((member) => {
         const isActive = currentAssignee === member.id;
         return (
           <button

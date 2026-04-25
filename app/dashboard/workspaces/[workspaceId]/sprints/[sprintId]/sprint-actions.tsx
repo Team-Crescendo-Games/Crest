@@ -5,9 +5,10 @@ import {
   updateSprint,
   toggleSprintActive,
   deleteSprint,
+  migrateSprint,
 } from "@/lib/actions/sprint";
 import { hasPermission, Permission } from "@/lib/permissions";
-import { Pencil, Play, Pause, Trash2, X } from "lucide-react";
+import { Pencil, Play, Pause, Trash2, X, ArrowRightLeft } from "lucide-react";
 
 interface Props {
   sprint: {
@@ -23,6 +24,7 @@ interface Props {
 
 export function SprintActions({ sprint, workspaceId, permissions }: Props) {
   const [editing, setEditing] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const [updateState, updateAction, updatePending] = useActionState(
     async (prev: unknown, formData: FormData) => {
       const result = await updateSprint(prev, formData);
@@ -36,6 +38,10 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
     null,
   );
   const [, deleteAction, deletePending] = useActionState(deleteSprint, null);
+  const [migrateState, migrateAction, migratePending] = useActionState(
+    migrateSprint,
+    null,
+  );
 
   const canEdit = hasPermission(permissions, Permission.EDIT_CONTENT);
   const canDelete = hasPermission(permissions, Permission.DELETE_CONTENT);
@@ -99,6 +105,57 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
     );
   }
 
+  if (migrating && canEdit) {
+    return (
+      <form
+        action={migrateAction}
+        className="w-72 rounded-md border border-border bg-bg-elevated p-3 shadow-lg"
+      >
+        <input type="hidden" name="sourceSprintId" value={sprint.id} />
+        <input type="hidden" name="workspaceId" value={workspaceId} />
+
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-medium text-fg-secondary">
+            Migrate to New Sprint
+          </span>
+          <button
+            type="button"
+            onClick={() => setMigrating(false)}
+            className="text-fg-muted hover:text-fg-secondary"
+          >
+            <X size={12} />
+          </button>
+        </div>
+
+        <p className="mb-2 text-[11px] text-fg-muted">
+          Creates a new sprint and adds all incomplete tasks from this sprint to it.
+        </p>
+
+        {migrateState?.error && (
+          <p className="mb-2 text-[11px] text-accent-emphasis">
+            {migrateState.error}
+          </p>
+        )}
+
+        <input
+          name="title"
+          required
+          placeholder="New sprint title"
+          defaultValue={`${sprint.title} (continued)`}
+          className="mb-2 block w-full rounded border border-border bg-bg-primary px-2 py-1 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
+        />
+
+        <button
+          type="submit"
+          disabled={migratePending}
+          className="w-full rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+        >
+          {migratePending ? "Migrating..." : "Migrate"}
+        </button>
+      </form>
+    );
+  }
+
   return (
     <div className="flex items-center gap-1">
       {canEdit && (
@@ -123,6 +180,15 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
             {sprint.isActive ? <Pause size={13} /> : <Play size={13} />}
           </button>
         </form>
+      )}
+      {canEdit && (
+        <button
+          onClick={() => setMigrating(true)}
+          className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
+          title="Migrate incomplete tasks to another sprint"
+        >
+          <ArrowRightLeft size={13} />
+        </button>
       )}
       {canDelete && (
         <form action={deleteAction}>

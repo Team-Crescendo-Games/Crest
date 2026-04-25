@@ -17,6 +17,7 @@ import { SprintActions } from "./sprint-actions";
 import { StandupModeFilter } from "./standup-mode-filter";
 import { AssignTaskSection } from "./assign-task-section";
 import { SprintViews } from "./sprint-views";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import { TaskFilters } from "@/components/task-filters";
 
 /** Split a comma-separated param into a trimmed, non-empty array. */
@@ -272,7 +273,7 @@ export default async function SprintDetailPage({
 
       {/* Timeline */}
       {sprint.startDate && sprint.endDate && (
-        <div className="mt-4 rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm">
+        <CollapsibleSection title="Timeline" className="mt-4">
           <div className="flex items-center justify-between text-[11px] text-fg-muted">
             <div className="flex items-center gap-1">
               <Calendar size={11} />
@@ -306,12 +307,12 @@ export default async function SprintDetailPage({
               {totalCompletedCount}/{totalTaskCount}
             </span>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Assign tasks */}
       {canEdit && (
-        <div className="mt-6">
+        <div className="mt-4 rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm">
           <AssignTaskSection
             sprintId={sprintId}
             workspaceId={workspaceId}
@@ -321,13 +322,8 @@ export default async function SprintDetailPage({
         </div>
       )}
 
-      {/* Standup mode */}
-      <div className="mt-6">
-        <StandupModeFilter members={members.map((m) => m.user)} />
-      </div>
-
-      {/* Filters + Task views */}
-      <div className="mt-6 space-y-4">
+      {/* Standup mode + Filters */}
+      <div className="mt-4 space-y-4 rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm">
         <TaskFilters
           tags={tags}
           assignees={members.map((m) => m.user)}
@@ -337,6 +333,11 @@ export default async function SprintDetailPage({
           currentAssignees={assigneeFilters}
         />
 
+        <StandupModeFilter members={members.map((m) => m.user)} />
+      </div>
+
+      {/* Task views */}
+      <div className="mt-6">
         <SprintViews
           columns={columns}
           tasks={sprint.tasks.map((t) => ({

@@ -22,13 +22,11 @@ export default async function DashboardLayout({
           id: true,
           name: true,
           boards: {
-            where: { isActive: true },
-            select: { id: true, name: true },
+            select: { id: true, name: true, isActive: true },
             orderBy: { displayOrder: "asc" },
           },
           sprints: {
-            where: { isActive: true },
-            select: { id: true, title: true },
+            select: { id: true, title: true, isActive: true },
             orderBy: { createdAt: "desc" },
           },
         },
