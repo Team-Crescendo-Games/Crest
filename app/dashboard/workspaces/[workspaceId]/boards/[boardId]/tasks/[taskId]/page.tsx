@@ -137,6 +137,9 @@ export default async function TaskDetailPage({
           activities={task.activities}
           createdAt={task.createdAt}
           createdByName={task.author.name}
+          memberNames={Object.fromEntries(
+            members.map((m) => [m.user.id, m.user.name ?? m.user.email ?? "Unknown"])
+          )}
         />
 
         {/* Comments — inline fallback for smaller screens */}

@@ -379,6 +379,15 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", { oldValue: id });
     }
 
+    const newPoints = points ? parseInt(points) || null : null;
+    if (newPoints !== oldTask.points) {
+      await logActivity(taskId, session.user.id, "EDITED", {
+        field: "points",
+        oldValue: oldTask.points != null ? String(oldTask.points) : null,
+        newValue: newPoints != null ? String(newPoints) : null,
+      });
+    }
+
     if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
       await logActivity(taskId, session.user.id, "EDITED");
     }

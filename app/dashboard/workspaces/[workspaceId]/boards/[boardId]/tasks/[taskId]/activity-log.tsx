@@ -32,7 +32,10 @@ function formatValue(value: string | null): string {
   return value.replace(/_/g, " ").toLowerCase();
 }
 
-function describeActivity(a: ActivityItem): string {
+function describeActivity(
+  a: ActivityItem,
+  memberNames: Record<string, string>,
+): string {
   const who = a.user.name ?? "Someone";
   const base = ACTIVITY_LABELS[a.type] ?? a.type;
 
@@ -44,6 +47,22 @@ function describeActivity(a: ActivityItem): string {
     return `${who} ${base} from ${formatValue(a.oldValue)} to ${formatValue(a.newValue)}`;
   }
 
+  if (a.type === "ASSIGNED" && a.newValue) {
+    const assignee = memberNames[a.newValue] ?? "someone";
+    return `${who} assigned ${assignee}`;
+  }
+
+  if (a.type === "UNASSIGNED" && a.oldValue) {
+    const assignee = memberNames[a.oldValue] ?? "someone";
+    return `${who} unassigned ${assignee}`;
+  }
+
+  if (a.type === "EDITED" && a.field === "points") {
+    const oldPts = a.oldValue ? a.oldValue : "none";
+    const newPts = a.newValue ? a.newValue : "none";
+    return `${who} changed points from ${oldPts} to ${newPts}`;
+  }
+
   return `${who} ${base}`;
 }
 
@@ -51,10 +70,12 @@ export function ActivityLog({
   activities,
   createdAt,
   createdByName,
+  memberNames,
 }: {
   activities: ActivityItem[];
   createdAt: Date;
   createdByName: string | null;
+  memberNames: Record<string, string>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const totalCount = activities.length + 1; // +1 for the "created" entry
@@ -79,7 +100,7 @@ export function ActivityLog({
         <div className="mt-2 space-y-1.5 border-l border-border-subtle pl-3">
           {activities.map((a) => (
             <div key={a.id} className="text-[10px] text-fg-muted">
-              <span>{describeActivity(a)}</span>
+              <span>{describeActivity(a, memberNames)}</span>
               <span className="ml-1.5 text-fg-muted/60">
                 {new Date(a.createdAt).toLocaleDateString()}{" "}
                 {new Date(a.createdAt).toLocaleTimeString([], {
