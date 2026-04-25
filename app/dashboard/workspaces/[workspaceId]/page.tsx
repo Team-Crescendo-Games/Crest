@@ -180,12 +180,13 @@ export default async function WorkspaceOverviewPage({
         ) : (
           <div className="mt-3 space-y-2">
             {workspace.sprints.map((sprint) => (
-              <div
+              <Link
                 key={sprint.id}
-                className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm"
+                href={`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`}
+                className="group flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-all hover:border-accent/40"
               >
                 <div>
-                  <p className="font-mono text-sm font-medium text-fg-primary">
+                  <p className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
                     {sprint.title}
                   </p>
                   <p className="mt-0.5 text-[11px] text-fg-muted">
@@ -209,7 +210,7 @@ export default async function WorkspaceOverviewPage({
                 >
                   {sprint.isActive ? "Active" : "Closed"}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}
