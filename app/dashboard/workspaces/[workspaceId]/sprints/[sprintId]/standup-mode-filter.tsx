@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Users, Shuffle } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 
@@ -11,42 +11,82 @@ interface Member {
   image?: string | null;
 }
 
+function getStorageKey(pathname: string) {
+  return `standupOrder:${pathname}`;
+}
+
+function readOrder(pathname: string, members: Member[]): Member[] {
+  if (typeof window === "undefined") return members;
+  try {
+    const raw = sessionStorage.getItem(getStorageKey(pathname));
+    if (!raw) return members;
+    const ids: string[] = JSON.parse(raw);
+    const byId = new Map(members.map((m) => [m.id, m]));
+    const ordered: Member[] = [];
+    for (const id of ids) {
+      const m = byId.get(id);
+      if (m) {
+        ordered.push(m);
+        byId.delete(id);
+      }
+    }
+    // Append any members not in storage (e.g. newly added)
+    for (const m of byId.values()) ordered.push(m);
+    return ordered;
+  } catch {
+    return members;
+  }
+}
+
+function writeOrder(pathname: string, ids: string[]) {
+  try {
+    sessionStorage.setItem(getStorageKey(pathname), JSON.stringify(ids));
+  } catch {
+    // storage full or unavailable — silently ignore
+  }
+}
+
 export function StandupModeFilter({ members }: { members: Member[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [order, setOrder] = useState<Member[]>(members);
 
   const currentAssignee = searchParams.get("assignee");
 
-  function select(memberId: string | null) {
-    const params = new URLSearchParams(searchParams.toString());
+  const [order, setOrder] = useState<Member[]>(() =>
+    readOrder(pathname, members),
+  );
 
-    if (memberId === null || memberId === currentAssignee) {
-      params.delete("assignee");
-    } else {
-      params.set("assignee", memberId);
-    }
-
-    const qs = params.toString();
-    router.push(`${pathname}${qs ? `?${qs}` : ""}`);
-  }
+  const select = useCallback(
+    (memberId: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (memberId === null || memberId === currentAssignee) {
+        params.delete("assignee");
+      } else {
+        params.set("assignee", memberId);
+      }
+      const qs = params.toString();
+      router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+    },
+    [router, pathname, searchParams, currentAssignee],
+  );
 
   function shuffle() {
-    setOrder((prev) => {
-      const shuffled = [...prev];
-      // Fisher-Yates shuffle
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    });
+    const shuffled = [...order];
+    // Fisher-Yates shuffle
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setOrder(shuffled);
+    writeOrder(
+      pathname,
+      shuffled.map((m) => m.id),
+    );
   }
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-fg-muted mr-0.5">Standup</span>
       <button
         type="button"
         onClick={shuffle}
