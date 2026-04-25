@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
-import { CreateTaskForm } from "@/components/create-task-form";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Task {
@@ -58,46 +57,41 @@ export function SprintViews({
 
   return (
     <div>
-      {/* View toggle + Add Task */}
+      {/* View toggle */}
       <div className="mb-4 flex items-center justify-between gap-2">
-        {hasTimeline ? (
-          <div className="flex items-center gap-1 rounded-md border border-border bg-bg-secondary/50 p-0.5">
+        <div className="flex items-center gap-1 rounded-md border border-border bg-bg-secondary/50 p-0.5">
+          <button
+            onClick={() => setView("columns")}
+            className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "columns"
+                ? "bg-bg-elevated text-fg-primary shadow-sm"
+                : "text-fg-muted hover:text-fg-secondary"
+            }`}
+          >
+            <Columns3 size={13} />
+            Columns
+          </button>
+          <div className="relative group/timeline">
             <button
-              onClick={() => setView("columns")}
+              onClick={() => hasTimeline && setView("timeline")}
               className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                view === "columns"
-                  ? "bg-bg-elevated text-fg-primary shadow-sm"
-                  : "text-fg-muted hover:text-fg-secondary"
-              }`}
-            >
-              <Columns3 size={13} />
-              Columns
-            </button>
-            <button
-              onClick={() => setView("timeline")}
-              className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                view === "timeline"
-                  ? "bg-bg-elevated text-fg-primary shadow-sm"
-                  : "text-fg-muted hover:text-fg-secondary"
+                !hasTimeline
+                  ? "cursor-not-allowed opacity-40"
+                  : view === "timeline"
+                    ? "cursor-pointer bg-bg-elevated text-fg-primary shadow-sm"
+                    : "cursor-pointer text-fg-muted hover:text-fg-secondary"
               }`}
             >
               <GanttChart size={13} />
               Timeline
             </button>
+            {!hasTimeline && (
+              <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-bg-primary px-2 py-1 text-[10px] text-fg-muted opacity-0 shadow-md border border-border transition-opacity group-hover/timeline:opacity-100">
+                The Sprint does not have a Start/End date set
+              </div>
+            )}
           </div>
-        ) : (
-          <div />
-        )}
-
-        {canCreate && (
-          <CreateTaskForm
-            workspaceId={workspaceId}
-            boards={boards}
-            sprintId={sprintId}
-            members={members}
-            tags={tags}
-          />
-        )}
+        </div>
       </div>
 
       {view === "columns" || !hasTimeline ? (

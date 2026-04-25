@@ -4,19 +4,40 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
+  TaskPriority,
+} from "@/prisma/generated/prisma/enums";
+import {
+  TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
   STATUS_LABELS,
   STATUS_COLORS,
 } from "@/lib/task-enums";
 import { KanbanBoard } from "@/components/kanban-board";
 import { UserAvatar } from "@/components/user-avatar";
+import { TaskFilters } from "@/components/task-filters";
+
+/** Split a comma-separated param into a trimmed, non-empty array. */
+function parseMulti(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
 
 export default async function MemberTasksPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workspaceId: string; memberId: string }>;
+  searchParams: Promise<{
+    q?: string;
+    priority?: string;
+    tag?: string;
+  }>;
 }) {
   const { workspaceId, memberId } = await params;
+  const { q, priority: priorityParam, tag: tagParam } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -37,13 +58,40 @@ export default async function MemberTasksPage({
 
   if (!member || member.workspaceId !== workspaceId) notFound();
 
+  // Parse filter params
+  const priorities = parseMulti(priorityParam).filter((p) =>
+    (TASK_PRIORITIES as readonly string[]).includes(p),
+  );
+  const tagFilters = parseMulti(tagParam);
+
+  // Build task where-clause
+  const taskWhere: Record<string, unknown> = {
+    assignees: { some: { id: member.user.id } },
+    board: { workspaceId },
+  };
+  if (q) {
+    taskWhere.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (priorities.length === 1) {
+    taskWhere.priority = priorities[0] as TaskPriority;
+  } else if (priorities.length > 1) {
+    taskWhere.priority = { in: priorities as TaskPriority[] };
+  }
+  if (tagFilters.length === 1) {
+    taskWhere.tags = { some: { name: tagFilters[0] } };
+  } else if (tagFilters.length > 1) {
+    taskWhere.AND = tagFilters.map((name) => ({
+      tags: { some: { name } },
+    }));
+  }
+
   // Fetch tasks assigned to this member within this workspace
   const [assignedTasks, boards, sprints, allMembers, allTags] = await Promise.all([
     prisma.task.findMany({
-      where: {
-        assignees: { some: { id: member.user.id } },
-        board: { workspaceId },
-      },
+      where: taskWhere,
       orderBy: { createdAt: "desc" },
       include: {
         assignees: { select: { id: true, name: true, image: true } },
@@ -144,6 +192,17 @@ export default async function MemberTasksPage({
           Tasks
         </h2>
         <div className="mt-1 h-px w-8 bg-accent-subtle" />
+
+        <div className="mt-4">
+          <TaskFilters
+            tags={allTags}
+            assignees={[]}
+            currentQ={q}
+            currentPriorities={priorities}
+            currentTags={tagFilters}
+            currentAssignees={[]}
+          />
+        </div>
 
         <div className="mt-4">
           {assignedTasks.length === 0 ? (

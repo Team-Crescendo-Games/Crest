@@ -185,11 +185,12 @@ export function AttachmentSection({
 
       {/* Upload area */}
       <div
-        className={`mt-3 rounded-md border-2 border-dashed p-4 text-center transition-colors ${
+        className={`mt-3 cursor-pointer rounded-md border-2 border-dashed p-2.5 text-center transition-colors ${
           dragOver
             ? "border-accent/50 bg-accent/5"
-            : "border-border hover:border-accent/30"
+            : "border-border hover:border-accent/30 hover:bg-accent/5"
         }`}
+        onClick={() => !uploading && fileInputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -211,18 +212,11 @@ export function AttachmentSection({
           </div>
         ) : (
           <div>
-            <Upload size={16} className="mx-auto text-fg-muted" />
-            <p className="mt-1.5 text-xs text-fg-muted">
-              Drag & drop a file here, or{" "}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="font-medium text-accent hover:text-accent-emphasis"
-              >
-                browse
-              </button>
-            </p>
-            <p className="mt-0.5 text-[11px] text-fg-muted">
-              Max 10 MB · Images, PDF, documents, archives
+            <Upload size={14} className="mx-auto text-fg-muted" />
+            <p className="mt-1 text-[11px] text-fg-muted">
+              Drop a file or{" "}
+              <span className="font-medium text-accent">browse</span>:
+              Max 10 MB
             </p>
           </div>
         )}
