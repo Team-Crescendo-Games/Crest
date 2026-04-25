@@ -6,8 +6,6 @@ import { signOut } from "next-auth/react";
 import { useState } from "react";
 import {
   LayoutGrid,
-  CheckSquare,
-  Inbox,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -48,8 +46,6 @@ interface SidebarProps {
 
 const userNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-  { name: "My Tasks", href: "/tasks", icon: CheckSquare },
-  { name: "Inbox", href: "/inbox", icon: Inbox },
 ];
 
 export function Sidebar({ user, workspaces }: SidebarProps) {
