@@ -62,14 +62,11 @@ export async function createTask(_prev: unknown, formData: FormData) {
   const dueDate = formData.get("dueDate") as string;
   const points = formData.get("points") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
+  const tagIds = formData.getAll("tagIds") as string[];
   const sprintId = (formData.get("sprintId") as string) || null;
 
   if (!boardId || !title?.trim()) {
     return { error: "Task title is required" };
-  }
-
-  if (!dueDate) {
-    return { error: "Due date is required" };
   }
 
   if (!VALID_STATUSES.includes(status)) return { error: "Invalid status" };
@@ -99,6 +96,16 @@ export async function createTask(_prev: unknown, formData: FormData) {
     }
   }
 
+  // Validate tags belong to the workspace
+  if (tagIds.length > 0) {
+    const validTagCount = await prisma.tag.count({
+      where: { id: { in: tagIds }, workspaceId: board.workspaceId },
+    });
+    if (validTagCount !== tagIds.length) {
+      return { error: "Invalid tag selection" };
+    }
+  }
+
   const task = await prisma.task.create({
     data: {
       title: title.trim(),
@@ -112,6 +119,9 @@ export async function createTask(_prev: unknown, formData: FormData) {
       authorId: session.user.id,
       assignees: assigneeIds.length > 0
         ? { connect: assigneeIds.map((id) => ({ id })) }
+        : undefined,
+      tags: tagIds.length > 0
+        ? { connect: tagIds.map((id) => ({ id })) }
         : undefined,
       sprints: sprintId ? { connect: { id: sprintId } } : undefined,
     },

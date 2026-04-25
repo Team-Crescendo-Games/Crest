@@ -129,13 +129,13 @@ export default async function SprintDetailPage({
     }),
     prisma.tag.findMany({
       where: { workspaceId },
-      select: { name: true, color: true },
+      select: { id: true, name: true, color: true },
       orderBy: { name: "asc" },
     }),
     prisma.workspaceMember.findMany({
       where: { workspaceId },
       select: {
-        user: { select: { id: true, name: true, image: true } },
+        user: { select: { id: true, name: true, email: true, image: true } },
       },
       orderBy: { user: { name: "asc" } },
     }),
@@ -355,6 +355,8 @@ export default async function SprintDetailPage({
           hasTimeline={!!sprint.startDate && !!sprint.endDate}
           boards={boards}
           canCreate={canEdit}
+          members={members.map((m) => m.user)}
+          tags={tags}
         />
       </div>
     </div>

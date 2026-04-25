@@ -13,7 +13,7 @@ import { archiveBoard, deleteBoard } from "@/lib/actions/board";
 import { updateTaskStatus } from "@/lib/actions/task";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { TaskStatus } from "@/prisma/generated/prisma/enums";
-import { CreateTaskForm } from "./[boardId]/create-task-form";
+import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
 
 interface Board {

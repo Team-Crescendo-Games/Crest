@@ -38,19 +38,41 @@ export default async function MemberTasksPage({
   if (!member || member.workspaceId !== workspaceId) notFound();
 
   // Fetch tasks assigned to this member within this workspace
-  const assignedTasks = await prisma.task.findMany({
-    where: {
-      assignees: { some: { id: member.user.id } },
-      board: { workspaceId },
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      assignees: { select: { id: true, name: true, image: true } },
-      tags: { select: { name: true, color: true } },
-      board: { select: { id: true, name: true } },
-      _count: { select: { comments: true } },
-    },
-  });
+  const [assignedTasks, boards, sprints, allMembers, allTags] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        assignees: { some: { id: member.user.id } },
+        board: { workspaceId },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        assignees: { select: { id: true, name: true, image: true } },
+        tags: { select: { name: true, color: true } },
+        board: { select: { id: true, name: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, title: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: { user: { select: { id: true, name: true, email: true, image: true } } },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   const completedTasks = assignedTasks.filter(
     (t) => t.status === "COMPLETED",
@@ -133,8 +155,13 @@ export default async function MemberTasksPage({
               columns={columns}
               boardId=""
               workspaceId={workspaceId}
-              canCreate={false}
+              canCreate={boards.length > 0}
               variant="detailed"
+              boards={boards}
+              assigneeId={member.user.id}
+              sprints={sprints}
+              members={allMembers.map((m) => m.user)}
+              tags={allTags}
             />
           )}
         </div>

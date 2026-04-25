@@ -101,7 +101,7 @@ export default async function BoardDetailPage({
     }
   }
 
-  const [board, totalTaskCount, tags, members] = await Promise.all([
+  const [board, totalTaskCount, tags, members, sprints] = await Promise.all([
     prisma.board.findUnique({
       where: { id: boardId },
       include: {
@@ -120,15 +120,20 @@ export default async function BoardDetailPage({
     prisma.task.count({ where: { boardId } }),
     prisma.tag.findMany({
       where: { workspaceId },
-      select: { name: true, color: true },
+      select: { id: true, name: true, color: true },
       orderBy: { name: "asc" },
     }),
     prisma.workspaceMember.findMany({
       where: { workspaceId },
       select: {
-        user: { select: { id: true, name: true, image: true } },
+        user: { select: { id: true, name: true, email: true, image: true } },
       },
       orderBy: { user: { name: "asc" } },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, title: true },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -224,6 +229,9 @@ export default async function BoardDetailPage({
           variant="detailed"
           workspaceId={workspaceId}
           canCreate={canCreate}
+          sprints={sprints}
+          members={members.map((m) => m.user)}
+          tags={tags}
         />
       </div>
     </div>

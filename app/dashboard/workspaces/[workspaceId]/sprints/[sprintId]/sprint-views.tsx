@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
-import { SprintCreateTaskForm } from "./sprint-create-task-form";
+import { CreateTaskForm } from "@/components/create-task-form";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Task {
@@ -39,6 +39,8 @@ export function SprintViews({
   hasTimeline,
   boards,
   canCreate,
+  members,
+  tags,
 }: {
   columns: Column[];
   tasks: Task[];
@@ -49,6 +51,8 @@ export function SprintViews({
   hasTimeline: boolean;
   boards: { id: string; name: string }[];
   canCreate: boolean;
+  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  tags?: { id: string; name: string; color: string | null }[];
 }) {
   const [view, setView] = useState<"columns" | "timeline">("columns");
 
@@ -86,10 +90,12 @@ export function SprintViews({
         )}
 
         {canCreate && (
-          <SprintCreateTaskForm
-            sprintId={sprintId}
+          <CreateTaskForm
             workspaceId={workspaceId}
             boards={boards}
+            sprintId={sprintId}
+            members={members}
+            tags={tags}
           />
         )}
       </div>
@@ -100,7 +106,11 @@ export function SprintViews({
           boardId=""
           variant="detailed"
           workspaceId={workspaceId}
-          canCreate={false}
+          canCreate={canCreate}
+          boards={boards}
+          sprintId={sprintId}
+          members={members}
+          tags={tags}
         />
       ) : (
         <SprintTimeline

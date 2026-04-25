@@ -8,7 +8,7 @@ import {
 } from "@hello-pangea/dnd";
 import { useTransition } from "react";
 import { updateTaskStatus } from "@/lib/actions/task";
-import { CreateTaskForm } from "@/app/dashboard/workspaces/[workspaceId]/boards/[boardId]/create-task-form";
+import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
 
 interface Column {
@@ -24,12 +24,24 @@ export function KanbanBoard({
   workspaceId,
   canCreate,
   variant = "simple",
+  boards,
+  assigneeId,
+  sprintId,
+  sprints,
+  members,
+  tags,
 }: {
   columns: Column[];
   boardId: string;
   workspaceId: string;
   canCreate: boolean;
   variant?: "simple" | "detailed";
+  boards?: { id: string; name: string }[];
+  assigneeId?: string;
+  sprintId?: string;
+  sprints?: { id: string; title: string }[];
+  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  tags?: { id: string; name: string; color: string | null }[];
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -54,7 +66,23 @@ export function KanbanBoard({
         className={`grid gap-4 lg:grid-cols-4 ${isPending ? "opacity-70" : ""}`}
       >
         {columns.map((column) => (
-          <div key={column.status}>
+          <div
+            key={column.status}
+            className="rounded-lg p-2 transition-colors duration-150"
+            style={
+              {
+                "--col-bg": column.color + "08",
+                "--col-bg-hover": column.color + "12",
+                backgroundColor: "var(--col-bg)",
+              } as React.CSSProperties
+            }
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "var(--col-bg-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "var(--col-bg)")
+            }
+          >
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
@@ -70,9 +98,15 @@ export function KanbanBoard({
               </div>
               {canCreate && (
                 <CreateTaskForm
-                  boardId={boardId}
                   workspaceId={workspaceId}
+                  boardId={boards ? undefined : boardId}
+                  boards={boards}
                   defaultStatus={column.status}
+                  assigneeId={assigneeId}
+                  sprintId={sprintId}
+                  sprints={sprints}
+                  members={members}
+                  tags={tags}
                   compact
                 />
               )}

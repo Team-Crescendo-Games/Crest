@@ -263,19 +263,23 @@ export default async function TaskDetailPage({
           )}
 
           {/* Timestamps */}
-          <MetaBlock label="Created">
-            <span className="text-[11px] text-fg-muted">
-              {task.createdAt.toLocaleDateString()} at{" "}
-              {task.createdAt.toLocaleTimeString()}
-            </span>
-          </MetaBlock>
+          <div className="opacity-40">
+            <MetaBlock label="Created">
+              <span className="text-[11px] text-fg-muted">
+                {task.createdAt.toLocaleDateString()} at{" "}
+                {task.createdAt.toLocaleTimeString()}
+              </span>
+            </MetaBlock>
+          </div>
 
-          <MetaBlock label="Updated">
-            <span className="text-[11px] text-fg-muted">
-              {task.updatedAt.toLocaleDateString()} at{" "}
-              {task.updatedAt.toLocaleTimeString()}
-            </span>
-          </MetaBlock>
+          <div className="opacity-40">
+            <MetaBlock label="Updated">
+              <span className="text-[11px] text-fg-muted">
+                {task.updatedAt.toLocaleDateString()} at{" "}
+                {task.updatedAt.toLocaleTimeString()}
+              </span>
+            </MetaBlock>
+          </div>
         </div>
         </div>{/* end grid */}
 
