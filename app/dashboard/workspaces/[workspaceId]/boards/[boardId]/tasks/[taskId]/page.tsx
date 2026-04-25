@@ -250,14 +250,28 @@ export default async function TaskDetailPage({
             </MetaBlock>
           )}
 
+          {/* Board */}
+          <MetaBlock label="Board">
+            <Link
+              href={`/dashboard/workspaces/${workspaceId}/boards/${boardId}`}
+              className="text-[11px] text-accent hover:text-accent-emphasis transition-colors"
+            >
+              {task.board.name}
+            </Link>
+          </MetaBlock>
+
           {/* Sprints */}
           {task.sprints.length > 0 && (
             <MetaBlock label="Sprints">
               <div className="space-y-1">
                 {task.sprints.map((s) => (
-                  <span key={s.id} className="block text-[11px] text-fg-muted">
+                  <Link
+                    key={s.id}
+                    href={`/dashboard/workspaces/${workspaceId}/sprints/${s.id}`}
+                    className="block text-[11px] text-accent hover:text-accent-emphasis transition-colors"
+                  >
                     {s.title}
-                  </span>
+                  </Link>
                 ))}
               </div>
             </MetaBlock>
