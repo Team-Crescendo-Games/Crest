@@ -12,12 +12,7 @@ import {
   Shield,
   Calendar,
 } from "lucide-react";
-import {
-  hasPermission,
-  Permission,
-  PERMISSION_LABELS,
-  PermissionKey,
-} from "@/lib/permissions";
+import { hasPermission, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/tag-manager";
 import { RoleManager } from "@/components/role-manager";
 

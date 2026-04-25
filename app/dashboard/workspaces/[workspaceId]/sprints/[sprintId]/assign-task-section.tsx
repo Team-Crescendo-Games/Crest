@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { assignTaskToSprint, removeTaskFromSprint } from "@/lib/actions/sprint";
+import { assignTaskToSprint } from "@/lib/actions/sprint";
 import { Plus, X, Search } from "lucide-react";
 
 interface UnassignedTask {

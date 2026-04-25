@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createRole, updateRole, deleteRole } from "@/lib/actions/role";
-import { Plus, Pencil, Trash2, X, Check, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Shield } from "lucide-react";
 import {
   Permission,
   PERMISSION_LABELS,

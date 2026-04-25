@@ -7,7 +7,6 @@ import {
   type DropResult,
 } from "@hello-pangea/dnd";
 import { useTransition } from "react";
-import Link from "next/link";
 import { updateTaskStatus } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/app/dashboard/workspaces/[workspaceId]/boards/[boardId]/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";

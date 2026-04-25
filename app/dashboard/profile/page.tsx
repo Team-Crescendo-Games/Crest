@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { User, Mail, Lock, Camera, Calendar } from "lucide-react";
+import { User, Mail, Lock, Calendar } from "lucide-react";
 import { ProfileForm } from "./profile-form";
 import { EmailForm } from "./email-form";
 import { PasswordForm } from "./password-form";

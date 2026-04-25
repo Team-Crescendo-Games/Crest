@@ -6,7 +6,7 @@ import {
   Upload,
   Trash2,
   FileText,
-  Image,
+  Image as ImageIcon,
   File,
   X,
 } from "lucide-react";
@@ -28,7 +28,7 @@ function formatFileSize(bytes: number): string {
 }
 
 function FileIcon({ mimeType }: { mimeType: string }) {
-  if (mimeType.startsWith("image/")) return <Image size={14} />;
+  if (mimeType.startsWith("image/")) return <ImageIcon size={14} />;
   if (mimeType === "application/pdf") return <FileText size={14} />;
   return <File size={14} />;
 }
