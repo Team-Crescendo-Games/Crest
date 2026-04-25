@@ -5,13 +5,14 @@ import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
 import { SprintCreateTaskForm } from "./sprint-create-task-form";
+import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Task {
   id: string;
   title: string;
   description: string | null;
-  status: string;
-  priority: string;
+  status: TaskStatus;
+  priority: TaskPriority;
   startDate: Date | null;
   dueDate: Date | null;
   boardId: string;
@@ -22,7 +23,7 @@ interface Task {
 }
 
 interface Column {
-  status: string;
+  status: TaskStatus;
   label: string;
   color: string;
   tasks: Task[];

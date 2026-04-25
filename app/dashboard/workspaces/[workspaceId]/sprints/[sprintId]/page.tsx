@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
 import {
-  TaskStatus,
   TaskPriority,
 } from "@/prisma/generated/prisma/enums";
 import { hasPermission, Permission } from "@/lib/permissions";
@@ -15,6 +14,7 @@ import {
   STATUS_COLORS,
 } from "@/lib/task-enums";
 import { SprintActions } from "./sprint-actions";
+import { StandupModeFilter } from "./standup-mode-filter";
 import { AssignTaskSection } from "./assign-task-section";
 import { SprintViews } from "./sprint-views";
 import { TaskFilters } from "@/components/task-filters";
@@ -320,6 +320,11 @@ export default async function SprintDetailPage({
           />
         </div>
       )}
+
+      {/* Standup mode */}
+      <div className="mt-6">
+        <StandupModeFilter members={members.map((m) => m.user)} />
+      </div>
 
       {/* Filters + Task views */}
       <div className="mt-6 space-y-4">

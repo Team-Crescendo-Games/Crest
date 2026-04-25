@@ -42,7 +42,7 @@ export function AssignTaskSection({
           className="flex items-center gap-1 rounded-md border border-border bg-bg-secondary px-2 py-1 text-xs text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
         >
           {showPicker ? <X size={11} /> : <Plus size={11} />}
-          {showPicker ? "Close" : "Add Tasks"}
+          {showPicker ? "Close" : "Find Available Tasks"}
         </button>
       </div>
 
