@@ -224,7 +224,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                         className={`block truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isBoardActive
                             ? "text-accent"
-                            : "text-fg-muted hover:text-fg-secondary"
+                            : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
                         }`}
                       >
                         {board.name}
@@ -275,7 +275,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                         className={`block truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isSprintActive
                             ? "text-accent"
-                            : "text-fg-muted hover:text-fg-secondary"
+                            : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
                         }`}
                       >
                         {sprint.title}

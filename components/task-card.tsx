@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 import { UserAvatar } from "@/components/user-avatar";
-
-const PRIORITY_COLORS: Record<string, string> = {
-  URGENT: "#ef4444",
-  HIGH: "#f0a468",
-  MEDIUM: "#f1c258",
-  LOW: "#6bc96b",
-  NONE: "",
-};
+import { PRIORITY_COLORS } from "@/lib/task-enums";
+import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 export interface TaskCardData {
   id: string;
@@ -49,20 +43,24 @@ export function TaskCard({
   return (
     <Link
       href={link}
-      className={`group block rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${className}`}
+      className={`group relative block overflow-hidden rounded-md border border-border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${className}`}
     >
-      {/* Row 1: priority + title */}
-      <div className="flex items-start gap-1.5">
-        {task.priority !== "NONE" && (
-          <div
-            className="mt-1 h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
-          />
-        )}
-        <p className="font-mono text-xs font-medium text-fg-primary line-clamp-2">
-          {task.title}
-        </p>
-      </div>
+      {/* Left priority bar (omitted when priority is NONE) */}
+      {task.priority !== "NONE" && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1"
+          style={{
+            backgroundColor:
+              PRIORITY_COLORS[task.priority as TaskPriority] ?? "transparent",
+          }}
+        />
+      )}
+
+      {/* Row 1: title */}
+      <p className="font-mono text-xs font-medium text-fg-primary line-clamp-2">
+        {task.title}
+      </p>
 
       {/* Row 2: description (1 line) */}
       {task.description && (
