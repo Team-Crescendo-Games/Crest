@@ -163,6 +163,15 @@ export default function SignUpPage() {
               Sign in
             </Link>
           </p>
+          <p className="text-center text-xs text-fg-muted">
+            Migrated account?{" "}
+            <Link
+              href="/set-password"
+              className="font-medium text-accent transition-colors hover:text-accent-emphasis"
+            >
+              Set your password
+            </Link>
+          </p>
         </div>
       </div>
     </div>
