@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Users, Shuffle } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 
@@ -53,9 +53,16 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
 
   const currentAssignee = searchParams.get("assignee");
 
-  const [order, setOrder] = useState<Member[]>(() =>
-    readOrder(pathname, members),
-  );
+  const [order, setOrder] = useState<Member[]>(members);
+
+  // Restore shuffled order from sessionStorage after hydration
+  useEffect(() => {
+    const stored = readOrder(pathname, members);
+    // Only update if the stored order differs from the default
+    if (stored.map((m) => m.id).join() !== members.map((m) => m.id).join()) {
+      setOrder(stored);
+    }
+  }, [pathname, members]);
 
   const select = useCallback(
     (memberId: string | null) => {
