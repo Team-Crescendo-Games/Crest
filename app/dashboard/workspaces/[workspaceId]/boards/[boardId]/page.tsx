@@ -101,12 +101,17 @@ export default async function BoardDetailPage({
     }
   }
 
-  const [board, totalTaskCount, tags, members, sprints] = await Promise.all([
+  // Build a where-clause for non-completed tasks (all filters apply)
+  const nonCompletedWhere = { ...taskWhere, status: { not: "COMPLETED" as TaskStatus } };
+  // Build a where-clause for completed tasks (all filters apply, limited to 10)
+  const completedWhere = { ...taskWhere, status: "COMPLETED" as TaskStatus };
+
+  const [board, completedTasks, completedCount, totalTaskCount, tags, members, sprints] = await Promise.all([
     prisma.board.findUnique({
       where: { id: boardId },
       include: {
         tasks: {
-          where: taskWhere,
+          where: nonCompletedWhere,
           orderBy: { createdAt: "desc" },
           include: {
             author: { select: { name: true } },
@@ -117,6 +122,18 @@ export default async function BoardDetailPage({
         },
       },
     }),
+    prisma.task.findMany({
+      where: { boardId, ...completedWhere },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        author: { select: { name: true } },
+        assignees: { select: { id: true, name: true, image: true } },
+        tags: { select: { name: true, color: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
+    prisma.task.count({ where: { boardId, ...completedWhere } }),
     prisma.task.count({ where: { boardId } }),
     prisma.tag.findMany({
       where: { workspaceId },
@@ -144,13 +161,17 @@ export default async function BoardDetailPage({
     Permission.CREATE_CONTENT,
   );
 
+  // Merge non-completed tasks from board query with the paginated completed tasks
+  const allTasks = [
+    ...board.tasks.map((t) => ({ ...t, commentCount: t._count.comments })),
+    ...completedTasks.map((t) => ({ ...t, commentCount: t._count.comments })),
+  ];
+
   const columns = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: board.tasks
-      .filter((t) => t.status === status)
-      .map((t) => ({ ...t, commentCount: t._count.comments })),
+    tasks: allTasks.filter((t) => t.status === status),
   }));
 
   const hasFilters =
@@ -158,7 +179,7 @@ export default async function BoardDetailPage({
     priorities.length > 0 ||
     tagFilters.length > 0 ||
     assigneeFilters.length > 0;
-  const filteredCount = board.tasks.length;
+  const filteredCount = allTasks.length;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -232,6 +253,13 @@ export default async function BoardDetailPage({
           sprints={sprints}
           members={members.map((m) => m.user)}
           tags={tags}
+          completedCount={completedCount}
+          completedFilters={{
+            q,
+            priorities,
+            tagFilters,
+            assigneeFilters,
+          }}
         />
       </div>
     </div>

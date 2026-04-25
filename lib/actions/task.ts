@@ -64,6 +64,90 @@ async function logActivity(
   });
 }
 
+// ─── Load completed tasks (pagination) ──────────────────────────────────────
+
+export async function loadCompletedTasks(
+  boardId: string,
+  workspaceId: string,
+  offset: number,
+  limit: number,
+  filters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    assigneeFilters?: string[];
+  },
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: {
+      userId_workspaceId: { userId: session.user.id, workspaceId },
+    },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  // Build the same filter where-clause the board page uses
+  const taskWhere: Record<string, unknown> = {
+    boardId,
+    status: "COMPLETED" as TaskStatus,
+  };
+
+  if (filters?.q) {
+    taskWhere.OR = [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { description: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters?.priorities && filters.priorities.length === 1) {
+    taskWhere.priority = filters.priorities[0] as TaskPriority;
+  } else if (filters?.priorities && filters.priorities.length > 1) {
+    taskWhere.priority = { in: filters.priorities as TaskPriority[] };
+  }
+
+  if (filters?.tagFilters && filters.tagFilters.length === 1) {
+    taskWhere.tags = { some: { name: filters.tagFilters[0] } };
+  } else if (filters?.tagFilters && filters.tagFilters.length > 1) {
+    taskWhere.AND = filters.tagFilters.map((name) => ({
+      tags: { some: { name } },
+    }));
+  }
+
+  if (filters?.assigneeFilters && filters.assigneeFilters.length > 0) {
+    const hasUnassigned = filters.assigneeFilters.includes("unassigned");
+    const userIds = filters.assigneeFilters.filter((v) => v !== "unassigned");
+
+    if (hasUnassigned && userIds.length > 0) {
+      taskWhere.OR = [
+        ...(taskWhere.OR ? (taskWhere.OR as unknown[]) : []),
+        { assignees: { none: {} } },
+        { assignees: { some: { id: { in: userIds } } } },
+      ];
+    } else if (hasUnassigned) {
+      taskWhere.assignees = { none: {} };
+    } else {
+      taskWhere.assignees = { some: { id: { in: userIds } } };
+    }
+  }
+
+  const tasks = await prisma.task.findMany({
+    where: taskWhere,
+    orderBy: { createdAt: "desc" },
+    skip: offset,
+    take: limit,
+    include: {
+      author: { select: { name: true } },
+      assignees: { select: { id: true, name: true, image: true } },
+      tags: { select: { name: true, color: true } },
+      _count: { select: { comments: true } },
+    },
+  });
+
+  return tasks.map((t) => ({ ...t, commentCount: t._count.comments }));
+}
+
 // ─── Create ─────────────────────────────────────────────────────────────────
 
 export async function createTask(_prev: unknown, formData: FormData) {
