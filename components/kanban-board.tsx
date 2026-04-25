@@ -12,7 +12,7 @@ import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 5;
 
 interface Column {
   status: string;

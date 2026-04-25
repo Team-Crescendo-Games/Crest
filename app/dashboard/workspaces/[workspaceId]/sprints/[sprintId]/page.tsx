@@ -115,8 +115,8 @@ export default async function SprintDetailPage({
   } as const;
 
   // Page sizes per column type
-  const PAGE_SIZE_DEFAULT = 20;
-  const PAGE_SIZE_COMPLETED = 10;
+  const PAGE_SIZE_DEFAULT = 5;
+  const PAGE_SIZE_COMPLETED = 5;
 
   // Build per-status where clauses for sprint-scoped tasks
   const statusWhere = (status: TaskStatus) => ({

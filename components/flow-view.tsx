@@ -295,7 +295,7 @@ function TaskSelector({
 
 // ─── Flow canvas ────────────────────────────────────────────────────────────
 
-function FlowCanvas({
+export function FlowCanvas({
   tasks,
   rootId,
   workspaceId,

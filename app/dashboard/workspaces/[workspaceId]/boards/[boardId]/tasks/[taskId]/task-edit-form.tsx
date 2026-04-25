@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { updateTask } from "@/lib/actions/task";
+import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
 import { X, Plus, Search, ChevronDown, Check, Calendar } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
-import { TaskActions } from "./task-actions";
+import { FlowCanvas } from "@/components/flow-view";
+import { TaskActions, FlowModeButton } from "./task-actions";
 import { DeleteTaskButton } from "./delete-task-button";
 import {
   STATUS_LABELS,
@@ -68,6 +69,30 @@ export function TaskEditForm({
   const [tagIds, setTagIds] = useState<string[]>(task.tagIds);
   const [selectedBoardId, setSelectedBoardId] = useState(task.boardId);
   const [sprintIds, setSprintIds] = useState<string[]>(task.sprintIds);
+  const [flowOpen, setFlowOpen] = useState(false);
+  const [flowTasks, setFlowTasks] = useState<Awaited<ReturnType<typeof getFlowGraphTasks>> | null>(null);
+  const [flowLoading, setFlowLoading] = useState(false);
+
+  // Fetch the dependency graph when flow mode is opened
+  useEffect(() => {
+    if (!flowOpen) {
+      setFlowTasks(null);
+      return;
+    }
+    let cancelled = false;
+    setFlowLoading(true);
+    getFlowGraphTasks(task.id, workspaceId)
+      .then((result) => {
+        if (!cancelled) setFlowTasks(result);
+      })
+      .catch(() => {
+        if (!cancelled) setFlowTasks(null);
+      })
+      .finally(() => {
+        if (!cancelled) setFlowLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [flowOpen, task.id, workspaceId]);
 
   const [state, formAction, pending] = useActionState(
     async (prev: unknown, formData: FormData) => {
@@ -222,6 +247,11 @@ export function TaskEditForm({
               members={members}
             />
 
+            <FlowModeButton
+              active={flowOpen}
+              onToggle={() => setFlowOpen((v) => !v)}
+            />
+
             <DeleteTaskButton taskId={task.id} workspaceId={workspaceId} boardId={boardId} />
           </div>
         </div>
@@ -300,6 +330,32 @@ export function TaskEditForm({
           </SidebarBlock>
         </div>
       </div>
+
+      {/* ── Flow mode: dependency graph ── */}
+      {flowOpen && (
+        <div className="mt-6">
+          {flowLoading ? (
+            <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
+              <p className="font-mono text-sm text-fg-muted animate-pulse">
+                Loading dependency graph…
+              </p>
+            </div>
+          ) : flowTasks ? (
+            <FlowCanvas
+              tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
+              rootId={task.id}
+              workspaceId={workspaceId}
+              onBack={() => setFlowOpen(false)}
+            />
+          ) : (
+            <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
+              <p className="font-mono text-sm text-fg-muted">
+                Could not load dependency graph.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

@@ -2,9 +2,33 @@
 
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Copy, Check, X } from "lucide-react";
+import { Link2, Copy, Check, X, Workflow } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { UserAvatar } from "@/components/user-avatar";
+
+export function FlowModeButton({
+  active,
+  onToggle,
+}: {
+  active: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={active ? "Close Flow mode" : "Open Flow mode"}
+      title={active ? "Close Flow mode" : "Open Flow mode"}
+      className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+        active
+          ? "border-accent bg-accent/10 text-accent"
+          : "border-border bg-bg-elevated/60 text-fg-secondary hover:border-accent/40 hover:text-accent"
+      }`}
+    >
+      <Workflow size={14} />
+    </button>
+  );
+}
 
 export interface SourceTask {
   title: string;

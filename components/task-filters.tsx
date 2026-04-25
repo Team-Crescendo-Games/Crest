@@ -18,6 +18,10 @@ interface Props {
   currentPriorities: string[];
   currentTags: string[];
   currentAssignees: string[];
+  /** Extra URL params to preserve across filter navigations (e.g. board, showArchived). */
+  extraParams?: Record<string, string | undefined>;
+  /** Extra controls to render inline after the built-in filter dropdowns. */
+  extraControls?: React.ReactNode;
 }
 
 export function TaskFilters({
@@ -27,6 +31,8 @@ export function TaskFilters({
   currentPriorities,
   currentTags,
   currentAssignees,
+  extraParams,
+  extraControls,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -56,6 +62,14 @@ export function TaskFilters({
         : currentAssignees;
     if (Array.isArray(assigneeVals) && assigneeVals.length > 0)
       params.set("assignee", assigneeVals.join(","));
+
+    // Preserve extra params (e.g. board, showArchived) but reset page on filter change
+    if (extraParams) {
+      for (const [key, val] of Object.entries(extraParams)) {
+        if (key === "page") continue; // reset page when filters change
+        if (val) params.set(key, val);
+      }
+    }
 
     const qs = params.toString();
     return `${pathname}${qs ? `?${qs}` : ""}`;
@@ -229,6 +243,8 @@ export function TaskFilters({
             </span>
           )}
         />
+
+        {extraControls}
       </div>
 
       {/* Active filter chips */}
@@ -301,7 +317,15 @@ export function TaskFilters({
           <button
             onClick={() => {
               setQ("");
-              router.push(pathname);
+              const params = new URLSearchParams();
+              if (extraParams) {
+                for (const [key, val] of Object.entries(extraParams)) {
+                  if (key === "page") continue;
+                  if (val) params.set(key, val);
+                }
+              }
+              const qs = params.toString();
+              router.push(`${pathname}${qs ? `?${qs}` : ""}`);
             }}
             className="text-[11px] text-accent hover:text-accent-emphasis"
           >

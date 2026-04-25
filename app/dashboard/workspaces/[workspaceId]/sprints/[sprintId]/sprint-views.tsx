@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Columns3, GanttChart, Workflow } from "lucide-react";
+import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
-import { FlowView } from "@/components/flow-view";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Task {
@@ -69,7 +68,7 @@ export function SprintViews({
     assigneeUserId?: string;
   };
 }) {
-  const [view, setView] = useState<"columns" | "timeline" | "flow">("columns");
+  const [view, setView] = useState<"columns" | "timeline">("columns");
 
   return (
     <div>
@@ -107,26 +106,10 @@ export function SprintViews({
               </div>
             )}
           </div>
-          <button
-            onClick={() => setView("flow")}
-            className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "flow"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
-            }`}
-          >
-            <Workflow size={13} />
-            Flow
-          </button>
         </div>
       </div>
 
-      {view === "flow" ? (
-        <FlowView
-          tasks={tasks}
-          workspaceId={workspaceId}
-        />
-      ) : view === "timeline" && hasTimeline ? (
+      {view === "timeline" && hasTimeline ? (
         <SprintTimeline
           tasks={tasks}
           sprintStart={sprintStart!}

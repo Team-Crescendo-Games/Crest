@@ -102,8 +102,8 @@ export default async function BoardDetailPage({
   }
 
   // Page sizes per column type
-  const PAGE_SIZE_DEFAULT = 20;
-  const PAGE_SIZE_COMPLETED = 10;
+  const PAGE_SIZE_DEFAULT = 5;
+  const PAGE_SIZE_COMPLETED = 5;
 
   const taskInclude = {
     author: { select: { name: true } },
