@@ -1,0 +1,27 @@
+[
+  {
+    "key": "alice",
+    "name": "Alice Anderson",
+    "email": "alice@dev.local"
+  },
+  {
+    "key": "bob",
+    "name": "Bob Baker",
+    "email": "bob@dev.local"
+  },
+  {
+    "key": "carol",
+    "name": "Carol Chen",
+    "email": "carol@dev.local"
+  },
+  {
+    "key": "dave",
+    "name": "Dave Diaz",
+    "email": "dave@dev.local"
+  },
+  {
+    "key": "eve",
+    "name": "Eve Edwards",
+    "email": "eve@dev.local"
+  }
+]

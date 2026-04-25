@@ -1,0 +1,34 @@
+[
+  {
+    "task": "acme-slow-boards",
+    "uploadedBy": "dave",
+    "fileName": "board-profiling-report.pdf",
+    "fileUrl": "https://example.com/dev/attachments/board-profiling-report.pdf",
+    "fileSize": 234567,
+    "mimeType": "application/pdf"
+  },
+  {
+    "task": "acme-slow-boards",
+    "uploadedBy": "dave",
+    "fileName": "query-timings.csv",
+    "fileUrl": "https://example.com/dev/attachments/query-timings.csv",
+    "fileSize": 8421,
+    "mimeType": "text/csv"
+  },
+  {
+    "task": "bolt-onboarding-flow",
+    "uploadedBy": "eve",
+    "fileName": "onboarding-wireframes-v1.png",
+    "fileUrl": "https://example.com/dev/attachments/onboarding-wireframes-v1.png",
+    "fileSize": 1245678,
+    "mimeType": "image/png"
+  },
+  {
+    "task": "bolt-empty-states",
+    "uploadedBy": "eve",
+    "fileName": "empty-state-illustrations.png",
+    "fileUrl": "https://example.com/dev/attachments/empty-state-illustrations.png",
+    "fileSize": 892341,
+    "mimeType": "image/png"
+  }
+]

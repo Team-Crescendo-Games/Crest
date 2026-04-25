@@ -1,0 +1,23 @@
+[
+  {
+    "key": "acme-sprint-current",
+    "workspace": "acme",
+    "title": "Q2 Sprint 3 — Auth hardening & perf",
+    "startOffsetDays": -3,
+    "endOffsetDays": 11
+  },
+  {
+    "key": "acme-sprint-next",
+    "workspace": "acme",
+    "title": "Q2 Sprint 4 — Notifications",
+    "startOffsetDays": 12,
+    "endOffsetDays": 26
+  },
+  {
+    "key": "bolt-sprint",
+    "workspace": "bolt",
+    "title": "Design Sprint — Onboarding redesign",
+    "startOffsetDays": 0,
+    "endOffsetDays": 14
+  }
+]

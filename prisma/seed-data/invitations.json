@@ -1,0 +1,17 @@
+[
+  {
+    "workspace": "acme",
+    "createdBy": "alice",
+    "expiresInDays": 7
+  },
+  {
+    "workspace": "bolt",
+    "createdBy": "bob",
+    "expiresInDays": 14
+  },
+  {
+    "workspace": "playground",
+    "createdBy": "alice",
+    "expiresInDays": 30
+  }
+]

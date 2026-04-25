@@ -1,0 +1,50 @@
+[
+  {
+    "user": "bob",
+    "task": "acme-login-bug",
+    "type": "TASK_ASSIGNED",
+    "message": "Alice assigned you to \"Fix infinite redirect loop after sign-in on Safari...\"",
+    "isRead": false
+  },
+  {
+    "user": "carol",
+    "task": "acme-csv-export",
+    "type": "TASK_ASSIGNED",
+    "message": "Alice assigned you to \"Add CSV export functionality for tasks...\"",
+    "isRead": false
+  },
+  {
+    "user": "alice",
+    "task": "acme-slow-boards",
+    "type": "TASK_STATUS_CHANGED",
+    "message": "Bob moved \"Investigate and resolve slow board load times...\" to In Review",
+    "isRead": true
+  },
+  {
+    "user": "alice",
+    "task": "acme-slow-boards",
+    "type": "TASK_COMMENTED",
+    "message": "Dave commented on \"Investigate and resolve slow board load times...\"",
+    "isRead": false
+  },
+  {
+    "user": "eve",
+    "task": "bolt-onboarding-flow",
+    "type": "TASK_COMMENTED",
+    "message": "Bob commented on \"Redesign the new-user onboarding flow...\"",
+    "isRead": false
+  },
+  {
+    "user": "dave",
+    "type": "WORKSPACE_INVITATION",
+    "message": "You were added to workspace \"Acme Engineering\"",
+    "isRead": true
+  },
+  {
+    "user": "alice",
+    "task": "acme-notif-center",
+    "type": "TASK_UPDATED",
+    "message": "Bob updated \"Build in-app notification center...\"",
+    "isRead": true
+  }
+]

@@ -1,0 +1,53 @@
+[
+  {
+    "key": "acme",
+    "name": "Acme Engineering",
+    "description": "Backend platform and infrastructure team.",
+    "joinPolicy": "INVITE_ONLY",
+    "createdBy": "alice",
+    "roles": [
+      { "key": "owner", "name": "Owner", "color": "#f0a468", "permissions": "ALL" },
+      { "key": "lead", "name": "Team Lead", "color": "#a855f7", "permissions": 127 },
+      { "key": "member", "name": "Member", "color": "#6B7280", "permissions": "DEFAULT_MEMBER" }
+    ],
+    "members": [
+      { "user": "alice", "role": "owner" },
+      { "user": "bob", "role": "lead" },
+      { "user": "carol", "role": "member" },
+      { "user": "dave", "role": "member" }
+    ]
+  },
+  {
+    "key": "bolt",
+    "name": "Bolt Design Studio",
+    "description": "Product design and brand work. Apply to join!",
+    "joinPolicy": "APPLY_TO_JOIN",
+    "createdBy": "bob",
+    "roles": [
+      { "key": "owner", "name": "Owner", "color": "#f0a468", "permissions": "ALL" },
+      { "key": "designer", "name": "Designer", "color": "#ec4899", "permissions": 63 },
+      { "key": "member", "name": "Member", "color": "#6B7280", "permissions": "DEFAULT_MEMBER" }
+    ],
+    "members": [
+      { "user": "bob", "role": "owner" },
+      { "user": "eve", "role": "designer" },
+      { "user": "alice", "role": "member" }
+    ]
+  },
+  {
+    "key": "playground",
+    "name": "Public Playground",
+    "description": "Open workspace for experiments. Anyone can join.",
+    "joinPolicy": "OPEN",
+    "createdBy": "alice",
+    "roles": [
+      { "key": "owner", "name": "Owner", "color": "#f0a468", "permissions": "ALL" },
+      { "key": "member", "name": "Member", "color": "#6B7280", "permissions": "DEFAULT_MEMBER" }
+    ],
+    "members": [
+      { "user": "alice", "role": "owner" },
+      { "user": "carol", "role": "member" },
+      { "user": "eve", "role": "member" }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "key": "acme-backlog",
+    "workspace": "acme",
+    "name": "Backlog",
+    "description": "Untriaged ideas and incoming work",
+    "displayOrder": 0
+  },
+  {
+    "key": "acme-current",
+    "workspace": "acme",
+    "name": "Current Work",
+    "description": "Tasks the team is actively working on this quarter",
+    "displayOrder": 1
+  },
+  {
+    "key": "acme-infra",
+    "workspace": "acme",
+    "name": "Infrastructure",
+    "description": "Platform, observability, and reliability work",
+    "displayOrder": 2
+  },
+
+  {
+    "key": "bolt-design",
+    "workspace": "bolt",
+    "name": "Design Sprint",
+    "description": "Active design explorations",
+    "displayOrder": 0
+  },
+  {
+    "key": "bolt-research",
+    "workspace": "bolt",
+    "name": "Research",
+    "description": "User research and insights",
+    "displayOrder": 1
+  },
+
+  {
+    "key": "play-ideas",
+    "workspace": "playground",
+    "name": "Ideas",
+    "description": "Anything goes",
+    "displayOrder": 0
+  }
+]

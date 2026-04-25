@@ -1,0 +1,14 @@
+[
+  {
+    "workspace": "bolt",
+    "user": "carol",
+    "message": "Hi Bob! I'd love to join the design studio to help with UX research. I have a background in product design.",
+    "status": "PENDING"
+  },
+  {
+    "workspace": "bolt",
+    "user": "dave",
+    "message": "Looking to expand into design work. Happy to start with small tasks.",
+    "status": "PENDING"
+  }
+]

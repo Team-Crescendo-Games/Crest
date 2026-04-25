@@ -1,0 +1,19 @@
+[
+  { "key": "acme-bug", "workspace": "acme", "name": "bug", "color": "#ef4444" },
+  { "key": "acme-feature", "workspace": "acme", "name": "feature", "color": "#10b981" },
+  { "key": "acme-chore", "workspace": "acme", "name": "chore", "color": "#64748b" },
+  { "key": "acme-infra", "workspace": "acme", "name": "infrastructure", "color": "#0ea5e9" },
+  { "key": "acme-security", "workspace": "acme", "name": "security", "color": "#dc2626" },
+  { "key": "acme-perf", "workspace": "acme", "name": "performance", "color": "#f59e0b" },
+  { "key": "acme-docs", "workspace": "acme", "name": "documentation", "color": "#8b5cf6" },
+
+  { "key": "bolt-ui", "workspace": "bolt", "name": "ui", "color": "#ec4899" },
+  { "key": "bolt-ux", "workspace": "bolt", "name": "ux research", "color": "#a855f7" },
+  { "key": "bolt-branding", "workspace": "bolt", "name": "branding", "color": "#f97316" },
+  { "key": "bolt-web", "workspace": "bolt", "name": "web", "color": "#14b8a6" },
+  { "key": "bolt-mobile", "workspace": "bolt", "name": "mobile", "color": "#6366f1" },
+
+  { "key": "play-exp", "workspace": "playground", "name": "experiment", "color": "#84cc16" },
+  { "key": "play-demo", "workspace": "playground", "name": "demo", "color": "#22d3ee" },
+  { "key": "play-idea", "workspace": "playground", "name": "idea", "color": "#facc15" }
+]
