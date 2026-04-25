@@ -32,6 +32,21 @@ export function hasPermission(permissions: number, perm: number): boolean {
   return (permissions & perm) === perm;
 }
 
+/**
+ * Return effective permissions for a workspace member.
+ * The workspace creator (owner) always has ALL_PERMISSIONS regardless of role.
+ */
+export function getEffectivePermissions(
+  rolePermissions: number,
+  userId: string,
+  workspaceCreatedById: string | null,
+): number {
+  if (workspaceCreatedById && userId === workspaceCreatedById) {
+    return ALL_PERMISSIONS;
+  }
+  return rolePermissions;
+}
+
 /** Human-readable labels for each permission. */
 export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   CREATE_CONTENT: "Create content",

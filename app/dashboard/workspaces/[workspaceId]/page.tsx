@@ -12,7 +12,7 @@ import {
   Shield,
   Calendar,
 } from "lucide-react";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/tag-manager";
 import { RoleManager } from "@/components/role-manager";
 
@@ -53,10 +53,12 @@ export default async function WorkspaceOverviewPage({
   if (!membership) notFound();
 
   const { workspace } = membership;
-  const canManage = hasPermission(
+  const effectivePerms = getEffectivePermissions(
     membership.role.permissions,
-    Permission.MANAGE_WORKSPACE,
+    userId,
+    workspace.createdById,
   );
+  const canManage = hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE);
 
   const JOIN_POLICY_LABELS = {
     INVITE_ONLY: "Invite Only",
@@ -228,18 +230,9 @@ export default async function WorkspaceOverviewPage({
             <TagManager
               tags={workspace.tags}
               workspaceId={workspaceId}
-              canCreate={hasPermission(
-                membership.role.permissions,
-                Permission.CREATE_CONTENT,
-              )}
-              canEdit={hasPermission(
-                membership.role.permissions,
-                Permission.EDIT_CONTENT,
-              )}
-              canDelete={hasPermission(
-                membership.role.permissions,
-                Permission.DELETE_CONTENT,
-              )}
+              canCreate={hasPermission(effectivePerms, Permission.CREATE_CONTENT)}
+              canEdit={hasPermission(effectivePerms, Permission.EDIT_CONTENT)}
+              canDelete={hasPermission(effectivePerms, Permission.DELETE_CONTENT)}
             />
           </div>
         </section>
@@ -254,10 +247,7 @@ export default async function WorkspaceOverviewPage({
             <RoleManager
               roles={workspace.roles}
               workspaceId={workspaceId}
-              canManage={hasPermission(
-                membership.role.permissions,
-                Permission.MANAGE_ROLES,
-              )}
+              canManage={hasPermission(effectivePerms, Permission.MANAGE_ROLES)}
             />
           </div>
         </section>

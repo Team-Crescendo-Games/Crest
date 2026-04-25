@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Timer } from "lucide-react";
 import { SprintRow } from "./sprint-row";
+import { getEffectivePermissions } from "@/lib/permissions";
 
 export default async function SprintsPage({
   params,
@@ -19,7 +20,7 @@ export default async function SprintsPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
 
   if (!membership) notFound();
@@ -103,7 +104,7 @@ export default async function SprintsPage({
                 key={sprint.id}
                 sprint={sprint}
                 workspaceId={workspaceId}
-                permissions={membership.role.permissions}
+                permissions={getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById)}
               />
             ))}
           </div>

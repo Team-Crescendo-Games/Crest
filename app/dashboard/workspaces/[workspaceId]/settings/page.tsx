@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { WorkspaceSettingsForm } from "./settings-form";
 
 export default async function WorkspaceSettingsPage({
@@ -25,9 +25,8 @@ export default async function WorkspaceSettingsPage({
 
   if (!membership) notFound();
 
-  if (
-    !hasPermission(membership.role.permissions, Permission.MANAGE_WORKSPACE)
-  ) {
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
+  if (!hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE)) {
     notFound();
   }
 

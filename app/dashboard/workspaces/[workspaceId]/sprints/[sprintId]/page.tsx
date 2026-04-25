@@ -6,7 +6,7 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import {
   TaskPriority,
 } from "@/prisma/generated/prisma/enums";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
@@ -53,7 +53,7 @@ export default async function SprintDetailPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
 
   if (!membership) notFound();
@@ -182,10 +182,8 @@ export default async function SprintDetailPage({
     }),
   ]);
 
-  const canEdit = hasPermission(
-    membership.role.permissions,
-    Permission.EDIT_CONTENT,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
+  const canEdit = hasPermission(effectivePerms, Permission.EDIT_CONTENT);
 
   const columns = STATUS_ORDER.map((status) => ({
     status,
@@ -270,7 +268,7 @@ export default async function SprintDetailPage({
             isActive: sprint.isActive,
           }}
           workspaceId={workspaceId}
-          permissions={membership.role.permissions}
+          permissions={effectivePerms}
         />
       </div>
 

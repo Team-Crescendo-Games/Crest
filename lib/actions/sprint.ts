@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 
 async function requireMemberWithPerms(
   userId: string,
@@ -13,10 +13,11 @@ async function requireMemberWithPerms(
 ) {
   const m = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
   if (!m) throw new Error("Not a member");
-  if (!hasPermission(m.role.permissions, perm))
+  const perms = getEffectivePermissions(m.role.permissions, userId, m.workspace.createdById);
+  if (!hasPermission(perms, perm))
     throw new Error("Insufficient permissions");
   return m;
 }

@@ -11,6 +11,7 @@ import {
 } from "@/lib/task-enums";
 import { BoardRow } from "./board-row";
 import { BoardFilters } from "./board-filters";
+import { getEffectivePermissions } from "@/lib/permissions";
 
 export default async function BoardsPage({
   params,
@@ -38,7 +39,7 @@ export default async function BoardsPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
 
   if (!membership) notFound();
@@ -159,7 +160,7 @@ export default async function BoardsPage({
                 statusLabels={STATUS_LABELS}
                 statusColors={STATUS_COLORS}
                 searchQuery={q}
-                permissions={membership.role.permissions}
+                permissions={getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById)}
               />
             ))}
           </div>

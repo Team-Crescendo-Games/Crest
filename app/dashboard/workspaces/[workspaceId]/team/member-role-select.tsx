@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { assignRole } from "@/lib/actions/role";
 
 interface Role {
@@ -22,13 +22,9 @@ export function MemberRoleSelect({
   workspaceId: string;
   canManage: boolean;
 }) {
-  const [state, action, pending] = useActionState(assignRole, null);
   const [selectedRoleId, setSelectedRoleId] = useState(currentRoleId);
-
-  // Sync with server when the prop updates after revalidation
-  useEffect(() => {
-    setSelectedRoleId(currentRoleId);
-  }, [currentRoleId]);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   const currentRole = roles.find((r) => r.id === selectedRoleId);
 
@@ -46,19 +42,31 @@ export function MemberRoleSelect({
     );
   }
 
+  function handleChange(newRoleId: string) {
+    setSelectedRoleId(newRoleId);
+    setError(null);
+
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("roleId", newRoleId);
+    formData.set("workspaceId", workspaceId);
+
+    startTransition(async () => {
+      const result = await assignRole(null, formData);
+      if (result?.error) {
+        setError(result.error);
+        // Revert on failure
+        setSelectedRoleId(currentRoleId);
+      }
+    });
+  }
+
   return (
-    <form action={action} className="flex items-center gap-1.5">
-      <input type="hidden" name="memberId" value={memberId} />
-      <input type="hidden" name="workspaceId" value={workspaceId} />
+    <div className="flex items-center gap-1.5">
       <select
-        key={selectedRoleId}
         name="roleId"
         value={selectedRoleId}
-        onChange={(e) => {
-          setSelectedRoleId(e.target.value);
-          const form = e.target.closest("form");
-          if (form) form.requestSubmit();
-        }}
+        onChange={(e) => handleChange(e.target.value)}
         disabled={pending}
         className="rounded-full border bg-transparent px-2 py-0.5 text-[11px] font-medium transition-colors focus:border-accent focus:outline-none disabled:opacity-50"
         style={{
@@ -72,9 +80,9 @@ export function MemberRoleSelect({
           </option>
         ))}
       </select>
-      {state?.error && (
-        <span className="text-[10px] text-accent-emphasis">{state.error}</span>
+      {error && (
+        <span className="text-[10px] text-accent-emphasis">{error}</span>
       )}
-    </form>
+    </div>
   );
 }

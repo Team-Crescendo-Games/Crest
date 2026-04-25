@@ -7,7 +7,7 @@ import {
   TaskStatus,
   TaskPriority,
 } from "@/prisma/generated/prisma/enums";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { BoardActions } from "./board-actions";
 import { TaskFilters } from "../../../../../../components/task-filters";
 import { KanbanBoard } from "@/components/kanban-board";
@@ -51,7 +51,7 @@ export default async function BoardDetailPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
 
   if (!membership) notFound();
@@ -158,10 +158,8 @@ export default async function BoardDetailPage({
 
   if (!board || board.workspaceId !== workspaceId) notFound();
 
-  const canCreate = hasPermission(
-    membership.role.permissions,
-    Permission.CREATE_CONTENT,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
+  const canCreate = hasPermission(effectivePerms, Permission.CREATE_CONTENT);
 
   // Merge non-completed tasks from board query with the paginated completed tasks
   const allTasks = [
@@ -232,7 +230,7 @@ export default async function BoardDetailPage({
             isActive: board.isActive,
           }}
           workspaceId={workspaceId}
-          permissions={membership.role.permissions}
+          permissions={effectivePerms}
         />
       </div>
 

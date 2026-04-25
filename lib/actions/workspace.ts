@@ -6,10 +6,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { JoinPolicy } from "@/prisma/generated/prisma/enums";
 import {
-  ALL_PERMISSIONS,
   DEFAULT_MEMBER_PERMISSIONS,
   Permission,
   hasPermission,
+  getEffectivePermissions,
 } from "@/lib/permissions";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ import {
 async function requireMembership(userId: string, workspaceId: string) {
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
   if (!membership) throw new Error("Not a member of this workspace");
   return membership;
@@ -60,9 +60,9 @@ export async function createWorkspace(_prev: unknown, formData: FormData) {
       createdById: session.user.id,
       roles: {
         create: {
-          name: "Owner",
-          color: "#f0a468",
-          permissions: ALL_PERMISSIONS,
+          name: "Member",
+          color: "#6B7280",
+          permissions: DEFAULT_MEMBER_PERMISSIONS,
         },
       },
     },
@@ -96,7 +96,8 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
   }
 
   const membership = await requireMembership(session.user.id, workspaceId);
-  if (!hasPermission(membership.role.permissions, Permission.MANAGE_WORKSPACE)) {
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
+  if (!hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE)) {
     return { error: "You don't have permission to edit workspace settings" };
   }
 
@@ -205,8 +206,9 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
     session.user.id,
     application.workspaceId
   );
+  const appPerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
   if (
-    !hasPermission(membership.role.permissions, Permission.MANAGE_APPLICATIONS)
+    !hasPermission(appPerms, Permission.MANAGE_APPLICATIONS)
   ) {
     return { error: "You don't have permission to manage applications" };
   }
@@ -250,7 +252,8 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
   if (!workspaceId) return { error: "Workspace ID is required" };
 
   const membership = await requireMembership(session.user.id, workspaceId);
-  if (!hasPermission(membership.role.permissions, Permission.INVITE_MEMBERS)) {
+  const invitePerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
+  if (!hasPermission(invitePerms, Permission.INVITE_MEMBERS)) {
     return { error: "You don't have permission to invite members" };
   }
 
@@ -312,27 +315,27 @@ export async function getLeaveWarning(workspaceId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { joinPolicy: true, name: true, createdById: true },
+  });
+
+  if (!workspace) return null;
+
   // Owners cannot leave — return null to hide the button
+  if (workspace.createdById === session.user.id) return null;
+
   const membership = await prisma.workspaceMember.findUnique({
     where: {
       userId_workspaceId: { userId: session.user.id, workspaceId },
     },
-    include: { role: true },
   });
 
   if (!membership) return null;
-  if (membership.role.name === "Owner") return null;
 
   const memberCount = await prisma.workspaceMember.count({
     where: { workspaceId },
   });
-
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
-    select: { joinPolicy: true, name: true },
-  });
-
-  if (!workspace) return null;
 
   const isLastMember = memberCount === 1;
 
@@ -360,19 +363,25 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
   if (!workspaceId) return { error: "Workspace ID is required" };
 
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { createdById: true, joinPolicy: true },
+  });
+
+  if (!workspace) return { error: "Workspace not found" };
+
+  if (workspace.createdById === session.user.id) {
+    return {
+      error:
+        "Owners cannot leave the workspace. Delete the workspace instead.",
+    };
+  }
+
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
-    include: { role: true },
   });
 
   if (!membership) return { error: "You are not a member" };
-
-  if (membership.role.name === "Owner") {
-    return {
-      error:
-        "Owners cannot leave the workspace. Transfer ownership first or delete the workspace.",
-    };
-  }
 
   const memberCount = await prisma.workspaceMember.count({
     where: { workspaceId },
@@ -385,15 +394,9 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
 
   // If this was the last member, handle cleanup
   if (memberCount === 1) {
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: workspaceId },
-      select: { joinPolicy: true },
-    });
-
     if (
-      workspace &&
-      (workspace.joinPolicy === "INVITE_ONLY" ||
-        workspace.joinPolicy === "APPLY_TO_JOIN")
+      workspace.joinPolicy === "INVITE_ONLY" ||
+      workspace.joinPolicy === "APPLY_TO_JOIN"
     ) {
       // No way for new members to join — delete immediately
       await prisma.workspace.delete({ where: { id: workspaceId } });
@@ -404,4 +407,47 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
 
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard/workspaces");
+}
+
+// ─── Transfer ownership ─────────────────────────────────────────────────────
+
+export async function transferOwnership(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const workspaceId = formData.get("workspaceId") as string;
+  const newOwnerId = formData.get("newOwnerId") as string;
+
+  if (!workspaceId || !newOwnerId) return { error: "Invalid request" };
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { createdById: true },
+  });
+
+  if (!workspace) return { error: "Workspace not found" };
+  if (workspace.createdById !== session.user.id) {
+    return { error: "Only the workspace owner can transfer ownership" };
+  }
+  if (newOwnerId === session.user.id) {
+    return { error: "You are already the owner" };
+  }
+
+  // Verify the target is a member of the workspace
+  const targetMember = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: newOwnerId, workspaceId } },
+  });
+  if (!targetMember) {
+    return { error: "Target user is not a member of this workspace" };
+  }
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { createdById: newOwnerId },
+  });
+
+  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
+  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath("/dashboard", "layout");
+  return { success: true };
 }

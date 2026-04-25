@@ -3,17 +3,19 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 
-const PROTECTED_ROLES: string[] = [];
+const UNEDITABLE_ROLES = ["Owner"];
+const UNDELETABLE_ROLES = ["Owner", "Member"];
 
 async function requireManageRoles(userId: string, workspaceId: string) {
   const m = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
   if (!m) throw new Error("Not a member");
-  if (!hasPermission(m.role.permissions, Permission.MANAGE_ROLES))
+  const perms = getEffectivePermissions(m.role.permissions, userId, m.workspace.createdById);
+  if (!hasPermission(perms, Permission.MANAGE_ROLES))
     throw new Error("No permission");
   return m;
 }
@@ -28,7 +30,7 @@ export async function createRole(_prev: unknown, formData: FormData) {
   const permissionBits = parseInt(formData.get("permissions") as string) || 0;
 
   if (!name?.trim()) return { error: "Role name is required" };
-  if (PROTECTED_ROLES.includes(name.trim())) {
+  if (UNDELETABLE_ROLES.includes(name.trim())) {
     return { error: `"${name.trim()}" is a reserved role name` };
   }
 
@@ -72,7 +74,7 @@ export async function updateRole(_prev: unknown, formData: FormData) {
   // Check if it's a protected role
   const role = await prisma.role.findUnique({ where: { id: roleId } });
   if (!role) return { error: "Role not found" };
-  if (PROTECTED_ROLES.includes(role.name)) {
+  if (UNEDITABLE_ROLES.includes(role.name)) {
     return { error: `The "${role.name}" role cannot be modified` };
   }
 
@@ -104,7 +106,7 @@ export async function deleteRole(_prev: unknown, formData: FormData) {
     include: { _count: { select: { members: true } } },
   });
   if (!role) return { error: "Role not found" };
-  if (PROTECTED_ROLES.includes(role.name)) {
+  if (UNDELETABLE_ROLES.includes(role.name)) {
     return { error: `The "${role.name}" role cannot be deleted` };
   }
   if (role._count.members > 0) {
@@ -138,6 +140,22 @@ export async function assignRole(_prev: unknown, formData: FormData) {
     await requireManageRoles(session.user.id, workspaceId);
   } catch {
     return { error: "No permission" };
+  }
+
+  // Prevent changing the workspace owner's role
+  const target = await prisma.workspaceMember.findUnique({
+    where: { id: memberId },
+    include: { workspace: { select: { createdById: true } } },
+  });
+  if (target && target.workspace.createdById === target.userId) {
+    return { error: "Cannot change the owner's role" };
+  }
+
+  // Prevent assigning the Owner role to anyone
+  const targetRole = await prisma.role.findUnique({ where: { id: roleId } });
+  if (!targetRole) return { error: "Role not found" };
+  if (targetRole.name === "Owner") {
+    return { error: "The Owner role cannot be assigned" };
   }
 
   await prisma.workspaceMember.update({

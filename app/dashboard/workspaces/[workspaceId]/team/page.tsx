@@ -3,12 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users, Mail, ClipboardList } from "lucide-react";
-import { hasPermission, Permission } from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { getLeaveWarning } from "@/lib/actions/workspace";
 import { InviteSection } from "./invite-section";
 import { ApplicationList } from "./application-list";
 import { LeaveWorkspaceButton } from "./leave-button";
 import { MemberRoleSelect } from "./member-role-select";
+import { TransferOwnership } from "./transfer-ownership";
 import { UserAvatar } from "@/components/user-avatar";
 
 export default async function WorkspaceTeamPage({
@@ -22,23 +23,20 @@ export default async function WorkspaceTeamPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
+    include: { role: true, workspace: { select: { createdById: true } } },
   });
 
   if (!membership) notFound();
 
-  const canInvite = hasPermission(
+  const effectivePerms = getEffectivePermissions(
     membership.role.permissions,
-    Permission.INVITE_MEMBERS,
+    userId,
+    membership.workspace.createdById,
   );
-  const canManageApps = hasPermission(
-    membership.role.permissions,
-    Permission.MANAGE_APPLICATIONS,
-  );
-  const canManageRoles = hasPermission(
-    membership.role.permissions,
-    Permission.MANAGE_ROLES,
-  );
+
+  const canInvite = hasPermission(effectivePerms, Permission.INVITE_MEMBERS);
+  const canManageApps = hasPermission(effectivePerms, Permission.MANAGE_APPLICATIONS);
+  const canManageRoles = hasPermission(effectivePerms, Permission.MANAGE_ROLES);
 
   const [members, applications, invitations, workspace, roles] =
     await Promise.all([
@@ -71,7 +69,7 @@ export default async function WorkspaceTeamPage({
         : [],
       prisma.workspace.findUnique({
         where: { id: workspaceId },
-        select: { name: true },
+        select: { name: true, createdById: true },
       }),
       prisma.role.findMany({
         where: { workspaceId },
@@ -140,13 +138,22 @@ export default async function WorkspaceTeamPage({
                 <span className="text-[11px] text-fg-muted">
                   Joined {member.joinedAt.toLocaleDateString()}
                 </span>
-                <MemberRoleSelect
-                  memberId={member.id}
-                  currentRoleId={member.role.id}
-                  roles={roles}
-                  workspaceId={workspaceId}
-                  canManage={canManageRoles}
-                />
+                {workspace?.createdById === member.user.id ? (
+                  <span
+                    className="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                    style={{ borderColor: "#f0a46840", color: "#f0a468" }}
+                  >
+                    Owner
+                  </span>
+                ) : (
+                  <MemberRoleSelect
+                    memberId={member.id}
+                    currentRoleId={member.role.id}
+                    roles={roles.filter((r) => r.name !== "Owner")}
+                    workspaceId={workspaceId}
+                    canManage={canManageRoles}
+                  />
+                )}
               </div>
             </div>
           ))}
@@ -195,6 +202,18 @@ export default async function WorkspaceTeamPage({
               }))}
             />
           </div>
+        </section>
+      )}
+
+      {/* Transfer ownership — only visible to the owner */}
+      {workspace?.createdById === userId && members.length > 1 && (
+        <section className="mt-10 border-t border-border pt-6">
+          <TransferOwnership
+            workspaceId={workspaceId}
+            members={members
+              .filter((m) => m.user.id !== userId)
+              .map((m) => m.user)}
+          />
         </section>
       )}
 

@@ -29,7 +29,7 @@ const PRESET_COLORS = [
   "#6B7280",
 ];
 
-const PROTECTED_ROLES: string[] = [];
+const PROTECTED_ROLES = ["Owner"];
 
 interface Role {
   id: string;
@@ -52,7 +52,9 @@ export function RoleManager({
 
   return (
     <div className="space-y-2">
-      {roles.map((role) => (
+      {roles
+        .filter((role) => role.name !== "Owner")
+        .map((role) => (
         <RoleItem
           key={role.id}
           role={role}
@@ -103,6 +105,7 @@ function RoleItem({
         defaultPermissions={role.permissions}
         memberCount={role._count.members}
         onCancel={() => setEditing(false)}
+        canDelete={role.name !== "Member"}
       />
     );
   }
@@ -136,16 +139,22 @@ function RoleItem({
         </div>
       </div>
       <div className="mt-1 flex flex-wrap gap-1">
-        {(Object.entries(Permission) as [PermissionKey, number][]).map(
-          ([key, val]) =>
-            hasPermission(role.permissions, val) ? (
-              <span
-                key={key}
-                className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted"
-              >
-                {PERMISSION_LABELS[key]}
-              </span>
-            ) : null,
+        {role.name === "Owner" ? (
+          <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted">
+            Everything
+          </span>
+        ) : (
+          (Object.entries(Permission) as [PermissionKey, number][]).map(
+            ([key, val]) =>
+              hasPermission(role.permissions, val) ? (
+                <span
+                  key={key}
+                  className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted"
+                >
+                  {PERMISSION_LABELS[key]}
+                </span>
+              ) : null,
+          )
         )}
       </div>
     </div>
@@ -193,6 +202,7 @@ function RoleForm({
   externalAction,
   externalPending,
   externalError,
+  canDelete = true,
 }: {
   workspaceId: string;
   roleId?: string;
@@ -204,6 +214,7 @@ function RoleForm({
   externalAction?: (formData: FormData) => void;
   externalPending?: boolean;
   externalError?: string | null;
+  canDelete?: boolean;
 }) {
   const [color, setColor] = useState(defaultColor);
   const [perms, setPerms] = useState(defaultPermissions);
@@ -311,7 +322,7 @@ function RoleForm({
       {/* Actions */}
       <div className="flex items-center justify-between">
         {/* Delete (edit mode only) */}
-        {roleId && (
+        {roleId && canDelete !== false && (
           <form action={deleteAction}>
             <input type="hidden" name="roleId" value={roleId} />
             <input type="hidden" name="workspaceId" value={workspaceId} />
