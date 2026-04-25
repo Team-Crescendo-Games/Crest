@@ -49,7 +49,7 @@ export function TaskCard({
   return (
     <Link
       href={link}
-      className={`block rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm transition-colors hover:border-accent/30 ${className}`}
+      className={`group block rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${className}`}
     >
       {/* Row 1: priority + title */}
       <div className="flex items-start gap-1.5">

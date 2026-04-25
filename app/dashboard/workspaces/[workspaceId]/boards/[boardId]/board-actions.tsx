@@ -102,6 +102,16 @@ export function BoardActions({ board, workspaceId, permissions }: Props) {
           <button
             type="submit"
             disabled={archivePending}
+            onClick={(e) => {
+              if (
+                board.isActive &&
+                !confirm(
+                  `Archive "${board.name}"? The board and its tasks will be hidden from the sidebar and active boards list until you restore it.`,
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
             className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
             title={board.isActive ? "Archive" : "Unarchive"}
           >

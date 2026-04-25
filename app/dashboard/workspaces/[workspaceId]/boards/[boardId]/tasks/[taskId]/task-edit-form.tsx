@@ -1,11 +1,23 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { updateTask, deleteTask } from "@/lib/actions/task";
-import { setTaskTags } from "@/lib/actions/tag";
-import { Trash2, X, Plus, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { updateTask } from "@/lib/actions/task";
+import { X, Plus, Search } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
+import { TaskActions } from "./task-actions";
+import { DeleteTaskButton } from "./delete-task-button";
+import {
+  STATUS_LABELS,
+  STATUS_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+  TASK_STATUSES,
+  TASK_PRIORITIES,
+} from "@/lib/task-enums";
+import type {
+  TaskStatus,
+  TaskPriority,
+} from "@/prisma/generated/prisma/enums";
 
 interface Props {
   task: {
@@ -33,23 +45,17 @@ export function TaskEditForm({
   workspaceId,
   boardId,
 }: Props) {
-  const router = useRouter();
   const [assigneeIds, setAssigneeIds] = useState<string[]>(task.assigneeIds);
-  const [state, action, pending] = useActionState(updateTask, null);
-  const [, deleteAction, deletePending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await deleteTask(prev, formData);
-      if (result?.success) {
-        router.push(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
-      }
-      return result;
-    },
-    null,
+  const [tagIds, setTagIds] = useState<string[]>(task.tagIds);
+  const [status, setStatus] = useState<TaskStatus>(task.status as TaskStatus);
+  const [priority, setPriority] = useState<TaskPriority>(
+    task.priority as TaskPriority,
   );
+  const [state, action, pending] = useActionState(updateTask, null);
 
   return (
     <div>
-      <form action={action} className="space-y-4">
+      <form id={`task-edit-${task.id}`} action={action} className="space-y-4">
         <input type="hidden" name="taskId" value={task.id} />
 
         {state?.success && (
@@ -86,32 +92,31 @@ export function TaskEditForm({
             <label className="block text-[11px] font-medium text-fg-muted">
               Status
             </label>
-            <select
+            <ColoredSelect
               name="status"
-              defaultValue={task.status}
-              className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-            >
-              <option value="NOT_STARTED">Not Started</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="IN_REVIEW">In Review</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
+              value={status}
+              onChange={(v) => setStatus(v as TaskStatus)}
+              options={TASK_STATUSES.map((s) => ({
+                value: s,
+                label: STATUS_LABELS[s],
+                color: STATUS_COLORS[s],
+              }))}
+            />
           </div>
           <div>
             <label className="block text-[11px] font-medium text-fg-muted">
               Priority
             </label>
-            <select
+            <ColoredSelect
               name="priority"
-              defaultValue={task.priority}
-              className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-            >
-              <option value="NONE">None</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
+              value={priority}
+              onChange={(v) => setPriority(v as TaskPriority)}
+              options={TASK_PRIORITIES.map((p) => ({
+                value: p,
+                label: PRIORITY_LABELS[p],
+                color: PRIORITY_COLORS[p],
+              }))}
+            />
           </div>
         </div>
 
@@ -168,42 +173,56 @@ export function TaskEditForm({
           onChange={setAssigneeIds}
         />
 
-        <div className="flex items-center justify-between pt-2">
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-          >
-            {pending ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
+        {/* Tags — state-driven with hidden inputs so they submit with the rest */}
+        {tagIds.map((id) => (
+          <input key={id} type="hidden" name="tagIds" value={id} />
+        ))}
+        {tags.length > 0 && (
+          <TagPicker
+            tags={tags}
+            selectedTagIds={tagIds}
+            onChange={setTagIds}
+          />
+        )}
       </form>
 
-      {/* Tags */}
-      <TagPicker
-        taskId={task.id}
-        workspaceId={workspaceId}
-        tags={tags}
-        selectedTagIds={task.tagIds}
-      />
-
-      {/* Delete */}
-      <form action={deleteAction} className="mt-4 border-t border-border pt-4">
-        <input type="hidden" name="taskId" value={task.id} />
+      {/* Action row: Save, Copy link, Duplicate, Delete.
+          Duplicate and Delete need their own forms for server actions, so
+          these buttons sit outside the edit form. The Save button uses the
+          `form` attribute to still submit the edit form above. */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
         <button
           type="submit"
-          disabled={deletePending}
-          className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-fg-muted transition-colors hover:bg-accent-emphasis/10 hover:text-accent-emphasis disabled:opacity-50"
-          onClick={(e) => {
-            if (!confirm("Delete this task? This cannot be undone.")) {
-              e.preventDefault();
-            }
-          }}
+          form={`task-edit-${task.id}`}
+          disabled={pending}
+          className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
         >
-          <Trash2 size={12} />
-          {deletePending ? "Deleting..." : "Delete task"}
+          {pending ? "Saving..." : "Save Changes"}
         </button>
-      </form>
+
+        <TaskActions
+          taskId={task.id}
+          workspaceId={workspaceId}
+          boardId={boardId}
+          source={{
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            priority: task.priority,
+            startDate: task.startDate,
+            dueDate: task.dueDate,
+            points: task.points,
+            assigneeIds: task.assigneeIds,
+          }}
+          members={members}
+        />
+
+        <DeleteTaskButton
+          taskId={task.id}
+          workspaceId={workspaceId}
+          boardId={boardId}
+        />
+      </div>
     </div>
   );
 }
@@ -325,52 +344,29 @@ function AssigneePicker({
 }
 
 function TagPicker({
-  taskId,
-  workspaceId,
   tags,
   selectedTagIds,
+  onChange,
 }: {
-  taskId: string;
-  workspaceId: string;
   tags: { id: string; name: string; color: string | null }[];
   selectedTagIds: string[];
+  onChange: (ids: string[]) => void;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(
-    new Set(selectedTagIds),
-  );
-  const [state, action, pending] = useActionState(setTaskTags, null);
-
-  if (tags.length === 0) return null;
+  const selected = new Set(selectedTagIds);
 
   function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    onChange(
+      selected.has(id)
+        ? selectedTagIds.filter((x) => x !== id)
+        : [...selectedTagIds, id],
+    );
   }
 
   return (
-    <form action={action} className="mt-4 border-t border-border pt-4">
-      <input type="hidden" name="taskId" value={taskId} />
-      <input type="hidden" name="workspaceId" value={workspaceId} />
-      {/* Hidden inputs for selected tag IDs */}
-      {Array.from(selected).map((id) => (
-        <input key={id} type="hidden" name="tagIds" value={id} />
-      ))}
-
+    <div>
       <label className="block text-[11px] font-medium text-fg-muted">
         Tags
       </label>
-
-      {state?.success && (
-        <p className="mt-1 text-[11px] text-accent">Tags updated.</p>
-      )}
-      {state?.error && (
-        <p className="mt-1 text-[11px] text-accent-emphasis">{state.error}</p>
-      )}
-
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {tags.map((tag) => {
           const color = tag.color ?? "#6B7280";
@@ -392,14 +388,62 @@ function TagPicker({
           );
         })}
       </div>
+    </div>
+  );
+}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 rounded bg-accent/10 px-2 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 disabled:opacity-50"
+/**
+ * A <select> where the chosen option's color tints the select itself and
+ * each dropdown option shows its own color.
+ *
+ * Uses a native <select> so the browser handles the dropdown UX. A colored
+ * dot is shown inside the field to signal the current selection (since
+ * native <select> background styling is inconsistent across browsers).
+ */
+function ColoredSelect({
+  name,
+  value,
+  onChange,
+  options,
+}: {
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string; color: string }[];
+}) {
+  const current = options.find((o) => o.value === value) ?? options[0];
+
+  return (
+    <div className="relative mt-1">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+        style={{ backgroundColor: current.color }}
+      />
+      <select
+        name={name}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          backgroundColor: current.color + "15",
+          borderColor: current.color + "40",
+          color: current.color,
+        }}
+        className="block w-full cursor-pointer rounded-md border py-1.5 pl-6 pr-2 font-mono text-xs font-medium focus:outline-none focus:ring-1"
       >
-        {pending ? "Saving..." : "Update Tags"}
-      </button>
-    </form>
+        {options.map((o) => (
+          <option
+            key={o.value}
+            value={o.value}
+            style={{
+              color: o.color,
+              backgroundColor: "var(--bg-elevated)",
+            }}
+          >
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

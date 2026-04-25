@@ -6,36 +6,12 @@ import { Calendar, User, Clock } from "lucide-react";
 import { TaskEditForm } from "./task-edit-form";
 import { CommentSection } from "./comment-section";
 import { AttachmentSection } from "@/components/attachment-section";
-
-const STATUS_LABELS: Record<string, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  NONE: "None",
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-  URGENT: "Urgent",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  NONE: "#9c9c98",
-  LOW: "#6bc96b",
-  MEDIUM: "#f1c258",
-  HIGH: "#f0a468",
-  URGENT: "#ef4444",
-};
+import {
+  STATUS_LABELS,
+  STATUS_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+} from "@/lib/task-enums";
 
 export default async function TaskDetailPage({
   params,

@@ -62,6 +62,7 @@ export async function createTask(_prev: unknown, formData: FormData) {
   const dueDate = formData.get("dueDate") as string;
   const points = formData.get("points") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
+  const sprintId = (formData.get("sprintId") as string) || null;
 
   if (!boardId || !title?.trim()) {
     return { error: "Task title is required" };
@@ -87,7 +88,18 @@ export async function createTask(_prev: unknown, formData: FormData) {
   });
   if (!membership) return { error: "Not a member" };
 
-  await prisma.task.create({
+  // If a sprint was specified, verify it belongs to the same workspace.
+  if (sprintId) {
+    const sprint = await prisma.sprint.findUnique({
+      where: { id: sprintId },
+      select: { workspaceId: true },
+    });
+    if (!sprint || sprint.workspaceId !== board.workspaceId) {
+      return { error: "Invalid sprint" };
+    }
+  }
+
+  const task = await prisma.task.create({
     data: {
       title: title.trim(),
       description: description?.trim() || null,
@@ -101,12 +113,16 @@ export async function createTask(_prev: unknown, formData: FormData) {
       assignees: assigneeIds.length > 0
         ? { connect: assigneeIds.map((id) => ({ id })) }
         : undefined,
+      sprints: sprintId ? { connect: { id: sprintId } } : undefined,
     },
   });
 
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
-  return { success: true };
+  if (sprintId) {
+    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${sprintId}`);
+  }
+  return { success: true, newTaskId: task.id };
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────
@@ -124,6 +140,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const dueDate = formData.get("dueDate") as string;
   const points = formData.get("points") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
+  const tagIds = formData.getAll("tagIds") as string[];
 
   if (!taskId || !title?.trim()) return { error: "Task title is required" };
 
@@ -132,6 +149,16 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     info = await requireTaskMembership(session.user.id, taskId);
   } catch {
     return { error: "Not authorized" };
+  }
+
+  // Validate tags all belong to this task's workspace to prevent cross-workspace linking.
+  if (tagIds.length > 0) {
+    const validTagCount = await prisma.tag.count({
+      where: { id: { in: tagIds }, workspaceId: info.workspaceId },
+    });
+    if (validTagCount !== tagIds.length) {
+      return { error: "Invalid tag selection" };
+    }
   }
 
   await prisma.task.update({
@@ -145,6 +172,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       dueDate: dueDate ? new Date(dueDate) : null,
       points: points ? parseInt(points) || null : null,
       assignees: { set: assigneeIds.map((id) => ({ id })) },
+      tags: { set: tagIds.map((id) => ({ id })) },
     },
   });
 

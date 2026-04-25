@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { addComment, deleteComment } from "@/lib/actions/task";
-import { MessageSquare, Trash2 } from "lucide-react";
-import { useRef } from "react";
+import { ChevronDown, MessageSquare, Trash2 } from "lucide-react";
 
 interface Comment {
   id: string;
@@ -22,6 +21,7 @@ export function CommentSection({
   comments: Comment[];
   currentUserId: string;
 }) {
+  const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
   const [addState, addAction, addPending] = useActionState(
     async (prev: unknown, formData: FormData) => {
@@ -34,54 +34,70 @@ export function CommentSection({
 
   return (
     <div>
-      <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-fg-secondary">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-controls={`comments-${taskId}`}
+        className="group flex w-full items-center gap-2 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
+      >
+        <ChevronDown
+          size={13}
+          className={`text-fg-muted transition-transform ${
+            expanded ? "" : "-rotate-90"
+          }`}
+        />
         <MessageSquare size={13} className="text-accent" />
         Comments
         <span className="text-[11px] text-fg-muted">({comments.length})</span>
-      </h3>
+      </button>
 
-      {/* Comment list */}
-      <div className="mt-3 space-y-3">
-        {comments.map((comment) => (
-          <CommentItem
-            key={comment.id}
-            comment={comment}
-            isOwn={comment.userId === currentUserId}
-          />
-        ))}
+      {expanded && (
+        <div id={`comments-${taskId}`}>
+          {/* Comment list */}
+          <div className="mt-3 space-y-3">
+            {comments.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                isOwn={comment.userId === currentUserId}
+              />
+            ))}
 
-        {comments.length === 0 && (
-          <p className="text-[11px] text-fg-muted">No comments yet.</p>
-        )}
-      </div>
+            {comments.length === 0 && (
+              <p className="text-[11px] text-fg-muted">No comments yet.</p>
+            )}
+          </div>
 
-      {/* Add comment */}
-      <form ref={formRef} action={addAction} className="mt-4">
-        <input type="hidden" name="taskId" value={taskId} />
+          {/* Add comment */}
+          <form ref={formRef} action={addAction} className="mt-4">
+            <input type="hidden" name="taskId" value={taskId} />
 
-        {addState?.error && (
-          <p className="mb-2 text-[11px] text-accent-emphasis">
-            {addState.error}
-          </p>
-        )}
+            {addState?.error && (
+              <p className="mb-2 text-[11px] text-accent-emphasis">
+                {addState.error}
+              </p>
+            )}
 
-        <div className="flex gap-2">
-          <textarea
-            name="text"
-            required
-            rows={2}
-            className="flex-1 resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-xs text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-            placeholder="Write a comment..."
-          />
-          <button
-            type="submit"
-            disabled={addPending}
-            className="self-end rounded-md bg-accent px-3 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-          >
-            {addPending ? "..." : "Post"}
-          </button>
+            <div className="flex gap-2">
+              <textarea
+                name="text"
+                required
+                rows={2}
+                className="flex-1 resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-xs text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                placeholder="Write a comment..."
+              />
+              <button
+                type="submit"
+                disabled={addPending}
+                className="self-end rounded-md bg-accent px-3 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
+              >
+                {addPending ? "..." : "Post"}
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      )}
     </div>
   );
 }

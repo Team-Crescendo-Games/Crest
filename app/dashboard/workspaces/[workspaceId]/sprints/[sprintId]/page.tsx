@@ -79,6 +79,13 @@ export default async function SprintDetailPage({
     take: 50,
   });
 
+  // Workspace boards for the Add Task board picker
+  const boards = await prisma.board.findMany({
+    where: { workspaceId, isActive: true },
+    select: { id: true, name: true },
+    orderBy: { displayOrder: "asc" },
+  });
+
   const canEdit = hasPermission(
     membership.role.permissions,
     Permission.EDIT_CONTENT,
@@ -218,10 +225,13 @@ export default async function SprintDetailPage({
             ...t,
             boardId: t.board.id,
           }))}
+          sprintId={sprintId}
           sprintStart={sprint.startDate}
           sprintEnd={sprint.endDate}
           workspaceId={workspaceId}
           hasTimeline={!!sprint.startDate && !!sprint.endDate}
+          boards={boards}
+          canCreate={canEdit}
         />
       </div>
     </div>
