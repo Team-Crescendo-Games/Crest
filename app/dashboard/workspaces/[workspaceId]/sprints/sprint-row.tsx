@@ -12,42 +12,19 @@ import { Play, Pause, Trash2, Calendar } from "lucide-react";
 import { toggleSprintActive, deleteSprint } from "@/lib/actions/sprint";
 import { updateTaskStatus } from "@/lib/actions/task";
 import { hasPermission, Permission } from "@/lib/permissions";
-import { TaskStatus } from "@/prisma/generated/prisma/enums";
-
-const STATUS_ORDER: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  URGENT: "#ef4444",
-  HIGH: "#f0a468",
-  MEDIUM: "#f1c258",
-  LOW: "#6bc96b",
-  NONE: "",
-};
+import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
+import {
+  TASK_STATUSES as STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+  PRIORITY_COLORS,
+} from "@/lib/task-enums";
 
 interface Task {
   id: string;
   title: string;
   status: TaskStatus;
-  priority: string;
+  priority: TaskPriority;
   dueDate: Date | null;
   board: { name: string };
   assignees: { id: string; name: string | null }[];

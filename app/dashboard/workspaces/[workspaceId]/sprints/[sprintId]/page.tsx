@@ -3,39 +3,50 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { TaskStatus } from "@/prisma/generated/prisma/enums";
+import {
+  TaskStatus,
+  TaskPriority,
+} from "@/prisma/generated/prisma/enums";
 import { hasPermission, Permission } from "@/lib/permissions";
+import {
+  TASK_PRIORITIES,
+  TASK_STATUSES as STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+} from "@/lib/task-enums";
 import { SprintActions } from "./sprint-actions";
 import { AssignTaskSection } from "./assign-task-section";
 import { SprintViews } from "./sprint-views";
+import { TaskFilters } from "@/components/task-filters";
 
-const STATUS_ORDER: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
+/** Split a comma-separated param into a trimmed, non-empty array. */
+function parseMulti(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
 
 export default async function SprintDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workspaceId: string; sprintId: string }>;
+  searchParams: Promise<{
+    q?: string;
+    priority?: string;
+    tag?: string;
+    assignee?: string;
+  }>;
 }) {
   const { workspaceId, sprintId } = await params;
+  const {
+    q,
+    priority: priorityParam,
+    tag: tagParam,
+    assignee: assigneeParam,
+  } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -46,45 +57,128 @@ export default async function SprintDetailPage({
 
   if (!membership) notFound();
 
-  const sprint = await prisma.sprint.findUnique({
-    where: { id: sprintId },
-    include: {
-      tasks: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          author: { select: { name: true } },
-          assignees: { select: { id: true, name: true, image: true } },
-          tags: { select: { name: true, color: true } },
-          board: { select: { id: true, name: true } },
+  // Parse comma-separated multi-value params
+  const priorities = parseMulti(priorityParam).filter((p) =>
+    (TASK_PRIORITIES as readonly string[]).includes(p),
+  );
+  const tagFilters = parseMulti(tagParam);
+  const assigneeFilters = parseMulti(assigneeParam);
+
+  // Build task where-clause for filters
+  const taskWhere: Record<string, unknown> = {};
+  if (q) {
+    taskWhere.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (priorities.length === 1) {
+    taskWhere.priority = priorities[0] as TaskPriority;
+  } else if (priorities.length > 1) {
+    taskWhere.priority = { in: priorities as TaskPriority[] };
+  }
+  if (tagFilters.length === 1) {
+    taskWhere.tags = { some: { name: tagFilters[0] } };
+  } else if (tagFilters.length > 1) {
+    taskWhere.AND = tagFilters.map((name) => ({
+      tags: { some: { name } },
+    }));
+  }
+  if (assigneeFilters.length > 0) {
+    const hasUnassigned = assigneeFilters.includes("unassigned");
+    const userIds = assigneeFilters.filter((v) => v !== "unassigned");
+
+    if (hasUnassigned && userIds.length > 0) {
+      taskWhere.OR = [
+        ...(taskWhere.OR ? (taskWhere.OR as unknown[]) : []),
+        { assignees: { none: {} } },
+        { assignees: { some: { id: { in: userIds } } } },
+      ];
+    } else if (hasUnassigned) {
+      taskWhere.assignees = { none: {} };
+    } else {
+      taskWhere.assignees = { some: { id: { in: userIds } } };
+    }
+  }
+
+  const hasTaskFilter = Object.keys(taskWhere).length > 0;
+
+  const taskInclude = {
+    author: { select: { name: true } },
+    assignees: { select: { id: true, name: true, image: true } },
+    tags: { select: { name: true, color: true } },
+    board: { select: { id: true, name: true } },
+  } as const;
+
+  const [sprint, totalTaskCount, tags, members] = await Promise.all([
+    prisma.sprint.findUnique({
+      where: { id: sprintId },
+      include: {
+        tasks: {
+          where: hasTaskFilter ? taskWhere : undefined,
+          orderBy: { createdAt: "desc" },
+          include: taskInclude,
         },
       },
-    },
-  });
+    }),
+    // Always get total count for the sprint (unfiltered)
+    prisma.task.count({
+      where: { sprints: { some: { id: sprintId } } },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+  ]);
 
   if (!sprint || sprint.workspaceId !== workspaceId) notFound();
 
-  // Get unassigned tasks for the assign picker
-  const unassignedTasks = await prisma.task.findMany({
-    where: {
-      board: { workspaceId },
-      sprints: { none: { id: sprintId } },
-    },
-    select: {
-      id: true,
-      title: true,
-      board: { select: { name: true } },
-      status: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  // For completion stats, we need unfiltered completed count
+  // When filters are active, fetch separately
+  let totalCompletedCount: number;
+  if (hasTaskFilter) {
+    totalCompletedCount = await prisma.task.count({
+      where: {
+        sprints: { some: { id: sprintId } },
+        status: "COMPLETED",
+      },
+    });
+  } else {
+    totalCompletedCount = sprint.tasks.filter(
+      (t) => t.status === "COMPLETED",
+    ).length;
+  }
 
-  // Workspace boards for the Add Task board picker
-  const boards = await prisma.board.findMany({
-    where: { workspaceId, isActive: true },
-    select: { id: true, name: true },
-    orderBy: { displayOrder: "asc" },
-  });
+  // Get unassigned tasks for the assign picker
+  const [unassignedTasks, boards] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        board: { workspaceId },
+        sprints: { none: { id: sprintId } },
+      },
+      select: {
+        id: true,
+        title: true,
+        board: { select: { name: true } },
+        status: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+  ]);
 
   const canEdit = hasPermission(
     membership.role.permissions,
@@ -113,12 +207,12 @@ export default async function SprintDetailPage({
     }
   }
 
-  const completedCount =
-    columns.find((c) => c.status === "COMPLETED")?.tasks.length ?? 0;
   const taskCompletion =
-    sprint.tasks.length > 0
-      ? Math.round((completedCount / sprint.tasks.length) * 100)
+    totalTaskCount > 0
+      ? Math.round((totalCompletedCount / totalTaskCount) * 100)
       : 0;
+
+  const filteredCount = sprint.tasks.length;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -148,8 +242,18 @@ export default async function SprintDetailPage({
           </div>
           <div className="mt-1 flex items-center gap-3 text-[11px] text-fg-muted">
             <span>
-              {sprint.tasks.length} task
-              {sprint.tasks.length !== 1 && "s"} · {taskCompletion}% done
+              {hasTaskFilter ? (
+                <>
+                  {filteredCount} of {totalTaskCount} task
+                  {totalTaskCount !== 1 && "s"}
+                </>
+              ) : (
+                <>
+                  {totalTaskCount} task
+                  {totalTaskCount !== 1 && "s"}
+                </>
+              )}{" "}
+              · {taskCompletion}% done
             </span>
           </div>
         </div>
@@ -199,7 +303,7 @@ export default async function SprintDetailPage({
               />
             </div>
             <span className="text-[11px] text-fg-muted">
-              {completedCount}/{sprint.tasks.length}
+              {totalCompletedCount}/{totalTaskCount}
             </span>
           </div>
         </div>
@@ -217,8 +321,17 @@ export default async function SprintDetailPage({
         </div>
       )}
 
-      {/* Task views (columns / timeline) */}
-      <div className="mt-6">
+      {/* Filters + Task views */}
+      <div className="mt-6 space-y-4">
+        <TaskFilters
+          tags={tags}
+          assignees={members.map((m) => m.user)}
+          currentQ={q}
+          currentPriorities={priorities}
+          currentTags={tagFilters}
+          currentAssignees={assigneeFilters}
+        />
+
         <SprintViews
           columns={columns}
           tasks={sprint.tasks.map((t) => ({

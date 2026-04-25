@@ -1,32 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { STATUS_COLORS, PRIORITY_COLORS } from "@/lib/task-enums";
+import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface TimelineTask {
   id: string;
   title: string;
-  status: string;
-  priority: string;
+  status: TaskStatus;
+  priority: TaskPriority;
   startDate: Date | null;
   dueDate: Date | null;
   boardId: string;
   board?: { id: string; name: string };
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  URGENT: "#ef4444",
-  HIGH: "#f0a468",
-  MEDIUM: "#f1c258",
-  LOW: "#6bc96b",
-  NONE: "",
-};
 
 export function SprintTimeline({
   tasks,

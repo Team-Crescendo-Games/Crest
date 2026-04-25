@@ -1,30 +1,14 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TaskStatus } from "@/prisma/generated/prisma/enums";
+import {
+  TASK_STATUSES as STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+} from "@/lib/task-enums";
 import { KanbanBoard } from "@/components/kanban-board";
 import { NotificationFeed } from "./notification-feed";
 import { Bell } from "lucide-react";
-
-const STATUS_ORDER: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
 
 const NOTIF_PAGE = 10;
 

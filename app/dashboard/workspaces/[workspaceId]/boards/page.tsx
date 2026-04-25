@@ -4,29 +4,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, LayoutList } from "lucide-react";
 import { TaskStatus } from "@/prisma/generated/prisma/enums";
+import {
+  TASK_STATUSES as STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+} from "@/lib/task-enums";
 import { BoardRow } from "./board-row";
 import { BoardFilters } from "./board-filters";
-
-const STATUS_ORDER: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
 
 export default async function BoardsPage({
   params,

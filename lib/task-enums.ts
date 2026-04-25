@@ -49,8 +49,8 @@ export const PRIORITY_LABELS: Record<TaskPriority, string> = {
 
 export const PRIORITY_COLORS: Record<TaskPriority, string> = {
   NONE: "#9c9c98",
-  LOW: "#6bc96b",
-  MEDIUM: "#f1c258",
+  LOW: "#a1a1aa",
+  MEDIUM: "#7b93b0",
   HIGH: "#f0a468",
   URGENT: "#ef4444",
 };

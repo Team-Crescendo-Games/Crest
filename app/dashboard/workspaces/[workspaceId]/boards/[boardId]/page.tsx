@@ -3,38 +3,49 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { TaskStatus } from "@/prisma/generated/prisma/enums";
+import {
+  TaskStatus,
+  TaskPriority,
+} from "@/prisma/generated/prisma/enums";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { BoardActions } from "./board-actions";
+import { TaskFilters } from "../../../../../../components/task-filters";
 import { KanbanBoard } from "@/components/kanban-board";
+import {
+  TASK_PRIORITIES,
+  TASK_STATUSES as STATUS_ORDER,
+  STATUS_LABELS,
+  STATUS_COLORS,
+} from "@/lib/task-enums";
 
-const STATUS_ORDER: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  IN_REVIEW: "In Review",
-  COMPLETED: "Completed",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  NOT_STARTED: "#9c9c98",
-  IN_PROGRESS: "#f1c258",
-  IN_REVIEW: "#f0a468",
-  COMPLETED: "#6bc96b",
-};
+/** Split a comma-separated param into a trimmed, non-empty array. */
+function parseMulti(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
 
 export default async function BoardDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workspaceId: string; boardId: string }>;
+  searchParams: Promise<{
+    q?: string;
+    priority?: string;
+    tag?: string;
+    assignee?: string;
+  }>;
 }) {
   const { workspaceId, boardId } = await params;
+  const {
+    q,
+    priority: priorityParam,
+    tag: tagParam,
+    assignee: assigneeParam,
+  } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -45,19 +56,80 @@ export default async function BoardDetailPage({
 
   if (!membership) notFound();
 
-  const board = await prisma.board.findUnique({
-    where: { id: boardId },
-    include: {
-      tasks: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          author: { select: { name: true } },
-          assignees: { select: { id: true, name: true, image: true } },
-          tags: { select: { name: true, color: true } },
+  // Parse comma-separated multi-value params
+  const priorities = parseMulti(priorityParam).filter((p) =>
+    (TASK_PRIORITIES as readonly string[]).includes(p),
+  );
+  const tagFilters = parseMulti(tagParam);
+  const assigneeFilters = parseMulti(assigneeParam);
+
+  // Build task where-clause for filters
+  const taskWhere: Record<string, unknown> = {};
+  if (q) {
+    taskWhere.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (priorities.length === 1) {
+    taskWhere.priority = priorities[0] as TaskPriority;
+  } else if (priorities.length > 1) {
+    taskWhere.priority = { in: priorities as TaskPriority[] };
+  }
+  if (tagFilters.length === 1) {
+    taskWhere.tags = { some: { name: tagFilters[0] } };
+  } else if (tagFilters.length > 1) {
+    taskWhere.AND = tagFilters.map((name) => ({
+      tags: { some: { name } },
+    }));
+  }
+  if (assigneeFilters.length > 0) {
+    const hasUnassigned = assigneeFilters.includes("unassigned");
+    const userIds = assigneeFilters.filter((v) => v !== "unassigned");
+
+    if (hasUnassigned && userIds.length > 0) {
+      // "unassigned" OR specific users — match either
+      taskWhere.OR = [
+        ...(taskWhere.OR ? (taskWhere.OR as unknown[]) : []),
+        { assignees: { none: {} } },
+        { assignees: { some: { id: { in: userIds } } } },
+      ];
+    } else if (hasUnassigned) {
+      taskWhere.assignees = { none: {} };
+    } else {
+      taskWhere.assignees = { some: { id: { in: userIds } } };
+    }
+  }
+
+  const [board, totalTaskCount, tags, members] = await Promise.all([
+    prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        tasks: {
+          where: taskWhere,
+          orderBy: { createdAt: "desc" },
+          include: {
+            author: { select: { name: true } },
+            assignees: { select: { id: true, name: true, image: true } },
+            tags: { select: { name: true, color: true } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.task.count({ where: { boardId } }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+  ]);
 
   if (!board || board.workspaceId !== workspaceId) notFound();
 
@@ -72,6 +144,13 @@ export default async function BoardDetailPage({
     color: STATUS_COLORS[status],
     tasks: board.tasks.filter((t) => t.status === status),
   }));
+
+  const hasFilters =
+    !!q ||
+    priorities.length > 0 ||
+    tagFilters.length > 0 ||
+    assigneeFilters.length > 0;
+  const filteredCount = board.tasks.length;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -102,7 +181,16 @@ export default async function BoardDetailPage({
             <Calendar size={10} />
             Created {board.createdAt.toLocaleDateString()}
             <span className="text-border">·</span>
-            {board.tasks.length} task{board.tasks.length !== 1 && "s"}
+            {hasFilters ? (
+              <>
+                {filteredCount} of {totalTaskCount} task
+                {totalTaskCount !== 1 && "s"}
+              </>
+            ) : (
+              <>
+                {totalTaskCount} task{totalTaskCount !== 1 && "s"}
+              </>
+            )}
           </div>
         </div>
         <BoardActions
@@ -117,7 +205,16 @@ export default async function BoardDetailPage({
         />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-4">
+        <TaskFilters
+          tags={tags}
+          assignees={members.map((m) => m.user)}
+          currentQ={q}
+          currentPriorities={priorities}
+          currentTags={tagFilters}
+          currentAssignees={assigneeFilters}
+        />
+
         <KanbanBoard
           columns={columns}
           boardId={boardId}

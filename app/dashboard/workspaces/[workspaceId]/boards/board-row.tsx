@@ -36,7 +36,7 @@ export function BoardRow({
 }: {
   board: Board;
   workspaceId: string;
-  statusOrder: TaskStatus[];
+  statusOrder: readonly TaskStatus[];
   statusLabels: Record<TaskStatus, string>;
   statusColors: Record<TaskStatus, string>;
   searchQuery?: string;
