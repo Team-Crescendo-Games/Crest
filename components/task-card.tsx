@@ -17,6 +17,7 @@ export interface TaskCardData {
   tags?: { name: string; color: string | null }[];
   board?: { id: string; name: string };
   boardId?: string;
+  commentCount?: number;
 }
 
 /**
@@ -53,6 +54,18 @@ export function TaskCard({
           style={{
             backgroundColor:
               PRIORITY_COLORS[task.priority as TaskPriority] ?? "transparent",
+          }}
+        />
+      )}
+
+      {/* Comment indicator — top-right orange triangle */}
+      {(task.commentCount ?? 0) > 0 && (
+        <span
+          aria-hidden
+          className="absolute right-0 top-0 h-0 w-0"
+          style={{
+            borderTop: "12px solid var(--accent-emphasis, #f0a468)",
+            borderLeft: "12px solid transparent",
           }}
         />
       )}

@@ -112,6 +112,7 @@ export default async function BoardDetailPage({
             author: { select: { name: true } },
             assignees: { select: { id: true, name: true, image: true } },
             tags: { select: { name: true, color: true } },
+            _count: { select: { comments: true } },
           },
         },
       },
@@ -142,7 +143,9 @@ export default async function BoardDetailPage({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: board.tasks.filter((t) => t.status === status),
+    tasks: board.tasks
+      .filter((t) => t.status === status)
+      .map((t) => ({ ...t, commentCount: t._count.comments })),
   }));
 
   const hasFilters =

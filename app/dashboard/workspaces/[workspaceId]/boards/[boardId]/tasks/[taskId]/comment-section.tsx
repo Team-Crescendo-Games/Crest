@@ -84,8 +84,26 @@ export function CommentSection({
                 name="text"
                 required
                 rows={2}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    // Cmd/Ctrl+Enter inserts a newline
+                    e.preventDefault();
+                    const target = e.currentTarget;
+                    const { selectionStart, selectionEnd } = target;
+                    target.value =
+                      target.value.slice(0, selectionStart) +
+                      "\n" +
+                      target.value.slice(selectionEnd);
+                    target.selectionStart = target.selectionEnd =
+                      selectionStart + 1;
+                  } else if (e.key === "Enter" && !e.shiftKey) {
+                    // Enter submits the form
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 className="flex-1 resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-xs text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-                placeholder="Write a comment..."
+                placeholder="Write a comment"
               />
               <button
                 type="submit"
@@ -106,7 +124,7 @@ function CommentItem({ comment, isOwn }: { comment: Comment; isOwn: boolean }) {
   const [, deleteAction, deletePending] = useActionState(deleteComment, null);
 
   return (
-    <div className="rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm">
+    <div className="rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm overflow-hidden">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-[9px] font-bold text-accent">
@@ -137,9 +155,34 @@ function CommentItem({ comment, isOwn }: { comment: Comment; isOwn: boolean }) {
           </form>
         )}
       </div>
-      <p className="mt-1.5 whitespace-pre-wrap text-xs text-fg-secondary">
-        {comment.text}
+      <p className="mt-1.5 whitespace-pre-wrap break-words text-xs text-fg-secondary">
+        <Linkify text={comment.text} />
       </p>
     </div>
+  );
+}
+
+const URL_REGEX = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+
+function Linkify({ text }: { text: string }) {
+  const parts = text.split(URL_REGEX);
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_REGEX.test(part) ? (
+          <a
+            key={i}
+            href={part.startsWith("http") ? part : `https://${part}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+          >
+            {part}
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
   );
 }

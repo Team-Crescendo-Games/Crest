@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Calendar, User, Clock } from "lucide-react";
+import { Calendar, Clock } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 import { TaskEditForm } from "./task-edit-form";
 import { CommentSection } from "./comment-section";
 import { AttachmentSection } from "@/components/attachment-section";
@@ -33,7 +34,7 @@ export default async function TaskDetailPage({
     where: { id: taskId },
     include: {
       board: { select: { name: true, workspaceId: true } },
-      author: { select: { id: true, name: true, email: true } },
+      author: { select: { id: true, name: true, email: true, image: true } },
       assignees: { select: { id: true, name: true, email: true, image: true } },
       tags: { select: { id: true, name: true, color: true } },
       sprints: { select: { id: true, title: true } },
@@ -67,8 +68,9 @@ export default async function TaskDetailPage({
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
+    <div className="relative">
+      <div className="mx-auto max-w-3xl">
+        <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
         {/* Main content */}
         <div>
           <TaskEditForm
@@ -126,21 +128,6 @@ export default async function TaskDetailPage({
           {/* Attachments */}
           <div className="mt-8">
             <AttachmentSection taskId={taskId} attachments={task.attachments} />
-          </div>
-
-          {/* Comments */}
-          <div className="mt-8">
-            <CommentSection
-              taskId={taskId}
-              comments={task.comments.map((c) => ({
-                id: c.id,
-                text: c.text,
-                createdAt: c.createdAt,
-                userId: c.user.id,
-                userName: c.user.name,
-              }))}
-              currentUserId={userId}
-            />
           </div>
         </div>
 
@@ -203,8 +190,8 @@ export default async function TaskDetailPage({
 
           {/* Author */}
           <MetaBlock label="Author">
-            <div className="flex items-center gap-1.5 text-[11px] text-fg-muted">
-              <User size={10} />
+            <div className="flex items-center gap-1.5 text-[11px] text-fg-primary">
+              <UserAvatar name={task.author.name} image={task.author.image} size={18} />
               {task.author.name}
             </div>
           </MetaBlock>
@@ -220,9 +207,7 @@ export default async function TaskDetailPage({
                     key={a.id}
                     className="flex items-center gap-1.5 text-[11px] text-fg-primary"
                   >
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-accent/10 text-[9px] font-bold text-accent">
-                      {a.name?.charAt(0)?.toUpperCase()}
-                    </div>
+                    <UserAvatar name={a.name} image={a.image} size={18} />
                     {a.name}
                   </div>
                 ))}
@@ -291,6 +276,39 @@ export default async function TaskDetailPage({
               {task.updatedAt.toLocaleTimeString()}
             </span>
           </MetaBlock>
+        </div>
+        </div>{/* end grid */}
+
+        {/* Comments — inline fallback for smaller screens */}
+        <div className="mt-8 xl:hidden">
+          <CommentSection
+            taskId={taskId}
+            comments={task.comments.map((c) => ({
+              id: c.id,
+              text: c.text,
+              createdAt: c.createdAt,
+              userId: c.user.id,
+              userName: c.user.name,
+            }))}
+            currentUserId={userId}
+          />
+        </div>
+      </div>{/* end max-w-3xl */}
+
+      {/* Comments — floating panel on wide screens */}
+      <div className="absolute right-0 top-0 hidden w-72 xl:block" style={{ transform: "translateX(calc(100% + 3rem))" }}>
+        <div className="sticky top-8 min-w-0 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-md border border-border bg-bg-elevated/60 p-4 shadow-md backdrop-blur-sm">
+          <CommentSection
+            taskId={taskId}
+            comments={task.comments.map((c) => ({
+              id: c.id,
+              text: c.text,
+              createdAt: c.createdAt,
+              userId: c.user.id,
+              userName: c.user.name,
+            }))}
+            currentUserId={userId}
+          />
         </div>
       </div>
     </div>

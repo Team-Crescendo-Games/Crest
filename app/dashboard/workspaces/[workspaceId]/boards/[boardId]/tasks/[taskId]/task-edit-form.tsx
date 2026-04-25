@@ -51,7 +51,37 @@ export function TaskEditForm({
   const [priority, setPriority] = useState<TaskPriority>(
     task.priority as TaskPriority,
   );
+  const [title, setTitle] = useState(task.title);
+  const [description, setDescription] = useState(task.description ?? "");
+  const [startDate, setStartDate] = useState(task.startDate);
+  const [dueDate, setDueDate] = useState(task.dueDate);
+  const [points, setPoints] = useState(task.points?.toString() ?? "");
   const [state, action, pending] = useActionState(updateTask, null);
+
+  const isDirty =
+    title !== task.title ||
+    description !== (task.description ?? "") ||
+    status !== task.status ||
+    priority !== task.priority ||
+    startDate !== task.startDate ||
+    dueDate !== task.dueDate ||
+    points !== (task.points?.toString() ?? "") ||
+    JSON.stringify(assigneeIds.slice().sort()) !==
+      JSON.stringify(task.assigneeIds.slice().sort()) ||
+    JSON.stringify(tagIds.slice().sort()) !==
+      JSON.stringify(task.tagIds.slice().sort());
+
+  function reset() {
+    setTitle(task.title);
+    setDescription(task.description ?? "");
+    setStatus(task.status as TaskStatus);
+    setPriority(task.priority as TaskPriority);
+    setStartDate(task.startDate);
+    setDueDate(task.dueDate);
+    setPoints(task.points?.toString() ?? "");
+    setAssigneeIds(task.assigneeIds);
+    setTagIds(task.tagIds);
+  }
 
   return (
     <div>
@@ -72,7 +102,8 @@ export function TaskEditForm({
         {/* Title */}
         <input
           name="title"
-          defaultValue={task.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           required
           className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
         />
@@ -80,7 +111,8 @@ export function TaskEditForm({
         {/* Description */}
         <textarea
           name="description"
-          defaultValue={task.description ?? ""}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           rows={4}
           className="block w-full resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           placeholder="Add a description..."
@@ -129,7 +161,8 @@ export function TaskEditForm({
             <input
               name="startDate"
               type="date"
-              defaultValue={task.startDate}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
               className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
             />
           </div>
@@ -140,7 +173,8 @@ export function TaskEditForm({
             <input
               name="dueDate"
               type="date"
-              defaultValue={task.dueDate}
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
               className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
             />
           </div>
@@ -155,7 +189,8 @@ export function TaskEditForm({
             name="points"
             type="number"
             min={0}
-            defaultValue={task.points ?? ""}
+            value={points}
+            onChange={(e) => setPoints(e.target.value)}
             className="mt-1 block w-24 rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
             placeholder="—"
           />
@@ -194,11 +229,25 @@ export function TaskEditForm({
         <button
           type="submit"
           form={`task-edit-${task.id}`}
-          disabled={pending}
-          className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
+          disabled={pending || !isDirty}
+          className={`rounded-md px-4 py-2 text-xs font-medium transition-all ${
+            isDirty
+              ? "bg-accent text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+              : "bg-bg-secondary text-fg-muted cursor-not-allowed"
+          }`}
         >
           {pending ? "Saving..." : "Save Changes"}
         </button>
+
+        {isDirty && (
+          <button
+            type="button"
+            onClick={reset}
+            className="rounded-md border border-border px-4 py-2 text-xs font-medium text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary"
+          >
+            Reset
+          </button>
+        )}
 
         <TaskActions
           taskId={task.id}

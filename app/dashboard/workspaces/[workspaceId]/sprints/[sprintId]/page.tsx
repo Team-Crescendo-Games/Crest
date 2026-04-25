@@ -109,6 +109,7 @@ export default async function SprintDetailPage({
     assignees: { select: { id: true, name: true, image: true } },
     tags: { select: { name: true, color: true } },
     board: { select: { id: true, name: true } },
+    _count: { select: { comments: true } },
   } as const;
 
   const [sprint, totalTaskCount, tags, members] = await Promise.all([
@@ -190,7 +191,9 @@ export default async function SprintDetailPage({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: sprint.tasks.filter((t) => t.status === status),
+    tasks: sprint.tasks
+      .filter((t) => t.status === status)
+      .map((t) => ({ ...t, commentCount: t._count.comments })),
   }));
 
   // Timeline
@@ -343,6 +346,7 @@ export default async function SprintDetailPage({
           tasks={sprint.tasks.map((t) => ({
             ...t,
             boardId: t.board.id,
+            commentCount: t._count.comments,
           }))}
           sprintId={sprintId}
           sprintStart={sprint.startDate}
