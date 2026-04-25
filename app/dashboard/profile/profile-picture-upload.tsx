@@ -14,7 +14,11 @@ export function ProfilePictureUpload({
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(() => {
+    if (!currentImage) return null;
+    const match = currentImage.match(/avatars\/([^/]+)\//);
+    return match ? `/api/profile-picture/${match[1]}` : currentImage;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, saveAction] = useActionState(updateProfilePicture, null);
 
@@ -57,7 +61,11 @@ export function ProfilePictureUpload({
       formData.set("imageUrl", presignData.publicUrl);
       await saveAction(formData);
 
-      setPreviewUrl(presignData.publicUrl);
+      // Use proxy URL for preview to avoid 403 on private bucket
+      const match = presignData.publicUrl.match(/avatars\/([^/]+)\//);
+      setPreviewUrl(
+        match ? `/api/profile-picture/${match[1]}` : presignData.publicUrl,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {

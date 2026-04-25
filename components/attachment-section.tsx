@@ -46,6 +46,22 @@ export function AttachmentSection({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  async function openAttachment(attachmentId: string) {
+    setLoadingId(attachmentId);
+    try {
+      const res = await fetch(`/api/attachments/${attachmentId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to get download URL");
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open file");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   async function uploadFile(file: globalThis.File) {
     setError(null);
     setUploading(true);
@@ -220,18 +236,17 @@ export function AttachmentSection({
               key={att.id}
               className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-3 py-2 backdrop-blur-sm"
             >
-              <a
-                href={att.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs text-fg-primary hover:text-accent"
+              <button
+                onClick={() => openAttachment(att.id)}
+                disabled={loadingId === att.id}
+                className="flex items-center gap-2 text-xs text-fg-primary hover:text-accent disabled:opacity-50"
               >
                 <FileIcon mimeType={att.mimeType} />
                 <span className="font-mono">{att.fileName}</span>
                 <span className="text-[11px] text-fg-muted">
                   {formatFileSize(att.fileSize)}
                 </span>
-              </a>
+              </button>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-fg-muted">
                   {att.uploadedBy.name}

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3 = new S3Client({
@@ -73,6 +73,23 @@ export async function getPresignedUploadUrl({
     : `https://${BUCKET}.s3.${process.env.S3_REGION ?? "us-east-1"}.amazonaws.com/${key}`;
 
   return { uploadUrl, key, publicUrl };
+}
+
+/**
+ * Generate a presigned GET URL for downloading/viewing a private S3 object.
+ * Extracts the key from the stored public URL.
+ */
+export async function getPresignedDownloadUrl(fileUrl: string, expiresIn = 3600): Promise<string> {
+  let key: string;
+  if (process.env.S3_PUBLIC_URL && fileUrl.startsWith(process.env.S3_PUBLIC_URL)) {
+    key = fileUrl.slice(process.env.S3_PUBLIC_URL.length + 1);
+  } else {
+    const match = fileUrl.match(/\.amazonaws\.com\/(.+)$/);
+    key = match?.[1] ?? fileUrl;
+  }
+
+  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+  return getSignedUrl(s3, command, { expiresIn });
 }
 
 /**
