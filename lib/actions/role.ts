@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { hasPermission, Permission } from "@/lib/permissions";
 
-const PROTECTED_ROLES = ["Owner", "Member"];
+const PROTECTED_ROLES: string[] = [];
 
 async function requireManageRoles(userId: string, workspaceId: string) {
   const m = await prisma.workspaceMember.findUnique({

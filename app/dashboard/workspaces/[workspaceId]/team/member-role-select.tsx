@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { assignRole } from "@/lib/actions/role";
 
 interface Role {
@@ -23,8 +23,14 @@ export function MemberRoleSelect({
   canManage: boolean;
 }) {
   const [state, action, pending] = useActionState(assignRole, null);
+  const [selectedRoleId, setSelectedRoleId] = useState(currentRoleId);
 
-  const currentRole = roles.find((r) => r.id === currentRoleId);
+  // Sync with server when the prop updates after revalidation
+  useEffect(() => {
+    setSelectedRoleId(currentRoleId);
+  }, [currentRoleId]);
+
+  const currentRole = roles.find((r) => r.id === selectedRoleId);
 
   if (!canManage) {
     return (
@@ -45,9 +51,11 @@ export function MemberRoleSelect({
       <input type="hidden" name="memberId" value={memberId} />
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <select
+        key={selectedRoleId}
         name="roleId"
-        defaultValue={currentRoleId}
+        value={selectedRoleId}
         onChange={(e) => {
+          setSelectedRoleId(e.target.value);
           const form = e.target.closest("form");
           if (form) form.requestSubmit();
         }}

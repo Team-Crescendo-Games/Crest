@@ -29,7 +29,7 @@ const PRESET_COLORS = [
   "#6B7280",
 ];
 
-const PROTECTED_ROLES = ["Owner", "Member"];
+const PROTECTED_ROLES: string[] = [];
 
 interface Role {
   id: string;
