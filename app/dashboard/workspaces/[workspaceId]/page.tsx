@@ -157,7 +157,7 @@ export default async function WorkspaceOverviewPage({
                   <Link
                     key={board.id}
                     href={`/dashboard/workspaces/${workspaceId}/boards/${board.id}`}
-                    className="group rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm transition-all hover:border-accent/40"
+                    className="group rounded-md border border-accent-subtle/25 bg-accent-subtle/5 p-4 backdrop-blur-sm transition-all hover:border-accent/40 hover:bg-accent-subtle/10"
                   >
                     <h3 className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
                       {board.name}

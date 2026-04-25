@@ -323,27 +323,26 @@ function RoleForm({
       <div className="flex items-center justify-between">
         {/* Delete (edit mode only) */}
         {roleId && canDelete !== false && (
-          <form action={deleteAction}>
-            <input type="hidden" name="roleId" value={roleId} />
-            <input type="hidden" name="workspaceId" value={workspaceId} />
-            <button
-              type="submit"
-              disabled={deletePending || (memberCount ?? 0) > 0}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-fg-muted hover:text-accent-emphasis disabled:opacity-40"
-              title={
-                (memberCount ?? 0) > 0
-                  ? "Reassign members before deleting"
-                  : "Delete role"
-              }
-              onClick={(e) => {
-                if (!confirm(`Delete role "${defaultName}"?`))
-                  e.preventDefault();
-              }}
-            >
-              <Trash2 size={11} />
-              Delete
-            </button>
-          </form>
+          <button
+            type="button"
+            disabled={deletePending || (memberCount ?? 0) > 0}
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-fg-muted hover:text-accent-emphasis disabled:opacity-40"
+            title={
+              (memberCount ?? 0) > 0
+                ? "Reassign members before deleting"
+                : "Delete role"
+            }
+            onClick={() => {
+              if (!confirm(`Delete role "${defaultName}"?`)) return;
+              const fd = new FormData();
+              fd.set("roleId", roleId);
+              fd.set("workspaceId", workspaceId);
+              deleteAction(fd);
+            }}
+          >
+            <Trash2 size={11} />
+            {deletePending ? "..." : "Delete"}
+          </button>
         )}
         {!roleId && <div />}
 

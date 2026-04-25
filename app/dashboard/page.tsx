@@ -1,32 +1,36 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TaskStatus } from "@/prisma/generated/prisma/enums";
 import {
   TASK_STATUSES as STATUS_ORDER,
   STATUS_LABELS,
   STATUS_COLORS,
 } from "@/lib/task-enums";
-import { KanbanBoard } from "@/components/kanban-board";
+import { DashboardKanban } from "./dashboard-kanban";
 import { NotificationFeed } from "./notification-feed";
-import { Bell } from "lucide-react";
+import { UserMetrics } from "@/components/user-metrics";
+import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
 
 const NOTIF_PAGE = 10;
+const TASKS_PER_COLUMN = 5;
 
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const [workspaceCount, assignedTasks, notifResult] = await Promise.all([
+  // Count tasks per status for the current user (for stats + pagination)
+  const statusCountRows = await prisma.task.groupBy({
+    by: ["status"],
+    where: { assignees: { some: { id: userId } } },
+    _count: true,
+  });
+  const statusCounts: Record<string, number> = {};
+  for (const row of statusCountRows) {
+    statusCounts[row.status] = row._count;
+  }
+
+  // Load first page of tasks per column + aggregate stats + metrics in parallel
+  const [workspaceCount, notifResult, initialWeeklyPoints, initialTagData, ...columnTaskResults] = await Promise.all([
     prisma.workspaceMember.count({ where: { userId } }),
-    prisma.task.findMany({
-      where: { assignees: { some: { id: userId } } },
-      orderBy: { createdAt: "desc" },
-      include: {
-        assignees: { select: { id: true, name: true, image: true } },
-        tags: { select: { name: true, color: true } },
-        board: { select: { id: true, name: true, workspaceId: true } },
-      },
-    }),
     prisma.$transaction([
       prisma.notification.findMany({
         where: { userId },
@@ -44,31 +48,60 @@ export default async function DashboardPage() {
       }),
       prisma.notification.count({ where: { userId } }),
     ]),
+    getWeeklyCompletedPoints(userId, 8),
+    getTasksByTag(userId),
+    ...STATUS_ORDER.map((status) =>
+      prisma.task.findMany({
+        where: { status, assignees: { some: { id: userId } } },
+        orderBy: { createdAt: "desc" },
+        take: TASKS_PER_COLUMN,
+        include: {
+          assignees: { select: { id: true, name: true, image: true } },
+          tags: { select: { name: true, color: true } },
+          board: { select: { id: true, name: true, workspaceId: true } },
+          subtasks: { select: { id: true, status: true } },
+          _count: { select: { comments: true } },
+        },
+      }),
+    ),
   ]);
 
   const [initialNotifications, totalNotifications] = notifResult;
 
-  const totalPoints = assignedTasks.reduce(
+  const totalAssigned = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+
+  // Compute total points from the loaded first-page tasks (approximation for display)
+  const allLoadedTasks = columnTaskResults.flat();
+  const totalPoints = allLoadedTasks.reduce(
     (sum, t) => sum + (t.points ?? 0),
     0,
   );
-  const completedTasks = assignedTasks.filter(
-    (t) => t.status === "COMPLETED",
-  ).length;
+  const completedTasks = statusCounts["COMPLETED"] ?? 0;
   const unreadCount = initialNotifications.filter((n) => !n.isRead).length;
 
-  const columns = STATUS_ORDER.map((status) => ({
+  const columns = STATUS_ORDER.map((status, i) => ({
     status,
     label: STATUS_LABELS[status],
     color: STATUS_COLORS[status],
-    tasks: assignedTasks
-      .filter((t) => t.status === status)
-      .map((t) => ({
-        ...t,
-        boardId: t.board.id,
-        workspaceId: t.board.workspaceId,
-      })),
+    tasks: columnTaskResults[i].map((t) => ({
+      ...t,
+      boardId: t.board.id,
+      workspaceId: t.board.workspaceId,
+      commentCount: t._count.comments,
+      subtaskIds: t.subtasks.map((s) => s.id),
+      subtaskTotal: t.subtasks.length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+    })),
   }));
+
+  // Build per-column counts and page sizes for the kanban pagination
+  const columnCounts: Record<string, number> = {};
+  const columnPageSizes: Record<string, number> = {};
+  for (const status of STATUS_ORDER) {
+    const count = statusCounts[status] ?? 0;
+    columnCounts[status] = count;
+    columnPageSizes[status] = TASKS_PER_COLUMN;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -96,7 +129,7 @@ export default async function DashboardPage() {
             />
             <StatCard
               label="Assigned Tasks"
-              value={assignedTasks.length}
+              value={totalAssigned}
               barColor="#f0a468"
             />
             <StatCard
@@ -134,19 +167,27 @@ export default async function DashboardPage() {
       {/* My Tasks kanban */}
       <div className="space-y-3">
         <SectionHeading>My Tasks</SectionHeading>
-        {assignedTasks.length === 0 ? (
+        {totalAssigned === 0 ? (
           <p className="py-8 text-center text-xs text-fg-muted">
             No tasks assigned to you yet.
           </p>
         ) : (
-          <KanbanBoard
+          <DashboardKanban
             columns={columns}
-            boardId=""
-            workspaceId=""
-            canCreate={false}
-            variant="detailed"
+            columnCounts={columnCounts}
+            columnPageSizes={columnPageSizes}
           />
         )}
+      </div>
+
+      {/* Metrics */}
+      <div className="space-y-3">
+        <SectionHeading>Metrics</SectionHeading>
+        <UserMetrics
+          userId={userId}
+          initialWeeklyData={initialWeeklyPoints}
+          initialTagData={initialTagData}
+        />
       </div>
     </div>
   );
