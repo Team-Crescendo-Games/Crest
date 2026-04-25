@@ -1137,3 +1137,45 @@ export async function getFlowGraphTasks(
     subtaskIds: t.subtasks.map((s) => s.id),
   }));
 }
+
+// ─── Search workspace tasks (for flow view "add task" prompt) ───────────────
+
+/**
+ * Search tasks in a workspace by title. Returns a lightweight list for the
+ * flow-view search modal. Only runs when the caller provides a non-empty query
+ * to avoid fetching the entire workspace task set.
+ */
+export async function searchWorkspaceTasks(
+  workspaceId: string,
+  query: string,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  if (!query || query.trim().length === 0) return [];
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      board: { workspaceId },
+      title: { contains: query.trim(), mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      boardId: true,
+      parentTaskId: true,
+      board: { select: { id: true, name: true } },
+    },
+    orderBy: { title: "asc" },
+    take: 20,
+  });
+
+  return tasks;
+}
