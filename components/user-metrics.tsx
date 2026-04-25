@@ -28,12 +28,14 @@ export interface TagSlice {
   percent: number;
 }
 
-type WeekRange = 4 | 8 | 12;
+type WeekRange = 4 | 8 | 12 | 26 | 52;
 
 const WEEK_OPTIONS: { value: WeekRange; label: string }[] = [
   { value: 4, label: "4 weeks" },
   { value: 8, label: "8 weeks" },
   { value: 12, label: "12 weeks" },
+  { value: 26, label: "6 months" },
+  { value: 52, label: "1 year" },
 ];
 
 export function UserMetrics({
