@@ -15,8 +15,9 @@ export interface TaskCardData {
   points?: number | null;
   assignees: { id: string; name: string | null; image?: string | null }[];
   tags?: { name: string; color: string | null }[];
-  board?: { id: string; name: string };
+  board?: { id: string; name: string; workspaceId?: string };
   boardId?: string;
+  workspaceId?: string;
   commentCount?: number;
 }
 
@@ -37,9 +38,10 @@ export function TaskCard({
   href?: string;
   className?: string;
 }) {
+  const resolvedWorkspaceId = task.workspaceId || task.board?.workspaceId || workspaceId;
   const link =
     href ??
-    `/dashboard/workspaces/${workspaceId}/boards/${task.board?.id ?? task.boardId}/tasks/${task.id}`;
+    `/dashboard/workspaces/${resolvedWorkspaceId}/boards/${task.board?.id ?? task.boardId}/tasks/${task.id}`;
 
   return (
     <Link

@@ -66,6 +66,7 @@ export default async function DashboardPage() {
       .map((t) => ({
         ...t,
         boardId: t.board.id,
+        workspaceId: t.board.workspaceId,
       })),
   }));
 

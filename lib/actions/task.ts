@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
+import { TaskStatus, TaskPriority, ActivityType } from "@/prisma/generated/prisma/enums";
 
 const VALID_STATUSES: TaskStatus[] = [
   "NOT_STARTED",
@@ -44,6 +44,24 @@ function revalidateTask(workspaceId: string, boardId: string, taskId: string) {
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${taskId}`);
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+}
+
+async function logActivity(
+  taskId: string,
+  userId: string,
+  type: ActivityType,
+  opts?: { field?: string; oldValue?: string | null; newValue?: string | null },
+) {
+  await prisma.activity.create({
+    data: {
+      taskId,
+      userId,
+      type,
+      field: opts?.field ?? null,
+      oldValue: opts?.oldValue ?? null,
+      newValue: opts?.newValue ?? null,
+    },
+  });
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -132,6 +150,9 @@ export async function createTask(_prev: unknown, formData: FormData) {
   if (sprintId) {
     revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${sprintId}`);
   }
+
+  await logActivity(task.id, session.user.id, "CREATED");
+
   return { success: true, newTaskId: task.id };
 }
 
@@ -171,6 +192,14 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     }
   }
 
+  // Fetch old values for activity logging
+  const oldTask = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      assignees: { select: { id: true } },
+    },
+  });
+
   await prisma.task.update({
     where: { id: taskId },
     data: {
@@ -185,6 +214,42 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       tags: { set: tagIds.map((id) => ({ id })) },
     },
   });
+
+  // Log activities for changed fields
+  if (oldTask) {
+    const newStatus = VALID_STATUSES.includes(status) ? status : oldTask.status;
+    if (newStatus !== oldTask.status) {
+      await logActivity(taskId, session.user.id, "STATUS_CHANGED", {
+        field: "status",
+        oldValue: oldTask.status,
+        newValue: newStatus,
+      });
+    }
+
+    const newPriority = VALID_PRIORITIES.includes(priority) ? priority : oldTask.priority;
+    if (newPriority !== oldTask.priority) {
+      await logActivity(taskId, session.user.id, "PRIORITY_CHANGED", {
+        field: "priority",
+        oldValue: oldTask.priority,
+        newValue: newPriority,
+      });
+    }
+
+    const oldAssigneeIds = oldTask.assignees.map((a) => a.id).sort();
+    const newAssigneeIds = [...assigneeIds].sort();
+    const added = newAssigneeIds.filter((id) => !oldAssigneeIds.includes(id));
+    const removed = oldAssigneeIds.filter((id) => !newAssigneeIds.includes(id));
+    for (const id of added) {
+      await logActivity(taskId, session.user.id, "ASSIGNED", { newValue: id });
+    }
+    for (const id of removed) {
+      await logActivity(taskId, session.user.id, "UNASSIGNED", { oldValue: id });
+    }
+
+    if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
+      await logActivity(taskId, session.user.id, "EDITED");
+    }
+  }
 
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };
@@ -211,10 +276,20 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
     return { error: "Not authorized" };
   }
 
+  const oldStatus = info.task.status;
+
   await prisma.task.update({
     where: { id: taskId },
     data: { status },
   });
+
+  if (oldStatus !== status) {
+    await logActivity(taskId, session.user.id, "STATUS_CHANGED", {
+      field: "status",
+      oldValue: oldStatus,
+      newValue: status,
+    });
+  }
 
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
   revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
@@ -268,6 +343,8 @@ export async function addComment(_prev: unknown, formData: FormData) {
       userId: session.user.id,
     },
   });
+
+  await logActivity(taskId, session.user.id, "COMMENTED");
 
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };

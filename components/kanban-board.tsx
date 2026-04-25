@@ -6,7 +6,7 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import { useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { updateTaskStatus } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
@@ -44,12 +44,40 @@ export function KanbanBoard({
   tags?: { id: string; name: string; color: string | null }[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const [localColumns, setLocalColumns] = useState(columns);
+
+  // Sync local state when server data changes (after revalidation)
+  useEffect(() => {
+    setLocalColumns(columns);
+  }, [columns]);
 
   function onDragEnd(result: DropResult) {
     if (!result.destination) return;
     const newStatus = result.destination.droppableId;
+    const oldStatus = result.source.droppableId;
     const taskId = result.draggableId;
-    if (result.source.droppableId === newStatus) return;
+    if (oldStatus === newStatus) return;
+
+    // Optimistic update: move the task locally
+    setLocalColumns((prev) =>
+      prev.map((col) => {
+        if (col.status === oldStatus) {
+          return { ...col, tasks: col.tasks.filter((t) => t.id !== taskId) };
+        }
+        if (col.status === newStatus) {
+          const task = prev
+            .find((c) => c.status === oldStatus)
+            ?.tasks.find((t) => t.id === taskId);
+          if (task) {
+            const updated = { ...task, status: newStatus };
+            const newTasks = [...col.tasks];
+            newTasks.splice(result.destination!.index, 0, updated);
+            return { ...col, tasks: newTasks };
+          }
+        }
+        return col;
+      }),
+    );
 
     startTransition(async () => {
       const formData = new FormData();
@@ -65,23 +93,11 @@ export function KanbanBoard({
       <div
         className={`grid gap-4 lg:grid-cols-4 ${isPending ? "opacity-70" : ""}`}
       >
-        {columns.map((column) => (
+        {localColumns.map((column) => (
           <div
             key={column.status}
-            className="rounded-lg p-2 transition-colors duration-150"
-            style={
-              {
-                "--col-bg": column.color + "08",
-                "--col-bg-hover": column.color + "12",
-                backgroundColor: "var(--col-bg)",
-              } as React.CSSProperties
-            }
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "var(--col-bg-hover)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "var(--col-bg)")
-            }
+            className="rounded-lg p-2"
+            style={{ backgroundColor: column.color + "08" }}
           >
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -117,7 +133,7 @@ export function KanbanBoard({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`min-h-[60px] max-h-[60vh] space-y-2 overflow-y-auto rounded-md p-1 transition-colors ${
+                  className={`min-h-[60px] space-y-2 rounded-md p-1 transition-colors ${
                     snapshot.isDraggingOver
                       ? "bg-accent/5 ring-1 ring-accent/20"
                       : ""

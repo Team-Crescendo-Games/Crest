@@ -6,6 +6,7 @@ import { Calendar, Clock } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { TaskEditForm } from "./task-edit-form";
 import { CommentSection } from "./comment-section";
+import { ActivityLog } from "./activity-log";
 import { AttachmentSection } from "@/components/attachment-section";
 import {
   STATUS_LABELS,
@@ -48,6 +49,10 @@ export default async function TaskDetailPage({
       },
       attachments: {
         include: { uploadedBy: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      },
+      activities: {
+        include: { user: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -129,6 +134,11 @@ export default async function TaskDetailPage({
           <div className="mt-8">
             <AttachmentSection taskId={taskId} attachments={task.attachments} />
           </div>
+
+          {/* Activities */}
+          {task.activities.length > 0 && (
+            <ActivityLog activities={task.activities} />
+          )}
         </div>
 
         {/* Sidebar metadata */}
