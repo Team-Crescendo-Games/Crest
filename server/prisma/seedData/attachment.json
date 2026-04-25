@@ -1,8 +1,0 @@
-[
-  { "id": 1, "fileName": "DesignDoc.pdf", "fileExt": "jpg", "taskId": 1, "uploadedById": 1 },
-  { "id": 2, "fileName": "NavAlgorithm.pdf", "fileExt": "jpg", "taskId": 2, "uploadedById": 3 },
-  { "id": 3, "fileName": "EnergySolutions.pdf", "fileExt": "jpg", "taskId": 3, "uploadedById": 5 },
-  { "id": 4, "fileName": "SecurityProtocol.pdf", "fileExt": "jpg", "taskId": 4, "uploadedById": 2 },
-  { "id": 5, "fileName": "UXMockups.pdf", "fileExt": "jpg", "taskId": 5, "uploadedById": 5 },
-  { "id": 6, "fileName": "AnalyticsDashboard.pdf", "fileExt": "jpg", "taskId": 6, "uploadedById": 7 }
-]

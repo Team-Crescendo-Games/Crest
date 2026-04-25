@@ -1,141 +1,36 @@
-# Project Management App
-
-A full-stack project management application similar to Jira/Trello, built with Next.js and Express.
-
-## Tech Stack
-
-**Frontend**
-- Next.js 16 with App Router
-- React 19
-- TypeScript
-- Tailwind CSS 4 (dark mode support)
-- Redux Toolkit + RTK Query
-- AWS Amplify (authentication)
-- react-dnd (drag & drop)
-- Recharts (data visualization)
-
-**Backend**
-- Express 5
-- TypeScript
-- Prisma 7 ORM
-- PostgreSQL
-
-**Infrastructure**
-- AWS Cognito (auth)
-- AWS S3 (file storage)
-
-## Features
-
-- **Boards**: Kanban-style project boards with drag-and-drop task management
-- **Sprints**: Sprint planning with timeline and table views
-- **Tasks**: Full task lifecycle with status, priority, points, dates, subtasks
-- **Comments**: Task discussions with @mentions and emoji reactions
-- **Search**: Global search across projects, tasks, and users
-- **Tags**: Customizable color-coded labels
-- **Activity Tracking**: Task history and audit trail
-- **Dark Mode**: Full dark theme support
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL database
-- AWS account (for Cognito and S3)
-
-### Environment Setup
-
-**Client** (`client/.env.local`):
-```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID=your_client_id
-NEXT_PUBLIC_COGNITO_USER_POOL_ID=your_pool_id
-```
-
-**Server** (`server/.env`):
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-PORT=8000
-```
-
-### Installation
+First, run the development server:
 
 ```bash
-# Install client dependencies
-cd client
-npm install
-
-# Install server dependencies
-cd ../server
-npm install
-
-# Set up database
-npx prisma migrate dev
-npm run seed
-```
-
-### Running the App
-
-```bash
-# Terminal 1 - Start server
-cd server
 npm run dev
-
-# Terminal 2 - Start client
-cd client
-npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Client runs on `http://localhost:3000`, server on `http://localhost:8000`.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Project Structure
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-```
-├── client/
-│   ├── app/              # Next.js pages and layouts
-│   ├── components/       # Reusable UI components
-│   ├── state/            # Redux store and RTK Query API
-│   └── lib/              # Utility functions
-│
-└── server/
-    ├── src/
-    │   ├── controllers/  # Request handlers
-    │   └── routes/       # API route definitions
-    └── prisma/
-        ├── schema.prisma # Database schema
-        └── seedData/     # Seed data JSON files
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## API Endpoints
+## Learn More
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/projects` | List all projects |
-| POST | `/projects` | Create project |
-| GET | `/tasks` | Get tasks (filter by projectId) |
-| POST | `/tasks` | Create task |
-| PATCH | `/tasks/:id` | Update task |
-| PATCH | `/tasks/:id/status` | Update task status |
-| GET | `/users` | List all users |
-| GET | `/sprints` | List all sprints |
-| GET | `/search` | Search across entities |
+To learn more about Next.js, take a look at the following resources:
 
-## Database Commands
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-```bash
-# Run migrations
-npx prisma migrate dev --name migration_name
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-# Generate Prisma client
-npx prisma generate
+## Deploy on Vercel
 
-# Reset and reseed database
-npx prisma migrate reset
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-# Open Prisma Studio
-npx prisma studio
-```
-
-## License
-
-Private
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
