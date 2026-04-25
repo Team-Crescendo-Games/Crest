@@ -117,7 +117,7 @@ export default async function BoardDetailPage({
             author: { select: { name: true } },
             assignees: { select: { id: true, name: true, image: true } },
             tags: { select: { name: true, color: true } },
-            subtasks: { select: { id: true } },
+            subtasks: { select: { id: true, status: true } },
             _count: { select: { comments: true } },
           },
         },
@@ -131,7 +131,7 @@ export default async function BoardDetailPage({
         author: { select: { name: true } },
         assignees: { select: { id: true, name: true, image: true } },
         tags: { select: { name: true, color: true } },
-        subtasks: { select: { id: true } },
+        subtasks: { select: { id: true, status: true } },
         _count: { select: { comments: true } },
       },
     }),
@@ -165,8 +165,8 @@ export default async function BoardDetailPage({
 
   // Merge non-completed tasks from board query with the paginated completed tasks
   const allTasks = [
-    ...board.tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id) })),
-    ...completedTasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id) })),
+    ...board.tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length })),
+    ...completedTasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length })),
   ];
 
   const columns = STATUS_ORDER.map((status) => ({

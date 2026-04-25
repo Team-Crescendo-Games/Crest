@@ -20,6 +20,8 @@ export interface TaskCardData {
   workspaceId?: string;
   commentCount?: number;
   subtaskIds?: string[];
+  subtaskTotal?: number;
+  subtaskCompleted?: number;
 }
 
 /* ── Color helpers ─────────────────────────────────────────────────────── */
@@ -101,6 +103,66 @@ function averageTagColor(
   const avgHue = ((avgRad * 180) / Math.PI + 360) % 360;
 
   return `hsla(${Math.round(avgHue)}, ${Math.round(TARGET_SATURATION * 100)}%, ${Math.round(TARGET_LIGHTNESS * 100)}%, ${TINT_OPACITY})`;
+}
+
+/* ── Subtask radial progress ────────────────────────────────────────────── */
+
+function SubtaskRadial({
+  completed,
+  total,
+}: {
+  completed: number;
+  total: number;
+}) {
+  const ratio = total > 0 ? completed / total : 0;
+  const size = 20;
+  const stroke = 2;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - ratio);
+  const allDone = completed === total;
+
+  return (
+    <div
+      className="relative shrink-0"
+      title={`${completed}/${total} subtasks done`}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90"
+      >
+        {/* Background ring */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          className="text-border"
+        />
+        {/* Progress arc */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={allDone ? "#6bc96b" : "var(--accent)"}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-[stroke-dashoffset] duration-300"
+        />
+      </svg>
+      {/* Centered label inside the ring */}
+      <span className="absolute inset-0 flex items-center justify-center text-[6px] font-medium text-fg-muted">
+        {completed}/{total}
+      </span>
+    </div>
+  );
 }
 
 /* ── Component ─────────────────────────────────────────────────────────── */
@@ -206,7 +268,7 @@ export function TaskCard({
         </div>
       )}
 
-      {/* Row 4: assignee avatars + due date */}
+      {/* Row 4: assignee avatars + subtask progress + due date */}
       <div className="mt-1.5 flex items-center justify-between">
         {task.assignees.length > 0 ? (
           <div className="flex -space-x-1">
@@ -228,11 +290,19 @@ export function TaskCard({
         ) : (
           <div />
         )}
-        {task.dueDate && (
-          <span className="text-[11px] text-fg-muted">
-            {new Date(task.dueDate).toLocaleDateString()}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {(task.subtaskTotal ?? 0) > 0 && (
+            <SubtaskRadial
+              completed={task.subtaskCompleted ?? 0}
+              total={task.subtaskTotal!}
+            />
+          )}
+          {task.dueDate && (
+            <span className="text-[11px] text-fg-muted">
+              {new Date(task.dueDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

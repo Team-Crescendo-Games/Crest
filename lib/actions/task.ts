@@ -141,12 +141,12 @@ export async function loadCompletedTasks(
       author: { select: { name: true } },
       assignees: { select: { id: true, name: true, image: true } },
       tags: { select: { name: true, color: true } },
-      subtasks: { select: { id: true } },
+      subtasks: { select: { id: true, status: true } },
       _count: { select: { comments: true } },
     },
   });
 
-  return tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id) }));
+  return tasks.map((t) => ({ ...t, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
