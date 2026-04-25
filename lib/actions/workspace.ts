@@ -312,6 +312,17 @@ export async function getLeaveWarning(workspaceId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  // Owners cannot leave — return null to hide the button
+  const membership = await prisma.workspaceMember.findUnique({
+    where: {
+      userId_workspaceId: { userId: session.user.id, workspaceId },
+    },
+    include: { role: true },
+  });
+
+  if (!membership) return null;
+  if (membership.role.name === "Owner") return null;
+
   const memberCount = await prisma.workspaceMember.count({
     where: { workspaceId },
   });
@@ -351,9 +362,17 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+    include: { role: true },
   });
 
   if (!membership) return { error: "You are not a member" };
+
+  if (membership.role.name === "Owner") {
+    return {
+      error:
+        "Owners cannot leave the workspace. Transfer ownership first or delete the workspace.",
+    };
+  }
 
   const memberCount = await prisma.workspaceMember.count({
     where: { workspaceId },

@@ -113,7 +113,10 @@ export default async function WorkspaceTeamPage({
               key={member.id}
               className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm"
             >
-              <div className="flex items-center gap-3">
+              <Link
+                href={`/dashboard/workspaces/${workspaceId}/team/${member.id}`}
+                className="flex items-center gap-3 transition-opacity hover:opacity-80"
+              >
                 <UserAvatar
                   name={member.user.name}
                   image={member.user.image}
@@ -132,7 +135,7 @@ export default async function WorkspaceTeamPage({
                     {member.user.email}
                   </p>
                 </div>
-              </div>
+              </Link>
               <div className="flex items-center gap-3">
                 <span className="text-[11px] text-fg-muted">
                   Joined {member.joinedAt.toLocaleDateString()}
