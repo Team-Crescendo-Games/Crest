@@ -1,5 +1,13 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getStage } from "@/lib/stage";
 
 const s3 = new S3Client({
   region: process.env.S3_REGION ?? "us-east-1",
@@ -54,9 +62,9 @@ export async function getPresignedUploadUrl({
     throw new Error("File type not allowed.");
   }
 
-  // Key format: attachments/{taskId}/{timestamp}-{sanitized filename}
+  // Key format: {stage}/attachments/{taskId}/{timestamp}-{sanitized filename}
   const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const key = `attachments/${taskId}/${Date.now()}-${sanitized}`;
+  const key = `${getStage()}/attachments/${taskId}/${Date.now()}-${sanitized}`;
 
   const command = new PutObjectCommand({
     Bucket: BUCKET,
@@ -112,6 +120,57 @@ export async function deleteS3Object(fileUrl: string) {
       Key: key,
     })
   );
+}
+
+/**
+ * Delete all objects under a given key prefix.
+ *
+ * Uses paginated ListObjectsV2 + batched DeleteObjects (max 1000 per call).
+ * Returns the number of objects deleted. Errors bubble up — callers should
+ * catch and decide whether to fail loudly or just log.
+ *
+ * WARNING: prefix must be specific enough that you can't accidentally nuke
+ * unrelated data (e.g. always include a user ID or task ID).
+ */
+export async function deleteS3Prefix(prefix: string): Promise<number> {
+  if (!prefix || prefix === "/" || prefix.length < 3) {
+    throw new Error(`Refusing to delete suspiciously broad prefix: "${prefix}"`);
+  }
+
+  let totalDeleted = 0;
+  let continuationToken: string | undefined;
+
+  do {
+    const listed = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    );
+
+    const objects = listed.Contents ?? [];
+    if (objects.length > 0) {
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: BUCKET,
+          Delete: {
+            Objects: objects
+              .filter((o): o is { Key: string } => !!o.Key)
+              .map((o) => ({ Key: o.Key })),
+            Quiet: true,
+          },
+        }),
+      );
+      totalDeleted += objects.length;
+    }
+
+    continuationToken = listed.IsTruncated
+      ? listed.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+
+  return totalDeleted;
 }
 
 export { MAX_FILE_SIZE, ALLOWED_MIME_TYPES };

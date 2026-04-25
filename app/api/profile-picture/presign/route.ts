@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getStage } from "@/lib/stage";
+import { deleteS3Prefix } from "@/lib/s3";
 
 const s3 = new S3Client({
   region: process.env.S3_REGION ?? "us-east-1",
@@ -32,7 +34,19 @@ export async function POST(request: Request) {
     }
 
     const ext = mimeType.split("/")[1] ?? "png";
-    const key = `avatars/${session.user.id}/${Date.now()}.${ext}`;
+    const stage = getStage();
+    const avatarPrefix = `${stage}/avatars/${session.user.id}/`;
+
+    // Clean up any existing avatars for this user before uploading the new
+    // one. Failures are logged but don't block the upload — the worst case
+    // is a leaked object, not a broken upload flow.
+    try {
+      await deleteS3Prefix(avatarPrefix);
+    } catch (err) {
+      console.error("Failed to clean up old avatars:", err);
+    }
+
+    const key = `${avatarPrefix}${Date.now()}.${ext}`;
 
     const command = new PutObjectCommand({
       Bucket: BUCKET,

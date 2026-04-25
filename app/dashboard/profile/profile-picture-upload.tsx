@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useActionState } from "react";
+import { useState, useRef } from "react";
 import { Camera } from "lucide-react";
 import { updateProfilePicture } from "@/lib/actions/user";
 import Image from "next/image";
@@ -20,7 +20,6 @@ export function ProfilePictureUpload({
     return match ? `/api/profile-picture/${match[1]}` : currentImage;
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [, saveAction] = useActionState(updateProfilePicture, null);
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -59,7 +58,8 @@ export function ProfilePictureUpload({
       // Save the public URL to the user profile
       const formData = new FormData();
       formData.set("imageUrl", presignData.publicUrl);
-      await saveAction(formData);
+      const result = await updateProfilePicture(null, formData);
+      if (result?.error) throw new Error(result.error);
 
       // Use proxy URL for preview to avoid 403 on private bucket
       const match = presignData.publicUrl.match(/avatars\/([^/]+)\//);
