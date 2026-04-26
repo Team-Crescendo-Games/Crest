@@ -1137,3 +1137,83 @@ export async function getFlowGraphTasks(
     subtaskIds: t.subtasks.map((s) => s.id),
   }));
 }
+
+// ─── Search workspace tasks (for flow view "add task" prompt) ───────────────
+
+/**
+ * Search tasks in a workspace by title. Returns a lightweight list for the
+ * flow-view search modal. Only runs when the caller provides a non-empty query
+ * to avoid fetching the entire workspace task set.
+ */
+export async function searchWorkspaceTasks(
+  workspaceId: string,
+  query: string,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  if (!query || query.trim().length === 0) return [];
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      board: { workspaceId },
+      title: { contains: query.trim(), mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      boardId: true,
+      parentTaskId: true,
+      board: { select: { id: true, name: true } },
+    },
+    orderBy: { title: "asc" },
+    take: 20,
+  });
+
+  return tasks;
+}
+
+// ─── Dashboard: load paginated tasks assigned to the current user ───────────
+
+export async function loadMyColumnTasks(
+  status: string,
+  offset: number,
+  limit: number,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      status: status as TaskStatus,
+      assignees: { some: { id: session.user.id } },
+    },
+    orderBy: { createdAt: "desc" },
+    skip: offset,
+    take: limit,
+    include: {
+      assignees: { select: { id: true, name: true, image: true } },
+      tags: { select: { name: true, color: true } },
+      board: { select: { id: true, name: true, workspaceId: true } },
+      subtasks: { select: { id: true, status: true } },
+      _count: { select: { comments: true } },
+    },
+  });
+
+  return tasks.map((t) => ({
+    ...t,
+    boardId: t.board.id,
+    workspaceId: t.board.workspaceId,
+    commentCount: t._count.comments,
+    subtaskIds: t.subtasks.map((s) => s.id),
+    subtaskTotal: t.subtasks.length,
+    subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+  }));
+}

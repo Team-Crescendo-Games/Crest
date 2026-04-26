@@ -9,8 +9,8 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import Link from "next/link";
-import { Search, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
-import { setTaskParent, getFlowGraphTasks } from "@/lib/actions/task";
+import { Search, X, ZoomIn, ZoomOut, Maximize2, Loader2 } from "lucide-react";
+import { setTaskParent, getFlowGraphTasks, searchWorkspaceTasks } from "@/lib/actions/task";
 import { STATUS_COLORS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
@@ -293,6 +293,187 @@ function TaskSelector({
   );
 }
 
+// ─── Add-task search modal ──────────────────────────────────────────────────
+
+interface AddTaskPrompt {
+  fromId: string;
+  fromPort: "parent" | "child";
+  /** Canvas position where the user released the mouse */
+  canvasX: number;
+  canvasY: number;
+}
+
+type SearchResult = {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  boardId: string;
+  parentTaskId: string | null;
+  board: { id: string; name: string };
+};
+
+function AddTaskSearchModal({
+  prompt,
+  workspaceId,
+  existingIds,
+  onSelect,
+  onClose,
+}: {
+  prompt: AddTaskPrompt;
+  workspaceId: string;
+  /** IDs already in the graph — we'll dim them but still allow selection */
+  existingIds: Set<string>;
+  onSelect: (taskId: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-focus the input when the modal opens
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // Debounced search — only fires after the user types something
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!query.trim()) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    debounceRef.current = setTimeout(() => {
+      searchWorkspaceTasks(workspaceId, query)
+        .then((res) => {
+          setResults(
+            (res as SearchResult[]).filter((t) => t.id !== prompt.fromId),
+          );
+          setSearching(false);
+        })
+        .catch(() => {
+          setSearching(false);
+        });
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, workspaceId, prompt.fromId]);
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      onMouseDown={(e) => {
+        // Close when clicking the backdrop
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-96 rounded-lg border border-border bg-bg-elevated shadow-xl">
+        <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+          <span className="font-mono text-xs font-medium text-fg-primary">
+            Add task as{" "}
+            {prompt.fromPort === "child" ? "subtask" : "parent"}
+          </span>
+          <button
+            onClick={onClose}
+            className="cursor-pointer text-fg-muted transition-colors hover:text-fg-primary"
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <div className="p-3">
+          <div className="relative">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Type to search workspace tasks..."
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 pl-9 font-mono text-xs text-fg-primary placeholder:text-fg-muted focus:border-accent/50 focus:outline-none"
+            />
+            {searching && (
+              <Loader2
+                size={14}
+                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-fg-muted"
+              />
+            )}
+          </div>
+
+          <div className="mt-2 max-h-64 overflow-y-auto rounded-md border border-border bg-bg-primary">
+            {!query.trim() ? (
+              <p className="px-3 py-6 text-center text-xs text-fg-muted">
+                Start typing to search tasks…
+              </p>
+            ) : searching ? (
+              <p className="px-3 py-6 text-center text-xs text-fg-muted animate-pulse">
+                Searching…
+              </p>
+            ) : results.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-fg-muted">
+                No tasks found
+              </p>
+            ) : (
+              results.map((task) => {
+                const alreadyInGraph = existingIds.has(task.id);
+                return (
+                  <button
+                    key={task.id}
+                    onClick={() => onSelect(task.id)}
+                    className={`flex w-full cursor-pointer items-center gap-2 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-bg-secondary/50 ${
+                      alreadyInGraph ? "opacity-50" : ""
+                    }`}
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: STATUS_COLORS[task.status],
+                      }}
+                    />
+                    <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                      <span className="truncate font-mono text-xs text-fg-primary">
+                        {task.title}
+                      </span>
+                      <span className="text-[9px] text-fg-muted">
+                        {task.board.name}
+                      </span>
+                    </div>
+                    {alreadyInGraph && (
+                      <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
+                        in graph
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Flow canvas ────────────────────────────────────────────────────────────
 
 export function FlowCanvas({
@@ -321,6 +502,7 @@ export function FlowCanvas({
   } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(null);
 
   // Pan & zoom
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -443,7 +625,8 @@ export function FlowCanvas({
 
   // ── Mouse up (finish drag / create connection) ─────────────────────────
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback(
+    (e: ReactMouseEvent) => {
     if (dragLine && hoveredPort) {
       // Determine parent and child based on port types
       let parentId: string;
@@ -474,12 +657,21 @@ export function FlowCanvas({
           setTaskParent(null, formData);
         });
       }
+    } else if (dragLine && !hoveredPort) {
+      // Released on empty canvas — open the "Add Task" search prompt
+      const canvasPos = screenToCanvas(e.clientX, e.clientY);
+      setAddTaskPrompt({
+        fromId: dragLine.fromId,
+        fromPort: dragLine.fromPort,
+        canvasX: canvasPos.x,
+        canvasY: canvasPos.y,
+      });
     }
 
     setDragLine(null);
     setDraggingNode(null);
     setIsPanning(false);
-  }, [dragLine, hoveredPort, workspaceId]);
+  }, [dragLine, hoveredPort, workspaceId, screenToCanvas]);
 
   // ── Zoom ───────────────────────────────────────────────────────────────
 
@@ -506,6 +698,38 @@ export function FlowCanvas({
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
+
+  // ── Handle task selected from search modal ─────────────────────────────
+
+  const handleAddTaskSelect = useCallback(
+    (selectedTaskId: string) => {
+      if (!addTaskPrompt) return;
+
+      let parentId: string;
+      let childId: string;
+
+      if (addTaskPrompt.fromPort === "child") {
+        // Dragged from child port → the source is the parent, selected task is the child
+        parentId = addTaskPrompt.fromId;
+        childId = selectedTaskId;
+      } else {
+        // Dragged from parent port → selected task is the parent, source is the child
+        parentId = selectedTaskId;
+        childId = addTaskPrompt.fromId;
+      }
+
+      const formData = new FormData();
+      formData.set("childId", childId);
+      formData.set("parentId", parentId);
+      formData.set("workspaceId", workspaceId);
+      startTransition(() => {
+        setTaskParent(null, formData);
+      });
+
+      setAddTaskPrompt(null);
+    },
+    [addTaskPrompt, workspaceId],
+  );
 
   // ── Build edges ────────────────────────────────────────────────────────
 
@@ -791,6 +1015,17 @@ export function FlowCanvas({
         </span>
         <span>Scroll to zoom · Drag background to pan · Drag nodes to reposition</span>
       </div>
+
+      {/* Add-task search modal */}
+      {addTaskPrompt && (
+        <AddTaskSearchModal
+          prompt={addTaskPrompt}
+          workspaceId={workspaceId}
+          existingIds={connectedIds}
+          onSelect={handleAddTaskSelect}
+          onClose={() => setAddTaskPrompt(null)}
+        />
+      )}
     </div>
   );
 }

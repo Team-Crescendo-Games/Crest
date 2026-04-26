@@ -45,6 +45,7 @@ export function KanbanBoard({
   // Legacy props for backward compatibility
   completedCount,
   completedFilters,
+  loadPage,
 }: {
   columns: Column[];
   boardId: string;
@@ -79,6 +80,8 @@ export function KanbanBoard({
     tagFilters?: string[];
     assigneeFilters?: string[];
   };
+  /** Custom loader for paginated tasks (e.g. dashboard "my tasks" view) */
+  loadPage?: (status: string, offset: number, limit: number) => Promise<TaskCardData[]>;
 }) {
   const [isPending, startTransition] = useTransition();
   const [localColumns, setLocalColumns] = useState(columns);
@@ -171,15 +174,20 @@ export function KanbanBoard({
 
       try {
         const offset = (page - 1) * pageSize;
-        const tasks = await loadColumnTasks(
-          boardId,
-          workspaceId,
-          status,
-          offset,
-          pageSize,
-          effectiveFilters,
-        );
-        const mapped = tasks as TaskCardData[];
+        let mapped: TaskCardData[];
+        if (loadPage) {
+          mapped = await loadPage(status, offset, pageSize);
+        } else {
+          const tasks = await loadColumnTasks(
+            boardId,
+            workspaceId,
+            status,
+            offset,
+            pageSize,
+            effectiveFilters,
+          );
+          mapped = tasks as TaskCardData[];
+        }
         setPaginationState((prev) => ({
           ...prev,
           [status]: {
