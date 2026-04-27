@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { loadMyColumnTasks } from "@/lib/actions/task";
+import { DashboardCreateTask } from "./dashboard-create-task";
 import type { TaskCardData } from "@/components/task-card";
 
 interface Column {
@@ -20,16 +21,24 @@ export interface DashboardFilters {
   boardIds?: string[];
 }
 
+interface WorkspaceOption {
+  id: string;
+  name: string;
+  boards: { id: string; name: string }[];
+}
+
 export function DashboardKanban({
   columns,
   columnCounts,
   columnPageSizes,
   filters,
+  workspaces,
 }: {
   columns: Column[];
   columnCounts: Record<string, number>;
   columnPageSizes: Record<string, number>;
   filters?: DashboardFilters;
+  workspaces?: WorkspaceOption[];
 }) {
   const loadPage = useCallback(
     async (status: string, offset: number, limit: number) => {
@@ -38,6 +47,16 @@ export function DashboardKanban({
     },
     [filters],
   );
+
+  const renderCreateButton = workspaces && workspaces.length > 0
+    ? (status: string) => (
+        <DashboardCreateTask
+          workspaces={workspaces}
+          defaultStatus={status}
+          compact
+        />
+      )
+    : undefined;
 
   return (
     <KanbanBoard
@@ -49,6 +68,7 @@ export function DashboardKanban({
       columnCounts={columnCounts}
       columnPageSizes={columnPageSizes}
       loadPage={loadPage}
+      renderCreateButton={renderCreateButton}
     />
   );
 }

@@ -46,6 +46,7 @@ export function KanbanBoard({
   completedCount,
   completedFilters,
   loadPage,
+  renderCreateButton,
 }: {
   columns: Column[];
   boardId: string;
@@ -82,6 +83,8 @@ export function KanbanBoard({
   };
   /** Custom loader for paginated tasks (e.g. dashboard "my tasks" view) */
   loadPage?: (status: string, offset: number, limit: number) => Promise<TaskCardData[]>;
+  /** Custom create button renderer per column (overrides built-in CreateTaskForm) */
+  renderCreateButton?: (status: string) => React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
   const [localColumns, setLocalColumns] = useState(columns);
@@ -317,7 +320,9 @@ export function KanbanBoard({
                     </div>
                   )}
                 </div>
-                {canCreate && (
+                {renderCreateButton ? (
+                  renderCreateButton(column.status)
+                ) : canCreate ? (
                   <CreateTaskForm
                     workspaceId={workspaceId}
                     boardId={boards ? undefined : boardId}
@@ -330,7 +335,7 @@ export function KanbanBoard({
                     tags={tags}
                     compact
                   />
-                )}
+                ) : null}
               </div>
 
               <Droppable droppableId={column.status}>
