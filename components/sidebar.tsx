@@ -248,7 +248,13 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
 
             {/* Boards — expandable */}
             <div>
-              <div className="flex items-center">
+              <div className={`flex items-center rounded-md transition-colors ${
+                boardsActive
+                  ? childBoardActive
+                    ? "bg-accent/5"
+                    : "bg-accent/10"
+                  : "hover:bg-bg-secondary"
+              }`}>
                 <button
                   onClick={() => setBoardsExpanded(!boardsExpanded)}
                   className="shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
@@ -261,12 +267,10 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                 </button>
                 <Link
                   href={boardsHref}
-                  className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                  className={`flex flex-1 items-center gap-2 px-2 py-1.5 text-xs font-medium transition-colors ${
                     boardsActive
-                      ? childBoardActive
-                        ? "bg-accent/5 text-accent"
-                        : "bg-accent/10 text-accent"
-                      : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
+                      ? "text-accent"
+                      : "text-fg-secondary hover:text-fg-primary"
                   }`}
                 >
                   <LayoutList size={13} />
@@ -274,7 +278,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                 </Link>
                 <button
                   onClick={() => setShowArchivedBoards(!showArchivedBoards)}
-                  className={`shrink-0 rounded p-0.5 transition-colors ${
+                  className={`shrink-0 rounded p-0.5 mr-1 transition-colors ${
                     showArchivedBoards
                       ? "text-accent hover:text-accent-emphasis"
                       : "text-fg-muted hover:text-fg-secondary"
@@ -315,7 +319,13 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
 
             {/* Sprints — expandable */}
             <div>
-              <div className="flex items-center">
+              <div className={`flex items-center rounded-md transition-colors ${
+                sprintsActive
+                  ? childSprintActive
+                    ? "bg-accent/5"
+                    : "bg-accent/10"
+                  : "hover:bg-bg-secondary"
+              }`}>
                 <button
                   onClick={() => setSprintsExpanded(!sprintsExpanded)}
                   className="shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
@@ -328,12 +338,10 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                 </button>
                 <Link
                   href={`/dashboard/workspaces/${activeWorkspaceId}/sprints`}
-                  className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                  className={`flex flex-1 items-center gap-2 px-2 py-1.5 text-xs font-medium transition-colors ${
                     sprintsActive
-                      ? childSprintActive
-                        ? "bg-accent/5 text-accent"
-                        : "bg-accent/10 text-accent"
-                      : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
+                      ? "text-accent"
+                      : "text-fg-secondary hover:text-fg-primary"
                   }`}
                 >
                   <Timer size={13} />
@@ -341,7 +349,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                 </Link>
                 <button
                   onClick={() => setShowArchivedSprints(!showArchivedSprints)}
-                  className={`shrink-0 rounded p-0.5 transition-colors ${
+                  className={`shrink-0 rounded p-0.5 mr-1 transition-colors ${
                     showArchivedSprints
                       ? "text-accent hover:text-accent-emphasis"
                       : "text-fg-muted hover:text-fg-secondary"
