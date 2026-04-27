@@ -59,7 +59,7 @@ export default async function TaskDetailPage({
   const [members, boards, sprints, allTags] = await Promise.all([
     prisma.workspaceMember.findMany({
       where: { workspaceId },
-      include: { user: { select: { id: true, name: true, email: true, image: true } } },
+      select: { id: true, user: { select: { id: true, name: true, email: true, image: true } } },
     }),
     prisma.board.findMany({
       where: { workspaceId, isActive: true },
@@ -77,6 +77,12 @@ export default async function TaskDetailPage({
       orderBy: { name: "asc" },
     }),
   ]);
+
+  // Build userId → workspaceMemberId map for profile links
+  const memberIdMap: Record<string, string> = {};
+  for (const m of members) {
+    memberIdMap[m.user.id] = m.id;
+  }
 
   return (
     <div className="relative">
@@ -102,8 +108,10 @@ export default async function TaskDetailPage({
           sprints={sprints}
           workspaceId={workspaceId}
           boardId={boardId}
+          authorId={task.author.id}
           authorName={task.author.name}
           authorImage={task.author.image}
+          memberIdMap={memberIdMap}
         />
 
         {/* Parent task link */}
