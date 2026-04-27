@@ -1186,15 +1186,62 @@ export async function loadMyColumnTasks(
   status: string,
   offset: number,
   limit: number,
+  filters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    workspaceIds?: string[];
+    boardIds?: string[];
+  },
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  // Build where clause with optional filters
+  const where: Record<string, unknown> = {
+    status: status as TaskStatus,
+    assignees: { some: { id: session.user.id } },
+  };
+
+  if (filters?.q) {
+    where.OR = [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { description: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+  if (filters?.priorities && filters.priorities.length > 0) {
+    where.priority =
+      filters.priorities.length === 1
+        ? (filters.priorities[0] as TaskPriority)
+        : { in: filters.priorities as TaskPriority[] };
+  }
+  if (filters?.tagFilters && filters.tagFilters.length > 0) {
+    if (filters.tagFilters.length === 1) {
+      where.tags = { some: { name: filters.tagFilters[0] } };
+    } else {
+      where.AND = filters.tagFilters.map((name) => ({
+        tags: { some: { name } },
+      }));
+    }
+  }
+  if (filters?.workspaceIds && filters.workspaceIds.length > 0) {
+    where.board = {
+      ...(where.board as Record<string, unknown> | undefined),
+      workspaceId:
+        filters.workspaceIds.length === 1
+          ? filters.workspaceIds[0]
+          : { in: filters.workspaceIds },
+    };
+  }
+  if (filters?.boardIds && filters.boardIds.length > 0) {
+    where.boardId =
+      filters.boardIds.length === 1
+        ? filters.boardIds[0]
+        : { in: filters.boardIds };
+  }
+
   const tasks = await prisma.task.findMany({
-    where: {
-      status: status as TaskStatus,
-      assignees: { some: { id: session.user.id } },
-    },
+    where: where as never,
     orderBy: { createdAt: "desc" },
     skip: offset,
     take: limit,

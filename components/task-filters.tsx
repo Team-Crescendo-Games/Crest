@@ -12,7 +12,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Props {
-  tags: { name: string; color: string | null }[];
+  tags: { name: string; color: string | null; workspaceName?: string }[];
   assignees: { id: string; name: string | null; image?: string | null }[];
   currentQ?: string;
   currentPriorities: string[];
@@ -22,6 +22,8 @@ interface Props {
   extraParams?: Record<string, string | undefined>;
   /** Extra controls to render inline after the built-in filter dropdowns. */
   extraControls?: React.ReactNode;
+  /** Hide the assignee filter dropdown (e.g. on the dashboard where tasks are always "mine"). */
+  hideAssignees?: boolean;
 }
 
 export function TaskFilters({
@@ -33,6 +35,7 @@ export function TaskFilters({
   currentAssignees,
   extraParams,
   extraControls,
+  hideAssignees,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -159,7 +162,14 @@ export function TaskFilters({
                       backgroundColor: t.color ?? "#6B7280",
                     }}
                   />
-                  {t.name}
+                  <span className="flex flex-col">
+                    <span>{t.name}</span>
+                    {t.workspaceName && (
+                      <span className="text-[9px] leading-tight text-fg-muted">
+                        {t.workspaceName}
+                      </span>
+                    )}
+                  </span>
                 </span>
               ),
             }))}
@@ -183,6 +193,7 @@ export function TaskFilters({
         )}
 
         {/* Assignee multi-select */}
+        {!hideAssignees && (
         <MultiSelect
           label="Assignee"
           selected={currentAssignees}
@@ -243,6 +254,7 @@ export function TaskFilters({
             </span>
           )}
         />
+        )}
 
         {extraControls}
       </div>

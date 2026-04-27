@@ -12,21 +12,31 @@ interface Column {
   tasks: TaskCardData[];
 }
 
+export interface DashboardFilters {
+  q?: string;
+  priorities?: string[];
+  tagFilters?: string[];
+  workspaceIds?: string[];
+  boardIds?: string[];
+}
+
 export function DashboardKanban({
   columns,
   columnCounts,
   columnPageSizes,
+  filters,
 }: {
   columns: Column[];
   columnCounts: Record<string, number>;
   columnPageSizes: Record<string, number>;
+  filters?: DashboardFilters;
 }) {
   const loadPage = useCallback(
     async (status: string, offset: number, limit: number) => {
-      const tasks = await loadMyColumnTasks(status, offset, limit);
+      const tasks = await loadMyColumnTasks(status, offset, limit, filters);
       return tasks as TaskCardData[];
     },
-    [],
+    [filters],
   );
 
   return (

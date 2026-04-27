@@ -148,16 +148,15 @@ export default async function MemberTasksPage({
   const totalAssigned = notStartedCount + inProgressCount + inReviewCount + completedCountVal;
   const completedTasks = completedCountVal;
 
+  // Aggregate total story points across ALL matching tasks (not just the first page)
+  const pointsAgg = await prisma.task.aggregate({
+    where: taskWhere as Parameters<typeof prisma.task.aggregate>[0]["where"],
+    _sum: { points: true },
+  });
+  const totalPoints = pointsAgg._sum.points ?? 0;
+
   // Use a typed helper to get the correct Prisma return type with includes
   type TaskWithIncludes = Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number];
-
-  const allPagedTasks = [
-    ...notStartedTasks as TaskWithIncludes[],
-    ...inProgressTasks as TaskWithIncludes[],
-    ...inReviewTasks as TaskWithIncludes[],
-    ...completedTasksList as TaskWithIncludes[],
-  ];
-  const totalPoints = allPagedTasks.reduce((sum, t) => sum + (t.points ?? 0), 0);
 
   const mapTask = (t: TaskWithIncludes) => ({
     ...t,
