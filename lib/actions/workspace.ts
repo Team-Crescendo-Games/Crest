@@ -451,3 +451,47 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
   revalidatePath("/dashboard", "layout");
   return { success: true };
 }
+
+// ─── Dashboard: fetch workspace form data for task creation ─────────────
+
+export async function getWorkspaceFormData(workspaceId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const [boards, members, tags, sprints] = await Promise.all([
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, title: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return {
+    boards,
+    members: members.map((m) => m.user),
+    tags,
+    sprints,
+  };
+}

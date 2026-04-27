@@ -345,6 +345,7 @@ export default async function DashboardPage({
             columnCounts={columnCounts}
             columnPageSizes={columnPageSizes}
             filters={dashboardFilters}
+            workspaces={workspaceOptions}
           />
         )}
       </div>
