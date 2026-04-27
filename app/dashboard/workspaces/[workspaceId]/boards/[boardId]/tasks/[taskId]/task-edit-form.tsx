@@ -41,8 +41,11 @@ interface Props {
   sprints: { id: string; title: string }[];
   workspaceId: string;
   boardId: string;
+  authorId: string;
   authorName: string | null;
   authorImage: string | null;
+  /** Maps userId → workspaceMemberId for profile links */
+  memberIdMap: Record<string, string>;
 }
 
 export function TaskEditForm({
@@ -53,8 +56,10 @@ export function TaskEditForm({
   sprints,
   workspaceId,
   boardId,
+  authorId,
   authorName,
   authorImage,
+  memberIdMap,
 }: Props) {
   const router = useRouter();
 
@@ -200,7 +205,7 @@ export function TaskEditForm({
             />
           </div>
 
-          <AssigneeEditor members={members} assigneeIds={assigneeIds} onChange={setAssigneeIds} />
+          <AssigneeEditor members={members} assigneeIds={assigneeIds} onChange={setAssigneeIds} workspaceId={workspaceId} memberIdMap={memberIdMap} />
 
           {tags.length > 0 && (
             <TagEditor tags={tags} selectedTagIds={tagIds} onChange={setTagIds} />
@@ -305,10 +310,20 @@ export function TaskEditForm({
           </SidebarBlock>
 
           <SidebarBlock label="Author">
-            <div className="flex items-center gap-1.5 text-[11px] text-fg-primary">
-              <UserAvatar name={authorName} image={authorImage} size={18} />
-              {authorName}
-            </div>
+            {memberIdMap[authorId] ? (
+              <Link
+                href={`/dashboard/workspaces/${workspaceId}/team/${memberIdMap[authorId]}`}
+                className="flex items-center gap-1.5 text-[11px] text-fg-primary transition-colors hover:text-accent"
+              >
+                <UserAvatar name={authorName} image={authorImage} size={18} />
+                {authorName}
+              </Link>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[11px] text-fg-primary">
+                <UserAvatar name={authorName} image={authorImage} size={18} />
+                {authorName}
+              </div>
+            )}
           </SidebarBlock>
 
           <SidebarBlock label="Board">
@@ -597,10 +612,14 @@ function AssigneeEditor({
   members,
   assigneeIds,
   onChange,
+  workspaceId,
+  memberIdMap,
 }: {
   members: { id: string; name: string | null; email: string | null; image?: string | null }[];
   assigneeIds: string[];
   onChange: (ids: string[]) => void;
+  workspaceId: string;
+  memberIdMap: Record<string, string>;
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [search, setSearch] = useState("");
@@ -622,8 +641,20 @@ function AssigneeEditor({
             key={m.id}
             className="flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary px-2 py-0.5 text-xs text-fg-primary"
           >
-            <UserAvatar name={m.name} image={m.image} size={16} />
-            {m.name ?? m.email}
+            {memberIdMap[m.id] ? (
+              <Link
+                href={`/dashboard/workspaces/${workspaceId}/team/${memberIdMap[m.id]}`}
+                className="flex items-center gap-1.5 transition-colors hover:text-accent"
+              >
+                <UserAvatar name={m.name} image={m.image} size={16} />
+                {m.name ?? m.email}
+              </Link>
+            ) : (
+              <>
+                <UserAvatar name={m.name} image={m.image} size={16} />
+                {m.name ?? m.email}
+              </>
+            )}
             <button
               type="button"
               onClick={() => onChange(assigneeIds.filter((a) => a !== m.id))}
