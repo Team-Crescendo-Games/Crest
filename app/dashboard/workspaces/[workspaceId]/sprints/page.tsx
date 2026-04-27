@@ -20,7 +20,7 @@ export default async function SprintsPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
+    include: { role: true, workspace: { select: { name: true, createdById: true } } },
   });
 
   if (!membership) notFound();
@@ -65,7 +65,8 @@ export default async function SprintsPage({
         <div className="flex items-center gap-2">
           <Timer size={16} className="text-accent" />
           <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            Sprints
+            Sprints in{" "}
+            <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
         <Link
