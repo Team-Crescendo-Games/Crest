@@ -5,6 +5,7 @@ import { KanbanBoard } from "@/components/kanban-board";
 import { loadMyColumnTasks } from "@/lib/actions/task";
 import { DashboardCreateTask } from "./dashboard-create-task";
 import type { TaskCardData } from "@/components/task-card";
+import type { SortOption } from "@/lib/task-enums";
 
 interface Column {
   status: string;
@@ -19,6 +20,7 @@ export interface DashboardFilters {
   tagFilters?: string[];
   workspaceIds?: string[];
   boardIds?: string[];
+  sorts?: SortOption[];
 }
 
 interface WorkspaceOption {

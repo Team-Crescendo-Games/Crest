@@ -5,6 +5,7 @@ import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprint-timeline";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
+import type { SortOption } from "@/lib/task-enums";
 
 interface Task {
   id: string;
@@ -66,6 +67,7 @@ export function SprintViews({
     assigneeFilters?: string[];
     sprintId?: string;
     assigneeUserId?: string;
+    sorts?: SortOption[];
   };
 }) {
   const [view, setView] = useState<"columns" | "timeline">("columns");

@@ -5,11 +5,14 @@ import {
   TASK_PRIORITIES,
   STATUS_LABELS,
   STATUS_COLORS,
+  PRIORITY_ORDER,
+  parseSorts,
 } from "@/lib/task-enums";
 import { DashboardKanban } from "./dashboard-kanban";
 import { NotificationFeed } from "./notification-feed";
 import { UserMetrics } from "@/components/user-metrics";
 import { TaskFilters } from "@/components/task-filters";
+import { SortControls } from "@/components/sort-controls";
 import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
 import { DashboardFilterDropdowns } from "./dashboard-filter-dropdowns";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
@@ -35,6 +38,7 @@ export default async function DashboardPage({
     tag?: string;
     workspace?: string;
     board?: string;
+    sort?: string;
   }>;
 }) {
   const {
@@ -43,6 +47,7 @@ export default async function DashboardPage({
     tag: tagParam,
     workspace: workspaceParam,
     board: boardParam,
+    sort: sortParam,
   } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
@@ -54,6 +59,7 @@ export default async function DashboardPage({
   const tagFilters = parseMulti(tagParam);
   const workspaceFilters = parseMulti(workspaceParam);
   const boardFilters = parseMulti(boardParam);
+  const sorts = parseSorts(sortParam);
 
   // Build task where-clause
   const taskWhere: Record<string, unknown> = {
@@ -151,7 +157,9 @@ export default async function DashboardPage({
           ...taskWhere,
           status,
         } as never,
-        orderBy: { createdAt: "desc" },
+        orderBy: sorts.length > 0
+          ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
+          : [{ createdAt: "desc" as const }],
         take: TASKS_PER_COLUMN,
         include: {
           assignees: { select: { id: true, name: true, image: true } },
@@ -185,6 +193,18 @@ export default async function DashboardPage({
       subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
     })),
   }));
+
+  // Re-sort by priority in memory if needed (Prisma sorts enum alphabetically)
+  const prioritySort = sorts.find((s) => s.field === "priority");
+  if (prioritySort) {
+    for (const col of columns) {
+      col.tasks.sort((a, b) => {
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+      });
+    }
+  }
 
   // Build per-column counts and page sizes for the kanban pagination
   const columnCounts: Record<string, number> = {};
@@ -244,6 +264,7 @@ export default async function DashboardPage({
     tagFilters,
     workspaceIds: workspaceFilters,
     boardIds: boardFilters,
+    sorts,
   };
 
   return (
@@ -324,12 +345,21 @@ export default async function DashboardPage({
             board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
           }}
           extraControls={
-            <DashboardExtraFilters
-              workspaces={workspaceOptions}
-              boards={boardOptions}
-              currentWorkspaces={workspaceFilters}
-              currentBoards={boardFilters}
-            />
+            <>
+              <DashboardExtraFilters
+                workspaces={workspaceOptions}
+                boards={boardOptions}
+                currentWorkspaces={workspaceFilters}
+                currentBoards={boardFilters}
+              />
+              <SortControls
+                currentSorts={sorts}
+                extraParams={{
+                  workspace: workspaceFilters.length > 0 ? workspaceFilters.join(",") : undefined,
+                  board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
+                }}
+              />
+            </>
           }
         />
 
