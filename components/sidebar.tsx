@@ -113,6 +113,17 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
     ? `/dashboard/workspaces/${activeWorkspaceId}/boards`
     : "#";
   const boardsActive = pathname.includes("/boards");
+  // Check if a specific child board is active (not just the boards list)
+  const childBoardActive = activeWorkspace?.boards.some((b) =>
+    pathname.startsWith(`/dashboard/workspaces/${activeWorkspaceId}/boards/${b.id}`),
+  ) ?? false;
+
+  const sprintsActive = pathname.startsWith(
+    `/dashboard/workspaces/${activeWorkspaceId}/sprints`,
+  );
+  const childSprintActive = activeWorkspace?.sprints.some((s) =>
+    pathname.startsWith(`/dashboard/workspaces/${activeWorkspaceId}/sprints/${s.id}`),
+  ) ?? false;
 
   return (
     <aside
@@ -252,7 +263,9 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                   href={boardsHref}
                   className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                     boardsActive
-                      ? "bg-accent/10 text-accent"
+                      ? childBoardActive
+                        ? "bg-accent/5 text-accent"
+                        : "bg-accent/10 text-accent"
                       : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
                   }`}
                 >
@@ -285,7 +298,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                         href={boardHref}
                         className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isBoardActive
-                            ? "text-accent"
+                            ? "bg-accent/10 text-accent"
                             : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
                         } ${!board.isActive ? "italic opacity-60" : ""}`}
                       >
@@ -316,10 +329,10 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                 <Link
                   href={`/dashboard/workspaces/${activeWorkspaceId}/sprints`}
                   className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                    pathname.startsWith(
-                      `/dashboard/workspaces/${activeWorkspaceId}/sprints`,
-                    )
-                      ? "bg-accent/10 text-accent"
+                    sprintsActive
+                      ? childSprintActive
+                        ? "bg-accent/5 text-accent"
+                        : "bg-accent/10 text-accent"
                       : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
                   }`}
                 >
@@ -352,7 +365,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                         href={sprintHref}
                         className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
                           isSprintActive
-                            ? "text-accent"
+                            ? "bg-accent/10 text-accent"
                             : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
                         } ${!sprint.isActive ? "italic opacity-60" : ""}`}
                       >

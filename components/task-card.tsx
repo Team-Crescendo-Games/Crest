@@ -199,7 +199,7 @@ export function TaskCard({
   return (
     <Link
       href={link}
-      className={`group relative block overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5 ${
+      className={`group relative block overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:ring-1 hover:ring-accent/30 hover:shadow-md hover:shadow-accent/8 ${
         highlighted
           ? "border-accent/50 ring-1 ring-accent/30 shadow-sm shadow-accent/10"
           : "border-border"
