@@ -11,11 +11,14 @@ import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permis
 import { BoardActions } from "./board-actions";
 import { TaskFilters } from "../../../../../../components/task-filters";
 import { KanbanBoard } from "@/components/kanban-board";
+import { SortControls } from "@/components/sort-controls";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
   STATUS_LABELS,
   STATUS_COLORS,
+  PRIORITY_ORDER,
+  parseSorts,
 } from "@/lib/task-enums";
 
 /** Split a comma-separated param into a trimmed, non-empty array. */
@@ -37,6 +40,7 @@ export default async function BoardDetailPage({
     priority?: string;
     tag?: string;
     assignee?: string;
+    sort?: string;
   }>;
 }) {
   const { workspaceId, boardId } = await params;
@@ -45,6 +49,7 @@ export default async function BoardDetailPage({
     priority: priorityParam,
     tag: tagParam,
     assignee: assigneeParam,
+    sort: sortParam,
   } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
@@ -62,6 +67,7 @@ export default async function BoardDetailPage({
   );
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
+  const sorts = parseSorts(sortParam);
 
   // Build task where-clause for filters
   const taskWhere: Record<string, unknown> = {};
@@ -116,6 +122,11 @@ export default async function BoardDetailPage({
   // Build per-status where clauses
   const statusWhere = (status: TaskStatus) => ({ boardId, ...taskWhere, status });
 
+  // Build orderBy from sort options
+  const orderBy = sorts.length > 0
+    ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
+    : [{ createdAt: "desc" as const }];
+
   const [
     notStartedTasks, notStartedCount,
     inProgressTasks, inProgressCount,
@@ -123,13 +134,13 @@ export default async function BoardDetailPage({
     completedTasks, completedCount,
     board, totalTaskCount, tags, members, sprints,
   ] = await Promise.all([
-    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
     prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
     prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
     prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy: { createdAt: "desc" }, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
     prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     prisma.board.findUnique({ where: { id: boardId } }),
     prisma.task.count({ where: { boardId } }),
@@ -172,6 +183,18 @@ export default async function BoardDetailPage({
     IN_REVIEW: inReviewTasks.map(mapTask),
     COMPLETED: completedTasks.map(mapTask),
   };
+
+  // Re-sort by priority in memory if needed (Prisma sorts enum alphabetically)
+  const prioritySort = sorts.find((s) => s.field === "priority");
+  if (prioritySort) {
+    for (const tasks of Object.values(tasksByStatus)) {
+      tasks.sort((a, b) => {
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+      });
+    }
+  }
 
   const columns = STATUS_ORDER.map((status) => ({
     status,
@@ -264,6 +287,9 @@ export default async function BoardDetailPage({
           currentPriorities={priorities}
           currentTags={tagFilters}
           currentAssignees={assigneeFilters}
+          extraControls={
+            <SortControls currentSorts={sorts} />
+          }
         />
 
         <KanbanBoard
@@ -282,6 +308,7 @@ export default async function BoardDetailPage({
             priorities,
             tagFilters,
             assigneeFilters,
+            sorts,
           }}
         />
       </div>

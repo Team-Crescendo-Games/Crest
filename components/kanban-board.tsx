@@ -11,6 +11,7 @@ import { updateTaskStatus, loadColumnTasks } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/create-task-form";
 import { TaskCard, type TaskCardData } from "@/components/task-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { SortOption } from "@/lib/task-enums";
 
 const DEFAULT_PAGE_SIZE = 5;
 
@@ -71,6 +72,7 @@ export function KanbanBoard({
     assigneeFilters?: string[];
     sprintId?: string;
     assigneeUserId?: string;
+    sorts?: SortOption[];
   };
   /** @deprecated Use columnCounts instead */
   completedCount?: number;

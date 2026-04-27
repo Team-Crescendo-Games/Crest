@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TaskStatus, TaskPriority, ActivityType } from "@/prisma/generated/prisma/enums";
+import { PRIORITY_ORDER, type SortOption } from "@/lib/task-enums";
 
 const VALID_STATUSES: TaskStatus[] = [
   "NOT_STARTED",
@@ -66,6 +67,15 @@ async function logActivity(
 
 // ─── Load paginated tasks for any column ────────────────────────────────────
 
+/** Build a Prisma-compatible orderBy array from SortOption[]. */
+function buildOrderBy(sorts?: SortOption[]): Record<string, string>[] {
+  if (!sorts || sorts.length === 0) return [{ createdAt: "desc" }];
+  const orderBy: Record<string, string>[] = sorts.map((s) => ({ [s.field]: s.direction }));
+  // Always add createdAt as a tiebreaker
+  orderBy.push({ createdAt: "desc" });
+  return orderBy;
+}
+
 export async function loadColumnTasks(
   boardId: string,
   workspaceId: string,
@@ -81,6 +91,8 @@ export async function loadColumnTasks(
     sprintId?: string;
     /** Scope to tasks assigned to a specific user (workspace-wide) */
     assigneeUserId?: string;
+    /** Sort options */
+    sorts?: SortOption[];
   },
 ) {
   const session = await auth();
@@ -149,9 +161,11 @@ export async function loadColumnTasks(
     }
   }
 
+  const orderBy = buildOrderBy(filters?.sorts);
+
   const tasks = await prisma.task.findMany({
     where: taskWhere,
-    orderBy: { createdAt: "desc" },
+    orderBy,
     skip: offset,
     take: limit,
     include: {
@@ -163,6 +177,18 @@ export async function loadColumnTasks(
       _count: { select: { comments: true } },
     },
   });
+
+  // If sorting by priority, Prisma sorts alphabetically on the enum string.
+  // We need to re-sort in memory using our custom priority order.
+  const hasPrioritySort = filters?.sorts?.some((s) => s.field === "priority");
+  if (hasPrioritySort) {
+    const prioritySort = filters!.sorts!.find((s) => s.field === "priority")!;
+    tasks.sort((a, b) => {
+      const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
+      const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    });
+  }
 
   return tasks.map((t) => ({ ...t, boardId: t.board.id, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
 }
@@ -1192,6 +1218,7 @@ export async function loadMyColumnTasks(
     tagFilters?: string[];
     workspaceIds?: string[];
     boardIds?: string[];
+    sorts?: SortOption[];
   },
 ) {
   const session = await auth();
@@ -1240,9 +1267,11 @@ export async function loadMyColumnTasks(
         : { in: filters.boardIds };
   }
 
+  const orderBy = buildOrderBy(filters?.sorts);
+
   const tasks = await prisma.task.findMany({
     where: where as never,
-    orderBy: { createdAt: "desc" },
+    orderBy,
     skip: offset,
     take: limit,
     include: {
@@ -1253,6 +1282,17 @@ export async function loadMyColumnTasks(
       _count: { select: { comments: true } },
     },
   });
+
+  // If sorting by priority, re-sort in memory using custom priority order.
+  const hasPrioritySort = filters?.sorts?.some((s) => s.field === "priority");
+  if (hasPrioritySort) {
+    const prioritySort = filters!.sorts!.find((s) => s.field === "priority")!;
+    tasks.sort((a, b) => {
+      const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
+      const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    });
+  }
 
   return tasks.map((t) => ({
     ...t,
