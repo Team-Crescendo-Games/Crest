@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import { AcceptInviteButton } from "./accept-button";
+import { AcceptInviteButton } from "@/components/invite/accept-button";
 
 export default async function InvitePage({
   params,
@@ -37,7 +37,7 @@ export default async function InvitePage({
   });
 
   if (existingMembership) {
-    redirect(`/dashboard/workspaces/${invitation.workspaceId}`);
+    redirect(`/w/${invitation.workspaceId}`);
   }
 
   return (

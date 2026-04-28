@@ -54,8 +54,8 @@ export async function createRole(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
+  revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
 
@@ -89,8 +89,8 @@ export async function updateRole(_prev: unknown, formData: FormData) {
     data: { name: name.trim(), color, permissions: permissionBits },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
+  revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
 
@@ -121,8 +121,8 @@ export async function deleteRole(_prev: unknown, formData: FormData) {
 
   await prisma.role.delete({ where: { id: roleId } });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
+  revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
 
@@ -163,6 +163,6 @@ export async function assignRole(_prev: unknown, formData: FormData) {
     data: { roleId },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
+  revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }

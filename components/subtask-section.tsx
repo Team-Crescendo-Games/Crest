@@ -46,6 +46,7 @@ export function SubtaskSection({
 
   // Sync with server data
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubtasks(initialSubtasks);
   }, [initialSubtasks]);
 
@@ -170,7 +171,7 @@ export function SubtaskSection({
                 }}
               />
               <Link
-                href={`/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${sub.id}`}
+                href={`/w/${workspaceId}/b/${boardId}/t/${sub.id}`}
                 className="min-w-0 flex-1 truncate text-fg-primary hover:text-accent transition-colors"
               >
                 {sub.title}
@@ -222,9 +223,7 @@ export function SubtaskSection({
           <div className="mt-1.5 max-h-48 overflow-y-auto">
             {results.length === 0 && !isSearching && (
               <p className="py-3 text-center text-[11px] text-fg-muted">
-                {query
-                  ? "No matching tasks found"
-                  : "Type to search for tasks"}
+                {query ? "No matching tasks found" : "Type to search for tasks"}
               </p>
             )}
             {results.map((task) => (
@@ -237,8 +236,7 @@ export function SubtaskSection({
                 <div
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{
-                    backgroundColor:
-                      STATUS_COLORS[task.status] ?? "#9c9c98",
+                    backgroundColor: STATUS_COLORS[task.status] ?? "#9c9c98",
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate text-fg-primary">

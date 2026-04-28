@@ -6,11 +6,18 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import { useState, useTransition, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useTransition,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { updateTaskStatus, loadColumnTasks } from "@/lib/actions/task";
-import { CreateTaskForm } from "@/components/create-task-form";
-import { TaskCard, type TaskCardData } from "@/components/task-card";
+import { CreateTaskForm } from "@/components/tasks/create-task-form";
+import { TaskCard, type TaskCardData } from "@/components/tasks/task-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { SortOption } from "@/lib/task-enums";
 
 const DEFAULT_PAGE_SIZE = 5;
 
@@ -46,6 +53,7 @@ export function KanbanBoard({
   completedCount,
   completedFilters,
   loadPage,
+  renderCreateButton,
 }: {
   columns: Column[];
   boardId: string;
@@ -56,7 +64,12 @@ export function KanbanBoard({
   assigneeId?: string;
   sprintId?: string;
   sprints?: { id: string; title: string }[];
-  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  members?: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
   tags?: { id: string; name: string; color: string | null }[];
   /** Total task count per status (e.g. { NOT_STARTED: 45, COMPLETED: 120 }) */
   columnCounts?: Record<string, number>;
@@ -70,6 +83,7 @@ export function KanbanBoard({
     assigneeFilters?: string[];
     sprintId?: string;
     assigneeUserId?: string;
+    sorts?: SortOption[];
   };
   /** @deprecated Use columnCounts instead */
   completedCount?: number;
@@ -81,7 +95,13 @@ export function KanbanBoard({
     assigneeFilters?: string[];
   };
   /** Custom loader for paginated tasks (e.g. dashboard "my tasks" view) */
-  loadPage?: (status: string, offset: number, limit: number) => Promise<TaskCardData[]>;
+  loadPage?: (
+    status: string,
+    offset: number,
+    limit: number,
+  ) => Promise<TaskCardData[]>;
+  /** Custom create button renderer per column (overrides built-in CreateTaskForm) */
+  renderCreateButton?: (status: string) => React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
   const [localColumns, setLocalColumns] = useState(columns);
@@ -102,13 +122,19 @@ export function KanbanBoard({
   const effectiveFilters = columnFilters ?? completedFilters;
 
   // Per-column pagination state
-  const [paginationState, setPaginationState] = useState<Record<string, ColumnPaginationState>>(() => {
+  const [paginationState, setPaginationState] = useState<
+    Record<string, ColumnPaginationState>
+  >(() => {
     const state: Record<string, ColumnPaginationState> = {};
     for (const col of columns) {
       const count = effectiveCounts[col.status];
       const pageSize = effectivePageSizes[col.status] ?? DEFAULT_PAGE_SIZE;
       if (count != null && count > pageSize) {
-        state[col.status] = { page: 1, isLoading: false, cache: { 1: col.tasks } };
+        state[col.status] = {
+          page: 1,
+          isLoading: false,
+          cache: { 1: col.tasks },
+        };
       }
     }
     return state;
@@ -131,14 +157,18 @@ export function KanbanBoard({
 
   // Sync local state when server data changes (after revalidation)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalColumns(columns);
-    // Seed page 1 cache for all paginated columns and reset to page 1
     const newState: Record<string, ColumnPaginationState> = {};
     for (const col of columns) {
       const count = effectiveCounts[col.status];
       const pageSize = effectivePageSizes[col.status] ?? DEFAULT_PAGE_SIZE;
       if (count != null && count > pageSize) {
-        newState[col.status] = { page: 1, isLoading: false, cache: { 1: col.tasks } };
+        newState[col.status] = {
+          page: 1,
+          isLoading: false,
+          cache: { 1: col.tasks },
+        };
       }
     }
     setPaginationState(newState);
@@ -151,13 +181,21 @@ export function KanbanBoard({
       const totalPages = Math.ceil(count / pageSize);
       const current = paginationState[status];
       if (!current) return;
-      if (page < 1 || page > totalPages || page === current.page || current.isLoading) return;
+      if (
+        page < 1 ||
+        page > totalPages ||
+        page === current.page ||
+        current.isLoading
+      )
+        return;
 
       // If we already have this page cached, just swap it in
       if (current.cache[page]) {
         setLocalColumns((prev) =>
           prev.map((col) =>
-            col.status === status ? { ...col, tasks: current.cache[page] } : col,
+            col.status === status
+              ? { ...col, tasks: current.cache[page] }
+              : col,
           ),
         );
         setPaginationState((prev) => ({
@@ -208,7 +246,15 @@ export function KanbanBoard({
         }));
       }
     },
-    [boardId, workspaceId, effectiveFilters, effectiveCounts, effectivePageSizes, paginationState],
+    [
+      boardId,
+      workspaceId,
+      effectiveFilters,
+      effectiveCounts,
+      effectivePageSizes,
+      paginationState,
+      loadPage,
+    ],
   );
 
   function onDragEnd(result: DropResult) {
@@ -249,7 +295,10 @@ export function KanbanBoard({
   }
 
   /** Build the page number buttons, collapsing middle pages with ellipsis. */
-  function pageNumbers(currentPage: number, totalPages: number): (number | "ellipsis")[] {
+  function pageNumbers(
+    currentPage: number,
+    totalPages: number,
+  ): (number | "ellipsis")[] {
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
@@ -273,9 +322,13 @@ export function KanbanBoard({
           const hasPagination = !!colState;
           const currentPage = colState?.page ?? 1;
           const isPageLoading = colState?.isLoading ?? false;
-          const pageSize = effectivePageSizes[column.status] ?? DEFAULT_PAGE_SIZE;
-          const totalCount = effectiveCounts[column.status] ?? column.tasks.length;
-          const totalPages = hasPagination ? Math.ceil(totalCount / pageSize) : 1;
+          const pageSize =
+            effectivePageSizes[column.status] ?? DEFAULT_PAGE_SIZE;
+          const totalCount =
+            effectiveCounts[column.status] ?? column.tasks.length;
+          const totalPages = hasPagination
+            ? Math.ceil(totalCount / pageSize)
+            : 1;
 
           return (
             <div
@@ -317,7 +370,9 @@ export function KanbanBoard({
                     </div>
                   )}
                 </div>
-                {canCreate && (
+                {renderCreateButton ? (
+                  renderCreateButton(column.status)
+                ) : canCreate ? (
                   <CreateTaskForm
                     workspaceId={workspaceId}
                     boardId={boards ? undefined : boardId}
@@ -330,7 +385,7 @@ export function KanbanBoard({
                     tags={tags}
                     compact
                   />
-                )}
+                ) : null}
               </div>
 
               <Droppable droppableId={column.status}>

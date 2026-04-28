@@ -77,7 +77,7 @@ export async function createWorkspace(_prev: unknown, formData: FormData) {
     },
   });
 
-  redirect(`/dashboard/workspaces/${workspace.id}`);
+  redirect(`/w/${workspace.id}`);
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}`);
   return { success: true };
 }
 
@@ -141,7 +141,7 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
     data: { userId: session.user.id, workspaceId, roleId: memberRole.id },
   });
 
-  redirect(`/dashboard/workspaces/${workspaceId}`);
+  redirect(`/w/${workspaceId}`);
 }
 
 // ─── Apply (apply-to-join workspaces) ───────────────────────────────────────
@@ -236,7 +236,7 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/dashboard/workspaces/${application.workspaceId}/settings`);
+  revalidatePath(`/w/${application.workspaceId}/settings`);
   return { success: true };
 }
 
@@ -268,7 +268,7 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/settings`);
+  revalidatePath(`/w/${workspaceId}/settings`);
   return { success: true, inviteId: invitation.id };
 }
 
@@ -306,7 +306,7 @@ export async function acceptInvitation(_prev: unknown, formData: FormData) {
     },
   });
 
-  redirect(`/dashboard/workspaces/${invitation.workspaceId}`);
+  redirect(`/w/${invitation.workspaceId}`);
 }
 
 // ─── Leave workspace ────────────────────────────────────────────────────────
@@ -406,7 +406,7 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
   }
 
   revalidatePath("/dashboard", "layout");
-  redirect("/dashboard/workspaces");
+  redirect("/w");
 }
 
 // ─── Transfer ownership ─────────────────────────────────────────────────────
@@ -446,8 +446,52 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
     data: { createdById: newOwnerId },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/team`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}/team`);
+  revalidatePath(`/w/${workspaceId}`);
   revalidatePath("/dashboard", "layout");
   return { success: true };
+}
+
+// ─── Dashboard: fetch workspace form data for task creation ─────────────
+
+export async function getWorkspaceFormData(workspaceId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const [boards, members, tags, sprints] = await Promise.all([
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, title: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return {
+    boards,
+    members: members.map((m) => m.user),
+    tags,
+    sprints,
+  };
 }

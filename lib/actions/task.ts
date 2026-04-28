@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TaskStatus, TaskPriority, ActivityType } from "@/prisma/generated/prisma/enums";
+import { PRIORITY_ORDER, type SortOption } from "@/lib/task-enums";
 
 const VALID_STATUSES: TaskStatus[] = [
   "NOT_STARTED",
@@ -41,9 +42,9 @@ async function requireTaskMembership(userId: string, taskId: string) {
 }
 
 function revalidateTask(workspaceId: string, boardId: string, taskId: string) {
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${taskId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}/t/${taskId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
 }
 
 async function logActivity(
@@ -66,6 +67,15 @@ async function logActivity(
 
 // ─── Load paginated tasks for any column ────────────────────────────────────
 
+/** Build a Prisma-compatible orderBy array from SortOption[]. */
+function buildOrderBy(sorts?: SortOption[]): Record<string, string>[] {
+  if (!sorts || sorts.length === 0) return [{ createdAt: "desc" }];
+  const orderBy: Record<string, string>[] = sorts.map((s) => ({ [s.field]: s.direction }));
+  // Always add createdAt as a tiebreaker
+  orderBy.push({ createdAt: "desc" });
+  return orderBy;
+}
+
 export async function loadColumnTasks(
   boardId: string,
   workspaceId: string,
@@ -81,6 +91,8 @@ export async function loadColumnTasks(
     sprintId?: string;
     /** Scope to tasks assigned to a specific user (workspace-wide) */
     assigneeUserId?: string;
+    /** Sort options */
+    sorts?: SortOption[];
   },
 ) {
   const session = await auth();
@@ -149,9 +161,11 @@ export async function loadColumnTasks(
     }
   }
 
+  const orderBy = buildOrderBy(filters?.sorts);
+
   const tasks = await prisma.task.findMany({
     where: taskWhere,
-    orderBy: { createdAt: "desc" },
+    orderBy,
     skip: offset,
     take: limit,
     include: {
@@ -163,6 +177,18 @@ export async function loadColumnTasks(
       _count: { select: { comments: true } },
     },
   });
+
+  // If sorting by priority, Prisma sorts alphabetically on the enum string.
+  // We need to re-sort in memory using our custom priority order.
+  const hasPrioritySort = filters?.sorts?.some((s) => s.field === "priority");
+  if (hasPrioritySort) {
+    const prioritySort = filters!.sorts!.find((s) => s.field === "priority")!;
+    tasks.sort((a, b) => {
+      const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
+      const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    });
+  }
 
   return tasks.map((t) => ({ ...t, boardId: t.board.id, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
 }
@@ -264,10 +290,10 @@ export async function createTask(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   if (sprintId) {
-    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${sprintId}`);
+    revalidatePath(`/w/${workspaceId}/s/${sprintId}`);
   }
 
   await logActivity(task.id, session.user.id, "CREATED");
@@ -293,7 +319,6 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const tagIds = formData.getAll("tagIds") as string[];
   const newBoardId = formData.get("boardId") as string | null;
   const sprintIds = formData.getAll("sprintIds") as string[];
-  const workspaceId = formData.get("workspaceId") as string;
 
   if (!taskId || !title?.trim()) return { error: "Task title is required" };
 
@@ -431,7 +456,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   if (boardId !== info.task.boardId) {
     revalidateTask(info.workspaceId, boardId, taskId);
-    revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards`);
+    revalidatePath(`/w/${info.workspaceId}/b`);
   }
 
   // Return the new boardId so the client can redirect if the board changed
@@ -474,8 +499,8 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   return { success: true };
 }
 
@@ -515,8 +540,8 @@ export async function updateTaskPriority(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };
 }
@@ -564,9 +589,9 @@ export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
     newValue: newBoardId,
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${oldBoardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${newBoardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${oldBoardId}`);
+  revalidatePath(`/w/${workspaceId}/b/${newBoardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
 
   return { success: true, newBoardId };
 }
@@ -625,7 +650,7 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   // Also revalidate affected sprint pages
   for (const id of [...added, ...removed]) {
-    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${id}`);
+    revalidatePath(`/w/${workspaceId}/s/${id}`);
   }
 
   return { success: true };
@@ -638,7 +663,6 @@ export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const dueDateStr = formData.get("dueDate") as string;
 
   if (!taskId) return { error: "Invalid request" };
@@ -674,7 +698,6 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
 
   if (!taskId) return { error: "Invalid request" };
@@ -717,7 +740,6 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const tagIds = formData.getAll("tagIds") as string[];
 
   if (!taskId) return { error: "Invalid request" };
@@ -765,8 +787,8 @@ export async function deleteTask(_prev: unknown, formData: FormData) {
 
   await prisma.task.delete({ where: { id: taskId } });
 
-  revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards`);
+  revalidatePath(`/w/${info.workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${info.workspaceId}/b`);
   return { success: true };
 }
 
@@ -993,7 +1015,7 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
       where: { id: childId },
       data: { parentTaskId: null },
     });
-    revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+    revalidatePath(`/w/${workspaceId}`);
     return { success: true };
   }
 
@@ -1034,7 +1056,7 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
     data: { parentTaskId: parentId },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}`);
   return { success: true };
 }
 
@@ -1186,16 +1208,66 @@ export async function loadMyColumnTasks(
   status: string,
   offset: number,
   limit: number,
+  filters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    workspaceIds?: string[];
+    boardIds?: string[];
+    sorts?: SortOption[];
+  },
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  // Build where clause with optional filters
+  const where: Record<string, unknown> = {
+    status: status as TaskStatus,
+    assignees: { some: { id: session.user.id } },
+  };
+
+  if (filters?.q) {
+    where.OR = [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { description: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+  if (filters?.priorities && filters.priorities.length > 0) {
+    where.priority =
+      filters.priorities.length === 1
+        ? (filters.priorities[0] as TaskPriority)
+        : { in: filters.priorities as TaskPriority[] };
+  }
+  if (filters?.tagFilters && filters.tagFilters.length > 0) {
+    if (filters.tagFilters.length === 1) {
+      where.tags = { some: { name: filters.tagFilters[0] } };
+    } else {
+      where.AND = filters.tagFilters.map((name) => ({
+        tags: { some: { name } },
+      }));
+    }
+  }
+  if (filters?.workspaceIds && filters.workspaceIds.length > 0) {
+    where.board = {
+      ...(where.board as Record<string, unknown> | undefined),
+      workspaceId:
+        filters.workspaceIds.length === 1
+          ? filters.workspaceIds[0]
+          : { in: filters.workspaceIds },
+    };
+  }
+  if (filters?.boardIds && filters.boardIds.length > 0) {
+    where.boardId =
+      filters.boardIds.length === 1
+        ? filters.boardIds[0]
+        : { in: filters.boardIds };
+  }
+
+  const orderBy = buildOrderBy(filters?.sorts);
+
   const tasks = await prisma.task.findMany({
-    where: {
-      status: status as TaskStatus,
-      assignees: { some: { id: session.user.id } },
-    },
-    orderBy: { createdAt: "desc" },
+    where: where as never,
+    orderBy,
     skip: offset,
     take: limit,
     include: {
@@ -1206,6 +1278,17 @@ export async function loadMyColumnTasks(
       _count: { select: { comments: true } },
     },
   });
+
+  // If sorting by priority, re-sort in memory using custom priority order.
+  const hasPrioritySort = filters?.sorts?.some((s) => s.field === "priority");
+  if (hasPrioritySort) {
+    const prioritySort = filters!.sorts!.find((s) => s.field === "priority")!;
+    tasks.sort((a, b) => {
+      const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
+      const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    });
+  }
 
   return tasks.map((t) => ({
     ...t,

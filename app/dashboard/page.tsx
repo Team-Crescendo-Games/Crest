@@ -2,34 +2,124 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   TASK_STATUSES as STATUS_ORDER,
+  TASK_PRIORITIES,
   STATUS_LABELS,
   STATUS_COLORS,
+  PRIORITY_ORDER,
+  parseSorts,
 } from "@/lib/task-enums";
-import { DashboardKanban } from "./dashboard-kanban";
-import { NotificationFeed } from "./notification-feed";
+import { DashboardKanban } from "@/components/dashboard/dashboard-kanban";
+import { NotificationFeed } from "@/components/dashboard/notification-feed";
 import { UserMetrics } from "@/components/user-metrics";
+import { TaskFilters } from "@/components/tasks/task-filters";
+import { SortControls } from "@/components/tasks/sort-controls";
 import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
+import { DashboardFilterDropdowns } from "@/components/dashboard/dashboard-filter-dropdowns";
+import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 const NOTIF_PAGE = 10;
 const TASKS_PER_COLUMN = 5;
 
-export default async function DashboardPage() {
+/** Split a comma-separated param into a trimmed, non-empty array. */
+function parseMulti(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+    priority?: string;
+    tag?: string;
+    workspace?: string;
+    board?: string;
+    sort?: string;
+  }>;
+}) {
+  const {
+    q,
+    priority: priorityParam,
+    tag: tagParam,
+    workspace: workspaceParam,
+    board: boardParam,
+    sort: sortParam,
+  } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
-  // Count tasks per status for the current user (for stats + pagination)
+  // Parse filter params
+  const priorities = parseMulti(priorityParam).filter((p) =>
+    (TASK_PRIORITIES as readonly string[]).includes(p),
+  );
+  const tagFilters = parseMulti(tagParam);
+  const workspaceFilters = parseMulti(workspaceParam);
+  const boardFilters = parseMulti(boardParam);
+  const sorts = parseSorts(sortParam);
+
+  // Build task where-clause
+  const taskWhere: Record<string, unknown> = {
+    assignees: { some: { id: userId } },
+  };
+  if (q) {
+    taskWhere.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (priorities.length === 1) {
+    taskWhere.priority = priorities[0] as TaskPriority;
+  } else if (priorities.length > 1) {
+    taskWhere.priority = { in: priorities as TaskPriority[] };
+  }
+  if (tagFilters.length === 1) {
+    taskWhere.tags = { some: { name: tagFilters[0] } };
+  } else if (tagFilters.length > 1) {
+    taskWhere.AND = tagFilters.map((name) => ({
+      tags: { some: { name } },
+    }));
+  }
+  if (workspaceFilters.length > 0) {
+    taskWhere.board = {
+      ...(taskWhere.board as Record<string, unknown> | undefined),
+      workspaceId:
+        workspaceFilters.length === 1
+          ? workspaceFilters[0]
+          : { in: workspaceFilters },
+    };
+  }
+  if (boardFilters.length > 0) {
+    taskWhere.boardId =
+      boardFilters.length === 1 ? boardFilters[0] : { in: boardFilters };
+  }
+
+  // Count tasks per status + sum all story points for the current user (with filters)
   const statusCountRows = await prisma.task.groupBy({
     by: ["status"],
-    where: { assignees: { some: { id: userId } } },
+    where: taskWhere as never,
     _count: true,
+    _sum: { points: true },
   });
   const statusCounts: Record<string, number> = {};
+  let totalPoints = 0;
   for (const row of statusCountRows) {
     statusCounts[row.status] = row._count;
+    totalPoints += row._sum.points ?? 0;
   }
 
   // Load first page of tasks per column + aggregate stats + metrics in parallel
-  const [workspaceCount, notifResult, initialWeeklyPoints, initialTagData, ...columnTaskResults] = await Promise.all([
+  const [
+    workspaceCount,
+    notifResult,
+    initialWeeklyPoints,
+    initialTagData,
+    userWorkspaces,
+    ...columnTaskResults
+  ] = await Promise.all([
     prisma.workspaceMember.count({ where: { userId } }),
     prisma.$transaction([
       prisma.notification.findMany({
@@ -50,10 +140,37 @@ export default async function DashboardPage() {
     ]),
     getWeeklyCompletedPoints(userId, 8),
     getTasksByTag(userId),
+    // Fetch workspaces the user belongs to (for filter dropdown)
+    prisma.workspaceMember.findMany({
+      where: { userId },
+      select: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            boards: {
+              where: { isActive: true },
+              select: { id: true, name: true },
+              orderBy: { displayOrder: "asc" },
+            },
+          },
+        },
+      },
+      orderBy: { workspace: { name: "asc" } },
+    }),
     ...STATUS_ORDER.map((status) =>
       prisma.task.findMany({
-        where: { status, assignees: { some: { id: userId } } },
-        orderBy: { createdAt: "desc" },
+        where: {
+          ...taskWhere,
+          status,
+        } as never,
+        orderBy:
+          sorts.length > 0
+            ? [
+                ...sorts.map((s) => ({ [s.field]: s.direction })),
+                { createdAt: "desc" as const },
+              ]
+            : [{ createdAt: "desc" as const }],
         take: TASKS_PER_COLUMN,
         include: {
           assignees: { select: { id: true, name: true, image: true } },
@@ -70,12 +187,6 @@ export default async function DashboardPage() {
 
   const totalAssigned = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
-  // Compute total points from the loaded first-page tasks (approximation for display)
-  const allLoadedTasks = columnTaskResults.flat();
-  const totalPoints = allLoadedTasks.reduce(
-    (sum, t) => sum + (t.points ?? 0),
-    0,
-  );
   const completedTasks = statusCounts["COMPLETED"] ?? 0;
   const unreadCount = initialNotifications.filter((n) => !n.isRead).length;
 
@@ -90,9 +201,26 @@ export default async function DashboardPage() {
       commentCount: t._count.comments,
       subtaskIds: t.subtasks.map((s) => s.id),
       subtaskTotal: t.subtasks.length,
-      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED")
+        .length,
     })),
   }));
+
+  // Re-sort by priority in memory if needed (Prisma sorts enum alphabetically)
+  const prioritySort = sorts.find((s) => s.field === "priority");
+  if (prioritySort) {
+    for (const col of columns) {
+      col.tasks.sort((a, b) => {
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
+      });
+    }
+  }
 
   // Build per-column counts and page sizes for the kanban pagination
   const columnCounts: Record<string, number> = {};
@@ -102,6 +230,70 @@ export default async function DashboardPage() {
     columnCounts[status] = count;
     columnPageSizes[status] = TASKS_PER_COLUMN;
   }
+
+  // Build workspace and board options for filters
+  const workspaceOptions = userWorkspaces.map((m) => m.workspace);
+  // If workspace filter is active, only show boards from those workspaces
+  const boardOptions =
+    workspaceFilters.length > 0
+      ? workspaceOptions
+          .filter((w) => workspaceFilters.includes(w.id))
+          .flatMap((w) =>
+            w.boards.map((b) => ({ ...b, workspaceName: w.name })),
+          )
+      : workspaceOptions.flatMap((w) =>
+          w.boards.map((b) => ({ ...b, workspaceName: w.name })),
+        );
+
+  // Collect all tags across the user's workspaces for the tag filter
+  const allTagsRaw = await prisma.tag.findMany({
+    where: {
+      workspace: {
+        members: { some: { userId } },
+        ...(workspaceFilters.length > 0
+          ? {
+              id:
+                workspaceFilters.length === 1
+                  ? workspaceFilters[0]
+                  : { in: workspaceFilters },
+            }
+          : {}),
+      },
+    },
+    select: { name: true, color: true, workspace: { select: { name: true } } },
+    orderBy: { name: "asc" },
+  });
+
+  // Deduplicate tags by name (keep first occurrence) and attach workspace name
+  const seenTagNames = new Set<string>();
+  const allTags = allTagsRaw
+    .map((t) => ({
+      name: t.name,
+      color: t.color,
+      workspaceName: t.workspace.name,
+    }))
+    .filter((t) => {
+      if (seenTagNames.has(t.name)) return false;
+      seenTagNames.add(t.name);
+      return true;
+    });
+
+  const hasFilters =
+    !!q ||
+    priorities.length > 0 ||
+    tagFilters.length > 0 ||
+    workspaceFilters.length > 0 ||
+    boardFilters.length > 0;
+
+  // Build filter state to pass to DashboardKanban for paginated loading
+  const dashboardFilters = {
+    q,
+    priorities,
+    tagFilters,
+    workspaceIds: workspaceFilters,
+    boardIds: boardFilters,
+    sorts,
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -167,15 +359,60 @@ export default async function DashboardPage() {
       {/* My Tasks kanban */}
       <div className="space-y-3">
         <SectionHeading>My Tasks</SectionHeading>
+
+        <TaskFilters
+          tags={allTags}
+          assignees={[]}
+          hideAssignees
+          currentQ={q}
+          currentPriorities={priorities}
+          currentTags={tagFilters}
+          currentAssignees={[]}
+          extraParams={{
+            workspace:
+              workspaceFilters.length > 0
+                ? workspaceFilters.join(",")
+                : undefined,
+            board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
+          }}
+          extraControls={
+            <>
+              <DashboardExtraFilters
+                workspaces={workspaceOptions}
+                boards={boardOptions}
+                currentWorkspaces={workspaceFilters}
+                currentBoards={boardFilters}
+              />
+              <SortControls
+                currentSorts={sorts}
+                extraParams={{
+                  workspace:
+                    workspaceFilters.length > 0
+                      ? workspaceFilters.join(",")
+                      : undefined,
+                  board:
+                    boardFilters.length > 0
+                      ? boardFilters.join(",")
+                      : undefined,
+                }}
+              />
+            </>
+          }
+        />
+
         {totalAssigned === 0 ? (
           <p className="py-8 text-center text-xs text-fg-muted">
-            No tasks assigned to you yet.
+            {hasFilters
+              ? "No tasks match your filters."
+              : "No tasks assigned to you yet."}
           </p>
         ) : (
           <DashboardKanban
             columns={columns}
             columnCounts={columnCounts}
             columnPageSizes={columnPageSizes}
+            filters={dashboardFilters}
+            workspaces={workspaceOptions}
           />
         )}
       </div>
@@ -230,5 +467,28 @@ function StatCard({
         </p>
       </div>
     </div>
+  );
+}
+
+/* ─── Dashboard-specific filter dropdowns (workspace + board) ──────────── */
+
+function DashboardExtraFilters({
+  workspaces,
+  boards,
+  currentWorkspaces,
+  currentBoards,
+}: {
+  workspaces: { id: string; name: string }[];
+  boards: { id: string; name: string; workspaceName: string }[];
+  currentWorkspaces: string[];
+  currentBoards: string[];
+}) {
+  return (
+    <DashboardFilterDropdowns
+      workspaces={workspaces}
+      boards={boards}
+      currentWorkspaces={currentWorkspaces}
+      currentBoards={currentBoards}
+    />
   );
 }
