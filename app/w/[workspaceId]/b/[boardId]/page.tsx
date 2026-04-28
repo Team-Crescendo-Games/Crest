@@ -11,7 +11,7 @@ import {
 } from "@/lib/permissions";
 import { BoardActions } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
-import { KanbanBoard } from "@/components/kanban-board";
+import { BoardViews } from "@/components/boards/board-views";
 import { SortControls } from "@/components/tasks/sort-controls";
 import {
   TASK_PRIORITIES,
@@ -342,10 +342,9 @@ export default async function BoardDetailPage({
           extraControls={<SortControls currentSorts={sorts} />}
         />
 
-        <KanbanBoard
+        <BoardViews
           columns={columns}
           boardId={boardId}
-          variant="detailed"
           workspaceId={workspaceId}
           canCreate={canCreate}
           sprints={sprints}

@@ -439,7 +439,7 @@ function DropdownPicker({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
+        className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
         style={color ? { backgroundColor: color + "20", color } : undefined}
       >
         {color && (
@@ -464,7 +464,7 @@ function DropdownPicker({
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 {o.color && (
                   <div
@@ -535,7 +535,7 @@ function BoardField({
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 <span
                   className={
@@ -885,23 +885,24 @@ function DescriptionField({
 }) {
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   const dragging = useRef(false);
   const startY = useRef(0);
   const startH = useRef(0);
 
-  const minHeight = 4 * 20 + 16; // 4 rows
+  const minHeight = 96; // matches min-h-[96px]
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       e.preventDefault();
       dragging.current = true;
       startY.current = e.clientY;
-      startH.current =
-        textareaRef.current?.getBoundingClientRect().height ?? minHeight;
+      const el = editing ? textareaRef.current : viewRef.current;
+      startH.current = el?.getBoundingClientRect().height ?? minHeight;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [minHeight],
+    [editing, minHeight],
   );
 
   const onPointerMove = useCallback(
@@ -922,11 +923,24 @@ function DescriptionField({
     if (editing) textareaRef.current?.focus();
   }, [editing]);
 
+  const dragHandle = (
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      className="group flex cursor-row-resize items-center justify-center py-1"
+    >
+      <div className="h-0.5 w-8 rounded-full bg-transparent transition-colors group-hover:bg-border" />
+    </div>
+  );
+
   if (!editing) {
     return (
-      <div className="group relative min-w-0">
+      <div className="group/desc relative min-w-0">
         <div
-          className="prose-description min-h-[96px] overflow-hidden break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
+          ref={viewRef}
+          className="prose-description overflow-y-auto overflow-hidden break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
+          style={{ minHeight, height: height ?? undefined }}
         >
           {value ? (
             <ReactMarkdown
@@ -955,10 +969,11 @@ function DescriptionField({
             <span className="text-fg-muted">No description</span>
           )}
         </div>
+        {dragHandle}
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted opacity-0 transition-opacity hover:text-fg-primary group-hover:opacity-100"
+          className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted opacity-0 transition-opacity hover:text-fg-primary group-hover/desc:opacity-100"
           title="Edit description"
         >
           <Pencil size={12} />
@@ -976,17 +991,9 @@ function DescriptionField({
         rows={4}
         className="block w-full resize-none rounded-md border border-accent bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors outline-none ring-1 ring-accent/50"
         placeholder="Add a description..."
-        style={height != null ? { height } : undefined}
+        style={{ minHeight, height: height ?? undefined }}
       />
-      {/* Drag handle */}
-      <div
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        className="group flex cursor-row-resize items-center justify-center py-1"
-      >
-        <div className="h-0.5 w-8 rounded-full bg-transparent transition-colors group-hover:bg-border" />
-      </div>
+      {dragHandle}
       <button
         type="button"
         onClick={() => setEditing(false)}

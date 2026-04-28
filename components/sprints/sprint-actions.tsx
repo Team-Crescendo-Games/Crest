@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/sprint";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { Pencil, Play, Pause, Trash2, X, ArrowRightLeft } from "lucide-react";
+import { Tooltip } from "@/components/tooltip";
 
 interface Props {
   sprint: {
@@ -62,7 +63,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer text-fg-muted hover:text-fg-secondary"
           >
             <X size={12} />
           </button>
@@ -97,7 +98,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
         <button
           type="submit"
           disabled={updatePending}
-          className="w-full rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+          className="w-full cursor-pointer rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
           {updatePending ? "Saving..." : "Save"}
         </button>
@@ -121,7 +122,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
           <button
             type="button"
             onClick={() => setMigrating(false)}
-            className="text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer text-fg-muted hover:text-fg-secondary"
           >
             <X size={12} />
           </button>
@@ -148,7 +149,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
         <button
           type="submit"
           disabled={migratePending}
-          className="w-full rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+          className="w-full cursor-pointer rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
           {migratePending ? "Migrating..." : "Migrate"}
         </button>
@@ -159,58 +160,72 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
   return (
     <div className="flex items-center gap-1">
       {canEdit && (
-        <button
-          onClick={() => setEditing(true)}
-          className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
-          title="Edit sprint"
-        >
-          <Pencil size={13} />
-        </button>
+        <Tooltip label="Edit sprint">
+          <button
+            onClick={() => setEditing(true)}
+            className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
+          >
+            <Pencil size={13} />
+          </button>
+        </Tooltip>
       )}
       {canEdit && (
-        <form action={toggleAction}>
+        <form action={toggleAction} className="flex">
           <input type="hidden" name="sprintId" value={sprint.id} />
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <button
-            type="submit"
-            disabled={togglePending}
-            className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
-            title={sprint.isActive ? "Close sprint" : "Reopen sprint"}
-          >
-            {sprint.isActive ? <Pause size={13} /> : <Play size={13} />}
-          </button>
+          <Tooltip label={sprint.isActive ? "Close sprint" : "Reopen sprint"}>
+            <button
+              type="submit"
+              disabled={togglePending}
+              className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
+              onClick={(e) => {
+                if (
+                  sprint.isActive &&
+                  !confirm(
+                    `Close "${sprint.title}"? This will mark the sprint as inactive.`,
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {sprint.isActive ? <Pause size={13} /> : <Play size={13} />}
+            </button>
+          </Tooltip>
         </form>
       )}
       {canEdit && (
-        <button
-          onClick={() => setMigrating(true)}
-          className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
-          title="Migrate incomplete tasks to another sprint"
-        >
-          <ArrowRightLeft size={13} />
-        </button>
+        <Tooltip label="Migrate tasks">
+          <button
+            onClick={() => setMigrating(true)}
+            className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
+          >
+            <ArrowRightLeft size={13} />
+          </button>
+        </Tooltip>
       )}
       {canDelete && (
-        <form action={deleteAction}>
+        <form action={deleteAction} className="flex">
           <input type="hidden" name="sprintId" value={sprint.id} />
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <button
-            type="submit"
-            disabled={deletePending}
-            className="rounded p-1.5 text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
-            title="Delete sprint"
-            onClick={(e) => {
-              if (
-                !confirm(
-                  `Delete "${sprint.title}"? Tasks will be unassigned but not deleted.`,
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <Trash2 size={13} />
-          </button>
+          <Tooltip label="Delete sprint" variant="danger">
+            <button
+              type="submit"
+              disabled={deletePending}
+              className="cursor-pointer rounded p-1.5 text-red-400/70 transition-colors hover:text-red-400 disabled:opacity-50"
+              onClick={(e) => {
+                if (
+                  !confirm(
+                    `Delete "${sprint.title}"? Tasks will be unassigned but not deleted.`,
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </Tooltip>
         </form>
       )}
     </div>

@@ -339,7 +339,7 @@ export function TaskFilters({
               const qs = params.toString();
               router.push(`${pathname}${qs ? `?${qs}` : ""}`);
             }}
-            className="text-[11px] text-accent hover:text-accent-emphasis"
+            className="cursor-pointer text-[11px] text-accent transition-colors hover:text-accent-emphasis"
           >
             Clear all
           </button>
@@ -395,7 +395,7 @@ function MultiSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[11px] transition-colors focus:outline-none ${
+        className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[11px] transition-all focus:outline-none hover:border-accent/40 hover:bg-accent/5 ${
           selected.length > 0
             ? "border-accent/40 bg-accent/5 text-fg-primary"
             : "border-border bg-bg-primary text-fg-muted"
@@ -417,7 +417,7 @@ function MultiSelect({
                 key={opt.value}
                 type="button"
                 onClick={() => toggle(opt.value)}
-                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-bg-secondary ${
+                className={`flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-bg-secondary ${
                   isSelected ? "bg-accent/5" : ""
                 }`}
               >
@@ -455,7 +455,7 @@ function FilterChip({
 }) {
   return (
     <span
-      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all hover:opacity-80"
       style={{
         backgroundColor: color ? `${color}15` : undefined,
         color: color ?? undefined,
@@ -474,7 +474,7 @@ function FilterChip({
       <span className={color ? "" : "text-accent"}>{label}</span>
       <button
         onClick={onRemove}
-        className="hover:opacity-70"
+        className="cursor-pointer transition-opacity hover:opacity-70"
       >
         <X size={9} />
       </button>

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { updateBoard, archiveBoard, deleteBoard } from "@/lib/actions/board";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { Pencil, Archive, ArchiveRestore, Trash2, X } from "lucide-react";
+import { Tooltip } from "@/components/tooltip";
 
 interface Props {
   board: {
@@ -48,7 +49,7 @@ export function BoardActions({ board, workspaceId, permissions }: Props) {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer text-fg-muted hover:text-fg-secondary"
           >
             <X size={12} />
           </button>
@@ -76,7 +77,7 @@ export function BoardActions({ board, workspaceId, permissions }: Props) {
         <button
           type="submit"
           disabled={updatePending}
-          className="w-full rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+          className="w-full cursor-pointer rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
           {updatePending ? "Saving..." : "Save"}
         </button>
@@ -87,63 +88,66 @@ export function BoardActions({ board, workspaceId, permissions }: Props) {
   return (
     <div className="flex items-center gap-1">
       {canEdit && (
-        <button
-          onClick={() => setEditing(true)}
-          className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
-          title="Edit board"
-        >
-          <Pencil size={13} />
-        </button>
+        <Tooltip label="Edit board">
+          <button
+            onClick={() => setEditing(true)}
+            className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
+          >
+            <Pencil size={13} />
+          </button>
+        </Tooltip>
       )}
       {canEdit && (
-        <form action={archiveAction}>
+        <form action={archiveAction} className="flex">
           <input type="hidden" name="boardId" value={board.id} />
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <button
-            type="submit"
-            disabled={archivePending}
-            onClick={(e) => {
-              if (
-                board.isActive &&
-                !confirm(
-                  `Archive "${board.name}"? The board and its tasks will be hidden from the sidebar and active boards list until you restore it.`,
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
-            className="rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
-            title={board.isActive ? "Archive" : "Unarchive"}
-          >
-            {board.isActive ? (
-              <Archive size={13} />
-            ) : (
-              <ArchiveRestore size={13} />
-            )}
-          </button>
+          <Tooltip label={board.isActive ? "Archive" : "Unarchive"}>
+            <button
+              type="submit"
+              disabled={archivePending}
+              onClick={(e) => {
+                if (
+                  board.isActive &&
+                  !confirm(
+                    `Archive "${board.name}"? The board and its tasks will be hidden from the sidebar and active boards list until you restore it.`,
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
+            >
+              {board.isActive ? (
+                <Archive size={13} />
+              ) : (
+                <ArchiveRestore size={13} />
+              )}
+            </button>
+          </Tooltip>
         </form>
       )}
       {canDelete && (
-        <form action={deleteAction}>
+        <form action={deleteAction} className="flex">
           <input type="hidden" name="boardId" value={board.id} />
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <button
-            type="submit"
-            disabled={deletePending}
-            className="rounded p-1.5 text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
-            title="Delete board"
-            onClick={(e) => {
-              if (
-                !confirm(
-                  `Delete "${board.name}"? All tasks will be permanently deleted.`,
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <Trash2 size={13} />
-          </button>
+          <Tooltip label="Delete board" variant="danger">
+            <button
+              type="submit"
+              disabled={deletePending}
+              className="cursor-pointer rounded p-1.5 text-red-400/70 transition-colors hover:text-red-400 disabled:opacity-50"
+              onClick={(e) => {
+                if (
+                  !confirm(
+                    `Delete "${board.name}"? All tasks will be permanently deleted.`,
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </Tooltip>
         </form>
       )}
     </div>
