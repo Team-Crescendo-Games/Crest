@@ -357,7 +357,7 @@ export default async function SprintDetailPage({
   return (
     <div className="mx-auto max-w-5xl">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}/sprints`}
+        href={`/w/${workspaceId}/s`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />

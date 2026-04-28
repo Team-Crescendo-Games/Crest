@@ -33,14 +33,14 @@ export default async function WorkspacesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/dashboard/workspaces/browse"
+            href="/w/browse"
             className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-fg-secondary transition-colors hover:border-accent/30 hover:text-fg-primary"
           >
             <Search size={12} />
             Browse
           </Link>
           <Link
-            href="/dashboard/workspaces/new"
+            href="/w/new"
             className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis hover:shadow-[0_0_16px_-4px] hover:shadow-accent/40"
           >
             <Plus size={12} />
@@ -60,7 +60,7 @@ export default async function WorkspacesPage() {
             You&apos;re not a member of any workspaces yet.
           </p>
           <Link
-            href="/dashboard/workspaces/new"
+            href="/w/new"
             className="mt-4 inline-block rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis"
           >
             Create your first workspace
@@ -71,7 +71,7 @@ export default async function WorkspacesPage() {
           {memberships.map(({ workspace, role }) => (
             <Link
               key={workspace.id}
-              href={`/dashboard/workspaces/${workspace.id}`}
+              href={`/w/${workspace.id}`}
               className="group rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm transition-all hover:border-accent/40 hover:shadow-[0_0_24px_-8px] hover:shadow-accent/20"
             >
               <div className="flex items-center gap-2">

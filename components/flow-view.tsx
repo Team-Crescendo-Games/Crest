@@ -10,7 +10,11 @@ import {
 } from "react";
 import Link from "next/link";
 import { Search, X, ZoomIn, ZoomOut, Maximize2, Loader2 } from "lucide-react";
-import { setTaskParent, getFlowGraphTasks, searchWorkspaceTasks } from "@/lib/actions/task";
+import {
+  setTaskParent,
+  getFlowGraphTasks,
+  searchWorkspaceTasks,
+} from "@/lib/actions/task";
 import { STATUS_COLORS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
@@ -203,7 +207,13 @@ function EdgePath({
   );
 }
 
-function DragEdgePath({ from, to }: { from: { x: number; y: number }; to: { x: number; y: number } }) {
+function DragEdgePath({
+  from,
+  to,
+}: {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}) {
   const midY = (from.y + to.y) / 2;
   const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
 
@@ -231,9 +241,7 @@ function TaskSelector({
   const [query, setQuery] = useState("");
 
   const filtered = query
-    ? tasks.filter((t) =>
-        t.title.toLowerCase().includes(query.toLowerCase()),
-      )
+    ? tasks.filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))
     : tasks;
 
   return (
@@ -387,8 +395,7 @@ function AddTaskSearchModal({
       <div className="w-96 rounded-lg border border-border bg-bg-elevated shadow-xl">
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <span className="font-mono text-xs font-medium text-fg-primary">
-            Add task as{" "}
-            {prompt.fromPort === "child" ? "subtask" : "parent"}
+            Add task as {prompt.fromPort === "child" ? "subtask" : "parent"}
           </span>
           <button
             onClick={onClose}
@@ -492,7 +499,8 @@ export function FlowCanvas({
   const initialPositions = layoutGraph(rootId, connectedIds, taskMap);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [positions, setPositions] = useState<Map<string, NodePosition>>(initialPositions);
+  const [positions, setPositions] =
+    useState<Map<string, NodePosition>>(initialPositions);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dragLine, setDragLine] = useState<DragLine | null>(null);
@@ -502,7 +510,9 @@ export function FlowCanvas({
   } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(null);
+  const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(
+    null,
+  );
 
   // Pan & zoom
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -579,7 +589,8 @@ export function FlowCanvas({
       if (e.button !== 0) return;
       // Only pan if clicking on the canvas background
       const target = e.target as HTMLElement;
-      if (target.closest("[data-node]") || target.closest("[data-port]")) return;
+      if (target.closest("[data-node]") || target.closest("[data-port]"))
+        return;
 
       setIsPanning(true);
       panStart.current = {
@@ -627,51 +638,56 @@ export function FlowCanvas({
 
   const handleMouseUp = useCallback(
     (e: ReactMouseEvent) => {
-    if (dragLine && hoveredPort) {
-      // Determine parent and child based on port types
-      let parentId: string;
-      let childId: string;
+      if (dragLine && hoveredPort) {
+        // Determine parent and child based on port types
+        let parentId: string;
+        let childId: string;
 
-      if (dragLine.fromPort === "child" && hoveredPort.port === "parent") {
-        // Dragged from child port to parent port: fromId is parent, hoveredPort.id is child
-        parentId = dragLine.fromId;
-        childId = hoveredPort.id;
-      } else if (dragLine.fromPort === "parent" && hoveredPort.port === "child") {
-        // Dragged from parent port to child port: hoveredPort.id is parent, fromId is child
-        parentId = hoveredPort.id;
-        childId = dragLine.fromId;
-      } else {
-        // Invalid connection (same port types)
-        setDragLine(null);
-        setDraggingNode(null);
-        setIsPanning(false);
-        return;
-      }
+        if (dragLine.fromPort === "child" && hoveredPort.port === "parent") {
+          // Dragged from child port to parent port: fromId is parent, hoveredPort.id is child
+          parentId = dragLine.fromId;
+          childId = hoveredPort.id;
+        } else if (
+          dragLine.fromPort === "parent" &&
+          hoveredPort.port === "child"
+        ) {
+          // Dragged from parent port to child port: hoveredPort.id is parent, fromId is child
+          parentId = hoveredPort.id;
+          childId = dragLine.fromId;
+        } else {
+          // Invalid connection (same port types)
+          setDragLine(null);
+          setDraggingNode(null);
+          setIsPanning(false);
+          return;
+        }
 
-      if (parentId !== childId) {
-        const formData = new FormData();
-        formData.set("childId", childId);
-        formData.set("parentId", parentId);
-        formData.set("workspaceId", workspaceId);
-        startTransition(() => {
-          setTaskParent(null, formData);
+        if (parentId !== childId) {
+          const formData = new FormData();
+          formData.set("childId", childId);
+          formData.set("parentId", parentId);
+          formData.set("workspaceId", workspaceId);
+          startTransition(() => {
+            setTaskParent(null, formData);
+          });
+        }
+      } else if (dragLine && !hoveredPort) {
+        // Released on empty canvas — open the "Add Task" search prompt
+        const canvasPos = screenToCanvas(e.clientX, e.clientY);
+        setAddTaskPrompt({
+          fromId: dragLine.fromId,
+          fromPort: dragLine.fromPort,
+          canvasX: canvasPos.x,
+          canvasY: canvasPos.y,
         });
       }
-    } else if (dragLine && !hoveredPort) {
-      // Released on empty canvas — open the "Add Task" search prompt
-      const canvasPos = screenToCanvas(e.clientX, e.clientY);
-      setAddTaskPrompt({
-        fromId: dragLine.fromId,
-        fromPort: dragLine.fromPort,
-        canvasX: canvasPos.x,
-        canvasY: canvasPos.y,
-      });
-    }
 
-    setDragLine(null);
-    setDraggingNode(null);
-    setIsPanning(false);
-  }, [dragLine, hoveredPort, workspaceId, screenToCanvas]);
+      setDragLine(null);
+      setDraggingNode(null);
+      setIsPanning(false);
+    },
+    [dragLine, hoveredPort, workspaceId, screenToCanvas],
+  );
 
   // ── Zoom ───────────────────────────────────────────────────────────────
 
@@ -787,7 +803,7 @@ export function FlowCanvas({
           >
             <ZoomOut size={14} />
           </button>
-          <span className="min-w-[3rem] text-center font-mono text-[11px] text-fg-muted">
+          <span className="min-w-12 text-center font-mono text-[11px] text-fg-muted">
             {Math.round(zoom * 100)}%
           </span>
           <button
@@ -850,8 +866,7 @@ export function FlowCanvas({
               const fromPos = positions.get(from);
               const toPos = positions.get(to);
               if (!fromPos || !toPos) return null;
-              const isHighlighted =
-                hoveredNode === from || hoveredNode === to;
+              const isHighlighted = hoveredNode === from || hoveredNode === to;
               return (
                 <EdgePath
                   key={`${from}-${to}`}
@@ -862,20 +877,21 @@ export function FlowCanvas({
               );
             })}
             {/* Drag line */}
-            {dragLine && (() => {
-              const fromPos = positions.get(dragLine.fromId);
-              if (!fromPos) return null;
-              const portPos =
-                dragLine.fromPort === "child"
-                  ? getChildPortPos(fromPos)
-                  : getParentPortPos(fromPos);
-              return (
-                <DragEdgePath
-                  from={portPos}
-                  to={{ x: dragLine.x, y: dragLine.y }}
-                />
-              );
-            })()}
+            {dragLine &&
+              (() => {
+                const fromPos = positions.get(dragLine.fromId);
+                if (!fromPos) return null;
+                const portPos =
+                  dragLine.fromPort === "child"
+                    ? getChildPortPos(fromPos)
+                    : getParentPortPos(fromPos);
+                return (
+                  <DragEdgePath
+                    from={portPos}
+                    to={{ x: dragLine.x, y: dragLine.y }}
+                  />
+                );
+              })()}
           </svg>
 
           {/* Node layer */}
@@ -924,7 +940,7 @@ export function FlowCanvas({
                 <div className="flex h-full flex-col justify-between p-2.5 pl-3">
                   <div className="flex items-start justify-between gap-1">
                     <Link
-                      href={`/dashboard/workspaces/${workspaceId}/boards/${task.boardId}/tasks/${task.id}`}
+                      href={`/w/${workspaceId}/b/${task.boardId}/t/${task.id}`}
                       className="flex-1 truncate font-mono text-[11px] font-medium text-fg-primary hover:text-accent"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -945,8 +961,7 @@ export function FlowCanvas({
                           key={tag.name}
                           className="rounded px-1 py-px text-[8px]"
                           style={{
-                            backgroundColor:
-                              (tag.color ?? "#6B7280") + "15",
+                            backgroundColor: (tag.color ?? "#6B7280") + "15",
                             color: tag.color ?? "#6B7280",
                           }}
                         >
@@ -963,7 +978,7 @@ export function FlowCanvas({
                 {/* Parent port (top center) */}
                 <div
                   data-port="parent"
-                  className={`absolute -top-[6px] left-1/2 -translate-x-1/2 cursor-crosshair rounded-full border-2 transition-colors ${
+                  className={`absolute top-[-6px] left-1/2 -translate-x-1/2 cursor-crosshair rounded-full border-2 transition-colors ${
                     hoveredPort?.id === id && hoveredPort?.port === "parent"
                       ? "border-accent bg-accent scale-125"
                       : "border-border bg-bg-elevated hover:border-accent hover:bg-accent/30"
@@ -973,16 +988,14 @@ export function FlowCanvas({
                     height: PORT_RADIUS * 2,
                   }}
                   onMouseDown={(e) => handlePortMouseDown(e, id, "parent")}
-                  onMouseEnter={() =>
-                    setHoveredPort({ id, port: "parent" })
-                  }
+                  onMouseEnter={() => setHoveredPort({ id, port: "parent" })}
                   onMouseLeave={() => setHoveredPort(null)}
                 />
 
                 {/* Child port (bottom center) */}
                 <div
                   data-port="child"
-                  className={`absolute -bottom-[6px] left-1/2 -translate-x-1/2 cursor-crosshair rounded-full border-2 transition-colors ${
+                  className={`absolute bottom-[-6px] left-1/2 -translate-x-1/2 cursor-crosshair rounded-full border-2 transition-colors ${
                     hoveredPort?.id === id && hoveredPort?.port === "child"
                       ? "border-accent bg-accent scale-125"
                       : "border-border bg-bg-elevated hover:border-accent hover:bg-accent/30"
@@ -992,9 +1005,7 @@ export function FlowCanvas({
                     height: PORT_RADIUS * 2,
                   }}
                   onMouseDown={(e) => handlePortMouseDown(e, id, "child")}
-                  onMouseEnter={() =>
-                    setHoveredPort({ id, port: "child" })
-                  }
+                  onMouseEnter={() => setHoveredPort({ id, port: "child" })}
                   onMouseLeave={() => setHoveredPort(null)}
                 />
               </div>
@@ -1013,7 +1024,9 @@ export function FlowCanvas({
           <span className="inline-block h-px w-4 border-t border-dashed border-border" />
           Parent → Child
         </span>
-        <span>Scroll to zoom · Drag background to pan · Drag nodes to reposition</span>
+        <span>
+          Scroll to zoom · Drag background to pan · Drag nodes to reposition
+        </span>
       </div>
 
       {/* Add-task search modal */}
@@ -1053,18 +1066,22 @@ export function FlowView({
     let cancelled = false;
     setLoading(true);
 
-    getFlowGraphTasks(selectedRootId, workspaceId).then((result) => {
-      if (cancelled) return;
-      setGraphTasks(result as FlowTask[]);
-      setLoading(false);
-    }).catch(() => {
-      if (cancelled) return;
-      // Fallback to sprint-scoped tasks if the fetch fails
-      setGraphTasks(null);
-      setLoading(false);
-    });
+    getFlowGraphTasks(selectedRootId, workspaceId)
+      .then((result) => {
+        if (cancelled) return;
+        setGraphTasks(result as FlowTask[]);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Fallback to sprint-scoped tasks if the fetch fails
+        setGraphTasks(null);
+        setLoading(false);
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [selectedRootId, workspaceId]);
 
   if (!selectedRootId) {

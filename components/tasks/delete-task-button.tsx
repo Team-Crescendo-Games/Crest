@@ -19,7 +19,7 @@ export function DeleteTaskButton({
     async (prev: unknown, formData: FormData) => {
       const result = await deleteTask(prev, formData);
       if (result?.success) {
-        router.push(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
+        router.push(`/w/${workspaceId}/b/${boardId}`);
       }
       return result;
     },

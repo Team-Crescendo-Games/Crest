@@ -192,7 +192,7 @@ export function TaskCard({
     task.workspaceId || task.board?.workspaceId || workspaceId;
   const link =
     href ??
-    `/dashboard/workspaces/${resolvedWorkspaceId}/boards/${task.board?.id ?? task.boardId}/tasks/${task.id}`;
+    `/w/${resolvedWorkspaceId}/b/${task.board?.id ?? task.boardId}/t/${task.id}`;
 
   const tagTint = averageTagColor(task.tags);
 

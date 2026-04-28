@@ -23,13 +23,11 @@ async function requireMemberWithPerms(
 }
 
 function revalidateSprint(workspaceId: string, sprintId?: string) {
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints`);
+  revalidatePath(`/w/${workspaceId}/s`);
   if (sprintId) {
-    revalidatePath(
-      `/dashboard/workspaces/${workspaceId}/sprints/${sprintId}`
-    );
+    revalidatePath(`/w/${workspaceId}/s/${sprintId}`);
   }
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}`);
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -66,7 +64,7 @@ export async function createSprint(_prev: unknown, formData: FormData) {
     },
   });
 
-  redirect(`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`);
+  redirect(`/w/${workspaceId}/s/${sprint.id}`);
 }
 
 // ─── Update ─────────────────────────────────────────────────────────────────
@@ -167,7 +165,7 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
 
   await prisma.sprint.delete({ where: { id: sprintId } });
 
-  redirect(`/dashboard/workspaces/${workspaceId}/sprints`);
+  redirect(`/w/${workspaceId}/s`);
 }
 
 // ─── Assign / unassign tasks ────────────────────────────────────────────────
@@ -297,5 +295,5 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
   revalidateSprint(workspaceId, sourceSprintId);
   revalidateSprint(workspaceId, newSprint.id);
 
-  redirect(`/dashboard/workspaces/${workspaceId}/sprints/${newSprint.id}`);
+  redirect(`/w/${workspaceId}/s/${newSprint.id}`);
 }

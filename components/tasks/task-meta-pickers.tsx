@@ -225,9 +225,7 @@ export function BoardPicker({
       const result = await moveTaskToBoard(null, formData);
       if (result?.success && result.newBoardId) {
         // Navigate to the task on its new board
-        router.push(
-          `/dashboard/workspaces/${workspaceId}/boards/${result.newBoardId}/tasks/${taskId}`,
-        );
+        router.push(`/w/${workspaceId}/b/${result.newBoardId}/t/${taskId}`);
       }
     });
   }
@@ -335,7 +333,7 @@ export function SprintPicker({
           {selectedSprints.map((s) => (
             <Link
               key={s.id}
-              href={`/dashboard/workspaces/${workspaceId}/sprints/${s.id}`}
+              href={`/w/${workspaceId}/s/${s.id}`}
               className="block text-[11px] text-accent transition-colors hover:text-accent-emphasis"
             >
               {s.title}
@@ -382,9 +380,7 @@ export function SprintPicker({
                   >
                     <div
                       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
-                        isSelected
-                          ? "border-accent bg-accent"
-                          : "border-border"
+                        isSelected ? "border-accent bg-accent" : "border-border"
                       }`}
                     >
                       {isSelected && (
@@ -501,7 +497,12 @@ export function AssigneePicker({
   taskId: string;
   workspaceId: string;
   currentAssigneeIds: string[];
-  members: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  members: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
 }) {
   const [assigneeIds, setAssigneeIds] = useState<string[]>(currentAssigneeIds);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -549,7 +550,9 @@ export function AssigneePicker({
               className="group/assignee flex items-center gap-1.5 text-[11px] text-fg-primary"
             >
               <UserAvatar name={m.name} image={m.image} size={18} />
-              <span className="min-w-0 flex-1 truncate">{m.name ?? m.email}</span>
+              <span className="min-w-0 flex-1 truncate">
+                {m.name ?? m.email}
+              </span>
               <button
                 onClick={() => remove(m.id)}
                 disabled={isPending}

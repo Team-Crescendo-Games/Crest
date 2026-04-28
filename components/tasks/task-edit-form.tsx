@@ -112,9 +112,7 @@ export function TaskEditForm({
     async (prev: unknown, formData: FormData) => {
       const result = await updateTask(prev, formData);
       if (result?.success && result.newBoardId) {
-        router.push(
-          `/dashboard/workspaces/${workspaceId}/boards/${result.newBoardId}/tasks/${task.id}`,
-        );
+        router.push(`/w/${workspaceId}/b/${result.newBoardId}/t/${task.id}`);
       }
       return result;
     },
@@ -340,7 +338,7 @@ export function TaskEditForm({
           <SidebarBlock label="Author">
             {memberIdMap[authorId] ? (
               <Link
-                href={`/dashboard/workspaces/${workspaceId}/team/${memberIdMap[authorId]}`}
+                href={`/w/${workspaceId}/team/${memberIdMap[authorId]}`}
                 className="flex items-center gap-1.5 text-[11px] text-fg-primary transition-colors hover:text-accent"
               >
                 <UserAvatar name={authorName} image={authorImage} size={18} />
@@ -359,7 +357,7 @@ export function TaskEditForm({
               value={selectedBoardId}
               onChange={setSelectedBoardId}
               options={boards.map((b) => ({ value: b.id, label: b.name }))}
-              href={`/dashboard/workspaces/${workspaceId}/boards/${selectedBoardId}`}
+              href={`/w/${workspaceId}/b/${selectedBoardId}`}
             />
           </SidebarBlock>
 
@@ -593,7 +591,7 @@ function SprintEditor({
           {selected.map((s) => (
             <Link
               key={s.id}
-              href={`/dashboard/workspaces/${workspaceId}/sprints/${s.id}`}
+              href={`/w/${workspaceId}/s/${s.id}`}
               className="block text-[11px] text-accent transition-colors hover:text-accent-emphasis"
             >
               {s.title}
@@ -714,7 +712,7 @@ function AssigneeEditor({
           >
             {memberIdMap[m.id] ? (
               <Link
-                href={`/dashboard/workspaces/${workspaceId}/team/${memberIdMap[m.id]}`}
+                href={`/w/${workspaceId}/team/${memberIdMap[m.id]}`}
                 className="flex items-center gap-1.5 transition-colors hover:text-accent"
               >
                 <UserAvatar name={m.name} image={m.image} size={16} />

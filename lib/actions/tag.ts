@@ -17,8 +17,8 @@ async function requireMember(userId: string, workspaceId: string, perm: number) 
 }
 
 function revalidateWorkspace(workspaceId: string) {
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
 }
 
 export async function createTag(_prev: unknown, formData: FormData) {
@@ -135,10 +135,10 @@ export async function setTaskTags(_prev: unknown, formData: FormData) {
     data: { tags: { set: tagIds.map((id) => ({ id })) } },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${task.board.id}`);
+  revalidatePath(`/w/${workspaceId}/b/${task.board.id}`);
   revalidatePath(
-    `/dashboard/workspaces/${workspaceId}/boards/${task.board.id}/tasks/${taskId}`
+    `/w/${workspaceId}/b/${task.board.id}/t/${taskId}`
   );
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b`);
   return { success: true };
 }

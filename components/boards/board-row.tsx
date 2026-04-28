@@ -72,7 +72,7 @@ export function BoardRow({
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2.5">
           <Link
-            href={`/dashboard/workspaces/${workspaceId}/boards/${board.id}`}
+            href={`/w/${workspaceId}/b/${board.id}`}
             className="font-mono text-sm font-medium text-fg-primary transition-colors hover:text-accent"
           >
             {board.name}
@@ -92,7 +92,7 @@ export function BoardRow({
         <div className="flex items-center gap-1">
           {canEdit && (
             <Link
-              href={`/dashboard/workspaces/${workspaceId}/boards/${board.id}`}
+              href={`/w/${workspaceId}/b/${board.id}`}
               className="rounded p-1 text-fg-muted transition-colors hover:text-fg-secondary"
               title="Board details"
             >

@@ -14,7 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
+import {
+  hasPermission,
+  getEffectivePermissions,
+  Permission,
+} from "@/lib/permissions";
 import { TagManager } from "@/components/tag-manager";
 import { RoleManager } from "@/components/role-manager";
 
@@ -29,7 +33,10 @@ export default async function WorkspaceOverviewPage({
 }) {
   const { workspaceId } = await params;
   const { sprintPage } = await searchParams;
-  const currentSprintPage = Math.max(1, parseInt(String(sprintPage ?? "1"), 10) || 1);
+  const currentSprintPage = Math.max(
+    1,
+    parseInt(String(sprintPage ?? "1"), 10) || 1,
+  );
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -61,7 +68,11 @@ export default async function WorkspaceOverviewPage({
   const [sprints, totalSprints] = await Promise.all([
     prisma.sprint.findMany({
       where: { workspaceId },
-      orderBy: [{ isActive: "desc" }, { startDate: "desc" }, { createdAt: "desc" }],
+      orderBy: [
+        { isActive: "desc" },
+        { startDate: "desc" },
+        { createdAt: "desc" },
+      ],
       include: { _count: { select: { tasks: true } } },
       skip: (currentSprintPage - 1) * SPRINTS_PER_PAGE,
       take: SPRINTS_PER_PAGE,
@@ -69,7 +80,10 @@ export default async function WorkspaceOverviewPage({
     prisma.sprint.count({ where: { workspaceId } }),
   ]);
 
-  const totalSprintPages = Math.max(1, Math.ceil(totalSprints / SPRINTS_PER_PAGE));
+  const totalSprintPages = Math.max(
+    1,
+    Math.ceil(totalSprints / SPRINTS_PER_PAGE),
+  );
   const effectivePerms = getEffectivePermissions(
     membership.role.permissions,
     userId,
@@ -112,7 +126,7 @@ export default async function WorkspaceOverviewPage({
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href={`/dashboard/workspaces/${workspaceId}/team`}
+            href={`/w/${workspaceId}/team`}
             className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
           >
             <Users size={12} />
@@ -120,7 +134,7 @@ export default async function WorkspaceOverviewPage({
           </Link>
           {canManage && (
             <Link
-              href={`/dashboard/workspaces/${workspaceId}/settings`}
+              href={`/w/${workspaceId}/settings`}
               className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
             >
               <Settings size={12} />
@@ -138,7 +152,7 @@ export default async function WorkspaceOverviewPage({
             Boards
           </h2>
           <Link
-            href={`/dashboard/workspaces/${workspaceId}/boards/new`}
+            href={`/w/${workspaceId}/b/new`}
             className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
           >
             <Plus size={11} />
@@ -156,7 +170,7 @@ export default async function WorkspaceOverviewPage({
                 board.isActive && (
                   <Link
                     key={board.id}
-                    href={`/dashboard/workspaces/${workspaceId}/boards/${board.id}`}
+                    href={`/w/${workspaceId}/b/${board.id}`}
                     className="group rounded-md border border-accent-subtle/25 bg-accent-subtle/5 p-4 backdrop-blur-sm transition-all hover:border-accent/40 hover:bg-accent-subtle/10"
                   >
                     <h3 className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
@@ -190,7 +204,7 @@ export default async function WorkspaceOverviewPage({
             )}
           </h2>
           <Link
-            href={`/dashboard/workspaces/${workspaceId}/sprints/new`}
+            href={`/w/${workspaceId}/s/new`}
             className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
           >
             <Plus size={11} />
@@ -207,7 +221,7 @@ export default async function WorkspaceOverviewPage({
               {sprints.map((sprint) => (
                 <Link
                   key={sprint.id}
-                  href={`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`}
+                  href={`/w/${workspaceId}/s/${sprint.id}`}
                   className="group flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-all hover:border-accent/40"
                 >
                   <div>
@@ -220,7 +234,9 @@ export default async function WorkspaceOverviewPage({
                       {sprint.startDate && sprint.endDate && (
                         <>
                           {" · "}
-                          {new Date(sprint.startDate).toLocaleDateString()} –{" "}
+                          {new Date(
+                            sprint.startDate,
+                          ).toLocaleDateString()} –{" "}
                           {new Date(sprint.endDate).toLocaleDateString()}
                         </>
                       )}
@@ -246,7 +262,7 @@ export default async function WorkspaceOverviewPage({
                 <div className="flex items-center gap-1.5">
                   {currentSprintPage > 1 ? (
                     <Link
-                      href={`/dashboard/workspaces/${workspaceId}?sprintPage=${currentSprintPage - 1}`}
+                      href={`/w/${workspaceId}?sprintPage=${currentSprintPage - 1}`}
                       className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
                     >
                       <ChevronLeft size={12} />
@@ -260,7 +276,7 @@ export default async function WorkspaceOverviewPage({
                   )}
                   {currentSprintPage < totalSprintPages ? (
                     <Link
-                      href={`/dashboard/workspaces/${workspaceId}?sprintPage=${currentSprintPage + 1}`}
+                      href={`/w/${workspaceId}?sprintPage=${currentSprintPage + 1}`}
                       className="flex items-center gap-1 rounded-md bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
                     >
                       Next
@@ -291,9 +307,15 @@ export default async function WorkspaceOverviewPage({
             <TagManager
               tags={workspace.tags}
               workspaceId={workspaceId}
-              canCreate={hasPermission(effectivePerms, Permission.CREATE_CONTENT)}
+              canCreate={hasPermission(
+                effectivePerms,
+                Permission.CREATE_CONTENT,
+              )}
               canEdit={hasPermission(effectivePerms, Permission.EDIT_CONTENT)}
-              canDelete={hasPermission(effectivePerms, Permission.DELETE_CONTENT)}
+              canDelete={hasPermission(
+                effectivePerms,
+                Permission.DELETE_CONTENT,
+              )}
             />
           </div>
         </section>

@@ -13,7 +13,7 @@ export default function NewSprintPage() {
   return (
     <div className="mx-auto max-w-lg">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}`}
+        href={`/w/${workspaceId}`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />

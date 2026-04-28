@@ -177,7 +177,7 @@ export function SprintTimeline({
                   {/* Task name */}
                   <div className="w-[200px] shrink-0 border-r border-border px-3 py-2">
                     <Link
-                      href={`/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${task.id}`}
+                      href={`/w/${workspaceId}/b/${boardId}/t/${task.id}`}
                       className="block truncate font-mono text-xs text-fg-primary hover:text-accent"
                     >
                       {task.title}

@@ -37,7 +37,7 @@ export default async function InvitePage({
   });
 
   if (existingMembership) {
-    redirect(`/dashboard/workspaces/${invitation.workspaceId}`);
+    redirect(`/w/${invitation.workspaceId}`);
   }
 
   return (

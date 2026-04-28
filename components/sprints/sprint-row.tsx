@@ -92,7 +92,7 @@ export function SprintRow({
         <div className="flex-1">
           <div className="flex items-center gap-2.5">
             <Link
-              href={`/dashboard/workspaces/${workspaceId}/sprints/${sprint.id}`}
+              href={`/w/${workspaceId}/s/${sprint.id}`}
               className="font-mono text-sm font-medium text-fg-primary transition-colors hover:text-accent"
             >
               {sprint.title}

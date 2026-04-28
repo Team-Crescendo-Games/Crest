@@ -49,7 +49,7 @@ export default async function BrowseWorkspacesPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <Link
-        href="/dashboard/workspaces"
+        href="/w"
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />
@@ -129,7 +129,7 @@ export default async function BrowseWorkspacesPage() {
             {alreadyIn.map((ws) => (
               <Link
                 key={ws.id}
-                href={`/dashboard/workspaces/${ws.id}`}
+                href={`/w/${ws.id}`}
                 className="flex items-center gap-3 rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-colors hover:border-accent/30"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10">

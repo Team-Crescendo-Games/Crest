@@ -97,7 +97,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
     undefined,
   );
 
-  const workspaceMatch = pathname.match(/^\/dashboard\/workspaces\/([^/]+)/);
+  const workspaceMatch = pathname.match(/^\/w\/([^/]+)/);
   const urlWorkspaceId = workspaceMatch?.[1];
 
   // When URL has a workspace, remember it
@@ -109,21 +109,19 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
     urlWorkspaceId ?? lastWorkspaceId ?? workspaces[0]?.id;
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
-  const boardsHref = activeWorkspaceId
-    ? `/dashboard/workspaces/${activeWorkspaceId}/boards`
-    : "#";
-  const boardsActive = pathname.includes("/boards");
+  const boardsHref = activeWorkspaceId ? `/w/${activeWorkspaceId}/b` : "#";
+  const boardsActive = pathname.includes("/b");
   // Check if a specific child board is active (not just the boards list)
-  const childBoardActive = activeWorkspace?.boards.some((b) =>
-    pathname.startsWith(`/dashboard/workspaces/${activeWorkspaceId}/boards/${b.id}`),
-  ) ?? false;
+  const childBoardActive =
+    activeWorkspace?.boards.some((b) =>
+      pathname.startsWith(`/w/${activeWorkspaceId}/b/${b.id}`),
+    ) ?? false;
 
-  const sprintsActive = pathname.startsWith(
-    `/dashboard/workspaces/${activeWorkspaceId}/sprints`,
-  );
-  const childSprintActive = activeWorkspace?.sprints.some((s) =>
-    pathname.startsWith(`/dashboard/workspaces/${activeWorkspaceId}/sprints/${s.id}`),
-  ) ?? false;
+  const sprintsActive = pathname.startsWith(`/w/${activeWorkspaceId}/s`);
+  const childSprintActive =
+    activeWorkspace?.sprints.some((s) =>
+      pathname.startsWith(`/w/${activeWorkspaceId}/s/${s.id}`),
+    ) ?? false;
 
   return (
     <aside
@@ -203,7 +201,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               {workspaces.map((ws) => (
                 <Link
                   key={ws.id}
-                  href={`/dashboard/workspaces/${ws.id}`}
+                  href={`/w/${ws.id}`}
                   onClick={() => setWorkspaceOpen(false)}
                   className={`block rounded-md px-2.5 py-1.5 text-xs transition-colors ${
                     ws.id === activeWorkspaceId
@@ -216,14 +214,14 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               ))}
               <div className="mt-1 border-t border-border pt-1">
                 <Link
-                  href="/dashboard/workspaces"
+                  href="/w"
                   onClick={() => setWorkspaceOpen(false)}
                   className="block rounded-md px-2.5 py-1.5 text-xs text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-primary"
                 >
                   All workspaces →
                 </Link>
                 <Link
-                  href="/dashboard/workspaces/new"
+                  href="/w/new"
                   onClick={() => setWorkspaceOpen(false)}
                   className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10"
                 >
@@ -240,21 +238,23 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
           <nav className="space-y-0.5">
             {/* Overview */}
             <SidebarLink
-              href={`/dashboard/workspaces/${activeWorkspaceId}`}
+              href={`/w/${activeWorkspaceId}`}
               icon={LayoutGrid}
               label="Overview"
-              active={pathname === `/dashboard/workspaces/${activeWorkspaceId}`}
+              active={pathname === `/w/${activeWorkspaceId}`}
             />
 
             {/* Boards — expandable */}
             <div>
-              <div className={`flex items-center rounded-md transition-colors ${
-                boardsActive
-                  ? childBoardActive
-                    ? "bg-accent/5"
-                    : "bg-accent/10"
-                  : "hover:bg-bg-secondary"
-              }`}>
+              <div
+                className={`flex items-center rounded-md transition-colors ${
+                  boardsActive
+                    ? childBoardActive
+                      ? "bg-accent/5"
+                      : "bg-accent/10"
+                    : "hover:bg-bg-secondary"
+                }`}
+              >
                 <button
                   onClick={() => setBoardsExpanded(!boardsExpanded)}
                   className="shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
@@ -283,49 +283,64 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                       ? "text-accent hover:text-accent-emphasis"
                       : "text-fg-muted hover:text-fg-secondary"
                   }`}
-                  title={showArchivedBoards ? "Hide archived boards" : "Show archived boards"}
+                  title={
+                    showArchivedBoards
+                      ? "Hide archived boards"
+                      : "Show archived boards"
+                  }
                 >
-                  {showArchivedBoards ? <Eye size={11} /> : <EyeOff size={11} />}
+                  {showArchivedBoards ? (
+                    <Eye size={11} />
+                  ) : (
+                    <EyeOff size={11} />
+                  )}
                 </button>
               </div>
 
-              {boardsExpanded && activeWorkspace.boards.filter((b) => showArchivedBoards || b.isActive).length > 0 && (
-                <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-                  {activeWorkspace.boards
-                    .filter((b) => showArchivedBoards || b.isActive)
-                    .map((board) => {
-                    const boardHref = `/dashboard/workspaces/${activeWorkspaceId}/boards/${board.id}`;
-                    const isBoardActive = pathname.startsWith(boardHref);
-                    return (
-                      <Link
-                        key={board.id}
-                        href={boardHref}
-                        className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
-                          isBoardActive
-                            ? "bg-accent/10 text-accent"
-                            : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                        } ${!board.isActive ? "italic opacity-60" : ""}`}
-                      >
-                        {board.name}
-                        {!board.isActive && (
-                          <span className="text-[8px] text-fg-muted">(archived)</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              {boardsExpanded &&
+                activeWorkspace.boards.filter(
+                  (b) => showArchivedBoards || b.isActive,
+                ).length > 0 && (
+                  <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
+                    {activeWorkspace.boards
+                      .filter((b) => showArchivedBoards || b.isActive)
+                      .map((board) => {
+                        const boardHref = `/w/${activeWorkspaceId}/b/${board.id}`;
+                        const isBoardActive = pathname.startsWith(boardHref);
+                        return (
+                          <Link
+                            key={board.id}
+                            href={boardHref}
+                            className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                              isBoardActive
+                                ? "bg-accent/10 text-accent"
+                                : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
+                            } ${!board.isActive ? "italic opacity-60" : ""}`}
+                          >
+                            {board.name}
+                            {!board.isActive && (
+                              <span className="text-[8px] text-fg-muted">
+                                (archived)
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                  </div>
+                )}
             </div>
 
             {/* Sprints — expandable */}
             <div>
-              <div className={`flex items-center rounded-md transition-colors ${
-                sprintsActive
-                  ? childSprintActive
-                    ? "bg-accent/5"
-                    : "bg-accent/10"
-                  : "hover:bg-bg-secondary"
-              }`}>
+              <div
+                className={`flex items-center rounded-md transition-colors ${
+                  sprintsActive
+                    ? childSprintActive
+                      ? "bg-accent/5"
+                      : "bg-accent/10"
+                    : "hover:bg-bg-secondary"
+                }`}
+              >
                 <button
                   onClick={() => setSprintsExpanded(!sprintsExpanded)}
                   className="shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
@@ -337,7 +352,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                   )}
                 </button>
                 <Link
-                  href={`/dashboard/workspaces/${activeWorkspaceId}/sprints`}
+                  href={`/w/${activeWorkspaceId}/s`}
                   className={`flex flex-1 items-center gap-2 px-2 py-1.5 text-xs font-medium transition-colors ${
                     sprintsActive
                       ? "text-accent"
@@ -354,48 +369,59 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
                       ? "text-accent hover:text-accent-emphasis"
                       : "text-fg-muted hover:text-fg-secondary"
                   }`}
-                  title={showArchivedSprints ? "Hide archived sprints" : "Show archived sprints"}
+                  title={
+                    showArchivedSprints
+                      ? "Hide archived sprints"
+                      : "Show archived sprints"
+                  }
                 >
-                  {showArchivedSprints ? <Eye size={11} /> : <EyeOff size={11} />}
+                  {showArchivedSprints ? (
+                    <Eye size={11} />
+                  ) : (
+                    <EyeOff size={11} />
+                  )}
                 </button>
               </div>
 
-              {sprintsExpanded && activeWorkspace.sprints.filter((s) => showArchivedSprints || s.isActive).length > 0 && (
-                <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-                  {activeWorkspace.sprints
-                    .filter((s) => showArchivedSprints || s.isActive)
-                    .map((sprint) => {
-                    const sprintHref = `/dashboard/workspaces/${activeWorkspaceId}/sprints/${sprint.id}`;
-                    const isSprintActive = pathname.startsWith(sprintHref);
-                    return (
-                      <Link
-                        key={sprint.id}
-                        href={sprintHref}
-                        className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
-                          isSprintActive
-                            ? "bg-accent/10 text-accent"
-                            : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                        } ${!sprint.isActive ? "italic opacity-60" : ""}`}
-                      >
-                        {sprint.title}
-                        {!sprint.isActive && (
-                          <span className="text-[8px] text-fg-muted">(archived)</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              {sprintsExpanded &&
+                activeWorkspace.sprints.filter(
+                  (s) => showArchivedSprints || s.isActive,
+                ).length > 0 && (
+                  <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
+                    {activeWorkspace.sprints
+                      .filter((s) => showArchivedSprints || s.isActive)
+                      .map((sprint) => {
+                        const sprintHref = `/w/${activeWorkspaceId}/s/${sprint.id}`;
+                        const isSprintActive = pathname.startsWith(sprintHref);
+                        return (
+                          <Link
+                            key={sprint.id}
+                            href={sprintHref}
+                            className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                              isSprintActive
+                                ? "bg-accent/10 text-accent"
+                                : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
+                            } ${!sprint.isActive ? "italic opacity-60" : ""}`}
+                          >
+                            {sprint.title}
+                            {!sprint.isActive && (
+                              <span className="text-[8px] text-fg-muted">
+                                (archived)
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                  </div>
+                )}
             </div>
 
             {/* Team */}
             <SidebarLink
-              href={`/dashboard/workspaces/${activeWorkspaceId}/team`}
+              href={`/w/${activeWorkspaceId}/team`}
               icon={Users}
               label="Team"
-              active={pathname.startsWith(
-                `/dashboard/workspaces/${activeWorkspaceId}/team`,
-              )}
+              active={pathname.startsWith(`/w/${activeWorkspaceId}/team`)}
             />
           </nav>
         )}

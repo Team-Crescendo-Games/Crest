@@ -128,7 +128,7 @@ export default async function TaskDetailPage({
               Parent Task
             </h3>
             <Link
-              href={`/dashboard/workspaces/${workspaceId}/boards/${task.parentTask.boardId}/tasks/${task.parentTask.id}`}
+              href={`/w/${workspaceId}/b/${task.parentTask.boardId}/t/${task.parentTask.id}`}
               className="mt-1.5 inline-block text-xs text-accent transition-colors hover:text-accent-emphasis"
             >
               {task.parentTask.title}

@@ -42,9 +42,9 @@ async function requireTaskMembership(userId: string, taskId: string) {
 }
 
 function revalidateTask(workspaceId: string, boardId: string, taskId: string) {
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${taskId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}/t/${taskId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
 }
 
 async function logActivity(
@@ -290,10 +290,10 @@ export async function createTask(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   if (sprintId) {
-    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${sprintId}`);
+    revalidatePath(`/w/${workspaceId}/s/${sprintId}`);
   }
 
   await logActivity(task.id, session.user.id, "CREATED");
@@ -457,7 +457,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   if (boardId !== info.task.boardId) {
     revalidateTask(info.workspaceId, boardId, taskId);
-    revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards`);
+    revalidatePath(`/w/${info.workspaceId}/b`);
   }
 
   // Return the new boardId so the client can redirect if the board changed
@@ -500,8 +500,8 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   return { success: true };
 }
 
@@ -541,8 +541,8 @@ export async function updateTaskPriority(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };
 }
@@ -590,9 +590,9 @@ export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
     newValue: newBoardId,
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${oldBoardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards/${newBoardId}`);
-  revalidatePath(`/dashboard/workspaces/${workspaceId}/boards`);
+  revalidatePath(`/w/${workspaceId}/b/${oldBoardId}`);
+  revalidatePath(`/w/${workspaceId}/b/${newBoardId}`);
+  revalidatePath(`/w/${workspaceId}/b`);
 
   return { success: true, newBoardId };
 }
@@ -651,7 +651,7 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   // Also revalidate affected sprint pages
   for (const id of [...added, ...removed]) {
-    revalidatePath(`/dashboard/workspaces/${workspaceId}/sprints/${id}`);
+    revalidatePath(`/w/${workspaceId}/s/${id}`);
   }
 
   return { success: true };
@@ -791,8 +791,8 @@ export async function deleteTask(_prev: unknown, formData: FormData) {
 
   await prisma.task.delete({ where: { id: taskId } });
 
-  revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards/${info.task.boardId}`);
-  revalidatePath(`/dashboard/workspaces/${info.workspaceId}/boards`);
+  revalidatePath(`/w/${info.workspaceId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${info.workspaceId}/b`);
   return { success: true };
 }
 
@@ -1019,7 +1019,7 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
       where: { id: childId },
       data: { parentTaskId: null },
     });
-    revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+    revalidatePath(`/w/${workspaceId}`);
     return { success: true };
   }
 
@@ -1060,7 +1060,7 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
     data: { parentTaskId: parentId },
   });
 
-  revalidatePath(`/dashboard/workspaces/${workspaceId}`);
+  revalidatePath(`/w/${workspaceId}`);
   return { success: true };
 }
 

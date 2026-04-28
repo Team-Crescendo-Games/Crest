@@ -3,10 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  TaskPriority,
-  TaskStatus,
-} from "@/prisma/generated/prisma/enums";
+import { TaskPriority, TaskStatus } from "@/prisma/generated/prisma/enums";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
@@ -42,7 +39,12 @@ export default async function MemberTasksPage({
   }>;
 }) {
   const { workspaceId, memberId } = await params;
-  const { q, priority: priorityParam, tag: tagParam, sort: sortParam } = await searchParams;
+  const {
+    q,
+    priority: priorityParam,
+    tag: tagParam,
+    sort: sortParam,
+  } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -113,25 +115,56 @@ export default async function MemberTasksPage({
   });
 
   // Build orderBy from sort options
-  const orderBy = sorts.length > 0
-    ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
-    : [{ createdAt: "desc" as const }];
+  const orderBy =
+    sorts.length > 0
+      ? [
+          ...sorts.map((s) => ({ [s.field]: s.direction })),
+          { createdAt: "desc" as const },
+        ]
+      : [{ createdAt: "desc" as const }];
 
   // Fetch tasks assigned to this member within this workspace, paginated per status
   const [
-    notStartedTasks, notStartedCount,
-    inProgressTasks, inProgressCount,
-    inReviewTasks, inReviewCount,
-    completedTasksList, completedCountVal,
-    boards, sprints, allMembers, allTags,
+    notStartedTasks,
+    notStartedCount,
+    inProgressTasks,
+    inProgressCount,
+    inReviewTasks,
+    inReviewCount,
+    completedTasksList,
+    completedCountVal,
+    boards,
+    sprints,
+    allMembers,
+    allTags,
   ] = await Promise.all([
-    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("NOT_STARTED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_PROGRESS" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_REVIEW" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("COMPLETED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_COMPLETED,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     prisma.board.findMany({
       where: { workspaceId, isActive: true },
@@ -145,7 +178,9 @@ export default async function MemberTasksPage({
     }),
     prisma.workspaceMember.findMany({
       where: { workspaceId },
-      select: { user: { select: { id: true, name: true, email: true, image: true } } },
+      select: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
       orderBy: { user: { name: "asc" } },
     }),
     prisma.tag.findMany({
@@ -155,7 +190,8 @@ export default async function MemberTasksPage({
     }),
   ]);
 
-  const totalAssigned = notStartedCount + inProgressCount + inReviewCount + completedCountVal;
+  const totalAssigned =
+    notStartedCount + inProgressCount + inReviewCount + completedCountVal;
   const completedTasks = completedCountVal;
 
   // Aggregate total story points across ALL matching tasks (not just the first page)
@@ -166,14 +202,18 @@ export default async function MemberTasksPage({
   const totalPoints = pointsAgg._sum.points ?? 0;
 
   // Use a typed helper to get the correct Prisma return type with includes
-  type TaskWithIncludes = Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number];
+  type TaskWithIncludes = Awaited<
+    ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>
+  >[number];
 
   const mapTask = (t: TaskWithIncludes) => ({
     ...t,
     boardId: t.board.id,
     commentCount: t._count.comments,
     subtaskTotal: t.subtasks.length,
-    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
+    subtaskCompleted: t.subtasks.filter(
+      (s: { status: string }) => s.status === "COMPLETED",
+    ).length,
   });
 
   const tasksByStatus: Record<string, ReturnType<typeof mapTask>[]> = {
@@ -188,9 +228,13 @@ export default async function MemberTasksPage({
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
       });
     }
   }
@@ -219,7 +263,7 @@ export default async function MemberTasksPage({
   return (
     <div className="mx-auto max-w-5xl">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}/team`}
+        href={`/w/${workspaceId}/team`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />
@@ -261,9 +305,7 @@ export default async function MemberTasksPage({
 
       {/* Tasks kanban */}
       <div className="mt-8">
-        <h2 className="font-mono text-sm font-medium text-fg-primary">
-          Tasks
-        </h2>
+        <h2 className="font-mono text-sm font-medium text-fg-primary">Tasks</h2>
         <div className="mt-1 h-px w-8 bg-accent-subtle" />
 
         <div className="mt-4">
@@ -274,9 +316,7 @@ export default async function MemberTasksPage({
             currentPriorities={priorities}
             currentTags={tagFilters}
             currentAssignees={[]}
-            extraControls={
-              <SortControls currentSorts={sorts} />
-            }
+            extraControls={<SortControls currentSorts={sorts} />}
           />
         </div>
 

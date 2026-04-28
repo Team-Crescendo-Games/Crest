@@ -2,7 +2,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, LayoutList } from "lucide-react";
+import { ArrowLeft, Plus, Timer } from "lucide-react";
+import { SprintRow } from "@/components/sprints/sprint-row";
+import { SprintExtras } from "@/components/sprints/sprint-extras";
+import { TaskFilters } from "@/components/tasks/task-filters";
+import { getEffectivePermissions } from "@/lib/permissions";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import {
   TASK_STATUSES as STATUS_ORDER,
@@ -10,10 +14,6 @@ import {
   STATUS_COLORS,
   TASK_PRIORITIES,
 } from "@/lib/task-enums";
-import { BoardRow } from "@/components/boards/board-row";
-import { BoardExtras } from "@/components/boards/board-extras";
-import { TaskFilters } from "@/components/tasks/task-filters";
-import { getEffectivePermissions } from "@/lib/permissions";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
@@ -27,15 +27,14 @@ function parseMulti(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export default async function BoardsPage({
+export default async function SprintsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{
-    showArchived?: string;
+    showClosed?: string;
     q?: string;
-    board?: string;
     priority?: string;
     tag?: string;
     assignee?: string;
@@ -43,9 +42,8 @@ export default async function BoardsPage({
 }) {
   const { workspaceId } = await params;
   const {
-    showArchived,
+    showClosed,
     q,
-    board: boardFilter,
     priority: priorityParam,
     tag: tagParam,
     assignee: assigneeParam,
@@ -63,7 +61,7 @@ export default async function BoardsPage({
 
   if (!membership) notFound();
 
-  const includeArchived = showArchived === "true";
+  const includeClosed = showClosed === "true";
 
   // Parse multi-value filter params
   const priorities = parseMulti(priorityParam).filter((p) =>
@@ -72,9 +70,12 @@ export default async function BoardsPage({
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
 
-  // Build task filter (applied to tasks within each board)
-  function buildTaskWhere(boardId: string, status: TaskStatus) {
-    const where: Record<string, unknown> = { boardId, status };
+  // Build task filter applied to tasks within each sprint
+  function buildTaskWhere(sprintId: string, status: TaskStatus) {
+    const where: Record<string, unknown> = {
+      sprints: { some: { id: sprintId } },
+      status,
+    };
     if (q) {
       where.OR = [
         { title: { contains: q, mode: "insensitive" } },
@@ -96,7 +97,6 @@ export default async function BoardsPage({
     if (assigneeFilters.length > 0) {
       const hasUnassigned = assigneeFilters.includes("unassigned");
       const userIds = assigneeFilters.filter((v) => v !== "unassigned");
-
       if (hasUnassigned && userIds.length > 0) {
         where.OR = [
           ...(where.OR ? (where.OR as unknown[]) : []),
@@ -112,55 +112,47 @@ export default async function BoardsPage({
     return where;
   }
 
-  // Board filter
-  const boardWhere: Record<string, unknown> = { workspaceId };
-  if (!includeArchived) boardWhere.isActive = true;
-  if (boardFilter) boardWhere.id = boardFilter;
-
-  // Fetch boards (metadata only)
-  const [boardList, allBoards, allTags, allMembers, archivedCount] =
-    await Promise.all([
-      prisma.board.findMany({
-        where: boardWhere,
-        orderBy: { displayOrder: "asc" },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          isActive: true,
-        },
-      }),
-      prisma.board.findMany({
-        where: { workspaceId, isActive: true },
-        select: { id: true, name: true },
-        orderBy: { displayOrder: "asc" },
-      }),
-      prisma.tag.findMany({
-        where: { workspaceId },
-        select: { id: true, name: true, color: true },
-        orderBy: { name: "asc" },
-      }),
-      prisma.workspaceMember.findMany({
-        where: { workspaceId },
-        select: {
-          user: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-        },
-        orderBy: { user: { name: "asc" } },
-      }),
-      prisma.board.count({ where: { workspaceId, isActive: false } }),
-    ]);
+  const [sprintList, allTags, allMembers, closedCount] = await Promise.all([
+    prisma.sprint.findMany({
+      where: {
+        workspaceId,
+        ...(includeClosed ? {} : { isActive: true }),
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        startDate: true,
+        endDate: true,
+        isActive: true,
+        _count: { select: { tasks: true } },
+      },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.sprint.count({ where: { workspaceId, isActive: false } }),
+  ]);
 
   const taskInclude = {
     author: { select: { name: true } },
     assignees: { select: { id: true, name: true, image: true } },
     tags: { select: { name: true, color: true } },
+    board: { select: { id: true, name: true } },
   } as const;
 
-  // For each board, fetch per-status task pages + counts in parallel
-  const boardData = await Promise.all(
-    boardList.map(async (board) => {
+  // For each sprint, fetch per-status task pages + counts in parallel
+  const sprintData = await Promise.all(
+    sprintList.map(async (sprint) => {
       const [
         notStartedTasks,
         notStartedCount,
@@ -173,42 +165,42 @@ export default async function BoardsPage({
         totalTaskCount,
       ] = await Promise.all([
         prisma.task.findMany({
-          where: buildTaskWhere(board.id, "NOT_STARTED" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "NOT_STARTED" as TaskStatus),
           orderBy: { createdAt: "desc" },
           take: PAGE_SIZE_DEFAULT,
           include: taskInclude,
         }),
         prisma.task.count({
-          where: buildTaskWhere(board.id, "NOT_STARTED" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "NOT_STARTED" as TaskStatus),
         }),
         prisma.task.findMany({
-          where: buildTaskWhere(board.id, "IN_PROGRESS" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "IN_PROGRESS" as TaskStatus),
           orderBy: { createdAt: "desc" },
           take: PAGE_SIZE_DEFAULT,
           include: taskInclude,
         }),
         prisma.task.count({
-          where: buildTaskWhere(board.id, "IN_PROGRESS" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "IN_PROGRESS" as TaskStatus),
         }),
         prisma.task.findMany({
-          where: buildTaskWhere(board.id, "IN_REVIEW" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "IN_REVIEW" as TaskStatus),
           orderBy: { createdAt: "desc" },
           take: PAGE_SIZE_DEFAULT,
           include: taskInclude,
         }),
         prisma.task.count({
-          where: buildTaskWhere(board.id, "IN_REVIEW" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "IN_REVIEW" as TaskStatus),
         }),
         prisma.task.findMany({
-          where: buildTaskWhere(board.id, "COMPLETED" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "COMPLETED" as TaskStatus),
           orderBy: { createdAt: "desc" },
           take: PAGE_SIZE_COMPLETED,
           include: taskInclude,
         }),
         prisma.task.count({
-          where: buildTaskWhere(board.id, "COMPLETED" as TaskStatus),
+          where: buildTaskWhere(sprint.id, "COMPLETED" as TaskStatus),
         }),
-        prisma.task.count({ where: { boardId: board.id } }),
+        prisma.task.count({ where: { sprints: { some: { id: sprint.id } } } }),
       ]);
 
       const tasksByStatus: Record<string, typeof notStartedTasks> = {
@@ -222,10 +214,7 @@ export default async function BoardsPage({
         status,
         label: STATUS_LABELS[status],
         color: STATUS_COLORS[status],
-        tasks: (tasksByStatus[status] ?? []).map((t) => ({
-          ...t,
-          boardId: board.id,
-        })),
+        tasks: tasksByStatus[status] ?? [],
       }));
 
       const columnCounts: Record<string, number> = {
@@ -235,7 +224,7 @@ export default async function BoardsPage({
         COMPLETED: completedCount,
       };
 
-      return { board: { ...board, totalTaskCount }, columns, columnCounts };
+      return { sprint: { ...sprint, totalTaskCount }, columns, columnCounts };
     }),
   );
 
@@ -252,20 +241,18 @@ export default async function BoardsPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const columnFilters = hasTaskFilter
+  const baseColumnFilters = hasTaskFilter
     ? { q, priorities, tagFilters, assigneeFilters }
     : undefined;
 
-  // Extra params to preserve across TaskFilters navigations
   const extraParams: Record<string, string | undefined> = {
-    board: boardFilter,
-    showArchived: includeArchived ? "true" : undefined,
+    showClosed: includeClosed ? "true" : undefined,
   };
 
   return (
     <div className="mx-auto max-w-6xl">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}`}
+        href={`/w/${workspaceId}`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />
@@ -274,18 +261,18 @@ export default async function BoardsPage({
 
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <LayoutList size={16} className="text-accent" />
+          <Timer size={16} className="text-accent" />
           <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            Boards in{" "}
+            Sprints in{" "}
             <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
         <Link
-          href={`/dashboard/workspaces/${workspaceId}/boards/new`}
+          href={`/w/${workspaceId}/s/new`}
           className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
         >
           <Plus size={11} />
-          New Board
+          New Sprint
         </Link>
       </div>
 
@@ -300,37 +287,37 @@ export default async function BoardsPage({
           currentAssignees={assigneeFilters}
           extraParams={extraParams}
           extraControls={
-            <BoardExtras
+            <SprintExtras
               workspaceId={workspaceId}
-              boards={allBoards}
-              currentBoard={boardFilter}
-              showArchived={includeArchived}
-              archivedCount={archivedCount}
+              showClosed={includeClosed}
+              closedCount={closedCount}
             />
           }
         />
       </div>
 
-      {/* Board rows */}
+      {/* Sprint rows */}
       <div className="mt-6">
-        {boardData.length === 0 ? (
+        {sprintData.length === 0 ? (
           <p className="mt-8 text-center text-xs text-fg-muted">
-            {hasTaskFilter || boardFilter
+            {hasTaskFilter
               ? "No results match your filters."
-              : "No boards yet."}
+              : "No sprints yet."}
           </p>
         ) : (
           <div className="space-y-3">
-            {boardData.map(({ board, columns, columnCounts }) => (
-              <BoardRow
-                key={board.id}
-                board={board}
+            {sprintData.map(({ sprint, columns, columnCounts }) => (
+              <SprintRow
+                key={sprint.id}
+                sprint={sprint}
                 workspaceId={workspaceId}
                 columns={columns}
                 columnCounts={columnCounts}
                 columnPageSizes={columnPageSizes}
-                columnFilters={columnFilters}
-                searchQuery={q}
+                columnFilters={{
+                  ...baseColumnFilters,
+                  sprintId: sprint.id,
+                }}
                 permissions={getEffectivePermissions(
                   membership.role.permissions,
                   userId,

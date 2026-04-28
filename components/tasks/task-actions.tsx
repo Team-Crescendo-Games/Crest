@@ -67,7 +67,7 @@ export function TaskActions({
     const url =
       typeof window !== "undefined"
         ? window.location.href
-        : `/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${taskId}`;
+        : `/w/${workspaceId}/b/${boardId}/t/${taskId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -137,9 +137,7 @@ function DuplicateTaskModal({
     async (prev: unknown, formData: FormData) => {
       const result = await createTask(prev, formData);
       if (result?.success && result.newTaskId) {
-        router.push(
-          `/dashboard/workspaces/${workspaceId}/boards/${boardId}/tasks/${result.newTaskId}`,
-        );
+        router.push(`/w/${workspaceId}/b/${boardId}/t/${result.newTaskId}`);
       }
       return result;
     },

@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users, Mail, ClipboardList } from "lucide-react";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
+import {
+  hasPermission,
+  getEffectivePermissions,
+  Permission,
+} from "@/lib/permissions";
 import { getLeaveWarning } from "@/lib/actions/workspace";
 import { InviteSection } from "@/components/team/invite-section";
 import { ApplicationList } from "@/components/team/application-list";
@@ -35,7 +39,10 @@ export default async function WorkspaceTeamPage({
   );
 
   const canInvite = hasPermission(effectivePerms, Permission.INVITE_MEMBERS);
-  const canManageApps = hasPermission(effectivePerms, Permission.MANAGE_APPLICATIONS);
+  const canManageApps = hasPermission(
+    effectivePerms,
+    Permission.MANAGE_APPLICATIONS,
+  );
   const canManageRoles = hasPermission(effectivePerms, Permission.MANAGE_ROLES);
 
   const [members, applications, invitations, workspace, roles] =
@@ -81,7 +88,7 @@ export default async function WorkspaceTeamPage({
   return (
     <div className="mx-auto max-w-3xl">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}`}
+        href={`/w/${workspaceId}`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />
@@ -112,7 +119,7 @@ export default async function WorkspaceTeamPage({
               className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm"
             >
               <Link
-                href={`/dashboard/workspaces/${workspaceId}/team/${member.id}`}
+                href={`/w/${workspaceId}/team/${member.id}`}
                 className="flex items-center gap-3 transition-opacity hover:opacity-80"
               >
                 <UserAvatar

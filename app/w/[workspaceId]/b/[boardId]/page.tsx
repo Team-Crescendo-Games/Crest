@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
+import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import {
-  TaskStatus,
-  TaskPriority,
-} from "@/prisma/generated/prisma/enums";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
+  hasPermission,
+  getEffectivePermissions,
+  Permission,
+} from "@/lib/permissions";
 import { BoardActions } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { KanbanBoard } from "@/components/kanban-board";
@@ -120,27 +121,63 @@ export default async function BoardDetailPage({
   } as const;
 
   // Build per-status where clauses
-  const statusWhere = (status: TaskStatus) => ({ boardId, ...taskWhere, status });
+  const statusWhere = (status: TaskStatus) => ({
+    boardId,
+    ...taskWhere,
+    status,
+  });
 
   // Build orderBy from sort options
-  const orderBy = sorts.length > 0
-    ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
-    : [{ createdAt: "desc" as const }];
+  const orderBy =
+    sorts.length > 0
+      ? [
+          ...sorts.map((s) => ({ [s.field]: s.direction })),
+          { createdAt: "desc" as const },
+        ]
+      : [{ createdAt: "desc" as const }];
 
   const [
-    notStartedTasks, notStartedCount,
-    inProgressTasks, inProgressCount,
-    inReviewTasks, inReviewCount,
-    completedTasks, completedCount,
-    board, totalTaskCount, tags, members, sprints,
+    notStartedTasks,
+    notStartedCount,
+    inProgressTasks,
+    inProgressCount,
+    inReviewTasks,
+    inReviewCount,
+    completedTasks,
+    completedCount,
+    board,
+    totalTaskCount,
+    tags,
+    members,
+    sprints,
   ] = await Promise.all([
-    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("NOT_STARTED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_PROGRESS" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_REVIEW" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("COMPLETED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_COMPLETED,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     prisma.board.findUnique({ where: { id: boardId } }),
     prisma.task.count({ where: { boardId } }),
@@ -165,10 +202,14 @@ export default async function BoardDetailPage({
 
   if (!board || board.workspaceId !== workspaceId) notFound();
 
-  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
+  const effectivePerms = getEffectivePermissions(
+    membership.role.permissions,
+    userId,
+    membership.workspace.createdById,
+  );
   const canCreate = hasPermission(effectivePerms, Permission.CREATE_CONTENT);
 
-  const mapTask = (t: typeof completedTasks[number]) => ({
+  const mapTask = (t: (typeof completedTasks)[number]) => ({
     ...t,
     commentCount: t._count.comments,
     subtaskIds: t.subtasks.map((s) => s.id),
@@ -189,9 +230,13 @@ export default async function BoardDetailPage({
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
       });
     }
   }
@@ -217,19 +262,21 @@ export default async function BoardDetailPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const allTaskCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const allTaskCount =
+    notStartedCount + inProgressCount + inReviewCount + completedCount;
 
   const hasFilters =
     !!q ||
     priorities.length > 0 ||
     tagFilters.length > 0 ||
     assigneeFilters.length > 0;
-  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const filteredCount =
+    notStartedCount + inProgressCount + inReviewCount + completedCount;
 
   return (
     <div className="mx-auto max-w-5xl">
       <Link
-        href={`/dashboard/workspaces/${workspaceId}/boards`}
+        href={`/w/${workspaceId}/b`}
         className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft size={12} />
@@ -287,9 +334,7 @@ export default async function BoardDetailPage({
           currentPriorities={priorities}
           currentTags={tagFilters}
           currentAssignees={assigneeFilters}
-          extraControls={
-            <SortControls currentSorts={sorts} />
-          }
+          extraControls={<SortControls currentSorts={sorts} />}
         />
 
         <KanbanBoard

@@ -98,7 +98,7 @@ export function NotificationFeed({
               <p className="text-xs text-fg-secondary">{n.message}</p>
               {n.task && (
                 <a
-                  href={`/dashboard/workspaces/${n.task.board.workspaceId}/boards/${n.task.board.id}/tasks/${n.task.id}`}
+                  href={`/w/${n.task.board.workspaceId}/b/${n.task.board.id}/t/${n.task.id}`}
                   className="mt-0.5 block font-mono text-[11px] text-accent hover:text-accent-emphasis"
                 >
                   → {n.task.title}
