@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
+import { TaskPriority, TaskStatus } from "@/prisma/generated/prisma/enums";
 import {
-  TaskPriority,
-  TaskStatus,
-} from "@/prisma/generated/prisma/enums";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
+  hasPermission,
+  getEffectivePermissions,
+  Permission,
+} from "@/lib/permissions";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
@@ -132,36 +133,75 @@ export default async function SprintDetailPage({
   });
 
   // Build orderBy from sort options
-  const orderBy = sorts.length > 0
-    ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
-    : [{ createdAt: "desc" as const }];
+  const orderBy =
+    sorts.length > 0
+      ? [
+          ...sorts.map((s) => ({ [s.field]: s.direction })),
+          { createdAt: "desc" as const },
+        ]
+      : [{ createdAt: "desc" as const }];
 
   const [
     sprint,
-    notStartedTasks, notStartedCount,
-    inProgressTasks, inProgressCount,
-    inReviewTasks, inReviewCount,
-    completedTasks, completedCount,
+    notStartedTasks,
+    notStartedCount,
+    inProgressTasks,
+    inProgressCount,
+    inReviewTasks,
+    inReviewCount,
+    completedTasks,
+    completedCount,
     totalTaskCount,
-    tags, members,
+    tags,
+    members,
   ] = await Promise.all([
     prisma.sprint.findUnique({
       where: { id: sprintId },
       include: {
         tasks: {
-          select: { id: true, status: true, startDate: true, dueDate: true, title: true, description: true, priority: true, boardId: true, parentTaskId: true },
+          select: {
+            id: true,
+            status: true,
+            startDate: true,
+            dueDate: true,
+            title: true,
+            description: true,
+            priority: true,
+            boardId: true,
+            parentTaskId: true,
+          },
           where: hasTaskFilter ? taskWhere : undefined,
           orderBy: { createdAt: "desc" },
         },
       },
     }),
-    prisma.task.findMany({ where: statusWhere("NOT_STARTED" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("NOT_STARTED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_PROGRESS" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_PROGRESS" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("IN_REVIEW" as TaskStatus), orderBy, take: PAGE_SIZE_DEFAULT, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("IN_REVIEW" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_DEFAULT,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({ where: statusWhere("COMPLETED" as TaskStatus), orderBy, take: PAGE_SIZE_COMPLETED, include: taskInclude }),
+    prisma.task.findMany({
+      where: statusWhere("COMPLETED" as TaskStatus),
+      orderBy,
+      take: PAGE_SIZE_COMPLETED,
+      include: taskInclude,
+    }),
     prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     // Always get total count for the sprint (unfiltered)
     prisma.task.count({
@@ -219,23 +259,37 @@ export default async function SprintDetailPage({
     }),
   ]);
 
-  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
+  const effectivePerms = getEffectivePermissions(
+    membership.role.permissions,
+    userId,
+    membership.workspace.createdById,
+  );
   const canEdit = hasPermission(effectivePerms, Permission.EDIT_CONTENT);
 
-  const mapTask = (t: Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number]) => ({
+  const mapTask = (
+    t: Awaited<
+      ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>
+    >[number],
+  ) => ({
     ...t,
     boardId: t.board.id,
     commentCount: t._count.comments,
     subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
     subtaskTotal: t.subtasks.length,
-    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
+    subtaskCompleted: t.subtasks.filter(
+      (s: { status: string }) => s.status === "COMPLETED",
+    ).length,
   });
 
   type MappedTask = ReturnType<typeof mapTask>;
 
   const tasksByStatus: Record<string, MappedTask[]> = {
-    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
-    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(
+      mapTask,
+    ),
+    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(
+      mapTask,
+    ),
     IN_REVIEW: (inReviewTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
     COMPLETED: (completedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
   };
@@ -245,9 +299,13 @@ export default async function SprintDetailPage({
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
       });
     }
   }
@@ -293,7 +351,8 @@ export default async function SprintDetailPage({
       ? Math.round((totalCompletedCount / totalTaskCount) * 100)
       : 0;
 
-  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const filteredCount =
+    notStartedCount + inProgressCount + inReviewCount + completedCount;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -402,8 +461,8 @@ export default async function SprintDetailPage({
         </div>
       )}
 
-      {/* Standup mode + Filters */}
-      <div className="mt-4 space-y-4 rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm">
+      {/* Filters + Task views */}
+      <div className="mt-6 space-y-4">
         <TaskFilters
           tags={tags}
           assignees={members.map((m) => m.user)}
@@ -412,15 +471,13 @@ export default async function SprintDetailPage({
           currentTags={tagFilters}
           currentAssignees={assigneeFilters}
           extraControls={
-            <SortControls currentSorts={sorts} />
+            <>
+              <SortControls currentSorts={sorts} />
+              <StandupModeFilter members={members.map((m) => m.user)} />
+            </>
           }
         />
 
-        <StandupModeFilter members={members.map((m) => m.user)} />
-      </div>
-
-      {/* Task views */}
-      <div className="mt-6">
         <SprintViews
           columns={columns}
           tasks={sprint.tasks.map((t) => ({
