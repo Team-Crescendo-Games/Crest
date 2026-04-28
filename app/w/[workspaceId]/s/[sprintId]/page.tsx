@@ -1,9 +1,9 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/cached-auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { TaskPriority, TaskStatus } from "@/prisma/generated/prisma/enums";
+import { TaskPriority } from "@/prisma/generated/prisma/enums";
 import {
   hasPermission,
   getEffectivePermissions,
@@ -55,7 +55,7 @@ export default async function SprintDetailPage({
     assignee: assigneeParam,
     sort: sortParam,
   } = await searchParams;
-  const session = await auth();
+  const session = await getSession();
   const userId = session!.user!.id!;
 
   const membership = await prisma.workspaceMember.findUnique({
@@ -125,13 +125,6 @@ export default async function SprintDetailPage({
   const PAGE_SIZE_DEFAULT = 20;
   const PAGE_SIZE_COMPLETED = 20;
 
-  // Build per-status where clauses for sprint-scoped tasks
-  const statusWhere = (status: TaskStatus) => ({
-    sprints: { some: { id: sprintId } },
-    ...taskWhere,
-    status,
-  });
-
   // Build orderBy from sort options
   const orderBy =
     sorts.length > 0
@@ -141,19 +134,20 @@ export default async function SprintDetailPage({
         ]
       : [{ createdAt: "desc" as const }];
 
+  const sprintTaskWhere = {
+    sprints: { some: { id: sprintId } },
+    ...taskWhere,
+  };
+
   const [
     sprint,
-    notStartedTasks,
-    notStartedCount,
-    inProgressTasks,
-    inProgressCount,
-    inReviewTasks,
-    inReviewCount,
-    completedTasks,
-    completedCount,
+    allSprintTasks,
+    countsByStatus,
     totalTaskCount,
     tags,
     members,
+    unassignedTasks,
+    boards,
   ] = await Promise.all([
     prisma.sprint.findUnique({
       where: { id: sprintId },
@@ -175,34 +169,18 @@ export default async function SprintDetailPage({
         },
       },
     }),
+    // Single task query instead of 4 separate findMany calls
     prisma.task.findMany({
-      where: statusWhere("NOT_STARTED" as TaskStatus),
+      where: sprintTaskWhere,
       orderBy,
-      take: PAGE_SIZE_DEFAULT,
       include: taskInclude,
     }),
-    prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("IN_PROGRESS" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_DEFAULT,
-      include: taskInclude,
+    // Single groupBy instead of 4 separate count() calls
+    prisma.task.groupBy({
+      by: ["status"],
+      where: sprintTaskWhere,
+      _count: true,
     }),
-    prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("IN_REVIEW" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_DEFAULT,
-      include: taskInclude,
-    }),
-    prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("COMPLETED" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_COMPLETED,
-      include: taskInclude,
-    }),
-    prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     // Always get total count for the sprint (unfiltered)
     prisma.task.count({
       where: { sprints: { some: { id: sprintId } } },
@@ -219,25 +197,7 @@ export default async function SprintDetailPage({
       },
       orderBy: { user: { name: "asc" } },
     }),
-  ]);
-
-  if (!sprint || sprint.workspaceId !== workspaceId) notFound();
-
-  // For completion stats, we need unfiltered completed count
-  let totalCompletedCount: number;
-  if (hasTaskFilter) {
-    totalCompletedCount = await prisma.task.count({
-      where: {
-        sprints: { some: { id: sprintId } },
-        status: "COMPLETED",
-      },
-    });
-  } else {
-    totalCompletedCount = completedCount;
-  }
-
-  // Get unassigned tasks for the assign picker
-  const [unassignedTasks, boards] = await Promise.all([
+    // Moved from the second Promise.all to avoid a sequential waterfall
     prisma.task.findMany({
       where: {
         board: { workspaceId },
@@ -258,6 +218,50 @@ export default async function SprintDetailPage({
       orderBy: { displayOrder: "asc" },
     }),
   ]);
+
+  if (!sprint || sprint.workspaceId !== workspaceId) notFound();
+
+  // Split tasks by status and apply per-column page limits
+  const tasksByStatusRaw: Record<string, typeof allSprintTasks> = {};
+  for (const task of allSprintTasks) {
+    const list = (tasksByStatusRaw[task.status] ??= []);
+    list.push(task);
+  }
+
+  const statusPageSizes: Record<string, number> = {
+    NOT_STARTED: PAGE_SIZE_DEFAULT,
+    IN_PROGRESS: PAGE_SIZE_DEFAULT,
+    IN_REVIEW: PAGE_SIZE_DEFAULT,
+    COMPLETED: PAGE_SIZE_COMPLETED,
+  };
+
+  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(0, statusPageSizes["NOT_STARTED"]);
+  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(0, statusPageSizes["IN_PROGRESS"]);
+  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
+  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
+
+  // Build count map from groupBy result
+  const countMap: Record<string, number> = {};
+  for (const row of countsByStatus) {
+    countMap[row.status] = row._count;
+  }
+  const notStartedCount = countMap["NOT_STARTED"] ?? 0;
+  const inProgressCount = countMap["IN_PROGRESS"] ?? 0;
+  const inReviewCount = countMap["IN_REVIEW"] ?? 0;
+  const completedCount = countMap["COMPLETED"] ?? 0;
+
+  // For completion stats, we need unfiltered completed count
+  let totalCompletedCount: number;
+  if (hasTaskFilter) {
+    totalCompletedCount = await prisma.task.count({
+      where: {
+        sprints: { some: { id: sprintId } },
+        status: "COMPLETED",
+      },
+    });
+  } else {
+    totalCompletedCount = completedCount;
+  }
 
   const effectivePerms = getEffectivePermissions(
     membership.role.permissions,
