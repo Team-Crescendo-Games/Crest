@@ -16,8 +16,9 @@ export function ProfilePictureUpload({
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(() => {
     if (!currentImage) return null;
+    // currentImage may be a raw S3 key (new format) or a full URL (legacy)
     const match = currentImage.match(/avatars\/([^/]+)\//);
-    return match ? `/api/profile-picture/${match[1]}` : currentImage;
+    return match ? `/api/profile-picture/${match[1]}` : null;
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,14 +56,14 @@ export function ProfilePictureUpload({
       });
       if (!uploadRes.ok) throw new Error("Upload to storage failed");
 
-      // Save the public URL to the user profile
+      // Save the S3 key to the user profile (key is stable; public URL may vary by env)
       const formData = new FormData();
-      formData.set("imageUrl", presignData.publicUrl);
+      formData.set("imageUrl", presignData.key);
       const result = await updateProfilePicture(null, formData);
       if (result?.error) throw new Error(result.error);
 
-      // Use proxy URL for preview to avoid 403 on private bucket
-      const match = presignData.publicUrl.match(/avatars\/([^/]+)\//);
+      // Use proxy URL for preview
+      const match = presignData.key.match(/avatars\/([^/]+)\//);
       setPreviewUrl(
         match ? `/api/profile-picture/${match[1]}` : presignData.publicUrl,
       );

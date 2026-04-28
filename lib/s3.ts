@@ -85,15 +85,22 @@ export async function getPresignedUploadUrl({
 
 /**
  * Generate a presigned GET URL for downloading/viewing a private S3 object.
- * Extracts the key from the stored public URL.
+ * Accepts either a raw S3 key or a full public URL (legacy format).
  */
-export async function getPresignedDownloadUrl(fileUrl: string, expiresIn = 3600): Promise<string> {
+export async function getPresignedDownloadUrl(fileUrlOrKey: string, expiresIn = 3600): Promise<string> {
   let key: string;
-  if (process.env.S3_PUBLIC_URL && fileUrl.startsWith(process.env.S3_PUBLIC_URL)) {
-    key = fileUrl.slice(process.env.S3_PUBLIC_URL.length + 1);
+
+  // If it looks like a plain key (no protocol), use it directly
+  if (!fileUrlOrKey.includes("://")) {
+    key = fileUrlOrKey;
+  } else if (process.env.S3_PUBLIC_URL && fileUrlOrKey.startsWith(process.env.S3_PUBLIC_URL)) {
+    // Strip the base URL (handle trailing slash on S3_PUBLIC_URL)
+    const base = process.env.S3_PUBLIC_URL.replace(/\/$/, "");
+    key = fileUrlOrKey.slice(base.length + 1);
   } else {
-    const match = fileUrl.match(/\.amazonaws\.com\/(.+)$/);
-    key = match?.[1] ?? fileUrl;
+    // Legacy: extract key from amazonaws.com URL
+    const match = fileUrlOrKey.match(/\.amazonaws\.com\/(.+?)(\?.*)?$/);
+    key = match?.[1] ?? fileUrlOrKey;
   }
 
   const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
