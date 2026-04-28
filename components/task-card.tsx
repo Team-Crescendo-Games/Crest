@@ -299,7 +299,9 @@ export function TaskCard({
           )}
           {task.dueDate && (
             <span className="text-[11px] text-fg-muted">
-              {new Date(task.dueDate).toLocaleDateString()}
+              {new Date(task.dueDate).toLocaleDateString(undefined, {
+                timeZone: "UTC",
+              })}
             </span>
           )}
         </div>
