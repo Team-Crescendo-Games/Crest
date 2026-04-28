@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       ? `${process.env.S3_PUBLIC_URL}/${key}`
       : `https://${BUCKET}.s3.${process.env.S3_REGION ?? "us-east-1"}.amazonaws.com/${key}`;
 
-    return NextResponse.json({ uploadUrl, publicUrl });
+    return NextResponse.json({ uploadUrl, publicUrl, key });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upload failed";
     return NextResponse.json({ error: msg }, { status: 500 });
