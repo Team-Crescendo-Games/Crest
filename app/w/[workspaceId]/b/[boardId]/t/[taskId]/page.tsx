@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { TaskEditForm } from "@/components/tasks/task-edit-form";
+import { TaskBreadcrumb } from "@/components/tasks/task-breadcrumb";
 import { CommentSection } from "@/components/tasks/comment-section";
 import { ActivityLog } from "@/components/tasks/activity-log";
 import { AttachmentSection } from "@/components/attachment-section";
@@ -94,6 +95,12 @@ export default async function TaskDetailPage({
   return (
     <div className="relative">
       <div className="mx-auto max-w-3xl">
+        {/* Breadcrumb */}
+        <TaskBreadcrumb
+          boardName={task.board.name}
+          boardHref={`/w/${workspaceId}/b/${boardId}`}
+        />
+
         {/* Unified form renders both columns */}
         <TaskEditForm
           task={{

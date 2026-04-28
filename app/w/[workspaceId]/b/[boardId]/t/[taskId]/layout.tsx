@@ -39,7 +39,7 @@ export default function TaskModalLayout({
       <div className="relative z-10 mx-4 w-full max-w-3xl rounded-lg border border-border bg-bg-elevated p-6 shadow-xl">
         <button
           onClick={close}
-          className="absolute right-4 top-4 rounded-md p-1.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary"
+          className="absolute right-4 top-4 z-10 cursor-pointer rounded-md p-1.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary"
         >
           <X size={16} />
         </button>
