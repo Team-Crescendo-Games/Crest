@@ -17,10 +17,10 @@ import {
   PRIORITY_ORDER,
   parseSorts,
 } from "@/lib/task-enums";
-import { SprintActions } from "../../../../../../components/sprints/sprint-actions";
-import { StandupModeFilter } from "../../../../../../components/sprints/standup-mode-filter";
-import { AssignTaskSection } from "../../../../../../components/sprints/assign-task-section";
-import { SprintViews } from "../../../../../../components/sprints/sprint-views";
+import { SprintActions } from "@/components/sprints/sprint-actions";
+import { StandupModeFilter } from "@/components/sprints/standup-mode-filter";
+import { AssignTaskSection } from "@/components/sprints/assign-task-section";
+import { SprintViews } from "@/components/sprints/sprint-views";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";

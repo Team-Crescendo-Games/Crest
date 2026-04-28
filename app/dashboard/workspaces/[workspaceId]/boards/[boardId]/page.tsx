@@ -8,8 +8,8 @@ import {
   TaskPriority,
 } from "@/prisma/generated/prisma/enums";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
-import { BoardActions } from "../../../../../../components/boards/board-actions";
-import { TaskFilters } from "../../../../../../components/tasks/task-filters";
+import { BoardActions } from "@/components/boards/board-actions";
+import { TaskFilters } from "@/components/tasks/task-filters";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SortControls } from "@/components/tasks/sort-controls";
 import {

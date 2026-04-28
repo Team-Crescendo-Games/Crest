@@ -9,12 +9,12 @@ import {
   parseSorts,
 } from "@/lib/task-enums";
 import { DashboardKanban } from "@/components/dashboard/dashboard-kanban";
-import { NotificationFeed } from "../../components/dashboard/notification-feed";
+import { NotificationFeed } from "@/components/dashboard/notification-feed";
 import { UserMetrics } from "@/components/user-metrics";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
 import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
-import { DashboardFilterDropdowns } from "../../components/dashboard/dashboard-filter-dropdowns";
+import { DashboardFilterDropdowns } from "@/components/dashboard/dashboard-filter-dropdowns";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 const NOTIF_PAGE = 10;

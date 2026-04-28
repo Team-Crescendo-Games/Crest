@@ -10,8 +10,8 @@ import {
   STATUS_COLORS,
   TASK_PRIORITIES,
 } from "@/lib/task-enums";
-import { BoardRow } from "../../../../../components/boards/board-row";
-import { BoardExtras } from "../../../../../components/boards/board-extras";
+import { BoardRow } from "@/components/boards/board-row";
+import { BoardExtras } from "@/components/boards/board-extras";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
 

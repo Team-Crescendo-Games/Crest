@@ -2,9 +2,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { TaskEditForm } from "../../../../../../../../components/tasks/task-edit-form";
-import { CommentSection } from "../../../../../../../../components/tasks/comment-section";
-import { ActivityLog } from "../../../../../../../../components/tasks/activity-log";
+import { TaskEditForm } from "@/components/tasks/task-edit-form";
+import { CommentSection } from "@/components/tasks/comment-section";
+import { ActivityLog } from "@/components/tasks/activity-log";
 import { AttachmentSection } from "@/components/attachment-section";
 import { SubtaskSection } from "@/components/subtask-section";
 
