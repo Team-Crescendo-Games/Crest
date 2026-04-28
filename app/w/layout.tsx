@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/cached-auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/sidebar";
 
@@ -8,7 +8,7 @@ export default async function WorkspaceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     redirect("/sign-in");

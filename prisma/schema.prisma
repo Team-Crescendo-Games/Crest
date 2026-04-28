@@ -222,6 +222,8 @@ model Board {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   tasks Task[]
+
+  @@index([workspaceId])
 }
 
 // ─── Task ───────────────────────────────────────────────────────────────────
@@ -254,6 +256,10 @@ model Task {
   comments    Comment[]
   activities  Activity[]
   notifications Notification[]
+
+  @@index([boardId, status])
+  @@index([boardId])
+  @@index([authorId])
 }
 
 // ─── Tag ────────────────────────────────────────────────────────────────────
@@ -286,6 +292,8 @@ model Sprint {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   tasks Task[] @relation("SprintTasks")
+
+  @@index([workspaceId, isActive])
 }
 
 // ─── Attachment ─────────────────────────────────────────────────────────────

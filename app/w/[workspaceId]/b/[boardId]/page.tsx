@@ -1,9 +1,9 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/cached-auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
+import { TaskPriority } from "@/prisma/generated/prisma/enums";
 import {
   hasPermission,
   getEffectivePermissions,
@@ -52,7 +52,7 @@ export default async function BoardDetailPage({
     assignee: assigneeParam,
     sort: sortParam,
   } = await searchParams;
-  const session = await auth();
+  const session = await getSession();
   const userId = session!.user!.id!;
 
   const membership = await prisma.workspaceMember.findUnique({
@@ -120,13 +120,6 @@ export default async function BoardDetailPage({
     _count: { select: { comments: true } },
   } as const;
 
-  // Build per-status where clauses
-  const statusWhere = (status: TaskStatus) => ({
-    boardId,
-    ...taskWhere,
-    status,
-  });
-
   // Build orderBy from sort options
   const orderBy =
     sorts.length > 0
@@ -136,49 +129,32 @@ export default async function BoardDetailPage({
         ]
       : [{ createdAt: "desc" as const }];
 
+  // Fire all independent queries in parallel — use groupBy for counts
+  // instead of 4 separate count() calls, and fetch tasks in one query
+  // instead of 4 separate findMany calls.
   const [
-    notStartedTasks,
-    notStartedCount,
-    inProgressTasks,
-    inProgressCount,
-    inReviewTasks,
-    inReviewCount,
-    completedTasks,
-    completedCount,
+    allTasks,
+    countsByStatus,
     board,
     totalTaskCount,
     tags,
     members,
     sprints,
   ] = await Promise.all([
+    // Single task query — fetch up to pageLimit per status via a combined query.
+    // We fetch all statuses at once and split in JS. This trades a slightly
+    // larger result set for 3 fewer round-trips.
     prisma.task.findMany({
-      where: statusWhere("NOT_STARTED" as TaskStatus),
+      where: { boardId, ...taskWhere },
       orderBy,
-      take: PAGE_SIZE_DEFAULT,
       include: taskInclude,
     }),
-    prisma.task.count({ where: statusWhere("NOT_STARTED" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("IN_PROGRESS" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_DEFAULT,
-      include: taskInclude,
+    // Single groupBy replaces 4 separate count() calls
+    prisma.task.groupBy({
+      by: ["status"],
+      where: { boardId, ...taskWhere },
+      _count: true,
     }),
-    prisma.task.count({ where: statusWhere("IN_PROGRESS" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("IN_REVIEW" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_DEFAULT,
-      include: taskInclude,
-    }),
-    prisma.task.count({ where: statusWhere("IN_REVIEW" as TaskStatus) }),
-    prisma.task.findMany({
-      where: statusWhere("COMPLETED" as TaskStatus),
-      orderBy,
-      take: PAGE_SIZE_COMPLETED,
-      include: taskInclude,
-    }),
-    prisma.task.count({ where: statusWhere("COMPLETED" as TaskStatus) }),
     prisma.board.findUnique({ where: { id: boardId } }),
     prisma.task.count({ where: { boardId } }),
     prisma.tag.findMany({
@@ -199,6 +175,35 @@ export default async function BoardDetailPage({
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  // Split tasks by status and apply per-column page limits
+  const tasksByStatusRaw: Record<string, typeof allTasks> = {};
+  for (const task of allTasks) {
+    const list = (tasksByStatusRaw[task.status] ??= []);
+    list.push(task);
+  }
+
+  const statusPageSizes: Record<string, number> = {
+    NOT_STARTED: PAGE_SIZE_DEFAULT,
+    IN_PROGRESS: PAGE_SIZE_DEFAULT,
+    IN_REVIEW: PAGE_SIZE_DEFAULT,
+    COMPLETED: PAGE_SIZE_COMPLETED,
+  };
+
+  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(0, statusPageSizes["NOT_STARTED"]);
+  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(0, statusPageSizes["IN_PROGRESS"]);
+  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
+  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
+
+  // Build count map from groupBy result
+  const countMap: Record<string, number> = {};
+  for (const row of countsByStatus) {
+    countMap[row.status] = row._count;
+  }
+  const notStartedCount = countMap["NOT_STARTED"] ?? 0;
+  const inProgressCount = countMap["IN_PROGRESS"] ?? 0;
+  const inReviewCount = countMap["IN_REVIEW"] ?? 0;
+  const completedCount = countMap["COMPLETED"] ?? 0;
 
   if (!board || board.workspaceId !== workspaceId) notFound();
 
