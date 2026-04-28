@@ -2,9 +2,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { TaskEditForm } from "./task-edit-form";
-import { CommentSection } from "./comment-section";
-import { ActivityLog } from "./activity-log";
+import { TaskEditForm } from "../../../../../../../../components/tasks/task-edit-form";
+import { CommentSection } from "../../../../../../../../components/tasks/comment-section";
+import { ActivityLog } from "../../../../../../../../components/tasks/activity-log";
 import { AttachmentSection } from "@/components/attachment-section";
 import { SubtaskSection } from "@/components/subtask-section";
 
@@ -52,14 +52,21 @@ export default async function TaskDetailPage({
     },
   });
 
-  if (!task || task.board.workspaceId !== workspaceId || task.boardId !== boardId) {
+  if (
+    !task ||
+    task.board.workspaceId !== workspaceId ||
+    task.boardId !== boardId
+  ) {
     notFound();
   }
 
   const [members, boards, sprints, allTags] = await Promise.all([
     prisma.workspaceMember.findMany({
       where: { workspaceId },
-      select: { id: true, user: { select: { id: true, name: true, email: true, image: true } } },
+      select: {
+        id: true,
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
     }),
     prisma.board.findMany({
       where: { workspaceId, isActive: true },
@@ -146,7 +153,10 @@ export default async function TaskDetailPage({
           createdAt={task.createdAt}
           createdByName={task.author.name}
           memberNames={Object.fromEntries(
-            members.map((m) => [m.user.id, m.user.name ?? m.user.email ?? "Unknown"])
+            members.map((m) => [
+              m.user.id,
+              m.user.name ?? m.user.email ?? "Unknown",
+            ]),
           )}
         />
 

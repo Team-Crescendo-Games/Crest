@@ -6,7 +6,7 @@ import { Archive, ArchiveRestore, Trash2, Settings } from "lucide-react";
 import { archiveBoard, deleteBoard } from "@/lib/actions/board";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban-board";
-import type { TaskCardData } from "@/components/task-card";
+import type { TaskCardData } from "@/components/tasks/task-card";
 
 interface Column {
   status: string;

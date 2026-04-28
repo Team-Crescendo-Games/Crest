@@ -8,13 +8,13 @@ import {
   PRIORITY_ORDER,
   parseSorts,
 } from "@/lib/task-enums";
-import { DashboardKanban } from "./dashboard-kanban";
-import { NotificationFeed } from "./notification-feed";
+import { DashboardKanban } from "@/components/dashboard/dashboard-kanban";
+import { NotificationFeed } from "../../components/dashboard/notification-feed";
 import { UserMetrics } from "@/components/user-metrics";
-import { TaskFilters } from "@/components/task-filters";
-import { SortControls } from "@/components/sort-controls";
+import { TaskFilters } from "@/components/tasks/task-filters";
+import { SortControls } from "@/components/tasks/sort-controls";
 import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
-import { DashboardFilterDropdowns } from "./dashboard-filter-dropdowns";
+import { DashboardFilterDropdowns } from "../../components/dashboard/dashboard-filter-dropdowns";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 const NOTIF_PAGE = 10;
@@ -86,15 +86,15 @@ export default async function DashboardPage({
   if (workspaceFilters.length > 0) {
     taskWhere.board = {
       ...(taskWhere.board as Record<string, unknown> | undefined),
-      workspaceId: workspaceFilters.length === 1
-        ? workspaceFilters[0]
-        : { in: workspaceFilters },
+      workspaceId:
+        workspaceFilters.length === 1
+          ? workspaceFilters[0]
+          : { in: workspaceFilters },
     };
   }
   if (boardFilters.length > 0) {
-    taskWhere.boardId = boardFilters.length === 1
-      ? boardFilters[0]
-      : { in: boardFilters };
+    taskWhere.boardId =
+      boardFilters.length === 1 ? boardFilters[0] : { in: boardFilters };
   }
 
   // Count tasks per status + sum all story points for the current user (with filters)
@@ -112,7 +112,14 @@ export default async function DashboardPage({
   }
 
   // Load first page of tasks per column + aggregate stats + metrics in parallel
-  const [workspaceCount, notifResult, initialWeeklyPoints, initialTagData, userWorkspaces, ...columnTaskResults] = await Promise.all([
+  const [
+    workspaceCount,
+    notifResult,
+    initialWeeklyPoints,
+    initialTagData,
+    userWorkspaces,
+    ...columnTaskResults
+  ] = await Promise.all([
     prisma.workspaceMember.count({ where: { userId } }),
     prisma.$transaction([
       prisma.notification.findMany({
@@ -157,9 +164,13 @@ export default async function DashboardPage({
           ...taskWhere,
           status,
         } as never,
-        orderBy: sorts.length > 0
-          ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
-          : [{ createdAt: "desc" as const }],
+        orderBy:
+          sorts.length > 0
+            ? [
+                ...sorts.map((s) => ({ [s.field]: s.direction })),
+                { createdAt: "desc" as const },
+              ]
+            : [{ createdAt: "desc" as const }],
         take: TASKS_PER_COLUMN,
         include: {
           assignees: { select: { id: true, name: true, image: true } },
@@ -190,7 +201,8 @@ export default async function DashboardPage({
       commentCount: t._count.comments,
       subtaskIds: t.subtasks.map((s) => s.id),
       subtaskTotal: t.subtasks.length,
-      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED")
+        .length,
     })),
   }));
 
@@ -199,9 +211,13 @@ export default async function DashboardPage({
   if (prioritySort) {
     for (const col of columns) {
       col.tasks.sort((a, b) => {
-        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
       });
     }
   }
@@ -218,13 +234,16 @@ export default async function DashboardPage({
   // Build workspace and board options for filters
   const workspaceOptions = userWorkspaces.map((m) => m.workspace);
   // If workspace filter is active, only show boards from those workspaces
-  const boardOptions = workspaceFilters.length > 0
-    ? workspaceOptions
-        .filter((w) => workspaceFilters.includes(w.id))
-        .flatMap((w) => w.boards.map((b) => ({ ...b, workspaceName: w.name })))
-    : workspaceOptions.flatMap((w) =>
-        w.boards.map((b) => ({ ...b, workspaceName: w.name })),
-      );
+  const boardOptions =
+    workspaceFilters.length > 0
+      ? workspaceOptions
+          .filter((w) => workspaceFilters.includes(w.id))
+          .flatMap((w) =>
+            w.boards.map((b) => ({ ...b, workspaceName: w.name })),
+          )
+      : workspaceOptions.flatMap((w) =>
+          w.boards.map((b) => ({ ...b, workspaceName: w.name })),
+        );
 
   // Collect all tags across the user's workspaces for the tag filter
   const allTagsRaw = await prisma.tag.findMany({
@@ -232,7 +251,12 @@ export default async function DashboardPage({
       workspace: {
         members: { some: { userId } },
         ...(workspaceFilters.length > 0
-          ? { id: workspaceFilters.length === 1 ? workspaceFilters[0] : { in: workspaceFilters } }
+          ? {
+              id:
+                workspaceFilters.length === 1
+                  ? workspaceFilters[0]
+                  : { in: workspaceFilters },
+            }
           : {}),
       },
     },
@@ -243,7 +267,11 @@ export default async function DashboardPage({
   // Deduplicate tags by name (keep first occurrence) and attach workspace name
   const seenTagNames = new Set<string>();
   const allTags = allTagsRaw
-    .map((t) => ({ name: t.name, color: t.color, workspaceName: t.workspace.name }))
+    .map((t) => ({
+      name: t.name,
+      color: t.color,
+      workspaceName: t.workspace.name,
+    }))
     .filter((t) => {
       if (seenTagNames.has(t.name)) return false;
       seenTagNames.add(t.name);
@@ -341,7 +369,10 @@ export default async function DashboardPage({
           currentTags={tagFilters}
           currentAssignees={[]}
           extraParams={{
-            workspace: workspaceFilters.length > 0 ? workspaceFilters.join(",") : undefined,
+            workspace:
+              workspaceFilters.length > 0
+                ? workspaceFilters.join(",")
+                : undefined,
             board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
           }}
           extraControls={
@@ -355,8 +386,14 @@ export default async function DashboardPage({
               <SortControls
                 currentSorts={sorts}
                 extraParams={{
-                  workspace: workspaceFilters.length > 0 ? workspaceFilters.join(",") : undefined,
-                  board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
+                  workspace:
+                    workspaceFilters.length > 0
+                      ? workspaceFilters.join(",")
+                      : undefined,
+                  board:
+                    boardFilters.length > 0
+                      ? boardFilters.join(",")
+                      : undefined,
                 }}
               />
             </>

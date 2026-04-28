@@ -17,8 +17,8 @@ import {
 } from "@/lib/task-enums";
 import { KanbanBoard } from "@/components/kanban-board";
 import { UserAvatar } from "@/components/user-avatar";
-import { TaskFilters } from "@/components/task-filters";
-import { SortControls } from "@/components/sort-controls";
+import { TaskFilters } from "@/components/tasks/task-filters";
+import { SortControls } from "@/components/tasks/sort-controls";
 
 /** Split a comma-separated param into a trimmed, non-empty array. */
 function parseMulti(value: string | undefined): string[] {

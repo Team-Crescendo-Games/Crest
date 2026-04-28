@@ -17,13 +17,13 @@ import {
   PRIORITY_ORDER,
   parseSorts,
 } from "@/lib/task-enums";
-import { SprintActions } from "./sprint-actions";
-import { StandupModeFilter } from "./standup-mode-filter";
-import { AssignTaskSection } from "./assign-task-section";
-import { SprintViews } from "./sprint-views";
+import { SprintActions } from "../../../../../../components/sprints/sprint-actions";
+import { StandupModeFilter } from "../../../../../../components/sprints/standup-mode-filter";
+import { AssignTaskSection } from "../../../../../../components/sprints/assign-task-section";
+import { SprintViews } from "../../../../../../components/sprints/sprint-views";
 import { CollapsibleSection } from "@/components/collapsible-section";
-import { TaskFilters } from "@/components/task-filters";
-import { SortControls } from "@/components/sort-controls";
+import { TaskFilters } from "@/components/tasks/task-filters";
+import { SortControls } from "@/components/tasks/sort-controls";
 
 /** Split a comma-separated param into a trimmed, non-empty array. */
 function parseMulti(value: string | undefined): string[] {

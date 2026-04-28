@@ -5,11 +5,11 @@ import Link from "next/link";
 import { ArrowLeft, Users, Mail, ClipboardList } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { getLeaveWarning } from "@/lib/actions/workspace";
-import { InviteSection } from "./invite-section";
-import { ApplicationList } from "./application-list";
-import { LeaveWorkspaceButton } from "./leave-button";
-import { MemberRoleSelect } from "./member-role-select";
-import { TransferOwnership } from "./transfer-ownership";
+import { InviteSection } from "../../../../../components/team/invite-section";
+import { ApplicationList } from "../../../../../components/team/application-list";
+import { LeaveWorkspaceButton } from "../../../../../components/team/leave-button";
+import { MemberRoleSelect } from "../../../../../components/team/member-role-select";
+import { TransferOwnership } from "../../../../../components/team/transfer-ownership";
 import { UserAvatar } from "@/components/user-avatar";
 
 export default async function WorkspaceTeamPage({

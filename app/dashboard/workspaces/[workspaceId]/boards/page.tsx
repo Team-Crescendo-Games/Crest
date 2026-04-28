@@ -10,9 +10,9 @@ import {
   STATUS_COLORS,
   TASK_PRIORITIES,
 } from "@/lib/task-enums";
-import { BoardRow } from "./board-row";
-import { BoardExtras } from "./board-extras";
-import { TaskFilters } from "@/components/task-filters";
+import { BoardRow } from "../../../../../components/boards/board-row";
+import { BoardExtras } from "../../../../../components/boards/board-extras";
+import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
 
 const PAGE_SIZE_DEFAULT = 5;
@@ -55,7 +55,10 @@ export default async function BoardsPage({
 
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { name: true, createdById: true } } },
+    include: {
+      role: true,
+      workspace: { select: { name: true, createdById: true } },
+    },
   });
 
   if (!membership) notFound();

@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Timer } from "lucide-react";
-import { SprintRow } from "./sprint-row";
-import { SprintExtras } from "./sprint-extras";
-import { TaskFilters } from "@/components/task-filters";
+import { SprintRow } from "../../../../../components/sprints/sprint-row";
+import { SprintExtras } from "../../../../../components/sprints/sprint-extras";
+import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import {

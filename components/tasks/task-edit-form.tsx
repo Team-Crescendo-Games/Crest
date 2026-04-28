@@ -35,7 +35,12 @@ interface TaskData {
 
 interface Props {
   task: TaskData;
-  members: { id: string; name: string | null; email: string | null; image?: string | null }[];
+  members: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image?: string | null;
+  }[];
   tags: { id: string; name: string; color: string | null }[];
   boards: { id: string; name: string }[];
   sprints: { id: string; title: string }[];
@@ -75,7 +80,9 @@ export function TaskEditForm({
   const [selectedBoardId, setSelectedBoardId] = useState(task.boardId);
   const [sprintIds, setSprintIds] = useState<string[]>(task.sprintIds);
   const [flowOpen, setFlowOpen] = useState(false);
-  const [flowTasks, setFlowTasks] = useState<Awaited<ReturnType<typeof getFlowGraphTasks>> | null>(null);
+  const [flowTasks, setFlowTasks] = useState<Awaited<
+    ReturnType<typeof getFlowGraphTasks>
+  > | null>(null);
   const [flowLoading, setFlowLoading] = useState(false);
 
   // Fetch the dependency graph when flow mode is opened
@@ -96,7 +103,9 @@ export function TaskEditForm({
       .finally(() => {
         if (!cancelled) setFlowLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [flowOpen, task.id, workspaceId]);
 
   const [state, formAction, pending] = useActionState(
@@ -120,9 +129,12 @@ export function TaskEditForm({
     dueDate !== task.dueDate ||
     points !== (task.points?.toString() ?? "") ||
     selectedBoardId !== task.boardId ||
-    JSON.stringify(assigneeIds.slice().sort()) !== JSON.stringify(task.assigneeIds.slice().sort()) ||
-    JSON.stringify(tagIds.slice().sort()) !== JSON.stringify(task.tagIds.slice().sort()) ||
-    JSON.stringify(sprintIds.slice().sort()) !== JSON.stringify(task.sprintIds.slice().sort());
+    JSON.stringify(assigneeIds.slice().sort()) !==
+      JSON.stringify(task.assigneeIds.slice().sort()) ||
+    JSON.stringify(tagIds.slice().sort()) !==
+      JSON.stringify(task.tagIds.slice().sort()) ||
+    JSON.stringify(sprintIds.slice().sort()) !==
+      JSON.stringify(task.sprintIds.slice().sort());
 
   function reset() {
     setTitle(task.title);
@@ -194,7 +206,9 @@ export function TaskEditForm({
           />
 
           <div>
-            <label className="block text-[11px] font-medium text-fg-muted">Points</label>
+            <label className="block text-[11px] font-medium text-fg-muted">
+              Points
+            </label>
             <input
               type="number"
               min={0}
@@ -205,10 +219,20 @@ export function TaskEditForm({
             />
           </div>
 
-          <AssigneeEditor members={members} assigneeIds={assigneeIds} onChange={setAssigneeIds} workspaceId={workspaceId} memberIdMap={memberIdMap} />
+          <AssigneeEditor
+            members={members}
+            assigneeIds={assigneeIds}
+            onChange={setAssigneeIds}
+            workspaceId={workspaceId}
+            memberIdMap={memberIdMap}
+          />
 
           {tags.length > 0 && (
-            <TagEditor tags={tags} selectedTagIds={tagIds} onChange={setTagIds} />
+            <TagEditor
+              tags={tags}
+              selectedTagIds={tagIds}
+              onChange={setTagIds}
+            />
           )}
 
           {/* Action row */}
@@ -257,7 +281,11 @@ export function TaskEditForm({
               onToggle={() => setFlowOpen((v) => !v)}
             />
 
-            <DeleteTaskButton taskId={task.id} workspaceId={workspaceId} boardId={boardId} />
+            <DeleteTaskButton
+              taskId={task.id}
+              workspaceId={workspaceId}
+              boardId={boardId}
+            />
           </div>
         </div>
 
@@ -377,10 +405,18 @@ export function TaskEditForm({
 
 /* ── Sidebar block ─────────────────────────────────────────────────────── */
 
-function SidebarBlock({ label, children }: { label: string; children: React.ReactNode }) {
+function SidebarBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-fg-muted">{label}</p>
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-fg-muted">
+        {label}
+      </p>
       {children}
     </div>
   );
@@ -407,14 +443,13 @@ function DropdownPicker({
         type="button"
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
-        style={
-          color
-            ? { backgroundColor: color + "20", color }
-            : undefined
-        }
+        style={color ? { backgroundColor: color + "20", color } : undefined}
       >
         {color && (
-          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+          <div
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
         )}
         {current.label}
         <ChevronDown size={9} className={open ? "rotate-180" : ""} />
@@ -428,11 +463,17 @@ function DropdownPicker({
               <button
                 key={o.value}
                 type="button"
-                onClick={() => { onChange(o.value); setOpen(false); }}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 {o.color && (
-                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />
+                  <div
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: o.color }}
+                  />
                 )}
                 <span
                   className={o.value === value ? "font-medium" : ""}
@@ -440,7 +481,9 @@ function DropdownPicker({
                 >
                   {o.label}
                 </span>
-                {o.value === value && <Check size={11} className="ml-auto text-accent" />}
+                {o.value === value && (
+                  <Check size={11} className="ml-auto text-accent" />
+                )}
               </button>
             ))}
           </div>
@@ -491,13 +534,24 @@ function BoardField({
               <button
                 key={o.value}
                 type="button"
-                onClick={() => { onChange(o.value); setOpen(false); }}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
-                <span className={o.value === value ? "font-medium text-accent" : "text-fg-primary"}>
+                <span
+                  className={
+                    o.value === value
+                      ? "font-medium text-accent"
+                      : "text-fg-primary"
+                  }
+                >
                   {o.label}
                 </span>
-                {o.value === value && <Check size={11} className="ml-auto text-accent" />}
+                {o.value === value && (
+                  <Check size={11} className="ml-auto text-accent" />
+                )}
               </button>
             ))}
           </div>
@@ -565,7 +619,9 @@ function SprintEditor({
           <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-border bg-bg-elevated shadow-lg">
             <div className="max-h-48 overflow-y-auto p-1">
               {sprints.length === 0 && (
-                <p className="px-3 py-2 text-[11px] text-fg-muted">No sprints</p>
+                <p className="px-3 py-2 text-[11px] text-fg-muted">
+                  No sprints
+                </p>
               )}
               {sprints.map((sprint) => {
                 const isSelected = selectedIds.includes(sprint.id);
@@ -581,9 +637,17 @@ function SprintEditor({
                         isSelected ? "border-accent bg-accent" : "border-border"
                       }`}
                     >
-                      {isSelected && <Check size={9} className="text-bg-primary" />}
+                      {isSelected && (
+                        <Check size={9} className="text-bg-primary" />
+                      )}
                     </div>
-                    <span className={isSelected ? "font-medium text-fg-primary" : "text-fg-secondary"}>
+                    <span
+                      className={
+                        isSelected
+                          ? "font-medium text-fg-primary"
+                          : "text-fg-secondary"
+                      }
+                    >
                       {sprint.title}
                     </span>
                   </button>
@@ -615,7 +679,12 @@ function AssigneeEditor({
   workspaceId,
   memberIdMap,
 }: {
-  members: { id: string; name: string | null; email: string | null; image?: string | null }[];
+  members: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image?: string | null;
+  }[];
   assigneeIds: string[];
   onChange: (ids: string[]) => void;
   workspaceId: string;
@@ -634,7 +703,9 @@ function AssigneeEditor({
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">Assignees</label>
+      <label className="block text-[11px] font-medium text-fg-muted">
+        Assignees
+      </label>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {assigned.map((m) => (
           <span
@@ -688,7 +759,10 @@ function AssigneeEditor({
               />
               <button
                 type="button"
-                onClick={() => { setShowDropdown(false); setSearch(""); }}
+                onClick={() => {
+                  setShowDropdown(false);
+                  setSearch("");
+                }}
                 className="text-fg-muted hover:text-fg-secondary"
               >
                 <X size={12} />
@@ -700,7 +774,10 @@ function AssigneeEditor({
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => { onChange([...assigneeIds, m.id]); setSearch(""); }}
+                    onClick={() => {
+                      onChange([...assigneeIds, m.id]);
+                      setSearch("");
+                    }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
@@ -736,7 +813,9 @@ function TagEditor({
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
+      <label className="block text-[11px] font-medium text-fg-muted">
+        Tags
+      </label>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {tags.map((tag) => {
           const color = tag.color ?? "#6B7280";

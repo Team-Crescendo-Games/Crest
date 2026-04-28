@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, Globe, Lock, ShieldCheck } from "lucide-react";
-import { JoinButton, ApplyButton } from "./join-buttons";
+import { JoinButton, ApplyButton } from "../../../../components/workspaces/join-buttons";
 
 export default async function BrowseWorkspacesPage() {
   const session = await auth();

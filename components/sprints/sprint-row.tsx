@@ -6,7 +6,7 @@ import { Play, Pause, Trash2, Calendar } from "lucide-react";
 import { toggleSprintActive, deleteSprint } from "@/lib/actions/sprint";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban-board";
-import type { TaskCardData } from "@/components/task-card";
+import type { TaskCardData } from "@/components/tasks/task-card";
 
 interface Column {
   status: string;

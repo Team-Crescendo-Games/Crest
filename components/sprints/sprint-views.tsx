@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Columns3, GanttChart } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
-import { SprintTimeline } from "@/components/sprint-timeline";
+import { SprintTimeline } from "@/components/sprints/sprint-timeline";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import type { SortOption } from "@/lib/task-enums";
 

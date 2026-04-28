@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
-import { WorkspaceSettingsForm } from "./settings-form";
+import { WorkspaceSettingsForm } from "../../../../../components/workspaces/settings-form";
 
 export default async function WorkspaceSettingsPage({
   params,
