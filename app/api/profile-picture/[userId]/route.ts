@@ -31,7 +31,11 @@ export async function GET(
 
     const url = await getPresignedDownloadUrl(user.image, 900); // 15 min
     return NextResponse.redirect(url);
-  } catch {
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (err) {
+    console.error("[profile-picture] GET error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
