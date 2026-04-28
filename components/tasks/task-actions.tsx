@@ -66,8 +66,8 @@ export function TaskActions({
   async function handleCopyLink() {
     const url =
       typeof window !== "undefined"
-        ? window.location.href
-        : `/w/${workspaceId}/b/${boardId}/t/${taskId}`;
+        ? `${window.location.origin}/t/${taskId}`
+        : `/t/${taskId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
