@@ -102,3 +102,94 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--fg-muted);
 }
+
+/* ─── Markdown prose in task description ───────────────────────────────── */
+
+.prose-description p {
+  margin-bottom: 0.5em;
+}
+
+.prose-description p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-description h1,
+.prose-description h2,
+.prose-description h3 {
+  font-weight: 600;
+  margin-top: 0.75em;
+  margin-bottom: 0.25em;
+}
+
+.prose-description h1 {
+  font-size: 1.25em;
+}
+
+.prose-description h2 {
+  font-size: 1.1em;
+}
+
+.prose-description h3 {
+  font-size: 1em;
+}
+
+.prose-description ul,
+.prose-description ol {
+  padding-left: 1.25em;
+  margin-bottom: 0.5em;
+}
+
+.prose-description ul {
+  list-style-type: disc;
+}
+
+.prose-description ol {
+  list-style-type: decimal;
+}
+
+.prose-description li {
+  margin-bottom: 0.15em;
+}
+
+.prose-description code {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+
+.prose-description pre {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  max-width: 100%;
+  margin-bottom: 0.5em;
+}
+
+.prose-description pre code {
+  background: none;
+  padding: 0;
+  white-space: pre;
+}
+
+.prose-description blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75em;
+  color: var(--fg-secondary);
+  margin-bottom: 0.5em;
+}
+
+.prose-description hr {
+  border-color: var(--border-subtle);
+  margin: 0.75em 0;
+}
+
+.prose-description strong {
+  font-weight: 600;
+}
+
+.prose-description img {
+  max-width: 100%;
+  border-radius: 6px;
+}

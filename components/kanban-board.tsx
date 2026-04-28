@@ -354,7 +354,7 @@ export function KanbanBoard({
                       <button
                         onClick={() => goToPage(column.status, currentPage - 1)}
                         disabled={currentPage === 1 || isPageLoading}
-                        className="rounded p-0.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
+                        className="cursor-pointer rounded p-0.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
                         aria-label="Previous page"
                       >
                         <ChevronLeft size={12} />
@@ -362,7 +362,7 @@ export function KanbanBoard({
                       <button
                         onClick={() => goToPage(column.status, currentPage + 1)}
                         disabled={currentPage === totalPages || isPageLoading}
-                        className="rounded p-0.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
+                        className="cursor-pointer rounded p-0.5 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
                         aria-label="Next page"
                       >
                         <ChevronRight size={12} />
@@ -445,7 +445,7 @@ export function KanbanBoard({
                   <button
                     onClick={() => goToPage(column.status, currentPage - 1)}
                     disabled={currentPage === 1 || isPageLoading}
-                    className="rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
+                    className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
                     aria-label="Previous page"
                   >
                     <ChevronLeft size={13} />
@@ -464,7 +464,7 @@ export function KanbanBoard({
                         key={p}
                         onClick={() => goToPage(column.status, p)}
                         disabled={isPageLoading}
-                        className={`min-w-[22px] rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
+                        className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
                           p === currentPage
                             ? "bg-accent/15 text-accent"
                             : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
@@ -478,7 +478,7 @@ export function KanbanBoard({
                   <button
                     onClick={() => goToPage(column.status, currentPage + 1)}
                     disabled={currentPage === totalPages || isPageLoading}
-                    className="rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
+                    className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30"
                     aria-label="Next page"
                   >
                     <ChevronRight size={13} />

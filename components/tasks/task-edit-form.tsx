@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import React, { useActionState, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
-import { X, Plus, Search, ChevronDown, Check, Calendar } from "lucide-react";
+import { X, Plus, Search, ChevronDown, Check, Calendar, Pencil } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { UserAvatar } from "@/components/user-avatar";
 import { FlowCanvas } from "@/components/flow-view";
 import { TaskActions, FlowModeButton } from "./task-actions";
@@ -177,7 +178,7 @@ export function TaskEditForm({
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
         {/* ── Left column: main content ── */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {state?.success && (
             <div className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
               Task updated.
@@ -196,12 +197,9 @@ export function TaskEditForm({
             className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
 
-          <textarea
+          <DescriptionField
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="block w-full resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-            placeholder="Add a description..."
+            onChange={setDescription}
           />
 
           <div>
@@ -842,6 +840,161 @@ function TagEditor({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ── Description field with read / edit toggle + resizable textarea ───── */
+
+const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+
+/** Walk React children and turn plain-text URLs into clickable links. */
+function linkifyChildren(children: React.ReactNode): React.ReactNode {
+  return Array.isArray(children)
+    ? children.map((child, i) => <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>)
+    : linkifyNode(children);
+}
+
+function linkifyNode(node: React.ReactNode): React.ReactNode {
+  if (typeof node !== "string") return node;
+  const parts = node.split(URL_RE);
+  if (parts.length === 1) return node;
+  return parts.map((part, i) =>
+    URL_RE.test(part) ? (
+      <a
+        key={i}
+        href={part.startsWith("http") ? part : `https://${part}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function DescriptionField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+
+  const minHeight = 4 * 20 + 16; // 4 rows
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      dragging.current = true;
+      startY.current = e.clientY;
+      startH.current =
+        textareaRef.current?.getBoundingClientRect().height ?? minHeight;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [minHeight],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging.current) return;
+      const delta = e.clientY - startY.current;
+      setHeight(Math.max(minHeight, startH.current + delta));
+    },
+    [minHeight],
+  );
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
+
+  // Auto-focus the textarea when entering edit mode
+  useEffect(() => {
+    if (editing) textareaRef.current?.focus();
+  }, [editing]);
+
+  if (!editing) {
+    return (
+      <div className="group relative min-w-0">
+        <div
+          className="prose-description min-h-[96px] overflow-hidden break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
+        >
+          {value ? (
+            <ReactMarkdown
+              components={{
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+                  >
+                    {children}
+                  </a>
+                ),
+                p: ({ children }) => (
+                  <p>{linkifyChildren(children)}</p>
+                ),
+                li: ({ children }) => (
+                  <li>{linkifyChildren(children)}</li>
+                ),
+              }}
+            >
+              {value}
+            </ReactMarkdown>
+          ) : (
+            <span className="text-fg-muted">No description</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted opacity-0 transition-opacity hover:text-fg-primary group-hover:opacity-100"
+          title="Edit description"
+        >
+          <Pencil size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-w-0">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={4}
+        className="block w-full resize-none rounded-md border border-accent bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors outline-none ring-1 ring-accent/50"
+        placeholder="Add a description..."
+        style={height != null ? { height } : undefined}
+      />
+      {/* Drag handle */}
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        className="group flex cursor-row-resize items-center justify-center py-1"
+      >
+        <div className="h-0.5 w-8 rounded-full bg-transparent transition-colors group-hover:bg-border" />
+      </div>
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted transition-colors hover:text-fg-primary"
+        title="Done editing"
+      >
+        <Check size={12} />
+      </button>
     </div>
   );
 }
