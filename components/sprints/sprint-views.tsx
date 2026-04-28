@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Columns3, GanttChart, List } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SprintTimeline } from "@/components/sprints/sprint-timeline";
@@ -73,7 +73,17 @@ export function SprintViews({
     sorts?: SortOption[];
   };
 }) {
-  const [view, setView] = useState<"columns" | "timeline" | "list">("columns");
+  const [view, setView] = useState<"columns" | "timeline" | "list">(() => {
+    if (typeof window === "undefined") return "columns";
+    const saved = localStorage.getItem(`sprint-view-${sprintId}`);
+    if (saved === "list") return "list";
+    if (saved === "timeline" && hasTimeline) return "timeline";
+    return "columns";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`sprint-view-${sprintId}`, view);
+  }, [view, sprintId]);
 
   return (
     <div>

@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Columns3, List } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import type { SortOption } from "@/lib/task-enums";
+
+/** localStorage key for persisting the board view mode. */
+function viewKey(boardId: string) {
+  return `board-view-${boardId}`;
+}
 
 interface Task {
   id: string;
@@ -61,7 +66,15 @@ export function BoardViews({
     sorts?: SortOption[];
   };
 }) {
-  const [view, setView] = useState<"columns" | "list">("columns");
+  const [view, setView] = useState<"columns" | "list">(() => {
+    if (typeof window === "undefined") return "columns";
+    const saved = localStorage.getItem(viewKey(boardId));
+    return saved === "list" ? "list" : "columns";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(viewKey(boardId), view);
+  }, [view, boardId]);
 
   return (
     <div>
