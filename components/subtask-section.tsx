@@ -46,6 +46,7 @@ export function SubtaskSection({
 
   // Sync with server data
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubtasks(initialSubtasks);
   }, [initialSubtasks]);
 

@@ -319,7 +319,6 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const tagIds = formData.getAll("tagIds") as string[];
   const newBoardId = formData.get("boardId") as string | null;
   const sprintIds = formData.getAll("sprintIds") as string[];
-  const workspaceId = formData.get("workspaceId") as string;
 
   if (!taskId || !title?.trim()) return { error: "Task title is required" };
 
@@ -664,7 +663,6 @@ export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const dueDateStr = formData.get("dueDate") as string;
 
   if (!taskId) return { error: "Invalid request" };
@@ -700,7 +698,6 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const assigneeIds = formData.getAll("assigneeIds") as string[];
 
   if (!taskId) return { error: "Invalid request" };
@@ -743,7 +740,6 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
   const tagIds = formData.getAll("tagIds") as string[];
 
   if (!taskId) return { error: "Invalid request" };

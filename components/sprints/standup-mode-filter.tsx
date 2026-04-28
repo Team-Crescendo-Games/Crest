@@ -60,6 +60,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
     const stored = readOrder(pathname, members);
     // Only update if the stored order differs from the default
     if (stored.map((m) => m.id).join() !== members.map((m) => m.id).join()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrder(stored);
     }
   }, [pathname, members]);
@@ -131,11 +132,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
             }`}
             title={member.name ?? "Member"}
           >
-            <UserAvatar
-              name={member.name}
-              image={member.image}
-              size={24}
-            />
+            <UserAvatar name={member.name} image={member.image} size={24} />
           </button>
         );
       })}

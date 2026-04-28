@@ -88,6 +88,7 @@ export function TaskEditForm({
   // Fetch the dependency graph when flow mode is opened
   useEffect(() => {
     if (!flowOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFlowTasks(null);
       return;
     }

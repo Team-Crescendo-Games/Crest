@@ -105,10 +105,11 @@ function DashboardCreateTaskModal({
   const router = useRouter();
 
   // Default to first workspace that has boards
-  const defaultWs = workspaces.find((w) => w.boards.length > 0) ?? workspaces[0];
+  const defaultWs =
+    workspaces.find((w) => w.boards.length > 0) ?? workspaces[0];
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(defaultWs.id);
   const [formData, setFormData] = useState<WorkspaceFormData | null>(null);
-  const [loadingFormData, setLoadingFormData] = useState(false);
+  const [loadingFormData, setLoadingFormData] = useState(true);
 
   // Form fields
   const [selectedBoardId, setSelectedBoardId] = useState("");
@@ -117,37 +118,38 @@ function DashboardCreateTaskModal({
   const [selectedSprint, setSelectedSprint] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("NONE");
 
-  const selectedWorkspace = workspaces.find((w) => w.id === selectedWorkspaceId);
+  const selectedWorkspace = workspaces.find(
+    (w) => w.id === selectedWorkspaceId,
+  );
 
   // Load workspace-specific data (members, tags, sprints) when workspace changes
   useEffect(() => {
     let cancelled = false;
-    setFormData(null);
-    setSelectedAssignees([]);
-    setSelectedTags([]);
-    setSelectedSprint("");
-    setSelectedBoardId(selectedWorkspace?.boards[0]?.id ?? "");
-    setLoadingFormData(true);
 
     getWorkspaceFormData(selectedWorkspaceId)
       .then((data) => {
         if (!cancelled) {
           setFormData(data);
-          // Default to first board if not already set
-          if (data.boards.length > 0 && !selectedWorkspace?.boards[0]?.id) {
+          setSelectedAssignees([]);
+          setSelectedTags([]);
+          setSelectedSprint("");
+          if (data.boards.length > 0) {
             setSelectedBoardId(data.boards[0].id);
           }
+          setLoadingFormData(false);
         }
       })
       .catch(() => {
-        if (!cancelled) setFormData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingFormData(false);
+        if (!cancelled) {
+          setFormData(null);
+          setLoadingFormData(false);
+        }
       });
 
-    return () => { cancelled = true; };
-  }, [selectedWorkspaceId, selectedWorkspace?.boards]);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedWorkspaceId]);
 
   const [state, action, pending] = useActionState(
     async (prev: unknown, fd: FormData) => {
@@ -210,7 +212,10 @@ function DashboardCreateTaskModal({
         </label>
         <select
           value={selectedWorkspaceId}
-          onChange={(e) => setSelectedWorkspaceId(e.target.value)}
+          onChange={(e) => {
+            setSelectedWorkspaceId(e.target.value);
+            setLoadingFormData(true);
+          }}
           className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
         >
           {workspaces.map((w) => (
@@ -501,7 +506,10 @@ function AssigneePicker({
               />
               <button
                 type="button"
-                onClick={() => { setShowSearch(false); setSearch(""); }}
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearch("");
+                }}
                 className="text-fg-muted hover:text-fg-secondary"
               >
                 <X size={12} />
@@ -513,14 +521,21 @@ function AssigneePicker({
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => { onChange([...selectedIds, m.id]); setSearch(""); }}
+                    onClick={() => {
+                      onChange([...selectedIds, m.id]);
+                      setSearch("");
+                    }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
                     <div className="min-w-0 text-left">
-                      <span className="block truncate">{m.name ?? "Unknown"}</span>
+                      <span className="block truncate">
+                        {m.name ?? "Unknown"}
+                      </span>
                       {m.email && (
-                        <span className="block truncate text-[10px] text-fg-muted">{m.email}</span>
+                        <span className="block truncate text-[10px] text-fg-muted">
+                          {m.email}
+                        </span>
                       )}
                     </div>
                   </button>

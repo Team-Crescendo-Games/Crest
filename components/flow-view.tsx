@@ -5,6 +5,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
   useTransition,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -351,6 +352,7 @@ function AddTaskSearchModal({
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!query.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       setSearching(false);
       return;
@@ -494,13 +496,36 @@ export function FlowCanvas({
   workspaceId: string;
   onBack: () => void;
 }) {
-  const taskMap = new Map(tasks.map((t) => [t.id, t]));
-  const connectedIds = getConnectedGraph(rootId, taskMap);
-  const initialPositions = layoutGraph(rootId, connectedIds, taskMap);
+  const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
+  const connectedIds = useMemo(
+    () => getConnectedGraph(rootId, taskMap),
+    [rootId, taskMap],
+  );
+  const layoutPositions = useMemo(
+    () => layoutGraph(rootId, connectedIds, taskMap),
+    [rootId, connectedIds, taskMap],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [positions, setPositions] =
-    useState<Map<string, NodePosition>>(initialPositions);
+  const [dragOverrides, setDragOverrides] = useState<Map<string, NodePosition>>(
+    new Map(),
+  );
+
+  // Reset drag overrides when the layout changes (tasks/rootId changed)
+  const prevLayoutRef = useRef(layoutPositions);
+  useEffect(() => {
+    if (prevLayoutRef.current !== layoutPositions) {
+      prevLayoutRef.current = layoutPositions;
+      setDragOverrides(new Map());
+    }
+  }, [layoutPositions]);
+
+  const positions = useMemo(() => {
+    if (dragOverrides.size === 0) return layoutPositions;
+    const merged = new Map(layoutPositions);
+    for (const [id, pos] of dragOverrides) merged.set(id, pos);
+    return merged;
+  }, [layoutPositions, dragOverrides]);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dragLine, setDragLine] = useState<DragLine | null>(null);
@@ -519,14 +544,6 @@ export function FlowCanvas({
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-
-  // Recalculate layout when tasks change (e.g. after adding a relation)
-  useEffect(() => {
-    const newMap = new Map(tasks.map((t) => [t.id, t]));
-    const newConnected = getConnectedGraph(rootId, newMap);
-    const newPositions = layoutGraph(rootId, newConnected, newMap);
-    setPositions(newPositions);
-  }, [tasks, rootId]);
 
   // Convert screen coords to canvas coords
   const screenToCanvas = useCallback(
@@ -609,7 +626,7 @@ export function FlowCanvas({
     (e: ReactMouseEvent) => {
       if (draggingNode) {
         const canvasPos = screenToCanvas(e.clientX, e.clientY);
-        setPositions((prev) => {
+        setDragOverrides((prev) => {
           const next = new Map(prev);
           next.set(draggingNode, {
             x: canvasPos.x - dragOffset.x,
@@ -1059,6 +1076,7 @@ export function FlowView({
   // When a root task is selected, fetch the full dependency graph from the DB
   useEffect(() => {
     if (!selectedRootId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGraphTasks(null);
       return;
     }

@@ -157,8 +157,8 @@ export function KanbanBoard({
 
   // Sync local state when server data changes (after revalidation)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalColumns(columns);
-    // Seed page 1 cache for all paginated columns and reset to page 1
     const newState: Record<string, ColumnPaginationState> = {};
     for (const col of columns) {
       const count = effectiveCounts[col.status];
@@ -253,6 +253,7 @@ export function KanbanBoard({
       effectiveCounts,
       effectivePageSizes,
       paginationState,
+      loadPage,
     ],
   );
 
