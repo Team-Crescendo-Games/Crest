@@ -38,9 +38,9 @@ export default async function WorkspaceLayout({
   const workspaces = memberships.map((m) => m.workspace);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen">
       <Sidebar user={session.user} workspaces={workspaces} />
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      <main className="flex-1 p-8">{children}</main>
     </div>
   );
 }

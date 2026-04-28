@@ -278,6 +278,14 @@ export default async function BoardDetailPage({
   const filteredCount =
     notStartedCount + inProgressCount + inReviewCount + completedCount;
 
+  // Build full (unsliced) columns for the list view
+  const allColumns = STATUS_ORDER.map((status) => ({
+    status,
+    label: STATUS_LABELS[status],
+    color: STATUS_COLORS[status],
+    tasks: (tasksByStatusRaw[status] ?? []).map(mapTask),
+  }));
+
   return (
     <div className="mx-auto max-w-5xl">
       <Link
@@ -344,6 +352,7 @@ export default async function BoardDetailPage({
 
         <BoardViews
           columns={columns}
+          allColumns={allColumns}
           boardId={boardId}
           workspaceId={workspaceId}
           canCreate={canCreate}

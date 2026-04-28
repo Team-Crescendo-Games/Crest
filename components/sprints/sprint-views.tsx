@@ -34,6 +34,7 @@ interface Column {
 
 export function SprintViews({
   columns,
+  allColumns,
   tasks,
   sprintId,
   sprintStart,
@@ -49,6 +50,7 @@ export function SprintViews({
   columnFilters,
 }: {
   columns: Column[];
+  allColumns?: Column[];
   tasks: Task[];
   sprintId: string;
   sprintStart: Date | null;
@@ -125,7 +127,7 @@ export function SprintViews({
 
       {view === "list" ? (
         <TaskListView
-          columns={columns}
+          columns={allColumns ?? columns}
           workspaceId={workspaceId}
         />
       ) : view === "timeline" && hasTimeline ? (

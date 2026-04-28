@@ -828,7 +828,7 @@ function TagEditor({
                     : [...selectedTagIds, tag.id],
                 )
               }
-              className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
+              className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
               style={{
                 borderColor: color + (isSelected ? "80" : "40"),
                 color: isSelected ? "#fff" : color,

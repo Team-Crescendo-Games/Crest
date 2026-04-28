@@ -32,6 +32,7 @@ interface Column {
 
 export function BoardViews({
   columns,
+  allColumns,
   boardId,
   workspaceId,
   canCreate,
@@ -43,6 +44,7 @@ export function BoardViews({
   columnFilters,
 }: {
   columns: Column[];
+  allColumns?: Column[];
   boardId: string;
   workspaceId: string;
   canCreate: boolean;
@@ -93,7 +95,7 @@ export function BoardViews({
 
       {view === "list" ? (
         <TaskListView
-          columns={columns}
+          columns={allColumns ?? columns}
           workspaceId={workspaceId}
           boardId={boardId}
         />

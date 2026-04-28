@@ -78,8 +78,63 @@ export function TaskListView({
     return pages;
   }
 
+  const pagination = totalPages > 1 ? (
+    <div className="flex items-center justify-between">
+      <p className="text-[11px] text-fg-muted">
+        {(currentPage - 1) * PAGE_SIZE + 1}–
+        {Math.min(currentPage * PAGE_SIZE, allTasks.length)} of{" "}
+        {allTasks.length} tasks
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Previous page"
+        >
+          <ChevronLeft size={13} />
+        </button>
+
+        {pageNumbers().map((p, i) =>
+          p === "ellipsis" ? (
+            <span
+              key={`ellipsis-${i}`}
+              className="px-0.5 text-[10px] text-fg-muted"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
+                p === currentPage
+                  ? "bg-accent/15 text-accent"
+                  : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
+              }`}
+            >
+              {p}
+            </button>
+          ),
+        )}
+
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next page"
+        >
+          <ChevronRight size={13} />
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div>
+      {/* Top pagination */}
+      {pagination && <div className="mb-3">{pagination}</div>}
+
       <div className="overflow-hidden rounded-md border border-border">
         {/* Header */}
         <div className="grid grid-cols-[1fr_100px_90px_90px_80px_60px] gap-2 border-b border-border bg-bg-secondary/50 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-fg-muted">
@@ -208,58 +263,8 @@ export function TaskListView({
         </div>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-[11px] text-fg-muted">
-            {(currentPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(currentPage * PAGE_SIZE, allTasks.length)} of{" "}
-            {allTasks.length} tasks
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-              aria-label="Previous page"
-            >
-              <ChevronLeft size={13} />
-            </button>
-
-            {pageNumbers().map((p, i) =>
-              p === "ellipsis" ? (
-                <span
-                  key={`ellipsis-${i}`}
-                  className="px-0.5 text-[10px] text-fg-muted"
-                >
-                  …
-                </span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
-                    p === currentPage
-                      ? "bg-accent/15 text-accent"
-                      : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
-                  }`}
-                >
-                  {p}
-                </button>
-              ),
-            )}
-
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-              aria-label="Next page"
-            >
-              <ChevronRight size={13} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Bottom pagination */}
+      {pagination && <div className="mt-3">{pagination}</div>}
     </div>
   );
 }
