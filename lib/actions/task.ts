@@ -952,6 +952,20 @@ export async function removeSubtask(_prev: unknown, formData: FormData) {
   return { success: true };
 }
 
+/** Fetch subtasks for a given parent task (on-demand). */
+export async function getSubtasks(taskId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const subtasks = await prisma.task.findMany({
+    where: { parentTaskId: taskId },
+    select: { id: true, title: true, status: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return subtasks;
+}
+
 /** Fetch tasks on the same board that can be added as subtasks. */
 export async function getAvailableSubtasks(
   boardId: string,

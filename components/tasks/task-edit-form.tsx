@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useActionState, useState, useEffect, useRef, useCallback } from "react";
+import React, { useActionState, useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
 import { X, Plus, Search, ChevronDown, Check, Calendar, Pencil } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import { UserAvatar } from "@/components/user-avatar";
-import { FlowCanvas } from "@/components/flow-view";
 import { TaskActions, FlowModeButton } from "./task-actions";
 import { DeleteTaskButton } from "./delete-task-button";
+
+const ReactMarkdown = lazy(() => import("react-markdown"));
+const FlowCanvas = lazy(() =>
+  import("@/components/flow-view").then((m) => ({ default: m.FlowCanvas })),
+);
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -381,12 +384,20 @@ export function TaskEditForm({
               </p>
             </div>
           ) : flowTasks ? (
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
+                  <p className="font-mono text-sm text-fg-muted animate-pulse">Loading flow view…</p>
+                </div>
+              }
+            >
             <FlowCanvas
               tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
               rootId={task.id}
               workspaceId={workspaceId}
               onBack={() => setFlowOpen(false)}
             />
+            </Suspense>
           ) : (
             <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
               <p className="font-mono text-sm text-fg-muted">
@@ -943,6 +954,7 @@ function DescriptionField({
           style={{ minHeight, height: height ?? undefined }}
         >
           {value ? (
+            <Suspense fallback={<div className="animate-pulse text-fg-muted text-sm">Loading…</div>}>
             <ReactMarkdown
               components={{
                 a: ({ href, children }) => (
@@ -965,6 +977,7 @@ function DescriptionField({
             >
               {value}
             </ReactMarkdown>
+            </Suspense>
           ) : (
             <span className="text-fg-muted">No description</span>
           )}
