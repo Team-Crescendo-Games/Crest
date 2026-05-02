@@ -102,7 +102,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
         >
           <button
             onClick={() => toggleDirection(index)}
-            className="flex items-center gap-1 hover:text-accent transition-colors"
+            className="flex cursor-pointer items-center gap-1 hover:text-accent transition-colors"
             title={`Sort ${SORT_DIRECTION_LABELS[sort.direction === "asc" ? "desc" : "asc"]}`}
           >
             {sort.direction === "asc" ? (
@@ -114,7 +114,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
           </button>
           <button
             onClick={() => removeSort(index)}
-            className="ml-0.5 rounded-sm hover:bg-accent/10 p-0.5 transition-colors"
+            className="ml-0.5 cursor-pointer rounded-sm hover:bg-accent/10 p-0.5 transition-colors"
             title="Remove sort"
           >
             <X size={8} />
@@ -128,10 +128,10 @@ export function SortControls({ currentSorts, extraParams }: Props) {
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className={`flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[11px] transition-colors focus:outline-none ${
+            className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[11px] transition-all focus:outline-none hover:border-accent/40 hover:bg-accent/5 ${
               currentSorts.length > 0
-                ? "border-border bg-bg-primary text-fg-muted hover:text-fg-secondary"
-                : "border-border bg-bg-primary text-fg-muted hover:border-accent/30 hover:text-fg-secondary"
+                ? "border-accent/40 bg-accent/5 text-fg-primary"
+                : "border-border bg-bg-primary text-fg-muted"
             }`}
           >
             {currentSorts.length === 0 ? (
@@ -158,7 +158,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
                   key={field}
                   type="button"
                   onClick={() => addSort(field)}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-fg-secondary transition-colors hover:bg-bg-secondary"
+                  className="flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left text-[11px] text-fg-secondary transition-colors hover:bg-bg-secondary"
                 >
                   <ArrowUpDown size={10} className="text-fg-muted" />
                   {SORT_FIELD_LABELS[field]}
@@ -173,7 +173,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
       {currentSorts.length > 0 && (
         <button
           onClick={clearAll}
-          className="text-[11px] text-accent hover:text-accent-emphasis transition-colors"
+          className="cursor-pointer text-[11px] text-accent hover:text-accent-emphasis transition-colors"
         >
           Clear sort
         </button>

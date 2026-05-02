@@ -160,7 +160,7 @@ function MultiSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[11px] transition-colors focus:outline-none ${
+        className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 font-mono text-[11px] transition-all focus:outline-none hover:border-accent/40 hover:bg-accent/5 ${
           selected.length > 0
             ? "border-accent/40 bg-accent/5 text-fg-primary"
             : "border-border bg-bg-primary text-fg-muted"
@@ -182,7 +182,7 @@ function MultiSelect({
                 key={opt.value}
                 type="button"
                 onClick={() => toggle(opt.value)}
-                className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-bg-secondary ${
+                className={`flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-bg-secondary ${
                   isSelected ? "bg-accent/5" : ""
                 }`}
               >

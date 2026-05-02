@@ -321,6 +321,33 @@ export default async function SprintDetailPage({
     tasks: tasksByStatus[status] ?? [],
   }));
 
+  // Full (unsliced) columns for the list view
+  const allTasksByStatus: Record<string, MappedTask[]> = {};
+  for (const status of STATUS_ORDER) {
+    allTasksByStatus[status] = (
+      (tasksByStatusRaw[status] ?? []) as Parameters<typeof mapTask>[0][]
+    ).map(mapTask);
+  }
+  if (prioritySort) {
+    for (const tasks of Object.values(allTasksByStatus)) {
+      tasks.sort((a, b) => {
+        const aOrder =
+          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder =
+          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc"
+          ? aOrder - bOrder
+          : bOrder - aOrder;
+      });
+    }
+  }
+  const allColumns = STATUS_ORDER.map((status) => ({
+    status,
+    label: STATUS_LABELS[status],
+    color: STATUS_COLORS[status],
+    tasks: allTasksByStatus[status] ?? [],
+  }));
+
   const columnCounts: Record<string, number> = {
     NOT_STARTED: notStartedCount,
     IN_PROGRESS: inProgressCount,
@@ -484,6 +511,7 @@ export default async function SprintDetailPage({
 
         <SprintViews
           columns={columns}
+          allColumns={allColumns}
           tasks={sprint.tasks.map((t) => ({
             ...t,
             author: { name: null },

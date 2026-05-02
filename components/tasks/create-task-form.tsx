@@ -84,7 +84,7 @@ export function CreateTaskForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex items-center gap-1 rounded-md border border-border bg-bg-secondary text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent ${
+        className={`flex items-center gap-1 rounded-md border border-border bg-bg-secondary text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent cursor-pointer ${
           compact ? "px-2 py-1 text-[11px]" : "px-3 py-2 text-xs"
         }`}
       >

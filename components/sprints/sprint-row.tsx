@@ -1,9 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
 import Link from "next/link";
-import { Play, Pause, Trash2, Calendar } from "lucide-react";
-import { toggleSprintActive, deleteSprint } from "@/lib/actions/sprint";
+import { Calendar } from "lucide-react";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban-board";
 import type { TaskCardData } from "@/components/tasks/task-card";
@@ -48,14 +46,6 @@ export function SprintRow({
   };
   permissions: number;
 }) {
-  const [, toggleAction, togglePending] = useActionState(
-    toggleSprintActive,
-    null,
-  );
-  const [, deleteAction, deletePending] = useActionState(deleteSprint, null);
-
-  const canEdit = hasPermission(permissions, Permission.EDIT_CONTENT);
-  const canDelete = hasPermission(permissions, Permission.DELETE_CONTENT);
   const canCreate = hasPermission(permissions, Permission.CREATE_CONTENT);
 
   const filteredCount =
@@ -148,43 +138,6 @@ export function SprintRow({
         </div>
 
         <div className="ml-4 flex items-center gap-1">
-          {canEdit && (
-            <form action={toggleAction}>
-              <input type="hidden" name="sprintId" value={sprint.id} />
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <button
-                type="submit"
-                disabled={togglePending}
-                className="rounded p-1 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
-                title={sprint.isActive ? "Close sprint" : "Reopen sprint"}
-              >
-                {sprint.isActive ? <Pause size={12} /> : <Play size={12} />}
-              </button>
-            </form>
-          )}
-          {canDelete && (
-            <form action={deleteAction}>
-              <input type="hidden" name="sprintId" value={sprint.id} />
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <button
-                type="submit"
-                disabled={deletePending}
-                className="rounded p-1 text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
-                title="Delete sprint"
-                onClick={(e) => {
-                  if (
-                    !confirm(
-                      `Delete "${sprint.title}"? Tasks will be unassigned but not deleted.`,
-                    )
-                  ) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </form>
-          )}
         </div>
       </div>
 

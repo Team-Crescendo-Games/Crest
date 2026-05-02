@@ -1,14 +1,18 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import React, { useActionState, useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
-import { X, Plus, Search, ChevronDown, Check, Calendar } from "lucide-react";
+import { X, Plus, Search, ChevronDown, Check, Calendar, Pencil } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
-import { FlowCanvas } from "@/components/flow-view";
 import { TaskActions, FlowModeButton } from "./task-actions";
 import { DeleteTaskButton } from "./delete-task-button";
+
+const ReactMarkdown = lazy(() => import("react-markdown"));
+const FlowCanvas = lazy(() =>
+  import("@/components/flow-view").then((m) => ({ default: m.FlowCanvas })),
+);
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -177,7 +181,7 @@ export function TaskEditForm({
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
         {/* ── Left column: main content ── */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {state?.success && (
             <div className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
               Task updated.
@@ -196,12 +200,9 @@ export function TaskEditForm({
             className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
 
-          <textarea
+          <DescriptionField
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="block w-full resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-            placeholder="Add a description..."
+            onChange={setDescription}
           />
 
           <div>
@@ -383,12 +384,20 @@ export function TaskEditForm({
               </p>
             </div>
           ) : flowTasks ? (
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
+                  <p className="font-mono text-sm text-fg-muted animate-pulse">Loading flow view…</p>
+                </div>
+              }
+            >
             <FlowCanvas
               tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
               rootId={task.id}
               workspaceId={workspaceId}
               onBack={() => setFlowOpen(false)}
             />
+            </Suspense>
           ) : (
             <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
               <p className="font-mono text-sm text-fg-muted">
@@ -441,7 +450,7 @@ function DropdownPicker({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
+        className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
         style={color ? { backgroundColor: color + "20", color } : undefined}
       >
         {color && (
@@ -466,7 +475,7 @@ function DropdownPicker({
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 {o.color && (
                   <div
@@ -537,7 +546,7 @@ function BoardField({
                   onChange(o.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 <span
                   className={
@@ -830,7 +839,7 @@ function TagEditor({
                     : [...selectedTagIds, tag.id],
                 )
               }
-              className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
+              className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
               style={{
                 borderColor: color + (isSelected ? "80" : "40"),
                 color: isSelected ? "#fff" : color,
@@ -842,6 +851,170 @@ function TagEditor({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ── Description field with read / edit toggle + resizable textarea ───── */
+
+const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+
+/** Walk React children and turn plain-text URLs into clickable links. */
+function linkifyChildren(children: React.ReactNode): React.ReactNode {
+  return Array.isArray(children)
+    ? children.map((child, i) => <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>)
+    : linkifyNode(children);
+}
+
+function linkifyNode(node: React.ReactNode): React.ReactNode {
+  if (typeof node !== "string") return node;
+  const parts = node.split(URL_RE);
+  if (parts.length === 1) return node;
+  return parts.map((part, i) =>
+    URL_RE.test(part) ? (
+      <a
+        key={i}
+        href={part.startsWith("http") ? part : `https://${part}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function DescriptionField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+
+  const minHeight = 96; // matches min-h-[96px]
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      dragging.current = true;
+      startY.current = e.clientY;
+      const el = editing ? textareaRef.current : viewRef.current;
+      startH.current = el?.getBoundingClientRect().height ?? minHeight;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [editing, minHeight],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging.current) return;
+      const delta = e.clientY - startY.current;
+      setHeight(Math.max(minHeight, startH.current + delta));
+    },
+    [minHeight],
+  );
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
+
+  // Auto-focus the textarea when entering edit mode
+  useEffect(() => {
+    if (editing) textareaRef.current?.focus();
+  }, [editing]);
+
+  const dragHandle = (
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      className="group flex cursor-row-resize items-center justify-center py-1"
+    >
+      <div className="h-0.5 w-8 rounded-full bg-transparent transition-colors group-hover:bg-border" />
+    </div>
+  );
+
+  if (!editing) {
+    return (
+      <div className="group/desc relative min-w-0">
+        <div
+          ref={viewRef}
+          className="prose-description overflow-y-auto overflow-hidden break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
+          style={{ minHeight, height: height ?? undefined }}
+        >
+          {value ? (
+            <Suspense fallback={<div className="animate-pulse text-fg-muted text-sm">Loading…</div>}>
+            <ReactMarkdown
+              components={{
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+                  >
+                    {children}
+                  </a>
+                ),
+                p: ({ children }) => (
+                  <p>{linkifyChildren(children)}</p>
+                ),
+                li: ({ children }) => (
+                  <li>{linkifyChildren(children)}</li>
+                ),
+              }}
+            >
+              {value}
+            </ReactMarkdown>
+            </Suspense>
+          ) : (
+            <span className="text-fg-muted">No description</span>
+          )}
+        </div>
+        {dragHandle}
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted opacity-0 transition-opacity hover:text-fg-primary group-hover/desc:opacity-100"
+          title="Edit description"
+        >
+          <Pencil size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-w-0">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={4}
+        className="block w-full resize-none rounded-md border border-accent bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors outline-none ring-1 ring-accent/50"
+        placeholder="Add a description..."
+        style={{ minHeight, height: height ?? undefined }}
+      />
+      {dragHandle}
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="absolute right-2 top-2 cursor-pointer rounded-md border border-border bg-bg-secondary p-1 text-fg-muted transition-colors hover:text-fg-primary"
+        title="Done editing"
+      >
+        <Check size={12} />
+      </button>
     </div>
   );
 }

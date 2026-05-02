@@ -11,7 +11,7 @@ import {
 } from "@/lib/permissions";
 import { BoardActions } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
-import { KanbanBoard } from "@/components/kanban-board";
+import { BoardViews } from "@/components/boards/board-views";
 import { SortControls } from "@/components/tasks/sort-controls";
 import {
   TASK_PRIORITIES,
@@ -278,6 +278,14 @@ export default async function BoardDetailPage({
   const filteredCount =
     notStartedCount + inProgressCount + inReviewCount + completedCount;
 
+  // Build full (unsliced) columns for the list view
+  const allColumns = STATUS_ORDER.map((status) => ({
+    status,
+    label: STATUS_LABELS[status],
+    color: STATUS_COLORS[status],
+    tasks: (tasksByStatusRaw[status] ?? []).map(mapTask),
+  }));
+
   return (
     <div className="mx-auto max-w-5xl">
       <Link
@@ -342,10 +350,10 @@ export default async function BoardDetailPage({
           extraControls={<SortControls currentSorts={sorts} />}
         />
 
-        <KanbanBoard
+        <BoardViews
           columns={columns}
+          allColumns={allColumns}
           boardId={boardId}
-          variant="detailed"
           workspaceId={workspaceId}
           canCreate={canCreate}
           sprints={sprints}

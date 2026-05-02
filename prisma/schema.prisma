@@ -311,6 +311,8 @@ model Attachment {
 
   task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([taskId])
 }
 
 // ─── Comment ────────────────────────────────────────────────────────────────
@@ -326,6 +328,8 @@ model Comment {
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
 }
 
 // ─── Activity Log ───────────────────────────────────────────────────────────

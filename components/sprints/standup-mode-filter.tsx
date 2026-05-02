@@ -99,7 +99,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
         type="button"
         onClick={shuffle}
         disabled={members.length < 2}
-        className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-secondary text-fg-muted transition-all hover:bg-accent/10 hover:text-accent disabled:opacity-40"
+        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-bg-secondary text-fg-muted transition-all hover:bg-accent/10 hover:text-accent disabled:opacity-40"
         title="Shuffle order"
       >
         <Shuffle size={12} />
@@ -107,7 +107,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
       <button
         type="button"
         onClick={() => select(null)}
-        className={`flex items-center justify-center rounded-full transition-all ${
+        className={`flex cursor-pointer items-center justify-center rounded-full transition-all ${
           !currentAssignee
             ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary"
             : "opacity-60 hover:opacity-100"
@@ -125,7 +125,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
             key={member.id}
             type="button"
             onClick={() => select(member.id)}
-            className={`rounded-full transition-all ${
+            className={`cursor-pointer rounded-full transition-all ${
               isActive
                 ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary"
                 : "opacity-60 hover:opacity-100"

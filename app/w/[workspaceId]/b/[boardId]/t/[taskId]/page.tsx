@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { TaskEditForm } from "@/components/tasks/task-edit-form";
+import { TaskBreadcrumb } from "@/components/tasks/task-breadcrumb";
 import { CommentSection } from "@/components/tasks/comment-section";
 import { ActivityLog } from "@/components/tasks/activity-log";
 import { AttachmentSection } from "@/components/attachment-section";
@@ -17,40 +18,70 @@ export default async function TaskDetailPage({
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const membership = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true },
-  });
+  // Run all independent queries in parallel
+  const [membership, task, members, boards, sprints, allTags] =
+    await Promise.all([
+      prisma.workspaceMember.findUnique({
+        where: { userId_workspaceId: { userId, workspaceId } },
+        include: { role: true },
+      }),
+      prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          board: { select: { name: true, workspaceId: true } },
+          author: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+          assignees: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+          tags: { select: { id: true, name: true, color: true } },
+          sprints: { select: { id: true, title: true } },
+          parentTask: { select: { id: true, title: true, boardId: true } },
+          subtasks: {
+            select: { id: true },
+          },
+          comments: {
+            include: { user: { select: { id: true, name: true } } },
+            orderBy: { createdAt: "asc" },
+          },
+          attachments: {
+            include: { uploadedBy: { select: { name: true } } },
+            orderBy: { createdAt: "desc" },
+          },
+          activities: {
+            include: { user: { select: { name: true } } },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      }),
+      prisma.workspaceMember.findMany({
+        where: { workspaceId },
+        select: {
+          id: true,
+          user: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+        },
+      }),
+      prisma.board.findMany({
+        where: { workspaceId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { displayOrder: "asc" },
+      }),
+      prisma.sprint.findMany({
+        where: { workspaceId },
+        select: { id: true, title: true, isActive: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.tag.findMany({
+        where: { workspaceId },
+        select: { id: true, name: true, color: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
   if (!membership) notFound();
-
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    include: {
-      board: { select: { name: true, workspaceId: true } },
-      author: { select: { id: true, name: true, email: true, image: true } },
-      assignees: { select: { id: true, name: true, email: true, image: true } },
-      tags: { select: { id: true, name: true, color: true } },
-      sprints: { select: { id: true, title: true } },
-      parentTask: { select: { id: true, title: true, boardId: true } },
-      subtasks: {
-        select: { id: true, title: true, status: true },
-        orderBy: { createdAt: "asc" },
-      },
-      comments: {
-        include: { user: { select: { id: true, name: true } } },
-        orderBy: { createdAt: "asc" },
-      },
-      attachments: {
-        include: { uploadedBy: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-      activities: {
-        include: { user: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  });
 
   if (
     !task ||
@@ -59,31 +90,6 @@ export default async function TaskDetailPage({
   ) {
     notFound();
   }
-
-  const [members, boards, sprints, allTags] = await Promise.all([
-    prisma.workspaceMember.findMany({
-      where: { workspaceId },
-      select: {
-        id: true,
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
-    }),
-    prisma.board.findMany({
-      where: { workspaceId, isActive: true },
-      select: { id: true, name: true },
-      orderBy: { displayOrder: "asc" },
-    }),
-    prisma.sprint.findMany({
-      where: { workspaceId },
-      select: { id: true, title: true, isActive: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.tag.findMany({
-      where: { workspaceId },
-      select: { id: true, name: true, color: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
 
   // Build userId → workspaceMemberId map for profile links
   const memberIdMap: Record<string, string> = {};
@@ -94,6 +100,12 @@ export default async function TaskDetailPage({
   return (
     <div className="relative">
       <div className="mx-auto max-w-3xl">
+        {/* Breadcrumb */}
+        <TaskBreadcrumb
+          boardName={task.board.name}
+          boardHref={`/w/${workspaceId}/b/${boardId}`}
+        />
+
         {/* Unified form renders both columns */}
         <TaskEditForm
           task={{
@@ -141,7 +153,7 @@ export default async function TaskDetailPage({
           taskId={taskId}
           boardId={boardId}
           workspaceId={workspaceId}
-          subtasks={task.subtasks}
+          subtaskCount={task.subtasks.length}
         />
 
         <div className="mt-8">

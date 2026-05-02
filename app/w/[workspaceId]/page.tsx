@@ -222,7 +222,7 @@ export default async function WorkspaceOverviewPage({
                 <Link
                   key={sprint.id}
                   href={`/w/${workspaceId}/s/${sprint.id}`}
-                  className="group flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-all hover:border-accent/40"
+                  className="group flex items-center justify-between rounded-md border border-border bg-bg-secondary/50 px-4 py-3 backdrop-blur-sm transition-all hover:border-fg-muted/30 hover:bg-bg-secondary"
                 >
                   <div>
                     <p className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">

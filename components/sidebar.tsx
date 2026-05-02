@@ -126,7 +126,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
   return (
     <aside
       ref={sidebarRef}
-      className="relative flex flex-col border-r border-border bg-bg-elevated/60 backdrop-blur-sm"
+      className="sticky top-0 flex h-screen flex-col border-r border-border bg-bg-elevated/60 backdrop-blur-sm overflow-y-auto"
       style={{ width, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH }}
     >
       {/* Resize handle */}

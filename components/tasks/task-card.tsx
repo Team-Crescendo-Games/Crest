@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { UserAvatar } from "@/components/user-avatar";
 import { PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
@@ -188,6 +189,9 @@ export function TaskCard({
   highlighted?: boolean;
   onHoverChange?: (taskId: string | null) => void;
 }) {
+  const router = useRouter();
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+
   const resolvedWorkspaceId =
     task.workspaceId || task.board?.workspaceId || workspaceId;
   const link =
@@ -197,9 +201,25 @@ export function TaskCard({
   const tagTint = averageTagColor(task.tags);
 
   return (
-    <Link
-      href={link}
-      className={`group relative block overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:ring-1 hover:ring-accent/30 hover:shadow-md hover:shadow-accent/8 ${
+    <div
+      role="link"
+      tabIndex={0}
+      onPointerDown={(e) => {
+        pointerStart.current = { x: e.clientX, y: e.clientY };
+      }}
+      onClick={(e) => {
+        // Only navigate if the pointer barely moved (real click, not drag release)
+        if (pointerStart.current) {
+          const dx = Math.abs(e.clientX - pointerStart.current.x);
+          const dy = Math.abs(e.clientY - pointerStart.current.y);
+          if (dx > 4 || dy > 4) return;
+        }
+        router.push(link);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") router.push(link);
+      }}
+      className={`group relative block cursor-pointer overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:ring-1 hover:ring-accent/30 hover:shadow-md hover:shadow-accent/8 ${
         highlighted
           ? "border-accent/50 ring-1 ring-accent/30 shadow-sm shadow-accent/10"
           : "border-border"
@@ -306,6 +326,6 @@ export function TaskCard({
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

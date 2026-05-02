@@ -2,11 +2,12 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Plus, X, Search, Loader2 } from "lucide-react";
+import { Plus, X, Search, Loader2, ChevronRight } from "lucide-react";
 import {
   addSubtask,
   removeSubtask,
   getAvailableSubtasks,
+  getSubtasks,
 } from "@/lib/actions/task";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/task-enums";
 import type { TaskStatus } from "@/prisma/generated/prisma/enums";
@@ -27,14 +28,18 @@ export function SubtaskSection({
   taskId,
   boardId,
   workspaceId,
-  subtasks: initialSubtasks,
+  subtaskCount: initialCount,
 }: {
   taskId: string;
   boardId: string;
   workspaceId: string;
-  subtasks: Subtask[];
+  subtaskCount: number;
 }) {
-  const [subtasks, setSubtasks] = useState(initialSubtasks);
+  const [expanded, setExpanded] = useState(false);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [count, setCount] = useState(() => initialCount);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -44,11 +49,28 @@ export function SubtaskSection({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Sync with server data
+  // Fetch subtasks when expanded for the first time
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSubtasks(initialSubtasks);
-  }, [initialSubtasks]);
+    if (!expanded || loaded) return;
+    let cancelled = false;
+    async function fetchSubtasks() {
+      setLoading(true);
+      try {
+        const data = await getSubtasks(taskId);
+        if (!cancelled) {
+          setSubtasks(data);
+          setCount(data.length);
+          setLoaded(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchSubtasks();
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, loaded, taskId]);
 
   // Focus input when opening the add panel
   useEffect(() => {
@@ -66,7 +88,6 @@ export function SubtaskSection({
       setIsSearching(true);
       try {
         const tasks = await getAvailableSubtasks(boardId, taskId, query);
-        // Filter out tasks already in the subtask list
         const existingIds = new Set(subtasks.map((s) => s.id));
         setResults(
           (tasks as SearchResult[]).filter((t) => !existingIds.has(t.id)),
@@ -88,8 +109,10 @@ export function SubtaskSection({
       const result = await addSubtask(null, formData);
       if (result?.error) {
         setError(result.error);
-        // Auto-dismiss after 5 seconds
         setTimeout(() => setError(null), 5000);
+      } else {
+        // Refresh the subtask list
+        setLoaded(false);
       }
     });
   }
@@ -98,6 +121,7 @@ export function SubtaskSection({
     setError(null);
     // Optimistic removal
     setSubtasks((prev) => prev.filter((s) => s.id !== subtaskId));
+    setCount((c) => Math.max(0, c - 1));
     startTransition(async () => {
       const formData = new FormData();
       formData.set("parentTaskId", taskId);
@@ -106,27 +130,38 @@ export function SubtaskSection({
       if (result?.error) {
         setError(result.error);
         setTimeout(() => setError(null), 5000);
-        // Revert on error
-        setSubtasks(initialSubtasks);
+        // Revert on error — refetch
+        setLoaded(false);
       }
     });
+  }
+
+  function handleToggleAdd() {
+    if (!expanded) {
+      setExpanded(true);
+    }
+    setIsAdding(!isAdding);
+    setQuery("");
+    setResults([]);
   }
 
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-xs font-medium text-fg-secondary">
-          Subtasks
-          {subtasks.length > 0 && (
-            <span className="ml-1.5 text-fg-muted">{subtasks.length}</span>
-          )}
-        </h3>
         <button
-          onClick={() => {
-            setIsAdding(!isAdding);
-            setQuery("");
-            setResults([]);
-          }}
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex cursor-pointer items-center gap-1.5 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
+        >
+          <ChevronRight
+            size={12}
+            className={`transition-transform ${expanded ? "rotate-90" : ""}`}
+          />
+          Subtasks
+          <span className="ml-0.5 text-fg-muted">({count})</span>
+        </button>
+        <button
+          onClick={handleToggleAdd}
           className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary"
         >
           {isAdding ? (
@@ -156,44 +191,56 @@ export function SubtaskSection({
         </div>
       )}
 
-      {/* Existing subtasks */}
-      {subtasks.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {subtasks.map((sub) => (
-            <div
-              key={sub.id}
-              className="group/sub flex items-center gap-2 rounded-md border border-border bg-bg-elevated/60 px-3 py-2 text-xs transition-colors hover:border-accent/30"
-            >
-              <div
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: STATUS_COLORS[sub.status] ?? "#9c9c98",
-                }}
-              />
-              <Link
-                href={`/w/${workspaceId}/b/${boardId}/t/${sub.id}`}
-                className="min-w-0 flex-1 truncate text-fg-primary hover:text-accent transition-colors"
-              >
-                {sub.title}
-              </Link>
-              <span className="shrink-0 text-[11px] text-fg-muted">
-                {STATUS_LABELS[sub.status]}
-              </span>
-              <button
-                onClick={() => handleRemove(sub.id)}
-                disabled={isPending}
-                className="shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-all hover:bg-bg-secondary hover:text-red-400 group-hover/sub:opacity-100 disabled:opacity-50"
-                title="Remove subtask"
-              >
-                <X size={12} />
-              </button>
+      {expanded && (
+        <>
+          {/* Loading state */}
+          {loading && (
+            <div className="mt-2 flex items-center gap-2 py-3 text-xs text-fg-muted">
+              <Loader2 size={12} className="animate-spin" />
+              Loading subtasks…
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {subtasks.length === 0 && !isAdding && (
-        <p className="mt-2 text-[11px] text-fg-muted">No subtasks</p>
+          {/* Existing subtasks */}
+          {!loading && subtasks.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {subtasks.map((sub) => (
+                <div
+                  key={sub.id}
+                  className="group/sub flex items-center gap-2 rounded-md border border-border bg-bg-elevated/60 px-3 py-2 text-xs transition-colors hover:border-accent/30"
+                >
+                  <div
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: STATUS_COLORS[sub.status] ?? "#9c9c98",
+                    }}
+                  />
+                  <Link
+                    href={`/w/${workspaceId}/b/${boardId}/t/${sub.id}`}
+                    className="min-w-0 flex-1 truncate text-fg-primary transition-colors hover:text-accent"
+                  >
+                    {sub.title}
+                  </Link>
+                  <span className="shrink-0 text-[11px] text-fg-muted">
+                    {STATUS_LABELS[sub.status]}
+                  </span>
+                  <button
+                    onClick={() => handleRemove(sub.id)}
+                    disabled={isPending}
+                    className="shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-all hover:bg-bg-secondary hover:text-red-400 group-hover/sub:opacity-100 disabled:opacity-50"
+                    title="Remove subtask"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && subtasks.length === 0 && !isAdding && (
+            <p className="mt-2 text-[11px] text-fg-muted">No subtasks</p>
+          )}
+        </>
       )}
 
       {/* Add subtask search panel */}
