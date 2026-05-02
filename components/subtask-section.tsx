@@ -37,7 +37,7 @@ export function SubtaskSection({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-  const [count, setCount] = useState(initialCount);
+  const [count, setCount] = useState(() => initialCount);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -49,27 +49,24 @@ export function SubtaskSection({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Sync count with server data
-  useEffect(() => {
-    setCount(initialCount);
-  }, [initialCount]);
-
   // Fetch subtasks when expanded for the first time
   useEffect(() => {
     if (!expanded || loaded) return;
     let cancelled = false;
-    setLoading(true);
-    getSubtasks(taskId)
-      .then((data) => {
+    async function fetchSubtasks() {
+      setLoading(true);
+      try {
+        const data = await getSubtasks(taskId);
         if (!cancelled) {
           setSubtasks(data);
           setCount(data.length);
           setLoaded(true);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+    fetchSubtasks();
     return () => {
       cancelled = true;
     };
@@ -215,8 +212,7 @@ export function SubtaskSection({
                   <div
                     className="h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{
-                      backgroundColor:
-                        STATUS_COLORS[sub.status] ?? "#9c9c98",
+                      backgroundColor: STATUS_COLORS[sub.status] ?? "#9c9c98",
                     }}
                   />
                   <Link
@@ -274,9 +270,7 @@ export function SubtaskSection({
           <div className="mt-1.5 max-h-48 overflow-y-auto">
             {results.length === 0 && !isSearching && (
               <p className="py-3 text-center text-[11px] text-fg-muted">
-                {query
-                  ? "No matching tasks found"
-                  : "Type to search for tasks"}
+                {query ? "No matching tasks found" : "Type to search for tasks"}
               </p>
             )}
             {results.map((task) => (
@@ -289,8 +283,7 @@ export function SubtaskSection({
                 <div
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{
-                    backgroundColor:
-                      STATUS_COLORS[task.status] ?? "#9c9c98",
+                    backgroundColor: STATUS_COLORS[task.status] ?? "#9c9c98",
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate text-fg-primary">
