@@ -3,32 +3,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
-
-async function requireMemberWithPerms(
-  userId: string,
-  workspaceId: string,
-  perm: number
-) {
-  const m = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
-  });
-  if (!m) throw new Error("Not a member");
-  const perms = getEffectivePermissions(m.role.permissions, userId, m.workspace.createdById);
-  if (!hasPermission(perms, perm))
-    throw new Error("Insufficient permissions");
-  return m;
-}
-
-function revalidateSprint(workspaceId: string, sprintId?: string) {
-  revalidatePath(`/w/${workspaceId}/s`);
-  if (sprintId) {
-    revalidatePath(`/w/${workspaceId}/s/${sprintId}`);
-  }
-  revalidatePath(`/w/${workspaceId}`);
-}
+import { Permission } from "@/lib/permissions";
+import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
+import { revalidateSprint } from "@/lib/actions/revalidation-helpers";
 
 // ─── Create ─────────────────────────────────────────────────────────────────
 
@@ -46,7 +23,7 @@ export async function createSprint(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMemberWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.CREATE_CONTENT
@@ -82,7 +59,7 @@ export async function updateSprint(_prev: unknown, formData: FormData) {
   if (!sprintId || !title?.trim()) return { error: "Sprint title is required" };
 
   try {
-    await requireMemberWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.EDIT_CONTENT
@@ -114,7 +91,7 @@ export async function toggleSprintActive(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
 
   try {
-    await requireMemberWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.EDIT_CONTENT
@@ -148,7 +125,7 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
 
   try {
-    await requireMemberWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.DELETE_CONTENT
@@ -252,7 +229,7 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMemberWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.EDIT_CONTENT,

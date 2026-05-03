@@ -2,24 +2,9 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
-
-async function requireMember(userId: string, workspaceId: string, perm: number) {
-  const m = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
-  });
-  if (!m) throw new Error("Not a member");
-  const perms = getEffectivePermissions(m.role.permissions, userId, m.workspace.createdById);
-  if (!hasPermission(perms, perm)) throw new Error("No permission");
-  return m;
-}
-
-function revalidateWorkspace(workspaceId: string) {
-  revalidatePath(`/w/${workspaceId}`);
-  revalidatePath(`/w/${workspaceId}/b`);
-}
+import { Permission } from "@/lib/permissions";
+import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
+import { revalidateWorkspace, revalidateTask } from "@/lib/actions/revalidation-helpers";
 
 export async function createTag(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -34,7 +19,7 @@ export async function createTag(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMember(session.user.id, workspaceId, Permission.CREATE_CONTENT);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -68,7 +53,7 @@ export async function updateTag(_prev: unknown, formData: FormData) {
   if (!tagId || !name?.trim()) return { error: "Tag name is required" };
 
   try {
-    await requireMember(session.user.id, workspaceId, Permission.EDIT_CONTENT);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -96,7 +81,7 @@ export async function deleteTag(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
 
   try {
-    await requireMember(session.user.id, workspaceId, Permission.DELETE_CONTENT);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -135,10 +120,6 @@ export async function setTaskTags(_prev: unknown, formData: FormData) {
     data: { tags: { set: tagIds.map((id) => ({ id })) } },
   });
 
-  revalidatePath(`/w/${workspaceId}/b/${task.board.id}`);
-  revalidatePath(
-    `/w/${workspaceId}/b/${task.board.id}/t/${taskId}`
-  );
-  revalidatePath(`/w/${workspaceId}/b`);
+  revalidateTask(workspaceId, task.board.id, taskId);
   return { success: true };
 }

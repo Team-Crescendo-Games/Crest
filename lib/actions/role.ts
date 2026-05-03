@@ -3,22 +3,12 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
+import { Permission } from "@/lib/permissions";
+import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
+import { revalidateWorkspace } from "@/lib/actions/revalidation-helpers";
 
 const UNEDITABLE_ROLES = ["Owner"];
 const UNDELETABLE_ROLES = ["Owner", "Member"];
-
-async function requireManageRoles(userId: string, workspaceId: string) {
-  const m = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
-  });
-  if (!m) throw new Error("Not a member");
-  const perms = getEffectivePermissions(m.role.permissions, userId, m.workspace.createdById);
-  if (!hasPermission(perms, Permission.MANAGE_ROLES))
-    throw new Error("No permission");
-  return m;
-}
 
 export async function createRole(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -35,7 +25,7 @@ export async function createRole(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireManageRoles(session.user.id, workspaceId);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission to manage roles" };
   }
@@ -54,7 +44,7 @@ export async function createRole(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/w/${workspaceId}`);
+  revalidateWorkspace(workspaceId);
   revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
@@ -79,7 +69,7 @@ export async function updateRole(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireManageRoles(session.user.id, workspaceId);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }
@@ -89,7 +79,7 @@ export async function updateRole(_prev: unknown, formData: FormData) {
     data: { name: name.trim(), color, permissions: permissionBits },
   });
 
-  revalidatePath(`/w/${workspaceId}`);
+  revalidateWorkspace(workspaceId);
   revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
@@ -114,14 +104,14 @@ export async function deleteRole(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireManageRoles(session.user.id, workspaceId);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }
 
   await prisma.role.delete({ where: { id: roleId } });
 
-  revalidatePath(`/w/${workspaceId}`);
+  revalidateWorkspace(workspaceId);
   revalidatePath(`/w/${workspaceId}/team`);
   return { success: true };
 }
@@ -137,7 +127,7 @@ export async function assignRole(_prev: unknown, formData: FormData) {
   if (!memberId || !roleId) return { error: "Invalid request" };
 
   try {
-    await requireManageRoles(session.user.id, workspaceId);
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }

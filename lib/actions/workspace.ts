@@ -5,23 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { JoinPolicy } from "@/prisma/generated/prisma/enums";
-import {
-  DEFAULT_MEMBER_PERMISSIONS,
-  Permission,
-  hasPermission,
-  getEffectivePermissions,
-} from "@/lib/permissions";
+import { DEFAULT_MEMBER_PERMISSIONS, Permission } from "@/lib/permissions";
+import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
+import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-async function requireMembership(userId: string, workspaceId: string) {
-  const membership = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
-  });
-  if (!membership) throw new Error("Not a member of this workspace");
-  return membership;
-}
 
 async function getOrCreateMemberRole(workspaceId: string) {
   let role = await prisma.role.findFirst({
@@ -95,9 +83,13 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
     return { error: "Workspace name is required" };
   }
 
-  const membership = await requireMembership(session.user.id, workspaceId);
-  const effectivePerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
-  if (!hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE)) {
+  try {
+    await requireMemberWithPermission(
+      session.user.id,
+      workspaceId,
+      Permission.MANAGE_WORKSPACE
+    );
+  } catch {
     return { error: "You don't have permission to edit workspace settings" };
   }
 
@@ -110,7 +102,7 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/w/${workspaceId}`);
+  revalidateWorkspace(workspaceId);
   return { success: true };
 }
 
@@ -202,14 +194,13 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
 
   if (!application) return { error: "Application not found" };
 
-  const membership = await requireMembership(
-    session.user.id,
-    application.workspaceId
-  );
-  const appPerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
-  if (
-    !hasPermission(appPerms, Permission.MANAGE_APPLICATIONS)
-  ) {
+  try {
+    await requireMemberWithPermission(
+      session.user.id,
+      application.workspaceId,
+      Permission.MANAGE_APPLICATIONS
+    );
+  } catch {
     return { error: "You don't have permission to manage applications" };
   }
 
@@ -251,9 +242,13 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
 
   if (!workspaceId) return { error: "Workspace ID is required" };
 
-  const membership = await requireMembership(session.user.id, workspaceId);
-  const invitePerms = getEffectivePermissions(membership.role.permissions, session.user.id, membership.workspace.createdById);
-  if (!hasPermission(invitePerms, Permission.INVITE_MEMBERS)) {
+  try {
+    await requireMemberWithPermission(
+      session.user.id,
+      workspaceId,
+      Permission.INVITE_MEMBERS
+    );
+  } catch {
     return { error: "You don't have permission to invite members" };
   }
 
@@ -405,7 +400,7 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
     // For now we leave it — the workspace exists but has no members.
   }
 
-  revalidatePath("/dashboard", "layout");
+  revalidateDashboard();
   redirect("/w");
 }
 
@@ -447,8 +442,8 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
   });
 
   revalidatePath(`/w/${workspaceId}/team`);
-  revalidatePath(`/w/${workspaceId}`);
-  revalidatePath("/dashboard", "layout");
+  revalidateWorkspace(workspaceId);
+  revalidateDashboard();
   return { success: true };
 }
 

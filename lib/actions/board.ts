@@ -4,24 +4,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
-
-async function requireMembershipWithPerms(
-  userId: string,
-  workspaceId: string,
-  perm: number
-) {
-  const membership = await prisma.workspaceMember.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
-    include: { role: true, workspace: { select: { createdById: true } } },
-  });
-  if (!membership) throw new Error("Not a member");
-  const perms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
-  if (!hasPermission(perms, perm)) {
-    throw new Error("Insufficient permissions");
-  }
-  return membership;
-}
+import { Permission } from "@/lib/permissions";
+import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
+import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
 
 export async function createBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -36,7 +21,7 @@ export async function createBoard(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMembershipWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.CREATE_CONTENT
@@ -56,7 +41,7 @@ export async function createBoard(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard", "layout");
+  revalidateDashboard();
   redirect(`/w/${workspaceId}`);
 }
 
@@ -74,7 +59,7 @@ export async function updateBoard(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMembershipWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.EDIT_CONTENT
@@ -103,7 +88,7 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
 
   try {
-    await requireMembershipWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.EDIT_CONTENT
@@ -124,8 +109,8 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
     data: { isActive: !board.isActive },
   });
 
-  revalidatePath(`/w/${workspaceId}/b`);
-  revalidatePath("/dashboard", "layout");
+  revalidateWorkspace(workspaceId);
+  revalidateDashboard();
   return { success: true, archived: board.isActive };
 }
 
@@ -137,7 +122,7 @@ export async function deleteBoard(_prev: unknown, formData: FormData) {
   const workspaceId = formData.get("workspaceId") as string;
 
   try {
-    await requireMembershipWithPerms(
+    await requireMemberWithPermission(
       session.user.id,
       workspaceId,
       Permission.DELETE_CONTENT
@@ -148,6 +133,6 @@ export async function deleteBoard(_prev: unknown, formData: FormData) {
 
   await prisma.board.delete({ where: { id: boardId } });
 
-  revalidatePath("/dashboard", "layout");
+  revalidateDashboard();
   redirect(`/w/${workspaceId}/b`);
 }
