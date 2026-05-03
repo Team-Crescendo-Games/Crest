@@ -7,18 +7,16 @@ import { revalidatePath } from "next/cache";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import { createBoardSchema, updateBoardSchema, archiveBoardSchema, deleteBoardSchema } from "@/lib/validations/board";
 
 export async function createBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const description = (formData.get("description") as string) || null;
-
-  if (!workspaceId || !name?.trim()) {
-    return { error: "Board name is required" };
-  }
+  const parsed = parseFormData(createBoardSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, name, description } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -49,14 +47,9 @@ export async function updateBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const boardId = formData.get("boardId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const description = (formData.get("description") as string) || null;
-
-  if (!boardId || !name?.trim()) {
-    return { error: "Board name is required" };
-  }
+  const parsed = parseFormData(updateBoardSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { boardId, workspaceId, name, description } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -84,8 +77,9 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const boardId = formData.get("boardId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(archiveBoardSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { boardId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -118,8 +112,9 @@ export async function deleteBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const boardId = formData.get("boardId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(deleteBoardSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { boardId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(

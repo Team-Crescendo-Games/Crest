@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidateTask } from "@/lib/actions/revalidation-helpers";
 import { requireTaskMembership } from "./helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import { addSubtaskSchema, removeSubtaskSchema } from "@/lib/validations/task";
 
 // ─── Subtasks ───────────────────────────────────────────────────────────────
 
@@ -11,10 +13,10 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const parentTaskId = formData.get("parentTaskId") as string;
-  const subtaskId = formData.get("subtaskId") as string;
+  const parsed = parseFormData(addSubtaskSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { parentTaskId, subtaskId } = parsed.data;
 
-  if (!parentTaskId || !subtaskId) return { error: "Invalid request" };
   if (parentTaskId === subtaskId) return { error: "A task cannot be its own subtask" };
 
   let info;
@@ -73,10 +75,9 @@ export async function removeSubtask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const parentTaskId = formData.get("parentTaskId") as string;
-  const subtaskId = formData.get("subtaskId") as string;
-
-  if (!parentTaskId || !subtaskId) return { error: "Invalid request" };
+  const parsed = parseFormData(removeSubtaskSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { parentTaskId, subtaskId } = parsed.data;
 
   let info;
   try {

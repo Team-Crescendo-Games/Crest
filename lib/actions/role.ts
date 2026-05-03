@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateWorkspace } from "@/lib/actions/revalidation-helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import { createRoleSchema, updateRoleSchema, deleteRoleSchema, assignRoleSchema } from "@/lib/validations/role";
 
 const UNEDITABLE_ROLES = ["Owner"];
 const UNDELETABLE_ROLES = ["Owner", "Member"];
@@ -14,12 +16,12 @@ export async function createRole(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const color = (formData.get("color") as string) || "#6B7280";
-  const permissionBits = parseInt(formData.get("permissions") as string) || 0;
+  const parsed = parseFormData(createRoleSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, name, color, permissions } = parsed.data;
 
-  if (!name?.trim()) return { error: "Role name is required" };
+  const permissionBits = parseInt(permissions) || 0;
+
   if (UNDELETABLE_ROLES.includes(name.trim())) {
     return { error: `"${name.trim()}" is a reserved role name` };
   }
@@ -53,15 +55,12 @@ export async function updateRole(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const roleId = formData.get("roleId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const color = (formData.get("color") as string) || "#6B7280";
-  const permissionBits = parseInt(formData.get("permissions") as string) || 0;
+  const parsed = parseFormData(updateRoleSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { roleId, workspaceId, name, color, permissions } = parsed.data;
 
-  if (!roleId || !name?.trim()) return { error: "Role name is required" };
+  const permissionBits = parseInt(permissions) || 0;
 
-  // Check if it's a protected role
   const role = await prisma.role.findUnique({ where: { id: roleId } });
   if (!role) return { error: "Role not found" };
   if (UNEDITABLE_ROLES.includes(role.name)) {
@@ -88,8 +87,9 @@ export async function deleteRole(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const roleId = formData.get("roleId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(deleteRoleSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { roleId, workspaceId } = parsed.data;
 
   const role = await prisma.role.findUnique({
     where: { id: roleId },
@@ -120,11 +120,9 @@ export async function assignRole(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const memberId = formData.get("memberId") as string;
-  const roleId = formData.get("roleId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!memberId || !roleId) return { error: "Invalid request" };
+  const parsed = parseFormData(assignRoleSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { memberId, roleId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
@@ -132,7 +130,6 @@ export async function assignRole(_prev: unknown, formData: FormData) {
     return { error: "No permission" };
   }
 
-  // Prevent changing the workspace owner's role
   const target = await prisma.workspaceMember.findUnique({
     where: { id: memberId },
     include: { workspace: { select: { createdById: true } } },
@@ -141,7 +138,6 @@ export async function assignRole(_prev: unknown, formData: FormData) {
     return { error: "Cannot change the owner's role" };
   }
 
-  // Prevent assigning the Owner role to anyone
   const targetRole = await prisma.role.findUnique({ where: { id: roleId } });
   if (!targetRole) return { error: "Role not found" };
   if (targetRole.name === "Owner") {

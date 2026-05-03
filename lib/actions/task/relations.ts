@@ -5,6 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { revalidateTask } from "@/lib/actions/revalidation-helpers";
 import { requireTaskMembership, logActivity } from "./helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import {
+  updateTaskAssigneesSchema,
+  updateTaskTagsSchema,
+  updateTaskSprintsSchema,
+  setTaskParentSchema,
+} from "@/lib/validations/task";
 
 // ─── Update assignees ───────────────────────────────────────────────────────
 
@@ -12,10 +19,9 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const assigneeIds = formData.getAll("assigneeIds") as string[];
-
-  if (!taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(updateTaskAssigneesSchema, formData, ["assigneeIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, assigneeIds } = parsed.data;
 
   let info;
   try {
@@ -54,10 +60,9 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const tagIds = formData.getAll("tagIds") as string[];
-
-  if (!taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(updateTaskTagsSchema, formData, ["tagIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, tagIds } = parsed.data;
 
   let info;
   try {
@@ -93,11 +98,9 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const sprintIds = formData.getAll("sprintIds") as string[];
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(updateTaskSprintsSchema, formData, ["sprintIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, sprintIds, workspaceId } = parsed.data;
 
   let info;
   try {
@@ -155,11 +158,9 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const childId = formData.get("childId") as string;
-  const parentId = formData.get("parentId") as string | null;
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!childId || !workspaceId) return { error: "Invalid request" };
+  const parsed = parseFormData(setTaskParentSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { childId, parentId, workspaceId } = parsed.data;
 
   // Verify membership
   const membership = await prisma.workspaceMember.findUnique({

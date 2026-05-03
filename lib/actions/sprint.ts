@@ -6,6 +6,16 @@ import { redirect } from "next/navigation";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateSprint } from "@/lib/actions/revalidation-helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import {
+  createSprintSchema,
+  updateSprintSchema,
+  toggleSprintActiveSchema,
+  deleteSprintSchema,
+  assignTaskToSprintSchema,
+  removeTaskFromSprintSchema,
+  migrateSprintSchema,
+} from "@/lib/validations/sprint";
 
 // ─── Create ─────────────────────────────────────────────────────────────────
 
@@ -13,14 +23,9 @@ export async function createSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const title = formData.get("title") as string;
-  const startDate = formData.get("startDate") as string;
-  const endDate = formData.get("endDate") as string;
-
-  if (!workspaceId || !title?.trim()) {
-    return { error: "Sprint title is required" };
-  }
+  const parsed = parseFormData(createSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, title, startDate, endDate } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -50,13 +55,9 @@ export async function updateSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sprintId = formData.get("sprintId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const title = formData.get("title") as string;
-  const startDate = formData.get("startDate") as string;
-  const endDate = formData.get("endDate") as string;
-
-  if (!sprintId || !title?.trim()) return { error: "Sprint title is required" };
+  const parsed = parseFormData(updateSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sprintId, workspaceId, title, startDate, endDate } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -87,8 +88,9 @@ export async function toggleSprintActive(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sprintId = formData.get("sprintId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(toggleSprintActiveSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sprintId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -121,8 +123,9 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sprintId = formData.get("sprintId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(deleteSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sprintId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -134,7 +137,6 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
     return { error: "No permission" };
   }
 
-  // Disconnect tasks (don't delete them — they belong to boards)
   await prisma.sprint.update({
     where: { id: sprintId },
     data: { tasks: { set: [] } },
@@ -151,11 +153,9 @@ export async function assignTaskToSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sprintId = formData.get("sprintId") as string;
-  const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!sprintId || !taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(assignTaskToSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sprintId, taskId, workspaceId } = parsed.data;
 
   const sprint = await prisma.sprint.findUnique({
     where: { id: sprintId },
@@ -186,11 +186,9 @@ export async function removeTaskFromSprint(
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sprintId = formData.get("sprintId") as string;
-  const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!sprintId || !taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(removeTaskFromSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sprintId, taskId, workspaceId } = parsed.data;
 
   const sprint = await prisma.sprint.findUnique({
     where: { id: sprintId },
@@ -220,13 +218,9 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const sourceSprintId = formData.get("sourceSprintId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const title = formData.get("title") as string;
-
-  if (!sourceSprintId || !workspaceId || !title?.trim()) {
-    return { error: "Sprint title is required" };
-  }
+  const parsed = parseFormData(migrateSprintSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { sourceSprintId, workspaceId, title } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -247,7 +241,6 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
     return { error: "Sprint not found" };
   }
 
-  // Find all non-completed tasks in the source sprint
   const incompleteTasks = await prisma.task.findMany({
     where: {
       sprints: { some: { id: sourceSprintId } },
@@ -256,7 +249,6 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
     select: { id: true },
   });
 
-  // Create a new sprint, connecting incomplete tasks if any exist
   const newSprint = await prisma.sprint.create({
     data: {
       title: title.trim(),

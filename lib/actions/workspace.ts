@@ -4,10 +4,21 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { JoinPolicy } from "@/prisma/generated/prisma/enums";
 import { DEFAULT_MEMBER_PERMISSIONS, Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import {
+  createWorkspaceSchema,
+  updateWorkspaceSchema,
+  joinWorkspaceSchema,
+  applyToWorkspaceSchema,
+  handleApplicationSchema,
+  createInvitationSchema,
+  acceptInvitationSchema,
+  leaveWorkspaceSchema,
+  transferOwnershipSchema,
+} from "@/lib/validations/workspace";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -34,12 +45,9 @@ export async function createWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const name = formData.get("name") as string;
-  const description = (formData.get("description") as string) || null;
-
-  if (!name || name.trim().length === 0) {
-    return { error: "Workspace name is required" };
-  }
+  const parsed = parseFormData(createWorkspaceSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { name, description } = parsed.data;
 
   const workspace = await prisma.workspace.create({
     data: {
@@ -74,14 +82,9 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const description = (formData.get("description") as string) || null;
-  const joinPolicy = formData.get("joinPolicy") as JoinPolicy;
-
-  if (!workspaceId || !name?.trim()) {
-    return { error: "Workspace name is required" };
-  }
+  const parsed = parseFormData(updateWorkspaceSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, name, description, joinPolicy } = parsed.data;
 
   try {
     await requireMemberWithPermission(
@@ -112,8 +115,9 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  if (!workspaceId) return { error: "Workspace ID is required" };
+  const parsed = parseFormData(joinWorkspaceSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId } = parsed.data;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -142,10 +146,9 @@ export async function applyToWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const message = (formData.get("message") as string) || null;
-
-  if (!workspaceId) return { error: "Workspace ID is required" };
+  const parsed = parseFormData(applyToWorkspaceSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, message } = parsed.data;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -183,10 +186,9 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const applicationId = formData.get("applicationId") as string;
-  const action = formData.get("action") as "approve" | "reject";
-
-  if (!applicationId || !action) return { error: "Invalid request" };
+  const parsed = parseFormData(handleApplicationSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { applicationId, action } = parsed.data;
 
   const application = await prisma.workspaceApplication.findUnique({
     where: { id: applicationId },
@@ -237,10 +239,11 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const expiresInDays = parseInt(formData.get("expiresInDays") as string) || 7;
+  const parsed = parseFormData(createInvitationSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, expiresInDays } = parsed.data;
 
-  if (!workspaceId) return { error: "Workspace ID is required" };
+  const expiresInDaysNum = parseInt(expiresInDays) || 7;
 
   try {
     await requireMemberWithPermission(
@@ -253,7 +256,7 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
   }
 
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+  expiresAt.setDate(expiresAt.getDate() + expiresInDaysNum);
 
   const invitation = await prisma.workspaceInvitation.create({
     data: {
@@ -271,8 +274,9 @@ export async function acceptInvitation(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const inviteId = formData.get("inviteId") as string;
-  if (!inviteId) return { error: "Invitation ID is required" };
+  const parsed = parseFormData(acceptInvitationSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { inviteId } = parsed.data;
 
   const invitation = await prisma.workspaceInvitation.findUnique({
     where: { id: inviteId },
@@ -317,7 +321,6 @@ export async function getLeaveWarning(workspaceId: string) {
 
   if (!workspace) return null;
 
-  // Owners cannot leave — return null to hide the button
   if (workspace.createdById === session.user.id) return null;
 
   const membership = await prisma.workspaceMember.findUnique({
@@ -338,7 +341,6 @@ export async function getLeaveWarning(workspaceId: string) {
     return { isLastMember: false, willDelete: false, name: workspace.name };
   }
 
-  // Last member — workspace will become empty
   const willDeleteImmediately =
     workspace.joinPolicy === "INVITE_ONLY" ||
     workspace.joinPolicy === "APPLY_TO_JOIN";
@@ -355,8 +357,9 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  if (!workspaceId) return { error: "Workspace ID is required" };
+  const parsed = parseFormData(leaveWorkspaceSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId } = parsed.data;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -382,22 +385,17 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
     where: { workspaceId },
   });
 
-  // Remove the member
   await prisma.workspaceMember.delete({
     where: { id: membership.id },
   });
 
-  // If this was the last member, handle cleanup
   if (memberCount === 1) {
     if (
       workspace.joinPolicy === "INVITE_ONLY" ||
       workspace.joinPolicy === "APPLY_TO_JOIN"
     ) {
-      // No way for new members to join — delete immediately
       await prisma.workspace.delete({ where: { id: workspaceId } });
     }
-    // For OPEN workspaces, a scheduled job would clean up after 7 days.
-    // For now we leave it — the workspace exists but has no members.
   }
 
   revalidateDashboard();
@@ -410,10 +408,9 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const newOwnerId = formData.get("newOwnerId") as string;
-
-  if (!workspaceId || !newOwnerId) return { error: "Invalid request" };
+  const parsed = parseFormData(transferOwnershipSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, newOwnerId } = parsed.data;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -428,7 +425,6 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
     return { error: "You are already the owner" };
   }
 
-  // Verify the target is a member of the workspace
   const targetMember = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: newOwnerId, workspaceId } },
   });

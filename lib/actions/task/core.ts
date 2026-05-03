@@ -10,9 +10,16 @@ import {
   requireTaskMembership,
   logActivity,
   buildOrderBy,
-  VALID_STATUSES,
-  VALID_PRIORITIES,
 } from "./helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  updateTaskStatusSchema,
+  updateTaskPrioritySchema,
+  moveTaskToBoardSchema,
+  updateTaskDueDateSchema,
+} from "@/lib/validations/task";
 
 // ─── Load paginated tasks for any column ────────────────────────────────────
 
@@ -155,25 +162,10 @@ export async function createTask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const boardId = formData.get("boardId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const title = formData.get("title") as string;
-  const description = (formData.get("description") as string) || null;
-  const status = (formData.get("status") as TaskStatus) || "NOT_STARTED";
-  const priority = (formData.get("priority") as TaskPriority) || "NONE";
-  const startDate = formData.get("startDate") as string;
-  const dueDate = formData.get("dueDate") as string;
-  const points = formData.get("points") as string;
-  const assigneeIds = formData.getAll("assigneeIds") as string[];
-  const tagIds = formData.getAll("tagIds") as string[];
-  const sprintId = (formData.get("sprintId") as string) || null;
-
-  if (!boardId || !title?.trim()) {
-    return { error: "Task title is required" };
-  }
-
-  if (!VALID_STATUSES.includes(status)) return { error: "Invalid status" };
-  if (!VALID_PRIORITIES.includes(priority)) return { error: "Invalid priority" };
+  const parsed = parseFormData(createTaskSchema, formData, ["assigneeIds", "tagIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { boardId, title, description, status, priority, startDate, dueDate, points, assigneeIds, tagIds, sprintId: rawSprintId } = parsed.data;
+  const sprintId = rawSprintId || null;
 
   const board = await prisma.board.findUnique({
     where: { id: boardId },
@@ -230,10 +222,10 @@ export async function createTask(_prev: unknown, formData: FormData) {
     },
   });
 
-  revalidatePath(`/w/${workspaceId}/b/${boardId}`);
-  revalidatePath(`/w/${workspaceId}/b`);
+  revalidatePath(`/w/${board.workspaceId}/b/${boardId}`);
+  revalidatePath(`/w/${board.workspaceId}/b`);
   if (sprintId) {
-    revalidatePath(`/w/${workspaceId}/s/${sprintId}`);
+    revalidatePath(`/w/${board.workspaceId}/s/${sprintId}`);
   }
 
   await logActivity(task.id, session.user.id, "CREATED");
@@ -247,20 +239,9 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const title = formData.get("title") as string;
-  const description = (formData.get("description") as string) || null;
-  const status = formData.get("status") as TaskStatus;
-  const priority = formData.get("priority") as TaskPriority;
-  const startDate = formData.get("startDate") as string;
-  const dueDate = formData.get("dueDate") as string;
-  const points = formData.get("points") as string;
-  const assigneeIds = formData.getAll("assigneeIds") as string[];
-  const tagIds = formData.getAll("tagIds") as string[];
-  const newBoardId = formData.get("boardId") as string | null;
-  const sprintIds = formData.getAll("sprintIds") as string[];
-
-  if (!taskId || !title?.trim()) return { error: "Task title is required" };
+  const parsed = parseFormData(updateTaskSchema, formData, ["assigneeIds", "tagIds", "sprintIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, title, description, status, priority, startDate, dueDate, points, assigneeIds, tagIds, boardId: newBoardId, sprintIds } = parsed.data;
 
   let info;
   try {
@@ -316,8 +297,8 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     data: {
       title: title.trim(),
       description: description?.trim() || null,
-      status: VALID_STATUSES.includes(status) ? status : undefined,
-      priority: VALID_PRIORITIES.includes(priority) ? priority : undefined,
+      status,
+      priority,
       startDate: startDate ? new Date(startDate) : null,
       dueDate: dueDate ? new Date(dueDate) : null,
       points: points ? parseInt(points) || null : null,
@@ -330,7 +311,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
 
   // Log activities for changed fields
   if (oldTask) {
-    const newStatus = VALID_STATUSES.includes(status) ? status : oldTask.status;
+    const newStatus = status ?? oldTask.status;
     if (newStatus !== oldTask.status) {
       await logActivity(taskId, session.user.id, "STATUS_CHANGED", {
         field: "status",
@@ -339,7 +320,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       });
     }
 
-    const newPriority = VALID_PRIORITIES.includes(priority) ? priority : oldTask.priority;
+    const newPriority = priority ?? oldTask.priority;
     if (newPriority !== oldTask.priority) {
       await logActivity(taskId, session.user.id, "PRIORITY_CHANGED", {
         field: "priority",
@@ -410,6 +391,7 @@ export async function deleteTask(_prev: unknown, formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const taskId = formData.get("taskId") as string;
+  if (!taskId) return { error: "Invalid request" };
 
   let info;
   try {
@@ -431,13 +413,9 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const status = formData.get("status") as TaskStatus;
-
-  if (!taskId || !status || !VALID_STATUSES.includes(status)) {
-    return { error: "Invalid request" };
-  }
+  const parsed = parseFormData(updateTaskStatusSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, workspaceId, status } = parsed.data;
 
   let info;
   try {
@@ -472,13 +450,9 @@ export async function updateTaskPriority(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const priority = formData.get("priority") as TaskPriority;
-
-  if (!taskId || !priority || !VALID_PRIORITIES.includes(priority)) {
-    return { error: "Invalid request" };
-  }
+  const parsed = parseFormData(updateTaskPrioritySchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, workspaceId, priority } = parsed.data;
 
   let info;
   try {
@@ -514,11 +488,9 @@ export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const newBoardId = formData.get("boardId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-
-  if (!taskId || !newBoardId) return { error: "Invalid request" };
+  const parsed = parseFormData(moveTaskToBoardSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, boardId: newBoardId, workspaceId } = parsed.data;
 
   let info;
   try {
@@ -564,10 +536,9 @@ export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const dueDateStr = formData.get("dueDate") as string;
-
-  if (!taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(updateTaskDueDateSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, dueDate: dueDateStr } = parsed.data;
 
   let info;
   try {

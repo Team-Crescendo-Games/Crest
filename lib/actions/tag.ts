@@ -5,18 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateWorkspace, revalidateTask } from "@/lib/actions/revalidation-helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import { createTagSchema, updateTagSchema, deleteTagSchema, setTaskTagsSchema } from "@/lib/validations/tag";
 
 export async function createTag(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const color = (formData.get("color") as string) || "#6B7280";
-
-  if (!workspaceId || !name?.trim()) {
-    return { error: "Tag name is required" };
-  }
+  const parsed = parseFormData(createTagSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { workspaceId, name, color } = parsed.data;
 
   try {
     await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
@@ -45,12 +43,9 @@ export async function updateTag(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const tagId = formData.get("tagId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const name = formData.get("name") as string;
-  const color = (formData.get("color") as string) || "#6B7280";
-
-  if (!tagId || !name?.trim()) return { error: "Tag name is required" };
+  const parsed = parseFormData(updateTagSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { tagId, workspaceId, name, color } = parsed.data;
 
   try {
     await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
@@ -58,7 +53,6 @@ export async function updateTag(_prev: unknown, formData: FormData) {
     return { error: "No permission" };
   }
 
-  // Check for name conflict
   const existing = await prisma.tag.findFirst({
     where: { workspaceId, name: name.trim(), NOT: { id: tagId } },
   });
@@ -77,8 +71,9 @@ export async function deleteTag(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const tagId = formData.get("tagId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
+  const parsed = parseFormData(deleteTagSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { tagId, workspaceId } = parsed.data;
 
   try {
     await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
@@ -96,11 +91,9 @@ export async function setTaskTags(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const workspaceId = formData.get("workspaceId") as string;
-  const tagIds = formData.getAll("tagIds") as string[];
-
-  if (!taskId) return { error: "Invalid request" };
+  const parsed = parseFormData(setTaskTagsSchema, formData, ["tagIds"]);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, workspaceId, tagIds } = parsed.data;
 
   const task = await prisma.task.findUnique({
     where: { id: taskId },

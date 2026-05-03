@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidateTask } from "@/lib/actions/revalidation-helpers";
 import { requireTaskMembership, logActivity } from "./helpers";
+import { parseFormData } from "@/lib/validations/helpers";
+import { addCommentSchema, deleteCommentSchema } from "@/lib/validations/task";
 
 // ─── Comments ───────────────────────────────────────────────────────────────
 
@@ -11,10 +13,9 @@ export async function addComment(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const taskId = formData.get("taskId") as string;
-  const text = formData.get("text") as string;
-
-  if (!taskId || !text?.trim()) return { error: "Comment text is required" };
+  const parsed = parseFormData(addCommentSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, text } = parsed.data;
 
   let info;
   try {
@@ -41,8 +42,9 @@ export async function deleteComment(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const commentId = formData.get("commentId") as string;
-  if (!commentId) return { error: "Invalid request" };
+  const parsed = parseFormData(deleteCommentSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { commentId } = parsed.data;
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
