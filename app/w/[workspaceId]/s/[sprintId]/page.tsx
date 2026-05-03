@@ -24,15 +24,7 @@ import { SprintViews } from "@/components/sprints/sprint-views";
 import { CollapsibleSection } from "@/components/common/collapsible-section";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
-
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
+import { parseMulti } from "@/lib/url-helpers";
 
 export default async function SprintDetailPage({
   params,

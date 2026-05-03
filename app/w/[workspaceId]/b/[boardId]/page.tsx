@@ -21,15 +21,7 @@ import {
   PRIORITY_ORDER,
   parseSorts,
 } from "@/lib/task-enums";
-
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
+import { parseMulti } from "@/lib/url-helpers";
 
 export default async function BoardDetailPage({
   params,

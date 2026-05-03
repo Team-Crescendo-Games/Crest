@@ -17,17 +17,10 @@ import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";
 import { DashboardFilterDropdowns } from "@/components/dashboard/dashboard-filter-dropdowns";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
+import { parseMulti } from "@/lib/url-helpers";
+
 const NOTIF_PAGE = 10;
 const TASKS_PER_COLUMN = 5;
-
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
 
 export default async function DashboardPage({
   searchParams,

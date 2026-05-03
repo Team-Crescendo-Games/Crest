@@ -14,18 +14,10 @@ import {
   STATUS_COLORS,
   TASK_PRIORITIES,
 } from "@/lib/task-enums";
+import { parseMulti } from "@/lib/url-helpers";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
-
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
 
 export default async function SprintsPage({
   params,
