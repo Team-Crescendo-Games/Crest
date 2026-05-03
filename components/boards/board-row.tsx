@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { hasPermission, Permission } from "@/lib/permissions";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import type { TaskCardData } from "@/lib/types/task";
 
 interface Column {

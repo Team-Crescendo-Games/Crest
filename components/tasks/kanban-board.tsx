@@ -6,19 +6,14 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import {
-  useState,
-  useTransition,
-  useEffect,
-  useCallback,
-  useMemo,
-} from "react";
-import { updateTaskStatus, loadColumnTasks } from "@/lib/actions/task";
+import { useState, useTransition, useMemo } from "react";
+import { updateTaskStatus } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
 import { TaskCard } from "@/components/tasks/task-card";
 import type { TaskCardData } from "@/lib/types/task";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { SortOption } from "@/lib/task-enums";
+import { useColumnPagination } from "@/components/tasks/use-column-pagination";
 
 const DEFAULT_PAGE_SIZE = 5;
 
@@ -27,12 +22,6 @@ interface Column {
   label: string;
   color: string;
   tasks: TaskCardData[];
-}
-
-interface ColumnPaginationState {
-  page: number;
-  isLoading: boolean;
-  cache: Record<number, TaskCardData[]>;
 }
 
 export function KanbanBoard({
@@ -105,7 +94,6 @@ export function KanbanBoard({
   renderCreateButton?: (status: string) => React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [localColumns, setLocalColumns] = useState(columns);
 
   // Normalize: merge legacy props into the new per-column maps
   const effectiveCounts = useMemo(() => {
@@ -122,24 +110,16 @@ export function KanbanBoard({
 
   const effectiveFilters = columnFilters ?? completedFilters;
 
-  // Per-column pagination state
-  const [paginationState, setPaginationState] = useState<
-    Record<string, ColumnPaginationState>
-  >(() => {
-    const state: Record<string, ColumnPaginationState> = {};
-    for (const col of columns) {
-      const count = effectiveCounts[col.status];
-      const pageSize = effectivePageSizes[col.status] ?? DEFAULT_PAGE_SIZE;
-      if (count != null && count > pageSize) {
-        state[col.status] = {
-          page: 1,
-          isLoading: false,
-          cache: { 1: col.tasks },
-        };
-      }
-    }
-    return state;
-  });
+  const { localColumns, paginationState, goToPage, setLocalColumns } =
+    useColumnPagination({
+      columns,
+      effectiveCounts,
+      effectivePageSizes,
+      effectiveFilters,
+      boardId,
+      workspaceId,
+      loadPage,
+    });
 
   // Track which task is hovered to highlight its subtasks
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
@@ -155,108 +135,6 @@ export function KanbanBoard({
     }
     return new Set<string>();
   }, [hoveredTaskId, localColumns]);
-
-  // Sync local state when server data changes (after revalidation)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalColumns(columns);
-    const newState: Record<string, ColumnPaginationState> = {};
-    for (const col of columns) {
-      const count = effectiveCounts[col.status];
-      const pageSize = effectivePageSizes[col.status] ?? DEFAULT_PAGE_SIZE;
-      if (count != null && count > pageSize) {
-        newState[col.status] = {
-          page: 1,
-          isLoading: false,
-          cache: { 1: col.tasks },
-        };
-      }
-    }
-    setPaginationState(newState);
-  }, [columns, effectiveCounts, effectivePageSizes]);
-
-  const goToPage = useCallback(
-    async (status: string, page: number) => {
-      const pageSize = effectivePageSizes[status] ?? DEFAULT_PAGE_SIZE;
-      const count = effectiveCounts[status] ?? 0;
-      const totalPages = Math.ceil(count / pageSize);
-      const current = paginationState[status];
-      if (!current) return;
-      if (
-        page < 1 ||
-        page > totalPages ||
-        page === current.page ||
-        current.isLoading
-      )
-        return;
-
-      // If we already have this page cached, just swap it in
-      if (current.cache[page]) {
-        setLocalColumns((prev) =>
-          prev.map((col) =>
-            col.status === status
-              ? { ...col, tasks: current.cache[page] }
-              : col,
-          ),
-        );
-        setPaginationState((prev) => ({
-          ...prev,
-          [status]: { ...prev[status], page },
-        }));
-        return;
-      }
-
-      setPaginationState((prev) => ({
-        ...prev,
-        [status]: { ...prev[status], isLoading: true },
-      }));
-
-      try {
-        const offset = (page - 1) * pageSize;
-        let mapped: TaskCardData[];
-        if (loadPage) {
-          mapped = await loadPage(status, offset, pageSize);
-        } else {
-          const tasks = await loadColumnTasks(
-            boardId,
-            workspaceId,
-            status,
-            offset,
-            pageSize,
-            effectiveFilters,
-          );
-          mapped = tasks as TaskCardData[];
-        }
-        setPaginationState((prev) => ({
-          ...prev,
-          [status]: {
-            page,
-            isLoading: false,
-            cache: { ...prev[status].cache, [page]: mapped },
-          },
-        }));
-        setLocalColumns((prev) =>
-          prev.map((col) =>
-            col.status === status ? { ...col, tasks: mapped } : col,
-          ),
-        );
-      } catch {
-        setPaginationState((prev) => ({
-          ...prev,
-          [status]: { ...prev[status], isLoading: false },
-        }));
-      }
-    },
-    [
-      boardId,
-      workspaceId,
-      effectiveFilters,
-      effectiveCounts,
-      effectivePageSizes,
-      paginationState,
-      loadPage,
-    ],
-  );
 
   function onDragEnd(result: DropResult) {
     if (!result.destination) return;

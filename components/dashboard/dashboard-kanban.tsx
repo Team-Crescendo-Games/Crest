@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { loadMyColumnTasks } from "@/lib/actions/task";
 import { DashboardCreateTask } from "./dashboard-create-task";
 import type { TaskCardData } from "@/lib/types/task";

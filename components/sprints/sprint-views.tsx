@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Columns3, GanttChart, List } from "lucide-react";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { SprintTimeline } from "@/components/sprints/sprint-timeline";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
@@ -59,7 +59,12 @@ export function SprintViews({
   hasTimeline: boolean;
   boards: { id: string; name: string }[];
   canCreate: boolean;
-  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  members?: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
   tags?: { id: string; name: string; color: string | null }[];
   columnCounts?: Record<string, number>;
   columnPageSizes?: Record<string, number>;

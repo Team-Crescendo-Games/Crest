@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Columns3, List } from "lucide-react";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import type { SortOption } from "@/lib/task-enums";
 
@@ -54,7 +54,12 @@ export function BoardViews({
   workspaceId: string;
   canCreate: boolean;
   sprints?: { id: string; title: string }[];
-  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  members?: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
   tags?: { id: string; name: string; color: string | null }[];
   columnCounts?: Record<string, number>;
   columnPageSizes?: Record<string, number>;
