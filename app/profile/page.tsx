@@ -2,9 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { User, Mail, Lock, Calendar } from "lucide-react";
-import { ProfileForm } from "@/components/profile/profile-form";
-import { EmailForm } from "@/components/profile/email-form";
-import { PasswordForm } from "@/components/profile/password-form";
+import { ProfileForm, EmailForm, PasswordForm } from "@/components/profile/profile-editor";
 import { ProfilePictureUpload } from "@/components/profile/profile-picture-upload";
 
 export default async function ProfilePage() {
@@ -31,18 +29,14 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="font-mono text-lg font-semibold text-fg-primary">
-        Profile
-      </h1>
+      <h1 className="font-mono text-lg font-semibold text-fg-primary">Profile</h1>
       <p className="mt-1 text-xs text-fg-muted">Manage your account settings</p>
 
       {/* Profile header */}
       <div className="mt-6 flex items-center gap-4 rounded-md border border-border bg-bg-elevated/60 p-4 backdrop-blur-sm">
         <ProfilePictureUpload currentImage={user.image} userName={user.name} />
         <div>
-          <p className="font-mono text-sm font-semibold text-fg-primary">
-            {user.name}
-          </p>
+          <p className="font-mono text-sm font-semibold text-fg-primary">{user.name}</p>
           <p className="text-xs text-fg-muted">{user.email}</p>
           <div className="mt-1.5 flex items-center gap-3 text-[11px] text-fg-muted">
             <span className="flex items-center gap-1">

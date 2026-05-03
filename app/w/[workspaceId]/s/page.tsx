@@ -4,16 +4,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Timer } from "lucide-react";
 import { SprintRow } from "@/components/sprints/sprint-row";
-import { SprintExtras } from "@/components/sprints/sprint-extras";
+import { SprintExtras } from "@/components/sprints/sprint-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
-import {
-  TASK_STATUSES as STATUS_ORDER,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  TASK_PRIORITIES,
-} from "@/lib/task-enums";
+import { TASK_STATUSES as STATUS_ORDER, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES } from "@/lib/task-enums";
 import { parseMulti } from "@/lib/url-helpers";
 
 const PAGE_SIZE_DEFAULT = 5;
@@ -33,13 +28,7 @@ export default async function SprintsPage({
   }>;
 }) {
   const { workspaceId } = await params;
-  const {
-    showClosed,
-    q,
-    priority: priorityParam,
-    tag: tagParam,
-    assignee: assigneeParam,
-  } = await searchParams;
+  const { showClosed, q, priority: priorityParam, tag: tagParam, assignee: assigneeParam } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -56,9 +45,7 @@ export default async function SprintsPage({
   const includeClosed = showClosed === "true";
 
   // Parse multi-value filter params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
 
@@ -220,11 +207,7 @@ export default async function SprintsPage({
     }),
   );
 
-  const hasTaskFilter =
-    !!q ||
-    priorities.length > 0 ||
-    tagFilters.length > 0 ||
-    assigneeFilters.length > 0;
+  const hasTaskFilter = !!q || priorities.length > 0 || tagFilters.length > 0 || assigneeFilters.length > 0;
 
   const columnPageSizes: Record<string, number> = {
     NOT_STARTED: PAGE_SIZE_DEFAULT,
@@ -233,9 +216,7 @@ export default async function SprintsPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const baseColumnFilters = hasTaskFilter
-    ? { q, priorities, tagFilters, assigneeFilters }
-    : undefined;
+  const baseColumnFilters = hasTaskFilter ? { q, priorities, tagFilters, assigneeFilters } : undefined;
 
   const extraParams: Record<string, string | undefined> = {
     showClosed: includeClosed ? "true" : undefined,
@@ -255,8 +236,7 @@ export default async function SprintsPage({
         <div className="flex items-center gap-2">
           <Timer size={16} className="text-accent" />
           <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            Sprints in{" "}
-            <span className="text-accent">{membership.workspace.name}</span>
+            Sprints in <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
         <Link
@@ -279,11 +259,7 @@ export default async function SprintsPage({
           currentAssignees={assigneeFilters}
           extraParams={extraParams}
           extraControls={
-            <SprintExtras
-              workspaceId={workspaceId}
-              showClosed={includeClosed}
-              closedCount={closedCount}
-            />
+            <SprintExtras workspaceId={workspaceId} showClosed={includeClosed} closedCount={closedCount} />
           }
         />
       </div>
@@ -292,9 +268,7 @@ export default async function SprintsPage({
       <div className="mt-6">
         {sprintData.length === 0 ? (
           <p className="mt-8 text-center text-xs text-fg-muted">
-            {hasTaskFilter
-              ? "No results match your filters."
-              : "No sprints yet."}
+            {hasTaskFilter ? "No results match your filters." : "No sprints yet."}
           </p>
         ) : (
           <div className="space-y-3">

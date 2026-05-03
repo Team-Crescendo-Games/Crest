@@ -1,12 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import {
-  updateSprint,
-  toggleSprintActive,
-  deleteSprint,
-  migrateSprint,
-} from "@/lib/actions/sprint";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { updateSprint, toggleSprintActive, deleteSprint, migrateSprint } from "@/lib/actions/sprint";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { Pencil, Play, Pause, Trash2, X, ArrowRightLeft } from "lucide-react";
 import { Tooltip } from "@/components/common/tooltip";
@@ -26,40 +22,26 @@ interface Props {
 export function SprintActions({ sprint, workspaceId, permissions }: Props) {
   const [editing, setEditing] = useState(false);
   const [migrating, setMigrating] = useState(false);
-  const [updateState, updateAction, updatePending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await updateSprint(prev, formData);
-      if (result?.success) setEditing(false);
-      return result;
-    },
-    null,
-  );
-  const [, toggleAction, togglePending] = useActionState(
-    toggleSprintActive,
-    null,
-  );
+  const [updateState, updateAction, updatePending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await updateSprint(prev, formData);
+    if (result?.success) setEditing(false);
+    return result;
+  }, null);
+  const [, toggleAction, togglePending] = useActionState(toggleSprintActive, null);
   const [, deleteAction, deletePending] = useActionState(deleteSprint, null);
-  const [migrateState, migrateAction, migratePending] = useActionState(
-    migrateSprint,
-    null,
-  );
+  const [migrateState, migrateAction, migratePending] = useActionState(migrateSprint, null);
 
   const canEdit = hasPermission(permissions, Permission.EDIT_CONTENT);
   const canDelete = hasPermission(permissions, Permission.DELETE_CONTENT);
 
   if (editing && canEdit) {
     return (
-      <form
-        action={updateAction}
-        className="w-72 rounded-md border border-border bg-bg-elevated p-3 shadow-lg"
-      >
+      <form action={updateAction} className="w-72 rounded-md border border-border bg-bg-elevated p-3 shadow-lg">
         <input type="hidden" name="sprintId" value={sprint.id} />
         <input type="hidden" name="workspaceId" value={workspaceId} />
 
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-fg-secondary">
-            Edit Sprint
-          </span>
+          <span className="text-xs font-medium text-fg-secondary">Edit Sprint</span>
           <button
             type="button"
             onClick={() => setEditing(false)}
@@ -69,11 +51,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
           </button>
         </div>
 
-        {updateState?.error && (
-          <p className="mb-2 text-[11px] text-accent-emphasis">
-            {updateState.error}
-          </p>
-        )}
+        {updateState?.error && <p className="mb-2 text-[11px] text-accent-emphasis">{updateState.error}</p>}
 
         <input
           name="title"
@@ -108,17 +86,12 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
 
   if (migrating && canEdit) {
     return (
-      <form
-        action={migrateAction}
-        className="w-72 rounded-md border border-border bg-bg-elevated p-3 shadow-lg"
-      >
+      <form action={migrateAction} className="w-72 rounded-md border border-border bg-bg-elevated p-3 shadow-lg">
         <input type="hidden" name="sourceSprintId" value={sprint.id} />
         <input type="hidden" name="workspaceId" value={workspaceId} />
 
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-fg-secondary">
-            Migrate to New Sprint
-          </span>
+          <span className="text-xs font-medium text-fg-secondary">Migrate to New Sprint</span>
           <button
             type="button"
             onClick={() => setMigrating(false)}
@@ -129,15 +102,10 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
         </div>
 
         <p className="mb-2 text-[11px] text-fg-muted">
-          Creates a new sprint and adds all incomplete tasks from this sprint to
-          it.
+          Creates a new sprint and adds all incomplete tasks from this sprint to it.
         </p>
 
-        {migrateState?.error && (
-          <p className="mb-2 text-[11px] text-accent-emphasis">
-            {migrateState.error}
-          </p>
-        )}
+        {migrateState?.error && <p className="mb-2 text-[11px] text-accent-emphasis">{migrateState.error}</p>}
 
         <input
           name="title"
@@ -180,12 +148,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
               disabled={togglePending}
               className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
               onClick={(e) => {
-                if (
-                  sprint.isActive &&
-                  !confirm(
-                    `Close "${sprint.title}"? This will mark the sprint as inactive.`,
-                  )
-                ) {
+                if (sprint.isActive && !confirm(`Close "${sprint.title}"? This will mark the sprint as inactive.`)) {
                   e.preventDefault();
                 }
               }}
@@ -215,11 +178,7 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
               disabled={deletePending}
               className="cursor-pointer rounded p-1.5 text-red-400/70 transition-colors hover:text-red-400 disabled:opacity-50"
               onClick={(e) => {
-                if (
-                  !confirm(
-                    `Delete "${sprint.title}"? Tasks will be unassigned but not deleted.`,
-                  )
-                ) {
+                if (!confirm(`Delete "${sprint.title}"? Tasks will be unassigned but not deleted.`)) {
                   e.preventDefault();
                 }
               }}
@@ -230,5 +189,42 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
         </form>
       )}
     </div>
+  );
+}
+
+interface SprintExtrasProps {
+  workspaceId: string;
+  showClosed: boolean;
+  closedCount: number;
+}
+
+export function SprintExtras({ showClosed, closedCount }: SprintExtrasProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function navigate(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    for (const [key, val] of Object.entries(overrides)) {
+      if (val) {
+        params.set(key, val);
+      } else {
+        params.delete(key);
+      }
+    }
+    const qs = params.toString();
+    router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+  }
+
+  if (closedCount === 0) return null;
+
+  return (
+    <button
+      onClick={() => navigate({ showClosed: showClosed ? undefined : "true" })}
+      className="shrink-0 rounded-md border border-border px-2 py-1.5 text-[11px] text-fg-muted transition-colors hover:text-fg-secondary"
+    >
+      {showClosed ? "Hide closed" : `Closed (${closedCount})`}
+    </button>
   );
 }
