@@ -18,12 +18,12 @@ export function UserFooter({ user }: UserFooterProps) {
     <div className="border-t border-border p-3">
       <div className="flex items-center gap-2.5">
         <Link
-          href="/dashboard/profile"
+          href="/profile"
           className="shrink-0 transition-opacity hover:opacity-80"
         >
           <UserAvatar name={user.name} image={user.image} size={28} />
         </Link>
-        <Link href="/dashboard/profile" className="min-w-0 flex-1 group">
+        <Link href="/profile" className="min-w-0 flex-1 group">
           <p className="truncate text-xs font-medium text-fg-primary group-hover:text-accent">
             {user.name}
           </p>

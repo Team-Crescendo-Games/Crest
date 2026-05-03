@@ -40,9 +40,7 @@ interface SidebarProps {
   workspaces: Workspace[];
 }
 
-const userNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-];
+const userNavigation = [{ name: "Dashboard", href: "/", icon: LayoutGrid }];
 
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
@@ -109,7 +107,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
       />
       {/* Logo */}
       <div className="flex h-12 items-center justify-between border-b border-border px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Logo size={22} />
           <span className="font-mono text-sm font-bold tracking-tight text-accent">
             Crest
@@ -122,7 +120,9 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
       <nav className="space-y-0.5 px-2 pt-3 pb-2">
         {userNavigation.map((item) => {
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}

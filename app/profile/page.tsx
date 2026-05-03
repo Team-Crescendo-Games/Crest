@@ -9,10 +9,9 @@ import { ProfilePictureUpload } from "@/components/profile/profile-picture-uploa
 
 export default async function ProfilePage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/sign-in");
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: session!.user!.id! },
     select: {
       id: true,
       name: true,
