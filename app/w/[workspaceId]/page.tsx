@@ -19,8 +19,8 @@ import {
   getEffectivePermissions,
   Permission,
 } from "@/lib/permissions";
-import { TagManager } from "@/components/tag-manager";
-import { RoleManager } from "@/components/role-manager";
+import { TagManager } from "@/components/workspace/tag-manager";
+import { RoleManager } from "@/components/workspace/role-manager";
 
 const SPRINTS_PER_PAGE = 5;
 

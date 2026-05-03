@@ -21,7 +21,7 @@ import { SprintActions } from "@/components/sprints/sprint-actions";
 import { StandupModeFilter } from "@/components/sprints/standup-mode-filter";
 import { AssignTaskSection } from "@/components/sprints/assign-task-section";
 import { SprintViews } from "@/components/sprints/sprint-views";
-import { CollapsibleSection } from "@/components/collapsible-section";
+import { CollapsibleSection } from "@/components/common/collapsible-section";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
 
@@ -235,10 +235,22 @@ export default async function SprintDetailPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(0, statusPageSizes["NOT_STARTED"]);
-  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(0, statusPageSizes["IN_PROGRESS"]);
-  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
-  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
+  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(
+    0,
+    statusPageSizes["NOT_STARTED"],
+  );
+  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(
+    0,
+    statusPageSizes["IN_PROGRESS"],
+  );
+  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(
+    0,
+    statusPageSizes["IN_REVIEW"],
+  );
+  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(
+    0,
+    statusPageSizes["COMPLETED"],
+  );
 
   // Build count map from groupBy result
   const countMap: Record<string, number> = {};

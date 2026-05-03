@@ -16,9 +16,7 @@ export function Tooltip({
   variant?: "default" | "danger";
 }) {
   const posClass =
-    position === "top"
-      ? "bottom-full mb-1.5"
-      : "top-full mt-1.5";
+    position === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5";
 
   const colorClass =
     variant === "danger"

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 
 interface UserFooterProps {
   user: {

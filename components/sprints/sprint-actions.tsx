@@ -9,7 +9,7 @@ import {
 } from "@/lib/actions/sprint";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { Pencil, Play, Pause, Trash2, X, ArrowRightLeft } from "lucide-react";
-import { Tooltip } from "@/components/tooltip";
+import { Tooltip } from "@/components/common/tooltip";
 
 interface Props {
   sprint: {
@@ -129,7 +129,8 @@ export function SprintActions({ sprint, workspaceId, permissions }: Props) {
         </div>
 
         <p className="mb-2 text-[11px] text-fg-muted">
-          Creates a new sprint and adds all incomplete tasks from this sprint to it.
+          Creates a new sprint and adds all incomplete tasks from this sprint to
+          it.
         </p>
 
         {migrateState?.error && (

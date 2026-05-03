@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link2, Copy, Check, X, Workflow } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 
 export function FlowModeButton({
   active,

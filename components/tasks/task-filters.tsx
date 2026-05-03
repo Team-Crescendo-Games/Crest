@@ -8,7 +8,7 @@ import {
   PRIORITY_LABELS,
   PRIORITY_COLORS,
 } from "@/lib/task-enums";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Props {
@@ -194,66 +194,66 @@ export function TaskFilters({
 
         {/* Assignee multi-select */}
         {!hideAssignees && (
-        <MultiSelect
-          label="Assignee"
-          selected={currentAssignees}
-          onChange={(vals) => navigate({ assignee: vals })}
-          options={[
-            {
-              value: "unassigned",
-              label: "Unassigned",
-              node: (
-                <span className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary">
-                    <User size={10} className="text-fg-muted" />
-                  </span>
-                  Unassigned
-                </span>
-              ),
-            },
-            ...assignees.map((a) => ({
-              value: a.id,
-              label: a.name ?? "Unknown",
-              node: (
-                <span className="flex items-center gap-2">
-                  <UserAvatar name={a.name} image={a.image} size={20} />
-                  {a.name ?? "Unknown"}
-                </span>
-              ),
-            })),
-          ]}
-          renderSelected={(vals) => (
-            <span className="flex items-center -space-x-1">
-              {vals.slice(0, 3).map((v) => {
-                if (v === "unassigned") {
-                  return (
-                    <span
-                      key={v}
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary ring-1 ring-bg-elevated"
-                    >
+          <MultiSelect
+            label="Assignee"
+            selected={currentAssignees}
+            onChange={(vals) => navigate({ assignee: vals })}
+            options={[
+              {
+                value: "unassigned",
+                label: "Unassigned",
+                node: (
+                  <span className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary">
                       <User size={10} className="text-fg-muted" />
                     </span>
+                    Unassigned
+                  </span>
+                ),
+              },
+              ...assignees.map((a) => ({
+                value: a.id,
+                label: a.name ?? "Unknown",
+                node: (
+                  <span className="flex items-center gap-2">
+                    <UserAvatar name={a.name} image={a.image} size={20} />
+                    {a.name ?? "Unknown"}
+                  </span>
+                ),
+              })),
+            ]}
+            renderSelected={(vals) => (
+              <span className="flex items-center -space-x-1">
+                {vals.slice(0, 3).map((v) => {
+                  if (v === "unassigned") {
+                    return (
+                      <span
+                        key={v}
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary ring-1 ring-bg-elevated"
+                      >
+                        <User size={10} className="text-fg-muted" />
+                      </span>
+                    );
+                  }
+                  const a = assignees.find((a) => a.id === v);
+                  return (
+                    <UserAvatar
+                      key={v}
+                      name={a?.name}
+                      image={a?.image}
+                      size={20}
+                      className="ring-1 ring-bg-elevated"
+                    />
                   );
-                }
-                const a = assignees.find((a) => a.id === v);
-                return (
-                  <UserAvatar
-                    key={v}
-                    name={a?.name}
-                    image={a?.image}
-                    size={20}
-                    className="ring-1 ring-bg-elevated"
-                  />
-                );
-              })}
-              {vals.length > 3 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-elevated">
-                  +{vals.length - 3}
-                </span>
-              )}
-            </span>
-          )}
-        />
+                })}
+                {vals.length > 3 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-elevated">
+                    +{vals.length - 3}
+                  </span>
+                )}
+              </span>
+            )}
+          />
         )}
 
         {extraControls}
@@ -276,9 +276,7 @@ export function TaskFilters({
             <FilterChip
               key={p}
               color={PRIORITY_COLORS[p as TaskPriority]}
-              label={
-                PRIORITY_LABELS[p as keyof typeof PRIORITY_LABELS] ?? p
-              }
+              label={PRIORITY_LABELS[p as keyof typeof PRIORITY_LABELS] ?? p}
               onRemove={() =>
                 navigate({
                   priority: currentPriorities.filter((v) => v !== p),
@@ -461,9 +459,7 @@ function FilterChip({
         color: color ?? undefined,
       }}
     >
-      {!color && !avatar && (
-        <span className="text-accent" />
-      )}
+      {!color && !avatar && <span className="text-accent" />}
       {avatar}
       {color && (
         <span

@@ -55,13 +55,13 @@ export function RoleManager({
       {roles
         .filter((role) => role.name !== "Owner")
         .map((role) => (
-        <RoleItem
-          key={role.id}
-          role={role}
-          workspaceId={workspaceId}
-          canManage={canManage}
-        />
-      ))}
+          <RoleItem
+            key={role.id}
+            role={role}
+            workspaceId={workspaceId}
+            canManage={canManage}
+          />
+        ))}
 
       {canManage && !showCreate && (
         <button

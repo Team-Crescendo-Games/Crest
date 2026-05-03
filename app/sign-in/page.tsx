@@ -4,8 +4,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/common/theme-toggle";
+import { Logo } from "@/components/common/logo";
 
 export default function SignInPage() {
   const router = useRouter();

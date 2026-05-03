@@ -13,7 +13,7 @@ import {
   parseSorts,
 } from "@/lib/task-enums";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
 

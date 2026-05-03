@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 import { PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 import type { TaskCardData } from "@/lib/types/task";

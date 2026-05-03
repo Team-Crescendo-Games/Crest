@@ -19,7 +19,7 @@ import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import type { TaskFormData } from "@/lib/types/task";
 
 const FlowCanvas = lazy(() =>
-  import("@/components/flow-view").then((m) => ({ default: m.FlowCanvas })),
+  import("@/components/workspace/flow-view").then((m) => ({ default: m.FlowCanvas })),
 );
 
 type TaskData = TaskFormData;

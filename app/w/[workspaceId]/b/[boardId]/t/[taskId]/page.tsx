@@ -6,8 +6,8 @@ import { TaskEditForm } from "@/components/tasks/task-edit-form";
 import { TaskBreadcrumb } from "@/components/tasks/task-breadcrumb";
 import { CommentSection } from "@/components/tasks/comment-section";
 import { ActivityLog } from "@/components/tasks/activity-log";
-import { AttachmentSection } from "@/components/attachment-section";
-import { SubtaskSection } from "@/components/subtask-section";
+import { AttachmentSection } from "@/components/workspace/attachment-section";
+import { SubtaskSection } from "@/components/workspace/subtask-section";
 
 export default async function TaskDetailPage({
   params,

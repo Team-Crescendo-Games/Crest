@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { updateBoard, archiveBoard, deleteBoard } from "@/lib/actions/board";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { Pencil, Archive, ArchiveRestore, Trash2, X } from "lucide-react";
-import { Tooltip } from "@/components/tooltip";
+import { Tooltip } from "@/components/common/tooltip";
 
 interface Props {
   board: {

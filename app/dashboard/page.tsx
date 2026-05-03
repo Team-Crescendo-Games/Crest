@@ -10,7 +10,7 @@ import {
 } from "@/lib/task-enums";
 import { DashboardKanban } from "@/components/dashboard/dashboard-kanban";
 import { NotificationFeed } from "@/components/dashboard/notification-feed";
-import { UserMetrics } from "@/components/user-metrics";
+import { UserMetrics } from "@/components/dashboard/user-metrics";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
 import { getWeeklyCompletedPoints, getTasksByTag } from "@/lib/actions/metrics";

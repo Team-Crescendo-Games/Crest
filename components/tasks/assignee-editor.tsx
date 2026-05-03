@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { X, Plus, Search } from "lucide-react";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 
 export function AssigneeEditor({
   members,

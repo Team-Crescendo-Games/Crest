@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -47,7 +47,10 @@ export function TaskListView({
   workspaceId: string;
   boardId?: string;
 }) {
-  const allTasks = useMemo(() => columns.flatMap((col) => col.tasks), [columns]);
+  const allTasks = useMemo(
+    () => columns.flatMap((col) => col.tasks),
+    [columns],
+  );
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(allTasks.length / PAGE_SIZE));
@@ -78,57 +81,58 @@ export function TaskListView({
     return pages;
   }
 
-  const pagination = totalPages > 1 ? (
-    <div className="flex items-center justify-between">
-      <p className="text-[11px] text-fg-muted">
-        {(currentPage - 1) * PAGE_SIZE + 1}–
-        {Math.min(currentPage * PAGE_SIZE, allTasks.length)} of{" "}
-        {allTasks.length} tasks
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Previous page"
-        >
-          <ChevronLeft size={13} />
-        </button>
+  const pagination =
+    totalPages > 1 ? (
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-fg-muted">
+          {(currentPage - 1) * PAGE_SIZE + 1}–
+          {Math.min(currentPage * PAGE_SIZE, allTasks.length)} of{" "}
+          {allTasks.length} tasks
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={13} />
+          </button>
 
-        {pageNumbers().map((p, i) =>
-          p === "ellipsis" ? (
-            <span
-              key={`ellipsis-${i}`}
-              className="px-0.5 text-[10px] text-fg-muted"
-            >
-              …
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
-                p === currentPage
-                  ? "bg-accent/15 text-accent"
-                  : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
-              }`}
-            >
-              {p}
-            </button>
-          ),
-        )}
+          {pageNumbers().map((p, i) =>
+            p === "ellipsis" ? (
+              <span
+                key={`ellipsis-${i}`}
+                className="px-0.5 text-[10px] text-fg-muted"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
+                  p === currentPage
+                    ? "bg-accent/15 text-accent"
+                    : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
+                }`}
+              >
+                {p}
+              </button>
+            ),
+          )}
 
-        <button
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Next page"
-        >
-          <ChevronRight size={13} />
-        </button>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Next page"
+          >
+            <ChevronRight size={13} />
+          </button>
+        </div>
       </div>
-    </div>
-  ) : null;
+    ) : null;
 
   return (
     <div>

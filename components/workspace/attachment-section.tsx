@@ -215,8 +215,7 @@ export function AttachmentSection({
             <Upload size={14} className="mx-auto text-fg-muted" />
             <p className="mt-1 text-[11px] text-fg-muted">
               Drop a file or{" "}
-              <span className="font-medium text-accent">browse</span>:
-              Max 10 MB
+              <span className="font-medium text-accent">browse</span>: Max 10 MB
             </p>
           </div>
         )}

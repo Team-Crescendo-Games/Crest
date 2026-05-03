@@ -14,7 +14,7 @@ import { ApplicationList } from "@/components/team/application-list";
 import { LeaveWorkspaceButton } from "@/components/team/leave-button";
 import { MemberRoleSelect } from "@/components/team/member-role-select";
 import { TransferOwnership } from "@/components/team/transfer-ownership";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 
 export default async function WorkspaceTeamPage({
   params,

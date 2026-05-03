@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
-import { GridBackground } from "@/components/grid-background";
+import { ThemeProvider } from "@/components/common/theme-provider";
+import { GridBackground } from "@/components/common/grid-background";
 import "./globals.css";
 
 const geistSans = Geist({

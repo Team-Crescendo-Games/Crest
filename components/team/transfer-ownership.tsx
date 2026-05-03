@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { transferOwnership } from "@/lib/actions/workspace";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 
 interface Member {
   id: string;
@@ -69,7 +69,10 @@ export function TransferOwnership({
       <div className="rounded-md border border-accent/30 bg-bg-elevated/60 p-4 backdrop-blur-sm">
         <p className="text-xs font-medium text-fg-primary">
           Transfer ownership to{" "}
-          <span className="text-accent">{selected?.name ?? selected?.email}</span>?
+          <span className="text-accent">
+            {selected?.name ?? selected?.email}
+          </span>
+          ?
         </p>
         <p className="mt-1 text-[11px] text-fg-muted">
           You will lose owner privileges and become a regular member. This

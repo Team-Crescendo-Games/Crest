@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { X, Calendar } from "lucide-react";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar } from "@/components/common/user-avatar";
 import { DropdownPicker, BoardField } from "./dropdown-picker";
 import { SprintEditor } from "./sprint-editor";
 import {
