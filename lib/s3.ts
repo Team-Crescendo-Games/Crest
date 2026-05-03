@@ -7,19 +7,19 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getStage } from "@/lib/stage";
+import { config } from "@/lib/config";
 
 const s3 = new S3Client({
-  region: process.env.S3_REGION ?? "us-east-1",
-  endpoint: process.env.S3_ENDPOINT,
+  region: config.s3.region,
+  endpoint: config.s3.endpoint,
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+    accessKeyId: config.s3.accessKeyId,
+    secretAccessKey: config.s3.secretAccessKey,
   },
-  forcePathStyle: !!process.env.S3_ENDPOINT, // Required for MinIO / non-AWS S3
+  forcePathStyle: !!config.s3.endpoint, // Required for MinIO / non-AWS S3
 });
 
-const BUCKET = process.env.S3_BUCKET ?? "crest-attachments";
+const BUCKET = config.s3.bucket;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const ALLOWED_MIME_TYPES = [
@@ -64,7 +64,7 @@ export async function getPresignedUploadUrl({
 
   // Key format: {stage}/attachments/{taskId}/{timestamp}-{sanitized filename}
   const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const key = `${getStage()}/attachments/${taskId}/${Date.now()}-${sanitized}`;
+  const key = `${config.stage}/attachments/${taskId}/${Date.now()}-${sanitized}`;
 
   const command = new PutObjectCommand({
     Bucket: BUCKET,
@@ -76,9 +76,9 @@ export async function getPresignedUploadUrl({
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 min
 
   // The public URL depends on the S3 setup
-  const publicUrl = process.env.S3_PUBLIC_URL
-    ? `${process.env.S3_PUBLIC_URL}/${key}`
-    : `https://${BUCKET}.s3.${process.env.S3_REGION ?? "us-east-1"}.amazonaws.com/${key}`;
+  const publicUrl = config.s3.publicUrl
+    ? `${config.s3.publicUrl}/${key}`
+    : `https://${BUCKET}.s3.${config.s3.region}.amazonaws.com/${key}`;
 
   return { uploadUrl, key, publicUrl };
 }
@@ -93,9 +93,9 @@ export async function getPresignedDownloadUrl(fileUrlOrKey: string, expiresIn = 
   // If it looks like a plain key (no protocol), use it directly
   if (!fileUrlOrKey.includes("://")) {
     key = fileUrlOrKey;
-  } else if (process.env.S3_PUBLIC_URL && fileUrlOrKey.startsWith(process.env.S3_PUBLIC_URL)) {
+  } else if (config.s3.publicUrl && fileUrlOrKey.startsWith(config.s3.publicUrl)) {
     // Strip the base URL (handle trailing slash on S3_PUBLIC_URL)
-    const base = process.env.S3_PUBLIC_URL.replace(/\/$/, "");
+    const base = config.s3.publicUrl.replace(/\/$/, "");
     key = fileUrlOrKey.slice(base.length + 1);
   } else {
     // Legacy: extract key from amazonaws.com URL
@@ -113,8 +113,8 @@ export async function getPresignedDownloadUrl(fileUrlOrKey: string, expiresIn = 
 export async function deleteS3Object(fileUrl: string) {
   // Extract key from the URL
   let key: string;
-  if (process.env.S3_PUBLIC_URL && fileUrl.startsWith(process.env.S3_PUBLIC_URL)) {
-    key = fileUrl.slice(process.env.S3_PUBLIC_URL.length + 1);
+  if (config.s3.publicUrl && fileUrl.startsWith(config.s3.publicUrl)) {
+    key = fileUrl.slice(config.s3.publicUrl.length + 1);
   } else {
     // Try to extract from standard S3 URL
     const match = fileUrl.match(/\.amazonaws\.com\/(.+)$/);

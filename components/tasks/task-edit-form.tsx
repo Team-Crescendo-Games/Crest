@@ -1,10 +1,26 @@
 "use client";
 
-import React, { useActionState, useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import React, {
+  useActionState,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
-import { X, Plus, Search, ChevronDown, Check, Calendar, Pencil } from "lucide-react";
+import {
+  X,
+  Plus,
+  Search,
+  ChevronDown,
+  Check,
+  Calendar,
+  Pencil,
+} from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { TaskActions, FlowModeButton } from "./task-actions";
 import { DeleteTaskButton } from "./delete-task-button";
@@ -22,20 +38,9 @@ import {
   TASK_PRIORITIES,
 } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
+import type { TaskFormData } from "@/lib/types/task";
 
-interface TaskData {
-  id: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueDate: string;
-  points: number | null;
-  assigneeIds: string[];
-  tagIds: string[];
-  boardId: string;
-  sprintIds: string[];
-}
+type TaskData = TaskFormData;
 
 interface Props {
   task: TaskData;
@@ -200,10 +205,7 @@ export function TaskEditForm({
             className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
 
-          <DescriptionField
-            value={description}
-            onChange={setDescription}
-          />
+          <DescriptionField value={description} onChange={setDescription} />
 
           <div>
             <label className="block text-[11px] font-medium text-fg-muted">
@@ -387,16 +389,18 @@ export function TaskEditForm({
             <Suspense
               fallback={
                 <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
-                  <p className="font-mono text-sm text-fg-muted animate-pulse">Loading flow view…</p>
+                  <p className="font-mono text-sm text-fg-muted animate-pulse">
+                    Loading flow view…
+                  </p>
                 </div>
               }
             >
-            <FlowCanvas
-              tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
-              rootId={task.id}
-              workspaceId={workspaceId}
-              onBack={() => setFlowOpen(false)}
-            />
+              <FlowCanvas
+                tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
+                rootId={task.id}
+                workspaceId={workspaceId}
+                onBack={() => setFlowOpen(false)}
+              />
             </Suspense>
           ) : (
             <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
@@ -862,7 +866,9 @@ const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
 /** Walk React children and turn plain-text URLs into clickable links. */
 function linkifyChildren(children: React.ReactNode): React.ReactNode {
   return Array.isArray(children)
-    ? children.map((child, i) => <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>)
+    ? children.map((child, i) => (
+        <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>
+      ))
     : linkifyNode(children);
 }
 
@@ -954,29 +960,31 @@ function DescriptionField({
           style={{ minHeight, height: height ?? undefined }}
         >
           {value ? (
-            <Suspense fallback={<div className="animate-pulse text-fg-muted text-sm">Loading…</div>}>
-            <ReactMarkdown
-              components={{
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
-                  >
-                    {children}
-                  </a>
-                ),
-                p: ({ children }) => (
-                  <p>{linkifyChildren(children)}</p>
-                ),
-                li: ({ children }) => (
-                  <li>{linkifyChildren(children)}</li>
-                ),
-              }}
+            <Suspense
+              fallback={
+                <div className="animate-pulse text-fg-muted text-sm">
+                  Loading…
+                </div>
+              }
             >
-              {value}
-            </ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent underline underline-offset-2 hover:text-accent-emphasis"
+                    >
+                      {children}
+                    </a>
+                  ),
+                  p: ({ children }) => <p>{linkifyChildren(children)}</p>,
+                  li: ({ children }) => <li>{linkifyChildren(children)}</li>,
+                }}
+              >
+                {value}
+              </ReactMarkdown>
             </Suspense>
           ) : (
             <span className="text-fg-muted">No description</span>

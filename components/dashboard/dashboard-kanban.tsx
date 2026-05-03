@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { KanbanBoard } from "@/components/kanban-board";
 import { loadMyColumnTasks } from "@/lib/actions/task";
 import { DashboardCreateTask } from "./dashboard-create-task";
-import type { TaskCardData } from "@/components/tasks/task-card";
+import type { TaskCardData } from "@/lib/types/task";
 import type { SortOption } from "@/lib/task-enums";
 
 interface Column {

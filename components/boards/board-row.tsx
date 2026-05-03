@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban-board";
-import type { TaskCardData } from "@/components/tasks/task-card";
+import type { TaskCardData } from "@/lib/types/task";
 
 interface Column {
   status: string;
@@ -81,8 +81,7 @@ export function BoardRow({
             )}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-        </div>
+        <div className="flex items-center gap-1"></div>
       </div>
 
       {/* Kanban columns with pagination */}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban-board";
-import type { TaskCardData } from "@/components/tasks/task-card";
+import type { TaskCardData } from "@/lib/types/task";
 
 interface Column {
   status: string;
@@ -137,8 +137,7 @@ export function SprintRow({
           )}
         </div>
 
-        <div className="ml-4 flex items-center gap-1">
-        </div>
+        <div className="ml-4 flex items-center gap-1"></div>
       </div>
 
       {/* Kanban columns */}

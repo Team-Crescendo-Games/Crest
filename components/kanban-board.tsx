@@ -15,7 +15,8 @@ import {
 } from "react";
 import { updateTaskStatus, loadColumnTasks } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
-import { TaskCard, type TaskCardData } from "@/components/tasks/task-card";
+import { TaskCard } from "@/components/tasks/task-card";
+import type { TaskCardData } from "@/lib/types/task";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { SortOption } from "@/lib/task-enums";
 

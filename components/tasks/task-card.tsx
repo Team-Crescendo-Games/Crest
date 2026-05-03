@@ -5,25 +5,9 @@ import { useRef } from "react";
 import { UserAvatar } from "@/components/user-avatar";
 import { PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
+import type { TaskCardData } from "@/lib/types/task";
 
-export interface TaskCardData {
-  id: string;
-  title: string;
-  description?: string | null;
-  status: string;
-  priority: string;
-  dueDate?: Date | null;
-  points?: number | null;
-  assignees: { id: string; name: string | null; image?: string | null }[];
-  tags?: { name: string; color: string | null }[];
-  board?: { id: string; name: string; workspaceId?: string };
-  boardId?: string;
-  workspaceId?: string;
-  commentCount?: number;
-  subtaskIds?: string[];
-  subtaskTotal?: number;
-  subtaskCompleted?: number;
-}
+export type { TaskCardData };
 
 /* ── Color helpers ─────────────────────────────────────────────────────── */
 
