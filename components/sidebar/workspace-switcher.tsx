@@ -15,11 +15,7 @@ interface WorkspaceSwitcherProps {
   activeWorkspaceName: string | undefined;
 }
 
-export function WorkspaceSwitcher({
-  workspaces,
-  activeWorkspaceId,
-  activeWorkspaceName,
-}: WorkspaceSwitcherProps) {
+export function WorkspaceSwitcher({ workspaces, activeWorkspaceId, activeWorkspaceName }: WorkspaceSwitcherProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,13 +24,8 @@ export function WorkspaceSwitcher({
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-fg-primary transition-colors hover:border-accent/30 hover:text-accent"
       >
-        <span className="truncate">
-          {activeWorkspaceName ?? "No workspace"}
-        </span>
-        <ChevronDown
-          size={12}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <span className="truncate">{activeWorkspaceName ?? "No workspace"}</span>
+        <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

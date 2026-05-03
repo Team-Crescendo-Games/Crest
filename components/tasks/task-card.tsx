@@ -15,18 +15,10 @@ export type { TaskCardData };
 function hexToRgb(hex: string): [number, number, number] | null {
   const h = hex.replace("#", "");
   if (h.length === 3) {
-    return [
-      parseInt(h[0] + h[0], 16),
-      parseInt(h[1] + h[1], 16),
-      parseInt(h[2] + h[2], 16),
-    ];
+    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
   }
   if (h.length === 6) {
-    return [
-      parseInt(h.slice(0, 2), 16),
-      parseInt(h.slice(2, 4), 16),
-      parseInt(h.slice(4, 6), 16),
-    ];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
   }
   return null;
 }
@@ -66,9 +58,7 @@ const TINT_OPACITY = 0.15;
  * Average all tag colors by hue (circular mean to handle the 360° wrap),
  * then normalise saturation and lightness so every card looks consistent.
  */
-function averageTagColor(
-  tags?: { color: string | null }[],
-): string | undefined {
+function averageTagColor(tags?: { color: string | null }[]): string | undefined {
   if (!tags || tags.length === 0) return undefined;
   const hsls = tags
     .map((t) => (t.color ? hexToRgb(t.color) : null))
@@ -92,13 +82,7 @@ function averageTagColor(
 
 /* ── Subtask radial progress ────────────────────────────────────────────── */
 
-function SubtaskRadial({
-  completed,
-  total,
-}: {
-  completed: number;
-  total: number;
-}) {
+function SubtaskRadial({ completed, total }: { completed: number; total: number }) {
   const ratio = total > 0 ? completed / total : 0;
   const size = 20;
   const stroke = 2;
@@ -108,16 +92,8 @@ function SubtaskRadial({
   const allDone = completed === total;
 
   return (
-    <div
-      className="relative shrink-0"
-      title={`${completed}/${total} subtasks done`}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="-rotate-90"
-      >
+    <div className="relative shrink-0" title={`${completed}/${total} subtasks done`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         {/* Background ring */}
         <circle
           cx={size / 2}
@@ -176,11 +152,8 @@ export function TaskCard({
   const router = useRouter();
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
-  const resolvedWorkspaceId =
-    task.workspaceId || task.board?.workspaceId || workspaceId;
-  const link =
-    href ??
-    `/w/${resolvedWorkspaceId}/b/${task.board?.id ?? task.boardId}/t/${task.id}`;
+  const resolvedWorkspaceId = task.workspaceId || task.board?.workspaceId || workspaceId;
+  const link = href ?? `/w/${resolvedWorkspaceId}/b/${task.board?.id ?? task.boardId}/t/${task.id}`;
 
   const tagTint = averageTagColor(task.tags);
 
@@ -204,9 +177,7 @@ export function TaskCard({
         if (e.key === "Enter") router.push(link);
       }}
       className={`group relative block cursor-pointer overflow-hidden rounded-md border bg-bg-elevated/60 p-3 pl-4 backdrop-blur-sm transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:ring-1 hover:ring-accent/30 hover:shadow-md hover:shadow-accent/8 ${
-        highlighted
-          ? "border-accent/50 ring-1 ring-accent/30 shadow-sm shadow-accent/10"
-          : "border-border"
+        highlighted ? "border-accent/50 ring-1 ring-accent/30 shadow-sm shadow-accent/10" : "border-border"
       } ${className}`}
       style={tagTint ? { backgroundColor: tagTint } : undefined}
       onMouseEnter={() => onHoverChange?.(task.id)}
@@ -218,8 +189,7 @@ export function TaskCard({
           aria-hidden
           className="absolute inset-y-0 left-0 w-1"
           style={{
-            backgroundColor:
-              PRIORITY_COLORS[task.priority as TaskPriority] ?? "transparent",
+            backgroundColor: PRIORITY_COLORS[task.priority as TaskPriority] ?? "transparent",
           }}
         />
       )}
@@ -237,20 +207,13 @@ export function TaskCard({
       )}
 
       {/* Row 1: title */}
-      <p className="font-mono text-xs font-medium text-fg-primary line-clamp-2">
-        {task.title}
-      </p>
+      <p className="font-mono text-xs font-medium text-fg-primary line-clamp-2">{task.title}</p>
 
       {/* Row 2: description (1 line) */}
-      {task.description && (
-        <p className="mt-1 text-[11px] text-fg-muted line-clamp-1">
-          {task.description}
-        </p>
-      )}
+      {task.description && <p className="mt-1 text-[11px] text-fg-muted line-clamp-1">{task.description}</p>}
 
       {/* Row 3: tags (always shown) + points (detailed only) */}
-      {((task.tags && task.tags.length > 0) ||
-        (variant === "detailed" && task.points != null)) && (
+      {((task.tags && task.tags.length > 0) || (variant === "detailed" && task.points != null)) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {variant === "detailed" && task.points != null && (
             <span className="rounded bg-bg-secondary px-1 py-px font-mono text-[10px] text-fg-muted">
@@ -277,13 +240,7 @@ export function TaskCard({
         {task.assignees.length > 0 ? (
           <div className="flex -space-x-1">
             {task.assignees.slice(0, 4).map((a) => (
-              <UserAvatar
-                key={a.id}
-                name={a.name}
-                image={a.image}
-                size={20}
-                className="ring-1 ring-bg-elevated"
-              />
+              <UserAvatar key={a.id} name={a.name} image={a.image} size={20} className="ring-1 ring-bg-elevated" />
             ))}
             {task.assignees.length > 4 && (
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-elevated">
@@ -296,10 +253,7 @@ export function TaskCard({
         )}
         <div className="flex items-center gap-2">
           {(task.subtaskTotal ?? 0) > 0 && (
-            <SubtaskRadial
-              completed={task.subtaskCompleted ?? 0}
-              total={task.subtaskTotal!}
-            />
+            <SubtaskRadial completed={task.subtaskCompleted ?? 0} total={task.subtaskTotal!} />
           )}
           {task.dueDate && (
             <span className="text-[11px] text-fg-muted">

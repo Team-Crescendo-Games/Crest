@@ -3,11 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users, Mail, ClipboardList } from "lucide-react";
-import {
-  hasPermission,
-  getEffectivePermissions,
-  Permission,
-} from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { getLeaveWarning } from "@/lib/actions/workspace";
 import { InviteSection } from "@/components/team/invite-section";
 import { ApplicationList } from "@/components/team/application-list";
@@ -16,11 +12,7 @@ import { MemberRoleSelect } from "@/components/team/member-role-select";
 import { TransferOwnership } from "@/components/team/transfer-ownership";
 import { UserAvatar } from "@/components/common/user-avatar";
 
-export default async function WorkspaceTeamPage({
-  params,
-}: {
-  params: Promise<{ workspaceId: string }>;
-}) {
+export default async function WorkspaceTeamPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
   const session = await auth();
   const userId = session!.user!.id!;
@@ -32,58 +24,50 @@ export default async function WorkspaceTeamPage({
 
   if (!membership) notFound();
 
-  const effectivePerms = getEffectivePermissions(
-    membership.role.permissions,
-    userId,
-    membership.workspace.createdById,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
 
   const canInvite = hasPermission(effectivePerms, Permission.INVITE_MEMBERS);
-  const canManageApps = hasPermission(
-    effectivePerms,
-    Permission.MANAGE_APPLICATIONS,
-  );
+  const canManageApps = hasPermission(effectivePerms, Permission.MANAGE_APPLICATIONS);
   const canManageRoles = hasPermission(effectivePerms, Permission.MANAGE_ROLES);
 
-  const [members, applications, invitations, workspace, roles] =
-    await Promise.all([
-      prisma.workspaceMember.findMany({
-        where: { workspaceId },
-        include: {
-          user: { select: { id: true, name: true, email: true, image: true } },
-          role: { select: { id: true, name: true, color: true } },
-        },
-        orderBy: { joinedAt: "asc" },
-      }),
-      canManageApps
-        ? prisma.workspaceApplication.findMany({
-            where: { workspaceId, status: "PENDING" },
-            include: {
-              user: { select: { id: true, name: true, email: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          })
-        : [],
-      canInvite
-        ? prisma.workspaceInvitation.findMany({
-            where: { workspaceId },
-            include: {
-              createdBy: { select: { name: true } },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 20,
-          })
-        : [],
-      prisma.workspace.findUnique({
-        where: { id: workspaceId },
-        select: { name: true, createdById: true },
-      }),
-      prisma.role.findMany({
-        where: { workspaceId },
-        select: { id: true, name: true, color: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+  const [members, applications, invitations, workspace, roles] = await Promise.all([
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+        role: { select: { id: true, name: true, color: true } },
+      },
+      orderBy: { joinedAt: "asc" },
+    }),
+    canManageApps
+      ? prisma.workspaceApplication.findMany({
+          where: { workspaceId, status: "PENDING" },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : [],
+    canInvite
+      ? prisma.workspaceInvitation.findMany({
+          where: { workspaceId },
+          include: {
+            createdBy: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        })
+      : [],
+    prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { name: true, createdById: true },
+    }),
+    prisma.role.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -97,13 +81,10 @@ export default async function WorkspaceTeamPage({
 
       <div className="flex items-center gap-2">
         <Users size={16} className="text-accent" />
-        <h1 className="font-mono text-lg font-semibold text-fg-primary">
-          Team
-        </h1>
+        <h1 className="font-mono text-lg font-semibold text-fg-primary">Team</h1>
       </div>
       <p className="mt-1 text-xs text-fg-muted">
-        {members.length} member{members.length !== 1 && "s"} in{" "}
-        {workspace?.name}
+        {members.length} member{members.length !== 1 && "s"} in {workspace?.name}
       </p>
 
       {/* Members */}
@@ -114,37 +95,22 @@ export default async function WorkspaceTeamPage({
         </h2>
         <div className="mt-3 space-y-2">
           {members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm"
-            >
+            <div key={member.id} className="flex items-center justify-between card-panel">
               <Link
                 href={`/w/${workspaceId}/team/${member.id}`}
                 className="flex items-center gap-3 transition-opacity hover:opacity-80"
               >
-                <UserAvatar
-                  name={member.user.name}
-                  image={member.user.image}
-                  size={32}
-                />
+                <UserAvatar name={member.user.name} image={member.user.image} size={32} />
                 <div>
                   <p className="text-xs font-medium text-fg-primary">
                     {member.user.name}
-                    {member.user.id === userId && (
-                      <span className="ml-1.5 text-[11px] text-fg-muted">
-                        (you)
-                      </span>
-                    )}
+                    {member.user.id === userId && <span className="ml-1.5 text-[11px] text-fg-muted">(you)</span>}
                   </p>
-                  <p className="text-[11px] text-fg-muted">
-                    {member.user.email}
-                  </p>
+                  <p className="text-[11px] text-fg-muted">{member.user.email}</p>
                 </div>
               </Link>
               <div className="flex items-center gap-3">
-                <span className="text-[11px] text-fg-muted">
-                  Joined {member.joinedAt.toLocaleDateString()}
-                </span>
+                <span className="text-[11px] text-fg-muted">Joined {member.joinedAt.toLocaleDateString()}</span>
                 {workspace?.createdById === member.user.id ? (
                   <span
                     className="rounded-full border px-2 py-0.5 text-[11px] font-medium"
@@ -217,19 +183,14 @@ export default async function WorkspaceTeamPage({
         <section className="mt-10 border-t border-border pt-6">
           <TransferOwnership
             workspaceId={workspaceId}
-            members={members
-              .filter((m) => m.user.id !== userId)
-              .map((m) => m.user)}
+            members={members.filter((m) => m.user.id !== userId).map((m) => m.user)}
           />
         </section>
       )}
 
       {/* Leave workspace */}
       <section className="mt-10 border-t border-border pt-6">
-        <LeaveWorkspaceButton
-          workspaceId={workspaceId}
-          leaveWarning={await getLeaveWarning(workspaceId)}
-        />
+        <LeaveWorkspaceButton workspaceId={workspaceId} leaveWarning={await getLeaveWarning(workspaceId)} />
       </section>
     </div>
   );

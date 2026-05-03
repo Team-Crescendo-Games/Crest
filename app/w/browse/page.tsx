@@ -39,12 +39,8 @@ export default async function BrowseWorkspacesPage() {
     orderBy: { name: "asc" },
   });
 
-  const joinable = discoverableWorkspaces.filter(
-    (ws) => !myMembershipIds.has(ws.id),
-  );
-  const alreadyIn = discoverableWorkspaces.filter((ws) =>
-    myMembershipIds.has(ws.id),
-  );
+  const joinable = discoverableWorkspaces.filter((ws) => !myMembershipIds.has(ws.id));
+  const alreadyIn = discoverableWorkspaces.filter((ws) => myMembershipIds.has(ws.id));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -56,25 +52,16 @@ export default async function BrowseWorkspacesPage() {
         Back to workspaces
       </Link>
 
-      <h1 className="font-mono text-lg font-semibold text-fg-primary">
-        Browse Workspaces
-      </h1>
-      <p className="mt-1 text-xs text-fg-muted">
-        Discover workspaces you can join or apply to.
-      </p>
+      <h1 className="font-mono text-lg font-semibold text-fg-primary">Browse Workspaces</h1>
+      <p className="mt-1 text-xs text-fg-muted">Discover workspaces you can join or apply to.</p>
 
       {/* Joinable workspaces */}
       {joinable.length > 0 && (
         <section className="mt-6">
-          <h2 className="font-mono text-sm font-medium text-fg-primary">
-            Available to Join
-          </h2>
+          <h2 className="font-mono text-sm font-medium text-fg-primary">Available to Join</h2>
           <div className="mt-3 space-y-2">
             {joinable.map((ws) => (
-              <div
-                key={ws.id}
-                className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm"
-              >
+              <div key={ws.id} className="flex items-center justify-between card-panel">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10">
                     {ws.joinPolicy === "OPEN" ? (
@@ -84,9 +71,7 @@ export default async function BrowseWorkspacesPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-mono text-sm font-medium text-fg-primary">
-                      {ws.name}
-                    </p>
+                    <p className="font-mono text-sm font-medium text-fg-primary">{ws.name}</p>
                     <p className="text-[11px] text-fg-muted">
                       {ws._count.members} member
                       {ws._count.members !== 1 && "s"}
@@ -113,32 +98,26 @@ export default async function BrowseWorkspacesPage() {
       {joinable.length === 0 && (
         <div className="mt-12 text-center">
           <Lock size={20} className="mx-auto text-fg-muted" />
-          <p className="mt-3 text-xs text-fg-muted">
-            No workspaces are currently open for joining.
-          </p>
+          <p className="mt-3 text-xs text-fg-muted">No workspaces are currently open for joining.</p>
         </div>
       )}
 
       {/* Already a member */}
       {alreadyIn.length > 0 && (
         <section className="mt-8">
-          <h2 className="font-mono text-sm font-medium text-fg-secondary">
-            Already a Member
-          </h2>
+          <h2 className="font-mono text-sm font-medium text-fg-secondary">Already a Member</h2>
           <div className="mt-3 space-y-2">
             {alreadyIn.map((ws) => (
               <Link
                 key={ws.id}
                 href={`/w/${ws.id}`}
-                className="flex items-center gap-3 rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm transition-colors hover:border-accent/30"
+                className="flex items-center gap-3 card-panel transition-colors hover:border-accent/30"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10">
                   <Globe size={14} className="text-accent" />
                 </div>
                 <div>
-                  <p className="font-mono text-sm font-medium text-fg-primary">
-                    {ws.name}
-                  </p>
+                  <p className="font-mono text-sm font-medium text-fg-primary">{ws.name}</p>
                   <p className="text-[11px] text-fg-muted">
                     {ws._count.members} member
                     {ws._count.members !== 1 && "s"}

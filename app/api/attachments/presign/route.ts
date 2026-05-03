@@ -8,8 +8,7 @@ import { getPresignedUploadUrl } from "@/lib/s3";
  * Body: { taskId, fileName, mimeType, fileSize }
  * Returns: { uploadUrl, publicUrl, key }
  *
- * Client uploads directly to S3 using the uploadUrl,
- * then calls POST /api/attachments to save the metadata.
+ * Client uploads directly to S3 using the uploadUrl, then calls POST /api/attachments to save the metadata.
  */
 export async function POST(request: Request) {
   try {
@@ -21,13 +20,9 @@ export async function POST(request: Request) {
     const { taskId, fileName, mimeType, fileSize } = await request.json();
 
     if (!taskId || !fileName || !mimeType || !fileSize) {
-      return NextResponse.json(
-        { error: "taskId, fileName, mimeType, and fileSize are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "taskId, fileName, mimeType, and fileSize are required" }, { status: 400 });
     }
 
-    // Verify the user is a member of the task's workspace
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: { board: { select: { workspaceId: true } } },
@@ -58,8 +53,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ uploadUrl, publicUrl, key });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Something went wrong";
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Something went wrong";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

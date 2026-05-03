@@ -18,14 +18,8 @@ export interface MembershipResult {
   workspace: { createdById: string | null };
 }
 
-/**
- * Look up the human-readable label for a permission bitmask value.
- * Falls back to a hex representation if the permission is not recognized.
- */
 function getPermissionName(permission: number): string {
-  const key = (Object.keys(Permission) as PermissionKey[]).find(
-    (k) => Permission[k] === permission,
-  );
+  const key = (Object.keys(Permission) as PermissionKey[]).find((k) => Permission[k] === permission);
   return key ? PERMISSION_LABELS[key] : `0x${permission.toString(16)}`;
 }
 
@@ -36,10 +30,7 @@ function getPermissionName(permission: number): string {
  *
  * @throws {Error} If the user is not a member of the workspace.
  */
-export async function requireMembership(
-  userId: string,
-  workspaceId: string,
-): Promise<MembershipResult> {
+export async function requireMembership(userId: string, workspaceId: string): Promise<MembershipResult> {
   const membership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
     include: { role: true, workspace: { select: { createdById: true } } },

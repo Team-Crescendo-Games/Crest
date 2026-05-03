@@ -9,19 +9,15 @@ interface Role {
   color: string;
 }
 
-export function MemberRoleSelect({
-  memberId,
-  currentRoleId,
-  roles,
-  workspaceId,
-  canManage,
-}: {
+interface Props {
   memberId: string;
   currentRoleId: string;
   roles: Role[];
   workspaceId: string;
   canManage: boolean;
-}) {
+}
+
+export function MemberRoleSelect({ memberId, currentRoleId, roles, workspaceId, canManage }: Props) {
   const [selectedRoleId, setSelectedRoleId] = useState(currentRoleId);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -80,9 +76,7 @@ export function MemberRoleSelect({
           </option>
         ))}
       </select>
-      {error && (
-        <span className="text-[10px] text-accent-emphasis">{error}</span>
-      )}
+      {error && <span className="text-[10px] text-accent-emphasis">{error}</span>}
     </div>
   );
 }

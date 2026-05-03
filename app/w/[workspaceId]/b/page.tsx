@@ -9,23 +9,12 @@ import { BoardRow } from "@/components/boards/board-row";
 import { BoardExtras } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
+import { parseMulti } from "@/lib/url-helpers";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
 
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
-
-export default async function BoardsPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{
     showArchived?: string;
@@ -35,7 +24,9 @@ export default async function BoardsPage({
     tag?: string;
     assignee?: string;
   }>;
-}) {
+}
+
+export default async function BoardsPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
   const {
     showArchived,

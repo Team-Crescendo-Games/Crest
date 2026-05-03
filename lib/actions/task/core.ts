@@ -87,11 +87,7 @@ export async function loadColumnTasks(
   }
 
   // Only apply assignee filters when NOT in assignee-scoped mode
-  if (
-    !filters?.assigneeUserId &&
-    filters?.assigneeFilters &&
-    filters.assigneeFilters.length > 0
-  ) {
+  if (!filters?.assigneeUserId && filters?.assigneeFilters && filters.assigneeFilters.length > 0) {
     const hasUnassigned = filters.assigneeFilters.includes("unassigned");
     const userIds = filters.assigneeFilters.filter((v) => v !== "unassigned");
 
@@ -133,9 +129,7 @@ export async function loadColumnTasks(
     tasks.sort((a, b) => {
       const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
       const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
-      return prioritySort.direction === "asc"
-        ? aOrder - bOrder
-        : bOrder - aOrder;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
     });
   }
 
@@ -162,14 +156,7 @@ export async function loadCompletedTasks(
     assigneeFilters?: string[];
   },
 ) {
-  return loadColumnTasks(
-    boardId,
-    workspaceId,
-    "COMPLETED",
-    offset,
-    limit,
-    filters,
-  );
+  return loadColumnTasks(boardId, workspaceId, "COMPLETED", offset, limit, filters);
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -178,10 +165,7 @@ export async function createTask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(createTaskSchema, formData, [
-    "assigneeIds",
-    "tagIds",
-  ]);
+  const parsed = parseFormData(createTaskSchema, formData, ["assigneeIds", "tagIds"]);
   if (!parsed.success) return { error: parsed.error };
   const {
     boardId,
@@ -248,14 +232,8 @@ export async function createTask(_prev: unknown, formData: FormData) {
         points: points ? parseInt(points) || null : null,
         boardId,
         authorId: session.user.id,
-        assignees:
-          assigneeIds.length > 0
-            ? { connect: assigneeIds.map((id) => ({ id })) }
-            : undefined,
-        tags:
-          tagIds.length > 0
-            ? { connect: tagIds.map((id) => ({ id })) }
-            : undefined,
+        assignees: assigneeIds.length > 0 ? { connect: assigneeIds.map((id) => ({ id })) } : undefined,
+        tags: tagIds.length > 0 ? { connect: tagIds.map((id) => ({ id })) } : undefined,
         sprints: sprintId ? { connect: { id: sprintId } } : undefined,
       },
     });
@@ -281,11 +259,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskSchema, formData, [
-    "assigneeIds",
-    "tagIds",
-    "sprintIds",
-  ]);
+  const parsed = parseFormData(updateTaskSchema, formData, ["assigneeIds", "tagIds", "sprintIds"]);
   if (!parsed.success) return { error: parsed.error };
   const {
     taskId,
@@ -416,12 +390,8 @@ export async function updateTask(_prev: unknown, formData: FormData) {
 
     const oldSprintIds = oldTask.sprints.map((s) => s.id).sort();
     const newSprintIds = [...sprintIds].sort();
-    const addedSprints = newSprintIds.filter(
-      (id) => !oldSprintIds.includes(id),
-    );
-    const removedSprints = oldSprintIds.filter(
-      (id) => !newSprintIds.includes(id),
-    );
+    const addedSprints = newSprintIds.filter((id) => !oldSprintIds.includes(id));
+    const removedSprints = oldSprintIds.filter((id) => !newSprintIds.includes(id));
     for (const id of addedSprints) {
       await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", {
         newValue: id,
@@ -442,10 +412,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       });
     }
 
-    if (
-      title.trim() !== oldTask.title ||
-      (description?.trim() || null) !== oldTask.description
-    ) {
+    if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
       await logActivity(taskId, session.user.id, "EDITED");
     }
   }

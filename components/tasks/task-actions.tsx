@@ -6,13 +6,7 @@ import { Link2, Copy, Check, X, Workflow } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { UserAvatar } from "@/components/common/user-avatar";
 
-export function FlowModeButton({
-  active,
-  onToggle,
-}: {
-  active: boolean;
-  onToggle: () => void;
-}) {
+export function FlowModeButton({ active, onToggle }: { active: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
@@ -64,10 +58,7 @@ export function TaskActions({
   const [duplicateOpen, setDuplicateOpen] = useState(false);
 
   async function handleCopyLink() {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/t/${taskId}`
-        : `/t/${taskId}`;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/t/${taskId}` : `/t/${taskId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -87,11 +78,7 @@ export function TaskActions({
         title={copyError ?? (copied ? "Link copied" : "Copy link")}
         className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-elevated/60 text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
       >
-        {copied ? (
-          <Check size={14} className="text-accent" />
-        ) : (
-          <Link2 size={14} />
-        )}
+        {copied ? <Check size={14} className="text-accent" /> : <Link2 size={14} />}
       </button>
 
       <button
@@ -133,16 +120,13 @@ function DuplicateTaskModal({
   const router = useRouter();
   const [assigneeIds, setAssigneeIds] = useState<string[]>(source.assigneeIds);
 
-  const [state, action, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await createTask(prev, formData);
-      if (result?.success && result.newTaskId) {
-        router.push(`/w/${workspaceId}/b/${boardId}/t/${result.newTaskId}`);
-      }
-      return result;
-    },
-    null,
-  );
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createTask(prev, formData);
+    if (result?.success && result.newTaskId) {
+      router.push(`/w/${workspaceId}/b/${boardId}/t/${result.newTaskId}`);
+    }
+    return result;
+  }, null);
 
   return (
     <div
@@ -161,15 +145,8 @@ function DuplicateTaskModal({
         ))}
 
         <div className="flex items-center justify-between">
-          <h3 className="font-mono text-xs font-medium text-fg-primary">
-            Duplicate Task
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-fg-muted hover:text-fg-secondary"
-            aria-label="Close"
-          >
+          <h3 className="font-mono text-xs font-medium text-fg-primary">Duplicate Task</h3>
+          <button type="button" onClick={onClose} className="text-fg-muted hover:text-fg-secondary" aria-label="Close">
             <X size={14} />
           </button>
         </div>
@@ -181,9 +158,7 @@ function DuplicateTaskModal({
         )}
 
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Title
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Title</label>
           <input
             name="title"
             required
@@ -194,9 +169,7 @@ function DuplicateTaskModal({
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Description
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Description</label>
           <textarea
             name="description"
             rows={3}
@@ -207,9 +180,7 @@ function DuplicateTaskModal({
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] font-medium text-fg-muted">
-              Status
-            </label>
+            <label className="block text-[11px] font-medium text-fg-muted">Status</label>
             <select
               name="status"
               defaultValue={source.status}
@@ -222,9 +193,7 @@ function DuplicateTaskModal({
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-fg-muted">
-              Priority
-            </label>
+            <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
             <select
               name="priority"
               defaultValue={source.priority}
@@ -240,9 +209,7 @@ function DuplicateTaskModal({
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Due Date
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Due Date</label>
           <input
             name="dueDate"
             type="date"
@@ -253,9 +220,7 @@ function DuplicateTaskModal({
         </div>
 
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Points
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Points</label>
           <input
             name="points"
             type="number"
@@ -267,9 +232,7 @@ function DuplicateTaskModal({
         </div>
 
         <div>
-          <p className="block text-[11px] font-medium text-fg-muted">
-            Assignees
-          </p>
+          <p className="block text-[11px] font-medium text-fg-muted">Assignees</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {members.map((m) => {
               const selected = assigneeIds.includes(m.id);
@@ -278,11 +241,7 @@ function DuplicateTaskModal({
                   key={m.id}
                   type="button"
                   onClick={() =>
-                    setAssigneeIds((prev) =>
-                      prev.includes(m.id)
-                        ? prev.filter((x) => x !== m.id)
-                        : [...prev, m.id],
-                    )
+                    setAssigneeIds((prev) => (prev.includes(m.id) ? prev.filter((x) => x !== m.id) : [...prev, m.id]))
                   }
                   className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
                     selected

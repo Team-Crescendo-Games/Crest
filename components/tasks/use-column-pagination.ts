@@ -37,11 +37,7 @@ interface UseColumnPaginationOptions {
     | undefined;
   boardId: string;
   workspaceId: string;
-  loadPage?: (
-    status: string,
-    offset: number,
-    limit: number,
-  ) => Promise<TaskCardData[]>;
+  loadPage?: (status: string, offset: number, limit: number) => Promise<TaskCardData[]>;
 }
 
 export function useColumnPagination({
@@ -60,9 +56,7 @@ export function useColumnPagination({
 } {
   const [localColumns, setLocalColumns] = useState(columns);
 
-  const [paginationState, setPaginationState] = useState<
-    Record<string, ColumnPaginationState>
-  >(() => {
+  const [paginationState, setPaginationState] = useState<Record<string, ColumnPaginationState>>(() => {
     const state: Record<string, ColumnPaginationState> = {};
     for (const col of columns) {
       const count = effectiveCounts[col.status];
@@ -103,21 +97,11 @@ export function useColumnPagination({
       const totalPages = Math.ceil(count / pageSize);
       const current = paginationState[status];
       if (!current) return;
-      if (
-        page < 1 ||
-        page > totalPages ||
-        page === current.page ||
-        current.isLoading
-      )
-        return;
+      if (page < 1 || page > totalPages || page === current.page || current.isLoading) return;
 
       if (current.cache[page]) {
         setLocalColumns((prev) =>
-          prev.map((col) =>
-            col.status === status
-              ? { ...col, tasks: current.cache[page] }
-              : col,
-          ),
+          prev.map((col) => (col.status === status ? { ...col, tasks: current.cache[page] } : col)),
         );
         setPaginationState((prev) => ({
           ...prev,
@@ -137,14 +121,7 @@ export function useColumnPagination({
         if (loadPage) {
           mapped = await loadPage(status, offset, pageSize);
         } else {
-          const tasks = await loadColumnTasks(
-            boardId,
-            workspaceId,
-            status,
-            offset,
-            pageSize,
-            effectiveFilters,
-          );
+          const tasks = await loadColumnTasks(boardId, workspaceId, status, offset, pageSize, effectiveFilters);
           mapped = tasks as TaskCardData[];
         }
         setPaginationState((prev) => ({
@@ -155,11 +132,7 @@ export function useColumnPagination({
             cache: { ...prev[status].cache, [page]: mapped },
           },
         }));
-        setLocalColumns((prev) =>
-          prev.map((col) =>
-            col.status === status ? { ...col, tasks: mapped } : col,
-          ),
-        );
+        setLocalColumns((prev) => prev.map((col) => (col.status === status ? { ...col, tasks: mapped } : col)));
       } catch {
         setPaginationState((prev) => ({
           ...prev,
@@ -167,15 +140,7 @@ export function useColumnPagination({
         }));
       }
     },
-    [
-      boardId,
-      workspaceId,
-      effectiveFilters,
-      effectiveCounts,
-      effectivePageSizes,
-      paginationState,
-      loadPage,
-    ],
+    [boardId, workspaceId, effectiveFilters, effectiveCounts, effectivePageSizes, paginationState, loadPage],
   );
 
   return { localColumns, paginationState, goToPage, setLocalColumns };

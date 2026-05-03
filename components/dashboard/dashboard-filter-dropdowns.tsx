@@ -11,12 +11,7 @@ interface Props {
   currentBoards: string[];
 }
 
-export function DashboardFilterDropdowns({
-  workspaces,
-  boards,
-  currentWorkspaces,
-  currentBoards,
-}: Props) {
+export function DashboardFilterDropdowns({ workspaces, boards, currentWorkspaces, currentBoards }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,11 +60,7 @@ export function DashboardFilterDropdowns({
         renderSelected={(vals) => {
           if (vals.length === 1) {
             const w = workspaces.find((w) => w.id === vals[0]);
-            return (
-              <span className="truncate max-w-[100px]">
-                {w?.name ?? "Workspace"}
-              </span>
-            );
+            return <span className="truncate max-w-[100px]">{w?.name ?? "Workspace"}</span>;
           }
           return <span>{vals.length} workspaces</span>;
         }}
@@ -90,9 +81,7 @@ export function DashboardFilterDropdowns({
                 </span>
                 <span className="flex flex-col">
                   <span>{b.name}</span>
-                  <span className="text-[9px] text-fg-muted">
-                    {b.workspaceName}
-                  </span>
+                  <span className="text-[9px] text-fg-muted">{b.workspaceName}</span>
                 </span>
               </span>
             ),
@@ -100,11 +89,7 @@ export function DashboardFilterDropdowns({
           renderSelected={(vals) => {
             if (vals.length === 1) {
               const b = boards.find((b) => b.id === vals[0]);
-              return (
-                <span className="truncate max-w-[100px]">
-                  {b?.name ?? "Board"}
-                </span>
-              );
+              return <span className="truncate max-w-[100px]">{b?.name ?? "Board"}</span>;
             }
             return <span>{vals.length} boards</span>;
           }}
@@ -149,9 +134,7 @@ function MultiSelect({
   }, [open]);
 
   function toggle(value: string) {
-    const next = selected.includes(value)
-      ? selected.filter((v) => v !== value)
-      : [...selected, value];
+    const next = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value];
     onChange(next);
   }
 
@@ -167,10 +150,7 @@ function MultiSelect({
         }`}
       >
         {selected.length > 0 ? renderSelected(selected) : label}
-        <ChevronDown
-          size={10}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown size={10} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -188,9 +168,7 @@ function MultiSelect({
               >
                 <span
                   className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border text-[8px] ${
-                    isSelected
-                      ? "border-accent bg-accent text-white"
-                      : "border-border"
+                    isSelected ? "border-accent bg-accent text-white" : "border-border"
                   }`}
                 >
                   {isSelected && "✓"}

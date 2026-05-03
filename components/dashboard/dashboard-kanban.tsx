@@ -52,13 +52,7 @@ export function DashboardKanban({
 
   const renderCreateButton =
     workspaces && workspaces.length > 0
-      ? (status: string) => (
-          <DashboardCreateTask
-            workspaces={workspaces}
-            defaultStatus={status}
-            compact
-          />
-        )
+      ? (status: string) => <DashboardCreateTask workspaces={workspaces} defaultStatus={status} compact />
       : undefined;
 
   return (

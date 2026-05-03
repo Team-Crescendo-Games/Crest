@@ -9,16 +9,8 @@ export function AcceptInviteButton({ inviteId }: { inviteId: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="inviteId" value={inviteId} />
-      {state?.error && (
-        <div className="mb-3 rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-          {state.error}
-        </div>
-      )}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-      >
+      {state?.error && <div className="mb-3 alert-error">{state.error}</div>}
+      <button type="submit" disabled={pending} className="w-full btn-primary">
         {pending ? "Joining..." : "Accept & Join Workspace"}
       </button>
     </form>

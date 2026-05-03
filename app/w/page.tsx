@@ -24,12 +24,8 @@ export default async function WorkspacesPage() {
     <div className="mx-auto max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            Workspaces
-          </h1>
-          <p className="mt-1 text-xs text-fg-muted">
-            Manage and access your workspaces
-          </p>
+          <h1 className="font-mono text-lg font-semibold text-fg-primary">Workspaces</h1>
+          <p className="mt-1 text-xs text-fg-muted">Manage and access your workspaces</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -56,9 +52,7 @@ export default async function WorkspacesPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-subtle/10">
             <Plus size={20} className="text-accent-subtle" />
           </div>
-          <p className="text-xs text-fg-muted">
-            You&apos;re not a member of any workspaces yet.
-          </p>
+          <p className="text-xs text-fg-muted">You&apos;re not a member of any workspaces yet.</p>
           <Link
             href="/w/new"
             className="mt-4 inline-block rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis"
@@ -81,9 +75,7 @@ export default async function WorkspacesPage() {
                 </h3>
               </div>
               {workspace.description && (
-                <p className="mt-2 text-xs text-fg-muted line-clamp-2">
-                  {workspace.description}
-                </p>
+                <p className="mt-2 text-xs text-fg-muted line-clamp-2">{workspace.description}</p>
               )}
               <div className="mt-3 flex items-center gap-3 text-[11px] text-fg-muted">
                 <span>{workspace._count.members} members</span>

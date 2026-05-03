@@ -35,19 +35,7 @@ interface Column {
   tasks: Task[];
 }
 
-export function BoardViews({
-  columns,
-  allColumns,
-  boardId,
-  workspaceId,
-  canCreate,
-  sprints,
-  members,
-  tags,
-  columnCounts,
-  columnPageSizes,
-  columnFilters,
-}: {
+interface Props {
   columns: Column[];
   allColumns?: Column[];
   boardId: string;
@@ -70,7 +58,21 @@ export function BoardViews({
     assigneeFilters?: string[];
     sorts?: SortOption[];
   };
-}) {
+}
+
+export function BoardViews({
+  columns,
+  allColumns,
+  boardId,
+  workspaceId,
+  canCreate,
+  sprints,
+  members,
+  tags,
+  columnCounts,
+  columnPageSizes,
+  columnFilters,
+}: Props) {
   const [view, setView] = useState<"columns" | "list">(() => {
     if (typeof window === "undefined") return "columns";
     const saved = localStorage.getItem(viewKey(boardId));
@@ -89,9 +91,7 @@ export function BoardViews({
           <button
             onClick={() => setView("columns")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "columns"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "columns" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <Columns3 size={13} />
@@ -100,9 +100,7 @@ export function BoardViews({
           <button
             onClick={() => setView("list")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "list"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "list" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <List size={13} />
@@ -112,11 +110,7 @@ export function BoardViews({
       </div>
 
       {view === "list" ? (
-        <TaskListView
-          columns={allColumns ?? columns}
-          workspaceId={workspaceId}
-          boardId={boardId}
-        />
+        <TaskListView columns={allColumns ?? columns} workspaceId={workspaceId} boardId={boardId} />
       ) : (
         <KanbanBoard
           columns={columns}

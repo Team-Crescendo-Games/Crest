@@ -98,9 +98,7 @@ export function SprintViews({
           <button
             onClick={() => setView("columns")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "columns"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "columns" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <Columns3 size={13} />
@@ -109,9 +107,7 @@ export function SprintViews({
           <button
             onClick={() => setView("list")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "list"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "list" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <List size={13} />
@@ -141,17 +137,9 @@ export function SprintViews({
       </div>
 
       {view === "list" ? (
-        <TaskListView
-          columns={allColumns ?? columns}
-          workspaceId={workspaceId}
-        />
+        <TaskListView columns={allColumns ?? columns} workspaceId={workspaceId} />
       ) : view === "timeline" && hasTimeline ? (
-        <SprintTimeline
-          tasks={tasks}
-          sprintStart={sprintStart!}
-          sprintEnd={sprintEnd!}
-          workspaceId={workspaceId}
-        />
+        <SprintTimeline tasks={tasks} sprintStart={sprintStart!} sprintEnd={sprintEnd!} workspaceId={workspaceId} />
       ) : (
         <KanbanBoard
           columns={columns}

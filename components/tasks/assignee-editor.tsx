@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { X, Plus, Search } from "lucide-react";
 import { UserAvatar } from "@/components/common/user-avatar";
@@ -30,15 +30,12 @@ export function AssigneeEditor({
   const available = members.filter(
     (m) =>
       !assigneeIds.includes(m.id) &&
-      (m.name?.toLowerCase().includes(search.toLowerCase()) ||
-        m.email?.toLowerCase().includes(search.toLowerCase())),
+      (m.name?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">
-        Assignees
-      </label>
+      <label className="block text-[11px] font-medium text-fg-muted">Assignees</label>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {assigned.map((m) => (
           <span

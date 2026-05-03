@@ -3,12 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Plus, X, Search, Loader2, ChevronRight } from "lucide-react";
-import {
-  addSubtask,
-  removeSubtask,
-  getAvailableSubtasks,
-  getSubtasks,
-} from "@/lib/actions/task";
+import { addSubtask, removeSubtask, getAvailableSubtasks, getSubtasks } from "@/lib/actions/task";
 import { STATUS_COLORS, STATUS_LABELS } from "@/lib/task-enums";
 import type { TaskStatus } from "@/prisma/generated/prisma/enums";
 
@@ -89,9 +84,7 @@ export function SubtaskSection({
       try {
         const tasks = await getAvailableSubtasks(boardId, taskId, query);
         const existingIds = new Set(subtasks.map((s) => s.id));
-        setResults(
-          (tasks as SearchResult[]).filter((t) => !existingIds.has(t.id)),
-        );
+        setResults((tasks as SearchResult[]).filter((t) => !existingIds.has(t.id)));
       } finally {
         setIsSearching(false);
       }
@@ -153,10 +146,7 @@ export function SubtaskSection({
           onClick={() => setExpanded(!expanded)}
           className="flex cursor-pointer items-center gap-1.5 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
         >
-          <ChevronRight
-            size={12}
-            className={`transition-transform ${expanded ? "rotate-90" : ""}`}
-          />
+          <ChevronRight size={12} className={`transition-transform ${expanded ? "rotate-90" : ""}`} />
           Subtasks
           <span className="ml-0.5 text-fg-muted">({count})</span>
         </button>
@@ -221,9 +211,7 @@ export function SubtaskSection({
                   >
                     {sub.title}
                   </Link>
-                  <span className="shrink-0 text-[11px] text-fg-muted">
-                    {STATUS_LABELS[sub.status]}
-                  </span>
+                  <span className="shrink-0 text-[11px] text-fg-muted">{STATUS_LABELS[sub.status]}</span>
                   <button
                     onClick={() => handleRemove(sub.id)}
                     disabled={isPending}
@@ -247,10 +235,7 @@ export function SubtaskSection({
       {isAdding && (
         <div className="mt-2 rounded-md border border-border bg-bg-elevated/80 p-2 backdrop-blur-sm">
           <div className="relative">
-            <Search
-              size={12}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-muted"
-            />
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               ref={inputRef}
               type="text"
@@ -260,10 +245,7 @@ export function SubtaskSection({
               className="w-full rounded border border-border bg-bg-primary py-1.5 pl-7 pr-2 text-xs text-fg-primary placeholder:text-fg-muted focus:border-accent/40 focus:outline-none"
             />
             {isSearching && (
-              <Loader2
-                size={12}
-                className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-fg-muted"
-              />
+              <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-fg-muted" />
             )}
           </div>
 
@@ -286,12 +268,8 @@ export function SubtaskSection({
                     backgroundColor: STATUS_COLORS[task.status] ?? "#9c9c98",
                   }}
                 />
-                <span className="min-w-0 flex-1 truncate text-fg-primary">
-                  {task.title}
-                </span>
-                <span className="shrink-0 text-[10px] text-fg-muted">
-                  {STATUS_LABELS[task.status]}
-                </span>
+                <span className="min-w-0 flex-1 truncate text-fg-primary">{task.title}</span>
+                <span className="shrink-0 text-[10px] text-fg-muted">{STATUS_LABELS[task.status]}</span>
                 <Plus size={11} className="shrink-0 text-fg-muted" />
               </button>
             ))}

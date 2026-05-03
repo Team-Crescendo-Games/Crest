@@ -48,13 +48,7 @@ export function TagManager({
     <div>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
-          <TagItem
-            key={tag.id}
-            tag={tag}
-            workspaceId={workspaceId}
-            canEdit={canEdit}
-            canDelete={canDelete}
-          />
+          <TagItem key={tag.id} tag={tag} workspaceId={workspaceId} canEdit={canEdit} canDelete={canDelete} />
         ))}
 
         {canCreate && !showCreate && (
@@ -68,12 +62,7 @@ export function TagManager({
         )}
       </div>
 
-      {showCreate && (
-        <CreateTagForm
-          workspaceId={workspaceId}
-          onClose={() => setShowCreate(false)}
-        />
-      )}
+      {showCreate && <CreateTagForm workspaceId={workspaceId} onClose={() => setShowCreate(false)} />}
     </div>
   );
 }
@@ -90,14 +79,11 @@ function TagItem({
   canDelete: boolean;
 }) {
   const [editing, setEditing] = useState(false);
-  const [editState, editAction, editPending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await updateTag(prev, formData);
-      if (result?.success) setEditing(false);
-      return result;
-    },
-    null,
-  );
+  const [editState, editAction, editPending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await updateTag(prev, formData);
+    if (result?.success) setEditing(false);
+    return result;
+  }, null);
 
   const color = tag.color ?? "#6B7280";
 
@@ -137,21 +123,12 @@ function TagItem({
   );
 }
 
-function CreateTagForm({
-  workspaceId,
-  onClose,
-}: {
-  workspaceId: string;
-  onClose: () => void;
-}) {
-  const [state, action, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await createTag(prev, formData);
-      if (result?.success) onClose();
-      return result;
-    },
-    null,
-  );
+function CreateTagForm({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createTag(prev, formData);
+    if (result?.success) onClose();
+    return result;
+  }, null);
 
   return (
     <TagForm
@@ -188,29 +165,19 @@ function TagForm({
   onCancel: () => void;
 }) {
   const [color, setColor] = useState(defaultColor);
-  const [customColor, setCustomColor] = useState(
-    PRESET_COLORS.includes(defaultColor) ? "" : defaultColor,
-  );
+  const [customColor, setCustomColor] = useState(PRESET_COLORS.includes(defaultColor) ? "" : defaultColor);
   const [, deleteAction, deletePending] = useActionState(deleteTag, null);
 
   return (
-    <form
-      action={action}
-      className="mt-3 rounded-md border border-border bg-bg-elevated/80 p-3 backdrop-blur-sm"
-    >
+    <form action={action} className="mt-3 rounded-md border border-border bg-bg-elevated/80 p-3 backdrop-blur-sm">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       {tagId && <input type="hidden" name="tagId" value={tagId} />}
       <input type="hidden" name="color" value={color} />
 
-      {error && (
-        <p className="mb-2 text-[11px] text-accent-emphasis">{error}</p>
-      )}
+      {error && <p className="mb-2 text-[11px] text-accent-emphasis">{error}</p>}
 
       <div className="mb-3 flex items-center gap-2">
-        <div
-          className="h-6 w-6 shrink-0 rounded-full border border-border"
-          style={{ backgroundColor: color }}
-        />
+        <div className="h-6 w-6 shrink-0 rounded-full border border-border" style={{ backgroundColor: color }} />
         <input
           name="name"
           defaultValue={defaultName}
@@ -234,9 +201,7 @@ function TagForm({
                 setCustomColor("");
               }}
               className={`h-5 w-5 rounded-full border transition-transform hover:scale-110 ${
-                color === c
-                  ? "border-fg-primary scale-110"
-                  : "border-transparent"
+                color === c ? "border-fg-primary scale-110" : "border-transparent"
               }`}
               style={{ backgroundColor: c }}
             />

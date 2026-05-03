@@ -27,16 +27,13 @@ export function AssignTaskSection({
 
   const filtered = unassignedTasks.filter(
     (t) =>
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.board.name.toLowerCase().includes(search.toLowerCase()),
+      t.title.toLowerCase().includes(search.toLowerCase()) || t.board.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-xs font-medium text-fg-secondary">
-          Tasks in Sprint ({assignedTaskIds.length})
-        </h3>
+        <h3 className="font-mono text-xs font-medium text-fg-secondary">Tasks in Sprint ({assignedTaskIds.length})</h3>
         <button
           onClick={() => setShowPicker(!showPicker)}
           className="flex items-center gap-1 rounded-md border border-border bg-bg-secondary px-2 py-1 text-xs text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
@@ -49,10 +46,7 @@ export function AssignTaskSection({
       {showPicker && (
         <div className="mt-3 rounded-md border border-border bg-bg-elevated/80 p-3 backdrop-blur-sm">
           <div className="relative mb-2">
-            <Search
-              size={12}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-muted"
-            />
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               type="text"
               value={search}
@@ -65,18 +59,11 @@ export function AssignTaskSection({
           <div className="max-h-48 space-y-1 overflow-y-auto">
             {filtered.length === 0 ? (
               <p className="py-3 text-center text-xs text-fg-muted">
-                {search
-                  ? "No matching tasks"
-                  : "All tasks are already assigned"}
+                {search ? "No matching tasks" : "All tasks are already assigned"}
               </p>
             ) : (
               filtered.map((task) => (
-                <AssignRow
-                  key={task.id}
-                  task={task}
-                  sprintId={sprintId}
-                  workspaceId={workspaceId}
-                />
+                <AssignRow key={task.id} task={task} sprintId={sprintId} workspaceId={workspaceId} />
               ))
             )}
           </div>
@@ -86,15 +73,7 @@ export function AssignTaskSection({
   );
 }
 
-function AssignRow({
-  task,
-  sprintId,
-  workspaceId,
-}: {
-  task: UnassignedTask;
-  sprintId: string;
-  workspaceId: string;
-}) {
+function AssignRow({ task, sprintId, workspaceId }: { task: UnassignedTask; sprintId: string; workspaceId: string }) {
   const [state, action, pending] = useActionState(assignTaskToSprint, null);
 
   if (state?.success) {
@@ -124,9 +103,7 @@ function AssignRow({
       >
         {pending ? "..." : "Add"}
       </button>
-      {state?.error && (
-        <span className="text-[11px] text-accent-emphasis">{state.error}</span>
-      )}
+      {state?.error && <span className="text-[11px] text-accent-emphasis">{state.error}</span>}
     </form>
   );
 }

@@ -6,10 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { DEFAULT_MEMBER_PERMISSIONS, Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import {
-  revalidateWorkspace,
-  revalidateDashboard,
-} from "@/lib/actions/revalidation-helpers";
+import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
 import {
   createWorkspaceSchema,
@@ -96,11 +93,7 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
   const { workspaceId, name, description, joinPolicy } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.MANAGE_WORKSPACE,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_WORKSPACE);
   } catch {
     return { error: "You don't have permission to edit workspace settings" };
   }
@@ -138,8 +131,7 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
   });
 
   if (!workspace) return { error: "Workspace not found" };
-  if (workspace.joinPolicy !== "OPEN")
-    return { error: "This workspace is not open" };
+  if (workspace.joinPolicy !== "OPEN") return { error: "This workspace is not open" };
 
   const existing = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
@@ -222,11 +214,7 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
   if (!application) return { error: "Application not found" };
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      application.workspaceId,
-      Permission.MANAGE_APPLICATIONS,
-    );
+    await requireMemberWithPermission(session.user.id, application.workspaceId, Permission.MANAGE_APPLICATIONS);
   } catch {
     return { error: "You don't have permission to manage applications" };
   }
@@ -276,11 +264,7 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
   const expiresInDaysNum = parseInt(expiresInDays) || 7;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.INVITE_MEMBERS,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.INVITE_MEMBERS);
   } catch {
     return { error: "You don't have permission to invite members" };
   }
@@ -319,8 +303,7 @@ export async function acceptInvitation(_prev: unknown, formData: FormData) {
   });
 
   if (!invitation) return { error: "Invitation not found" };
-  if (invitation.expiresAt < new Date())
-    return { error: "Invitation has expired" };
+  if (invitation.expiresAt < new Date()) return { error: "Invitation has expired" };
 
   const existing = await prisma.workspaceMember.findUnique({
     where: {
@@ -383,9 +366,7 @@ export async function getLeaveWarning(workspaceId: string) {
     return { isLastMember: false, willDelete: false, name: workspace.name };
   }
 
-  const willDeleteImmediately =
-    workspace.joinPolicy === "INVITE_ONLY" ||
-    workspace.joinPolicy === "APPLY_TO_JOIN";
+  const willDeleteImmediately = workspace.joinPolicy === "INVITE_ONLY" || workspace.joinPolicy === "APPLY_TO_JOIN";
 
   return {
     isLastMember: true,
@@ -432,10 +413,7 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
     });
 
     if (memberCount === 1) {
-      if (
-        workspace.joinPolicy === "INVITE_ONLY" ||
-        workspace.joinPolicy === "APPLY_TO_JOIN"
-      ) {
+      if (workspace.joinPolicy === "INVITE_ONLY" || workspace.joinPolicy === "APPLY_TO_JOIN") {
         await prisma.workspace.delete({ where: { id: workspaceId } });
       }
     }

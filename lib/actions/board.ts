@@ -6,17 +6,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import {
-  revalidateWorkspace,
-  revalidateDashboard,
-} from "@/lib/actions/revalidation-helpers";
+import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
-import {
-  createBoardSchema,
-  updateBoardSchema,
-  archiveBoardSchema,
-  deleteBoardSchema,
-} from "@/lib/validations/board";
+import { createBoardSchema, updateBoardSchema, archiveBoardSchema, deleteBoardSchema } from "@/lib/validations/board";
 
 export async function createBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -27,11 +19,7 @@ export async function createBoard(_prev: unknown, formData: FormData) {
   const { workspaceId, name, description } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.CREATE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
   } catch {
     return { error: "You don't have permission to create boards" };
   }
@@ -65,11 +53,7 @@ export async function updateBoard(_prev: unknown, formData: FormData) {
   const { boardId, workspaceId, name, description } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "You don't have permission to edit boards" };
   }
@@ -100,11 +84,7 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
   const { boardId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "You don't have permission to archive boards" };
   }
@@ -140,11 +120,7 @@ export async function deleteBoard(_prev: unknown, formData: FormData) {
   const { boardId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.DELETE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
   } catch {
     return { error: "You don't have permission to delete boards" };
   }

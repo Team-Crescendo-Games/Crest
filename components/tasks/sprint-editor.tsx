@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import  { useState } from "react";
 import Link from "next/link";
 import { Plus, Check } from "lucide-react";
 
@@ -18,11 +18,7 @@ export function SprintEditor({
   const [open, setOpen] = useState(false);
 
   function toggle(id: string) {
-    onChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((x) => x !== id)
-        : [...selectedIds, id],
-    );
+    onChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
   }
 
   const selected = sprints.filter((s) => selectedIds.includes(s.id));
@@ -59,11 +55,7 @@ export function SprintEditor({
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-border bg-bg-elevated shadow-lg">
             <div className="max-h-48 overflow-y-auto p-1">
-              {sprints.length === 0 && (
-                <p className="px-3 py-2 text-[11px] text-fg-muted">
-                  No sprints
-                </p>
-              )}
+              {sprints.length === 0 && <p className="px-3 py-2 text-[11px] text-fg-muted">No sprints</p>}
               {sprints.map((sprint) => {
                 const isSelected = selectedIds.includes(sprint.id);
                 return (
@@ -78,17 +70,9 @@ export function SprintEditor({
                         isSelected ? "border-accent bg-accent" : "border-border"
                       }`}
                     >
-                      {isSelected && (
-                        <Check size={9} className="text-bg-primary" />
-                      )}
+                      {isSelected && <Check size={9} className="text-bg-primary" />}
                     </div>
-                    <span
-                      className={
-                        isSelected
-                          ? "font-medium text-fg-primary"
-                          : "text-fg-secondary"
-                      }
-                    >
+                    <span className={isSelected ? "font-medium text-fg-primary" : "text-fg-secondary"}>
                       {sprint.title}
                     </span>
                   </button>

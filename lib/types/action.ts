@@ -7,6 +7,4 @@
  *
  * @see Requirements 8.1, 8.4
  */
-export type ActionResult =
-  | { success: true; [key: string]: unknown }
-  | { error: string };
+export type ActionResult = { success: true; [key: string]: unknown } | { error: string };

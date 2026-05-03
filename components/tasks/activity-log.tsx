@@ -32,18 +32,11 @@ function formatValue(value: string | null): string {
   return value.replace(/_/g, " ").toLowerCase();
 }
 
-function describeActivity(
-  a: ActivityItem,
-  memberNames: Record<string, string>,
-): string {
+function describeActivity(a: ActivityItem, memberNames: Record<string, string>): string {
   const who = a.user.name ?? "Someone";
   const base = ACTIVITY_LABELS[a.type] ?? a.type;
 
-  if (
-    (a.type === "STATUS_CHANGED" || a.type === "PRIORITY_CHANGED") &&
-    a.oldValue &&
-    a.newValue
-  ) {
+  if ((a.type === "STATUS_CHANGED" || a.type === "PRIORITY_CHANGED") && a.oldValue && a.newValue) {
     return `${who} ${base} from ${formatValue(a.oldValue)} to ${formatValue(a.newValue)}`;
   }
 
@@ -87,10 +80,7 @@ export function ActivityLog({
         onClick={() => setExpanded(!expanded)}
         className="group flex items-center gap-2 font-mono text-xs font-medium text-fg-muted transition-colors hover:text-fg-secondary"
       >
-        <ChevronDown
-          size={13}
-          className={`transition-transform ${expanded ? "" : "-rotate-90"}`}
-        />
+        <ChevronDown size={13} className={`transition-transform ${expanded ? "" : "-rotate-90"}`} />
         <Activity size={13} />
         Activity
         <span className="text-[11px]">({totalCount})</span>

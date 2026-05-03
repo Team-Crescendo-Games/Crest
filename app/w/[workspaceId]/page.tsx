@@ -14,29 +14,21 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import {
-  hasPermission,
-  getEffectivePermissions,
-  Permission,
-} from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/workspace/tag-manager";
 import { RoleManager } from "@/components/workspace/role-manager";
 
 const SPRINTS_PER_PAGE = 5;
 
-export default async function WorkspaceOverviewPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export default async function WorkspaceOverviewPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
   const { sprintPage } = await searchParams;
-  const currentSprintPage = Math.max(
-    1,
-    parseInt(String(sprintPage ?? "1"), 10) || 1,
-  );
+  const currentSprintPage = Math.max(1, parseInt(String(sprintPage ?? "1"), 10) || 1);
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -68,11 +60,7 @@ export default async function WorkspaceOverviewPage({
   const [sprints, totalSprints] = await Promise.all([
     prisma.sprint.findMany({
       where: { workspaceId },
-      orderBy: [
-        { isActive: "desc" },
-        { startDate: "desc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ isActive: "desc" }, { startDate: "desc" }, { createdAt: "desc" }],
       include: { _count: { select: { tasks: true } } },
       skip: (currentSprintPage - 1) * SPRINTS_PER_PAGE,
       take: SPRINTS_PER_PAGE,
@@ -80,15 +68,8 @@ export default async function WorkspaceOverviewPage({
     prisma.sprint.count({ where: { workspaceId } }),
   ]);
 
-  const totalSprintPages = Math.max(
-    1,
-    Math.ceil(totalSprints / SPRINTS_PER_PAGE),
-  );
-  const effectivePerms = getEffectivePermissions(
-    membership.role.permissions,
-    userId,
-    workspace.createdById,
-  );
+  const totalSprintPages = Math.max(1, Math.ceil(totalSprints / SPRINTS_PER_PAGE));
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, workspace.createdById);
   const canManage = hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE);
 
   const JOIN_POLICY_LABELS = {
@@ -102,14 +83,8 @@ export default async function WorkspaceOverviewPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            {workspace.name}
-          </h1>
-          {workspace.description && (
-            <p className="mt-1 text-xs text-fg-muted">
-              {workspace.description}
-            </p>
-          )}
+          <h1 className="font-mono text-lg font-semibold text-fg-primary">{workspace.name}</h1>
+          {workspace.description && <p className="mt-1 text-xs text-fg-muted">{workspace.description}</p>}
           <div className="mt-1.5 flex items-center gap-3 text-[11px] text-fg-muted">
             <span>
               {workspace._count.members} member
@@ -160,9 +135,7 @@ export default async function WorkspaceOverviewPage({
           </Link>
         </div>
         {workspace.boards.length === 0 ? (
-          <p className="mt-4 text-xs text-fg-muted">
-            No boards yet. Create one to start organizing tasks.
-          </p>
+          <p className="mt-4 text-xs text-fg-muted">No boards yet. Create one to start organizing tasks.</p>
         ) : (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {workspace.boards.map(
@@ -177,9 +150,7 @@ export default async function WorkspaceOverviewPage({
                       {board.name}
                     </h3>
                     {board.description && (
-                      <p className="mt-1 text-xs text-fg-muted line-clamp-2">
-                        {board.description}
-                      </p>
+                      <p className="mt-1 text-xs text-fg-muted line-clamp-2">{board.description}</p>
                     )}
                     <p className="mt-2 text-[11px] text-fg-muted">
                       {board._count.tasks} task{board._count.tasks !== 1 && "s"}
@@ -197,11 +168,7 @@ export default async function WorkspaceOverviewPage({
           <h2 className="flex items-center gap-2 font-mono text-sm font-medium text-fg-primary">
             <Timer size={14} className="text-accent" />
             Sprints
-            {totalSprints > 0 && (
-              <span className="text-[11px] font-normal text-fg-muted">
-                ({totalSprints})
-              </span>
-            )}
+            {totalSprints > 0 && <span className="text-[11px] font-normal text-fg-muted">({totalSprints})</span>}
           </h2>
           <Link
             href={`/w/${workspaceId}/s/new`}
@@ -234,9 +201,7 @@ export default async function WorkspaceOverviewPage({
                       {sprint.startDate && sprint.endDate && (
                         <>
                           {" · "}
-                          {new Date(
-                            sprint.startDate,
-                          ).toLocaleDateString()} –{" "}
+                          {new Date(sprint.startDate).toLocaleDateString()} –{" "}
                           {new Date(sprint.endDate).toLocaleDateString()}
                         </>
                       )}
@@ -244,9 +209,7 @@ export default async function WorkspaceOverviewPage({
                   </div>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      sprint.isActive
-                        ? "bg-accent/10 text-accent"
-                        : "bg-bg-secondary text-fg-muted"
+                      sprint.isActive ? "bg-accent/10 text-accent" : "bg-bg-secondary text-fg-muted"
                     }`}
                   >
                     {sprint.isActive ? "Active" : "Closed"}
@@ -307,15 +270,9 @@ export default async function WorkspaceOverviewPage({
             <TagManager
               tags={workspace.tags}
               workspaceId={workspaceId}
-              canCreate={hasPermission(
-                effectivePerms,
-                Permission.CREATE_CONTENT,
-              )}
+              canCreate={hasPermission(effectivePerms, Permission.CREATE_CONTENT)}
               canEdit={hasPermission(effectivePerms, Permission.EDIT_CONTENT)}
-              canDelete={hasPermission(
-                effectivePerms,
-                Permission.DELETE_CONTENT,
-              )}
+              canDelete={hasPermission(effectivePerms, Permission.DELETE_CONTENT)}
             />
           </div>
         </section>

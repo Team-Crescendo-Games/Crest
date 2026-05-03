@@ -4,17 +4,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import {
-  revalidateWorkspace,
-  revalidateTask,
-} from "@/lib/actions/revalidation-helpers";
+import { revalidateWorkspace, revalidateTask } from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
-import {
-  createTagSchema,
-  updateTagSchema,
-  deleteTagSchema,
-  setTaskTagsSchema,
-} from "@/lib/validations/tag";
+import { createTagSchema, updateTagSchema, deleteTagSchema, setTaskTagsSchema } from "@/lib/validations/tag";
 
 export async function createTag(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -25,11 +17,7 @@ export async function createTag(_prev: unknown, formData: FormData) {
   const { workspaceId, name, color } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.CREATE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -65,11 +53,7 @@ export async function updateTag(_prev: unknown, formData: FormData) {
   const { tagId, workspaceId, name, color } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -102,11 +86,7 @@ export async function deleteTag(_prev: unknown, formData: FormData) {
   const { tagId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.DELETE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
   } catch {
     return { error: "No permission" };
   }

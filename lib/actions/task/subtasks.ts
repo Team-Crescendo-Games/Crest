@@ -17,8 +17,7 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
   if (!parsed.success) return { error: parsed.error };
   const { parentTaskId, subtaskId } = parsed.data;
 
-  if (parentTaskId === subtaskId)
-    return { error: "A task cannot be its own subtask" };
+  if (parentTaskId === subtaskId) return { error: "A task cannot be its own subtask" };
 
   let info;
   try {
@@ -56,11 +55,10 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
     if (current === subtaskId) {
       return { error: "Circular subtask reference detected" };
     }
-    const ancestor: { parentTaskId: string | null } | null =
-      await prisma.task.findUnique({
-        where: { id: current },
-        select: { parentTaskId: true },
-      });
+    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
+      where: { id: current },
+      select: { parentTaskId: true },
+    });
     current = ancestor?.parentTaskId ?? null;
   }
 
@@ -132,11 +130,7 @@ export async function getSubtasks(taskId: string) {
 }
 
 /** Fetch tasks on the same board that can be added as subtasks. */
-export async function getAvailableSubtasks(
-  boardId: string,
-  parentTaskId: string,
-  query: string,
-) {
+export async function getAvailableSubtasks(boardId: string, parentTaskId: string, query: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 

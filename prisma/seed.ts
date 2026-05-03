@@ -19,10 +19,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../prisma/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import {
-  ALL_PERMISSIONS,
-  DEFAULT_MEMBER_PERMISSIONS,
-} from "../lib/permissions";
+import { ALL_PERMISSIONS, DEFAULT_MEMBER_PERMISSIONS } from "../lib/permissions";
 
 // Load .env.local with precedence over .env for local dev.
 dotenv.config({
@@ -138,12 +135,7 @@ interface ActivityFixture {
 interface NotificationFixture {
   user: string;
   task?: string;
-  type:
-    | "TASK_ASSIGNED"
-    | "TASK_STATUS_CHANGED"
-    | "TASK_COMMENTED"
-    | "TASK_UPDATED"
-    | "WORKSPACE_INVITATION";
+  type: "TASK_ASSIGNED" | "TASK_STATUS_CHANGED" | "TASK_COMMENTED" | "TASK_UPDATED" | "WORKSPACE_INVITATION";
   message: string;
   isRead: boolean;
 }
@@ -292,9 +284,7 @@ async function main() {
       });
     }
   }
-  console.log(
-    `  ✓ ${workspaceFixtures.length} workspace(s) with roles & members`,
-  );
+  console.log(`  ✓ ${workspaceFixtures.length} workspace(s) with roles & members`);
 
   // ── Tags ─────────────────────────────────────────────────────────────────
   const tagIds = new Map<string, string>();
@@ -320,9 +310,7 @@ async function main() {
     });
     boardIds.set(b.key, created.id);
   }
-  console.log(
-    `  ✓ ${boardFixtures.length} boards, ${tagFixtures.length} tags`,
-  );
+  console.log(`  ✓ ${boardFixtures.length} boards, ${tagFixtures.length} tags`);
 
   // ── Sprints ──────────────────────────────────────────────────────────────
   const sprintIds = new Map<string, string>();
@@ -366,17 +354,14 @@ async function main() {
         description: t.description,
         status: t.status,
         priority: t.priority,
-        startDate:
-          t.startOffsetDays != null ? daysFromNow(t.startOffsetDays) : null,
+        startDate: t.startOffsetDays != null ? daysFromNow(t.startOffsetDays) : null,
         dueDate: daysFromNow(t.dueOffsetDays),
         points: t.points,
         boardId,
         authorId,
         assignees: assigneeIds.length ? { connect: assigneeIds } : undefined,
         tags: tagConnections.length ? { connect: tagConnections } : undefined,
-        sprints: sprintConnections.length
-          ? { connect: sprintConnections }
-          : undefined,
+        sprints: sprintConnections.length ? { connect: sprintConnections } : undefined,
       },
     });
     taskIds.set(t.key, created.id);
@@ -394,9 +379,7 @@ async function main() {
     });
     subtaskCount++;
   }
-  console.log(
-    `  ✓ ${taskFixtures.length} tasks (${subtaskCount} subtasks), ${sprintFixtures.length} sprint(s)`,
-  );
+  console.log(`  ✓ ${taskFixtures.length} tasks (${subtaskCount} subtasks), ${sprintFixtures.length} sprint(s)`);
 
   // ── Comments ─────────────────────────────────────────────────────────────
   for (const c of commentFixtures) {
@@ -475,9 +458,7 @@ async function main() {
       },
     });
   }
-  console.log(
-    `  ✓ ${applicationFixtures.length} applications, ${invitationFixtures.length} invitations`,
-  );
+  console.log(`  ✓ ${applicationFixtures.length} applications, ${invitationFixtures.length} invitations`);
 
   console.log("\n🎉 Seed complete. Sign in with:");
   for (const u of userFixtures) {

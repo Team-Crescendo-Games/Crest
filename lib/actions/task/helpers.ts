@@ -1,25 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import {
-  TaskStatus,
-  TaskPriority,
-  ActivityType,
-} from "@/prisma/generated/prisma/enums";
+import { TaskStatus, TaskPriority, ActivityType } from "@/prisma/generated/prisma/enums";
 import type { SortOption } from "@/lib/task-enums";
 
-export const VALID_STATUSES: TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-];
+export const VALID_STATUSES: TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
 
-export const VALID_PRIORITIES: TaskPriority[] = [
-  "NONE",
-  "LOW",
-  "MEDIUM",
-  "HIGH",
-  "URGENT",
-];
+export const VALID_PRIORITIES: TaskPriority[] = ["NONE", "LOW", "MEDIUM", "HIGH", "URGENT"];
 
 export async function requireTaskMembership(userId: string, taskId: string) {
   const task = await prisma.task.findUnique({
@@ -63,10 +48,7 @@ export async function logActivity(
   });
 }
 
-/** Build a Prisma-compatible orderBy array from SortOption[]. */
-export function buildOrderBy(
-  sorts?: SortOption[],
-): Record<string, string>[] {
+export function buildOrderBy(sorts?: SortOption[]): Record<string, string>[] {
   if (!sorts || sorts.length === 0) return [{ createdAt: "desc" }];
   const orderBy: Record<string, string>[] = sorts.map((s) => ({
     [s.field]: s.direction,

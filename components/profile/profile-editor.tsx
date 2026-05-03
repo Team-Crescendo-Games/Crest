@@ -13,18 +13,9 @@ export function ProfileForm({ currentName }: { currentName: string }) {
       {state?.success && <p className="text-xs text-accent">Name updated.</p>}
       {state?.error && <p className="text-xs text-accent-emphasis">{state.error}</p>}
 
-      <input
-        name="name"
-        defaultValue={currentName}
-        required
-        className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-      />
+      <input name="name" defaultValue={currentName} required className="block w-full input-field" />
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className="btn-primary text-xs">
         {pending ? "Saving..." : "Update Name"}
       </button>
     </form>
@@ -46,7 +37,7 @@ export function EmailForm({ currentEmail }: { currentEmail: string }) {
           type="email"
           defaultValue={currentEmail}
           required
-          className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+          className="mt-1 block w-full input-field"
         />
       </div>
 
@@ -57,15 +48,11 @@ export function EmailForm({ currentEmail }: { currentEmail: string }) {
           type="password"
           required
           placeholder="Verify your identity"
-          className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+          className="mt-1 block w-full input-field"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className="btn-primary text-xs">
         {pending ? "Updating..." : "Update Email"}
       </button>
     </form>
@@ -87,12 +74,7 @@ export function PasswordForm() {
 
       <div>
         <label className="block text-[11px] font-medium text-fg-muted">Current Password</label>
-        <input
-          name="currentPassword"
-          type="password"
-          required
-          className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
-        />
+        <input name="currentPassword" type="password" required className="mt-1 block w-full input-field" />
       </div>
 
       <div>
@@ -103,7 +85,7 @@ export function PasswordForm() {
           required
           minLength={8}
           placeholder="At least 8 characters"
-          className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+          className="mt-1 block w-full input-field"
         />
       </div>
 
@@ -114,15 +96,11 @@ export function PasswordForm() {
           type="password"
           required
           minLength={8}
-          className="mt-1 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+          className="mt-1 block w-full input-field"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className="btn-primary text-xs">
         {pending ? "Changing..." : "Change Password"}
       </button>
     </form>

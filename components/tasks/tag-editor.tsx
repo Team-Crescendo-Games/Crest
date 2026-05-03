@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 export function TagEditor({
   tags,
   selectedTagIds,
@@ -15,9 +13,7 @@ export function TagEditor({
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">
-        Tags
-      </label>
+      <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {tags.map((tag) => {
           const color = tag.color ?? "#6B7280";
@@ -27,11 +23,7 @@ export function TagEditor({
               key={tag.id}
               type="button"
               onClick={() =>
-                onChange(
-                  isSelected
-                    ? selectedTagIds.filter((x) => x !== tag.id)
-                    : [...selectedTagIds, tag.id],
-                )
+                onChange(isSelected ? selectedTagIds.filter((x) => x !== tag.id) : [...selectedTagIds, tag.id])
               }
               className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
               style={{

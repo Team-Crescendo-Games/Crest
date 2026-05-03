@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Check, Pencil } from "lucide-react";
 
 const ReactMarkdown = lazy(() => import("react-markdown"));
@@ -16,9 +9,7 @@ export const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
 
 export function linkifyChildren(children: React.ReactNode): React.ReactNode {
   return Array.isArray(children)
-    ? children.map((child, i) => (
-        <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>
-      ))
+    ? children.map((child, i) => <React.Fragment key={i}>{linkifyNode(child)}</React.Fragment>)
     : linkifyNode(children);
 }
 
@@ -43,13 +34,7 @@ export function linkifyNode(node: React.ReactNode): React.ReactNode {
   );
 }
 
-export function DescriptionField({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function DescriptionField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -105,17 +90,11 @@ export function DescriptionField({
       <div className="group/desc relative min-w-0">
         <div
           ref={viewRef}
-          className="prose-description overflow-y-auto overflow-hidden break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
+          className="prose-description overflow-y-auto overflow-hidden wrap-break-words rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary"
           style={{ minHeight, height: height ?? undefined }}
         >
           {value ? (
-            <Suspense
-              fallback={
-                <div className="animate-pulse text-fg-muted text-sm">
-                  Loading…
-                </div>
-              }
-            >
+            <Suspense fallback={<div className="animate-pulse text-fg-muted text-sm">Loading…</div>}>
               <ReactMarkdown
                 components={{
                   a: ({ href, children }) => (

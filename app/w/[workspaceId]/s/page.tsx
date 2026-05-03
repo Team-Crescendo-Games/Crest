@@ -14,10 +14,7 @@ import { parseMulti } from "@/lib/url-helpers";
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
 
-export default async function SprintsPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{
     showClosed?: string;
@@ -26,7 +23,9 @@ export default async function SprintsPage({
     tag?: string;
     assignee?: string;
   }>;
-}) {
+}
+
+export default async function SprintsPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
   const { showClosed, q, priority: priorityParam, tag: tagParam, assignee: assigneeParam } = await searchParams;
   const session = await auth();

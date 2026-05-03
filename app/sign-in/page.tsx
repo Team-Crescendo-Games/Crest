@@ -12,7 +12,7 @@ export default function SignInPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -39,32 +39,21 @@ export default function SignInPage() {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
               <Logo size={32} />
-              <h1 className="font-mono text-xl font-semibold tracking-tight text-accent">
-                Crest
-              </h1>
+              <h1 className="font-mono text-xl font-semibold tracking-tight text-accent">Crest</h1>
             </div>
             <ThemeToggle />
           </div>
 
           <div>
             <div className="h-px w-12 bg-linear-to-r from-accent-subtle to-transparent" />
-            <p className="mt-3 text-xs text-fg-muted">
-              Sign in to manage your projects
-            </p>
+            <p className="mt-3 text-xs text-fg-muted">Sign in to manage your projects</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-error">{error}</div>}
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-xs font-medium text-fg-secondary"
-              >
+              <label htmlFor="email" className="form-label">
                 Email
               </label>
               <input
@@ -73,16 +62,13 @@ export default function SignInPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-medium text-fg-secondary"
-              >
+              <label htmlFor="password" className="form-label">
                 Password
               </label>
               <input
@@ -91,16 +77,12 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="••••••••"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary transition-all hover:bg-accent-emphasis hover:shadow-[0_0_20px_-4px] hover:shadow-accent/40 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-elevated disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="w-full btn-primary">
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
@@ -113,10 +95,7 @@ export default function SignInPage() {
 
           <p className="text-center text-xs text-fg-muted">
             Don&apos;t have an account?{" "}
-            <Link
-              href="/sign-up"
-              className="font-medium text-accent transition-colors hover:text-accent-emphasis"
-            >
+            <Link href="/sign-up" className="font-medium text-accent transition-colors hover:text-accent-emphasis">
               Sign up
             </Link>
           </p>

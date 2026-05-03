@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X, Search } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { UserAvatar } from "@/components/common/user-avatar";
-import {
-  TASK_PRIORITIES,
-  PRIORITY_LABELS,
-  PRIORITY_COLORS,
-} from "@/lib/task-enums";
+import { TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface BoardOption {
@@ -64,17 +60,14 @@ export function CreateTaskForm({
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const [state, action, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await createTask(prev, formData);
-      if (result?.success) {
-        setOpen(false);
-        router.refresh();
-      }
-      return result;
-    },
-    null,
-  );
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createTask(prev, formData);
+    if (result?.success) {
+      setOpen(false);
+      router.refresh();
+    }
+    return result;
+  }, null);
 
   const hasBoards = boardId || (boards && boards.length > 0);
   if (!hasBoards) return null;
@@ -150,9 +143,7 @@ function CreateTaskModal({
   pending: boolean;
   onClose: () => void;
 }) {
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(
-    assigneeId ? [assigneeId] : [],
-  );
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(assigneeId ? [assigneeId] : []);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedSprint, setSelectedSprint] = useState(sprintId ?? "");
   const [priority, setPriority] = useState<TaskPriority>("NONE");
@@ -175,20 +166,11 @@ function CreateTaskModal({
       {selectedTags.map((id) => (
         <input key={id} type="hidden" name="tagIds" value={id} />
       ))}
-      {selectedSprint && (
-        <input type="hidden" name="sprintId" value={selectedSprint} />
-      )}
+      {selectedSprint && <input type="hidden" name="sprintId" value={selectedSprint} />}
 
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-xs font-medium text-fg-primary">
-          New Task
-        </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-fg-muted hover:text-fg-secondary"
-          aria-label="Close"
-        >
+        <h3 className="font-mono text-xs font-medium text-fg-primary">New Task</h3>
+        <button type="button" onClick={onClose} className="text-fg-muted hover:text-fg-secondary" aria-label="Close">
           <X size={14} />
         </button>
       </div>
@@ -202,9 +184,7 @@ function CreateTaskModal({
       {/* Board picker */}
       {showBoardPicker && (
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Board
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Board</label>
           <select
             name="boardId"
             required
@@ -222,9 +202,7 @@ function CreateTaskModal({
 
       {/* Title */}
       <div>
-        <label className="block text-[11px] font-medium text-fg-muted">
-          Title
-        </label>
+        <label className="block text-[11px] font-medium text-fg-muted">Title</label>
         <input
           name="title"
           type="text"
@@ -237,9 +215,7 @@ function CreateTaskModal({
 
       {/* Description */}
       <div>
-        <label className="block text-[11px] font-medium text-fg-muted">
-          Description
-        </label>
+        <label className="block text-[11px] font-medium text-fg-muted">Description</label>
         <textarea
           name="description"
           rows={2}
@@ -251,15 +227,11 @@ function CreateTaskModal({
       {/* Priority + Due Date */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Priority
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
           <ColoredPrioritySelect value={priority} onChange={setPriority} />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Due Date
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Due Date</label>
           <input
             name="dueDate"
             type="date"
@@ -271,9 +243,7 @@ function CreateTaskModal({
       {/* Sprint picker */}
       {sprints && sprints.length > 0 && (
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Sprint
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Sprint</label>
           <select
             value={selectedSprint}
             onChange={(e) => setSelectedSprint(e.target.value)}
@@ -291,19 +261,13 @@ function CreateTaskModal({
 
       {/* Assignee picker */}
       {members && members.length > 0 && (
-        <AssigneePicker
-          members={members}
-          selectedIds={selectedAssignees}
-          onChange={setSelectedAssignees}
-        />
+        <AssigneePicker members={members} selectedIds={selectedAssignees} onChange={setSelectedAssignees} />
       )}
 
       {/* Tag picker */}
       {tags && tags.length > 0 && (
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Tags
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {tags.map((tag) => {
               const color = tag.color ?? "#6B7280";
@@ -313,11 +277,7 @@ function CreateTaskModal({
                   key={tag.id}
                   type="button"
                   onClick={() =>
-                    setSelectedTags((prev) =>
-                      isSelected
-                        ? prev.filter((id) => id !== tag.id)
-                        : [...prev, tag.id],
-                    )
+                    setSelectedTags((prev) => (isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]))
                   }
                   className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
                   style={{
@@ -356,13 +316,7 @@ function CreateTaskModal({
 
 /* ─── Colored priority select ──────────────────────────────────────────── */
 
-function ColoredPrioritySelect({
-  value,
-  onChange,
-}: {
-  value: TaskPriority;
-  onChange: (v: TaskPriority) => void;
-}) {
+function ColoredPrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
   const current = PRIORITY_COLORS[value];
 
   return (
@@ -421,10 +375,7 @@ function AssigneePicker({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowSearch(false);
         setSearch("");
       }
@@ -437,8 +388,7 @@ function AssigneePicker({
   const available = members.filter(
     (m) =>
       !selectedIds.includes(m.id) &&
-      (m.name?.toLowerCase().includes(search.toLowerCase()) ||
-        m.email?.toLowerCase().includes(search.toLowerCase())),
+      (m.name?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())),
   );
 
   function add(id: string) {
@@ -452,9 +402,7 @@ function AssigneePicker({
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">
-        Assignees
-      </label>
+      <label className="block text-[11px] font-medium text-fg-muted">Assignees</label>
 
       {/* Selected chips */}
       <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -465,11 +413,7 @@ function AssigneePicker({
           >
             <UserAvatar name={m.name} image={m.image} size={16} />
             {m.name ?? m.email ?? "Unknown"}
-            <button
-              type="button"
-              onClick={() => remove(m.id)}
-              className="text-fg-muted hover:text-accent-emphasis"
-            >
+            <button type="button" onClick={() => remove(m.id)} className="text-fg-muted hover:text-accent-emphasis">
               <X size={10} />
             </button>
           </span>
@@ -520,14 +464,8 @@ function AssigneePicker({
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
                     <div className="min-w-0 text-left">
-                      <span className="block truncate">
-                        {m.name ?? "Unknown"}
-                      </span>
-                      {m.email && (
-                        <span className="block truncate text-[10px] text-fg-muted">
-                          {m.email}
-                        </span>
-                      )}
+                      <span className="block truncate">{m.name ?? "Unknown"}</span>
+                      {m.email && <span className="block truncate text-[10px] text-fg-muted">{m.email}</span>}
                     </div>
                   </button>
                 ))}

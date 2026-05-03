@@ -31,20 +31,11 @@ export function SprintTimeline({
   const end = new Date(sprintEnd);
   end.setHours(23, 59, 59, 999);
 
-  const totalDays = Math.max(
-    1,
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
-  );
+  const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayOffset = Math.max(
-    0,
-    Math.min(
-      totalDays,
-      (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-    ),
-  );
+  const todayOffset = Math.max(0, Math.min(totalDays, (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
   // Generate day labels
   const days: {
@@ -64,9 +55,7 @@ export function SprintTimeline({
         day: "numeric",
       }),
       isToday:
-        d.getFullYear() === today.getFullYear() &&
-        d.getMonth() === today.getMonth() &&
-        d.getDate() === today.getDate(),
+        d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate(),
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     });
   }
@@ -75,16 +64,8 @@ export function SprintTimeline({
 
   // Sort tasks: those with start dates first, then by due date
   const sortedTasks = [...tasks].sort((a, b) => {
-    const aStart = a.startDate
-      ? new Date(a.startDate).getTime()
-      : a.dueDate
-        ? new Date(a.dueDate).getTime()
-        : Infinity;
-    const bStart = b.startDate
-      ? new Date(b.startDate).getTime()
-      : b.dueDate
-        ? new Date(b.dueDate).getTime()
-        : Infinity;
+    const aStart = a.startDate ? new Date(a.startDate).getTime() : a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+    const bStart = b.startDate ? new Date(b.startDate).getTime() : b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
     return aStart - bStart;
   });
 
@@ -96,14 +77,8 @@ export function SprintTimeline({
 
     if (taskStart) {
       // Range block
-      const startOffset = Math.max(
-        0,
-        (taskStart.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      const endOffset = Math.min(
-        totalDays,
-        (taskDue.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) + 1,
-      );
+      const startOffset = Math.max(0, (taskStart.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const endOffset = Math.min(totalDays, (taskDue.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) + 1);
       return {
         left: startOffset * DAY_WIDTH,
         width: Math.max(DAY_WIDTH * 0.5, (endOffset - startOffset) * DAY_WIDTH),
@@ -111,8 +86,7 @@ export function SprintTimeline({
       };
     } else {
       // Single marker on due date
-      const offset =
-        (taskDue.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+      const offset = (taskDue.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
       return {
         left: offset * DAY_WIDTH,
         width: DAY_WIDTH * 0.6,
@@ -129,9 +103,7 @@ export function SprintTimeline({
           <div className="flex border-b border-border">
             {/* Task name column */}
             <div className="w-[200px] shrink-0 border-r border-border px-3 py-2">
-              <span className="text-[11px] font-medium text-fg-muted">
-                Task
-              </span>
+              <span className="text-[11px] font-medium text-fg-muted">Task</span>
             </div>
             {/* Day columns */}
             <div className="relative flex">
@@ -139,19 +111,11 @@ export function SprintTimeline({
                 <div
                   key={i}
                   className={`flex shrink-0 items-center justify-center border-r border-border-subtle py-2 ${
-                    day.isToday
-                      ? "bg-accent/5"
-                      : day.isWeekend
-                        ? "bg-bg-secondary/30"
-                        : ""
+                    day.isToday ? "bg-accent/5" : day.isWeekend ? "bg-bg-secondary/30" : ""
                   }`}
                   style={{ width: DAY_WIDTH }}
                 >
-                  <span
-                    className={`text-[10px] ${
-                      day.isToday ? "font-medium text-accent" : "text-fg-muted"
-                    }`}
-                  >
+                  <span className={`text-[10px] ${day.isToday ? "font-medium text-accent" : "text-fg-muted"}`}>
                     {day.label}
                   </span>
                 </div>
@@ -170,10 +134,7 @@ export function SprintTimeline({
               const boardId = task.board?.id ?? task.boardId;
 
               return (
-                <div
-                  key={task.id}
-                  className="flex border-b border-border-subtle last:border-b-0"
-                >
+                <div key={task.id} className="flex border-b border-border-subtle last:border-b-0">
                   {/* Task name */}
                   <div className="w-[200px] shrink-0 border-r border-border px-3 py-2">
                     <Link
@@ -182,18 +143,11 @@ export function SprintTimeline({
                     >
                       {task.title}
                     </Link>
-                    {task.board && (
-                      <span className="text-[10px] text-fg-muted">
-                        {task.board.name}
-                      </span>
-                    )}
+                    {task.board && <span className="text-[10px] text-fg-muted">{task.board.name}</span>}
                   </div>
 
                   {/* Timeline area */}
-                  <div
-                    className="relative"
-                    style={{ width: totalDays * DAY_WIDTH, height: 36 }}
-                  >
+                  <div className="relative" style={{ width: totalDays * DAY_WIDTH, height: 36 }}>
                     {/* Today marker */}
                     {todayOffset >= 0 && todayOffset <= totalDays && (
                       <div
@@ -233,9 +187,7 @@ export function SprintTimeline({
 
                     {!pos && (
                       <div className="flex h-full items-center px-2">
-                        <span className="text-[10px] text-fg-muted italic">
-                          No dates
-                        </span>
+                        <span className="text-[10px] text-fg-muted italic">No dates</span>
                       </div>
                     )}
                   </div>

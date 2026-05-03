@@ -8,10 +8,7 @@ import { getPresignedDownloadUrl } from "@/lib/s3";
  * Redirects to a short-lived presigned S3 URL for the user's profile picture.
  * Requires authentication.
  */
-export async function GET(
-  _request: Request,
-  ctx: RouteContext<"/api/profile-picture/[userId]">
-) {
+export async function GET(_: Request, ctx: RouteContext<"/api/profile-picture/[userId]">) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -31,11 +28,8 @@ export async function GET(
 
     const url = await getPresignedDownloadUrl(user.image, 900); // 15 min
     return NextResponse.redirect(url);
-  } catch (err) {
-    console.error("[profile-picture] GET error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Something went wrong" },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error("[profile-picture] GET error:", e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Something went wrong" }, { status: 500 });
   }
 }

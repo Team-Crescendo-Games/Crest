@@ -6,11 +6,7 @@ import { Plus, X, Search } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { getWorkspaceFormData } from "@/lib/actions/workspace";
 import { UserAvatar } from "@/components/common/user-avatar";
-import {
-  TASK_PRIORITIES,
-  PRIORITY_LABELS,
-  PRIORITY_COLORS,
-} from "@/lib/task-enums";
+import { TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface WorkspaceOption {
@@ -84,11 +80,7 @@ export function DashboardCreateTask({
         if (e.key === "Escape") setOpen(false);
       }}
     >
-      <DashboardCreateTaskModal
-        workspaces={workspaces}
-        defaultStatus={defaultStatus}
-        onClose={() => setOpen(false)}
-      />
+      <DashboardCreateTaskModal workspaces={workspaces} defaultStatus={defaultStatus} onClose={() => setOpen(false)} />
     </div>
   );
 }
@@ -105,8 +97,7 @@ function DashboardCreateTaskModal({
   const router = useRouter();
 
   // Default to first workspace that has boards
-  const defaultWs =
-    workspaces.find((w) => w.boards.length > 0) ?? workspaces[0];
+  const defaultWs = workspaces.find((w) => w.boards.length > 0) ?? workspaces[0];
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(defaultWs.id);
   const [formData, setFormData] = useState<WorkspaceFormData | null>(null);
   const [loadingFormData, setLoadingFormData] = useState(true);
@@ -118,9 +109,7 @@ function DashboardCreateTaskModal({
   const [selectedSprint, setSelectedSprint] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("NONE");
 
-  const selectedWorkspace = workspaces.find(
-    (w) => w.id === selectedWorkspaceId,
-  );
+  const selectedWorkspace = workspaces.find((w) => w.id === selectedWorkspaceId);
 
   // Load workspace-specific data (members, tags, sprints) when workspace changes
   useEffect(() => {
@@ -151,17 +140,14 @@ function DashboardCreateTaskModal({
     };
   }, [selectedWorkspaceId]);
 
-  const [state, action, pending] = useActionState(
-    async (prev: unknown, fd: FormData) => {
-      const result = await createTask(prev, fd);
-      if (result?.success) {
-        onClose();
-        router.refresh();
-      }
-      return result;
-    },
-    null,
-  );
+  const [state, action, pending] = useActionState(async (prev: unknown, fd: FormData) => {
+    const result = await createTask(prev, fd);
+    if (result?.success) {
+      onClose();
+      router.refresh();
+    }
+    return result;
+  }, null);
 
   const boards = selectedWorkspace?.boards ?? [];
 
@@ -181,20 +167,11 @@ function DashboardCreateTaskModal({
       {selectedTags.map((id) => (
         <input key={id} type="hidden" name="tagIds" value={id} />
       ))}
-      {selectedSprint && (
-        <input type="hidden" name="sprintId" value={selectedSprint} />
-      )}
+      {selectedSprint && <input type="hidden" name="sprintId" value={selectedSprint} />}
 
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-xs font-medium text-fg-primary">
-          New Task
-        </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-fg-muted hover:text-fg-secondary"
-          aria-label="Close"
-        >
+        <h3 className="font-mono text-xs font-medium text-fg-primary">New Task</h3>
+        <button type="button" onClick={onClose} className="text-fg-muted hover:text-fg-secondary" aria-label="Close">
           <X size={14} />
         </button>
       </div>
@@ -207,9 +184,7 @@ function DashboardCreateTaskModal({
 
       {/* Workspace picker */}
       <div>
-        <label className="block text-[11px] font-medium text-fg-muted">
-          Workspace
-        </label>
+        <label className="block text-[11px] font-medium text-fg-muted">Workspace</label>
         <select
           value={selectedWorkspaceId}
           onChange={(e) => {
@@ -229,9 +204,7 @@ function DashboardCreateTaskModal({
       {/* Board picker */}
       {boards.length > 0 ? (
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Board
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Board</label>
           <select
             value={selectedBoardId}
             onChange={(e) => setSelectedBoardId(e.target.value)}
@@ -245,16 +218,12 @@ function DashboardCreateTaskModal({
           </select>
         </div>
       ) : (
-        <p className="text-[11px] text-fg-muted">
-          No boards in this workspace. Create a board first.
-        </p>
+        <p className="text-[11px] text-fg-muted">No boards in this workspace. Create a board first.</p>
       )}
 
       {/* Title */}
       <div>
-        <label className="block text-[11px] font-medium text-fg-muted">
-          Title
-        </label>
+        <label className="block text-[11px] font-medium text-fg-muted">Title</label>
         <input
           name="title"
           type="text"
@@ -267,9 +236,7 @@ function DashboardCreateTaskModal({
 
       {/* Description */}
       <div>
-        <label className="block text-[11px] font-medium text-fg-muted">
-          Description
-        </label>
+        <label className="block text-[11px] font-medium text-fg-muted">Description</label>
         <textarea
           name="description"
           rows={2}
@@ -281,15 +248,11 @@ function DashboardCreateTaskModal({
       {/* Priority + Due Date */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Priority
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
           <ColoredPrioritySelect value={priority} onChange={setPriority} />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">
-            Due Date
-          </label>
+          <label className="block text-[11px] font-medium text-fg-muted">Due Date</label>
           <input
             name="dueDate"
             type="date"
@@ -300,17 +263,13 @@ function DashboardCreateTaskModal({
 
       {/* Dynamic workspace-specific fields */}
       {loadingFormData ? (
-        <p className="text-[11px] text-fg-muted animate-pulse">
-          Loading workspace data…
-        </p>
+        <p className="text-[11px] text-fg-muted animate-pulse">Loading workspace data…</p>
       ) : formData ? (
         <>
           {/* Sprint picker */}
           {formData.sprints.length > 0 && (
             <div>
-              <label className="block text-[11px] font-medium text-fg-muted">
-                Sprint
-              </label>
+              <label className="block text-[11px] font-medium text-fg-muted">Sprint</label>
               <select
                 value={selectedSprint}
                 onChange={(e) => setSelectedSprint(e.target.value)}
@@ -338,9 +297,7 @@ function DashboardCreateTaskModal({
           {/* Tag picker */}
           {formData.tags.length > 0 && (
             <div>
-              <label className="block text-[11px] font-medium text-fg-muted">
-                Tags
-              </label>
+              <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {formData.tags.map((tag) => {
                   const color = tag.color ?? "#6B7280";
@@ -350,11 +307,7 @@ function DashboardCreateTaskModal({
                       key={tag.id}
                       type="button"
                       onClick={() =>
-                        setSelectedTags((prev) =>
-                          isSelected
-                            ? prev.filter((id) => id !== tag.id)
-                            : [...prev, tag.id],
-                        )
+                        setSelectedTags((prev) => (isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]))
                       }
                       className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
                       style={{
@@ -395,13 +348,7 @@ function DashboardCreateTaskModal({
 
 /* ─── Colored priority select ──────────────────────────────────────────── */
 
-function ColoredPrioritySelect({
-  value,
-  onChange,
-}: {
-  value: TaskPriority;
-  onChange: (v: TaskPriority) => void;
-}) {
+function ColoredPrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
   const current = PRIORITY_COLORS[value];
 
   return (
@@ -456,15 +403,12 @@ function AssigneePicker({
   const available = members.filter(
     (m) =>
       !selectedIds.includes(m.id) &&
-      (m.name?.toLowerCase().includes(search.toLowerCase()) ||
-        m.email?.toLowerCase().includes(search.toLowerCase())),
+      (m.name?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-fg-muted">
-        Assignees
-      </label>
+      <label className="block text-[11px] font-medium text-fg-muted">Assignees</label>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {assigned.map((m) => (
           <span
@@ -529,14 +473,8 @@ function AssigneePicker({
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
                     <div className="min-w-0 text-left">
-                      <span className="block truncate">
-                        {m.name ?? "Unknown"}
-                      </span>
-                      {m.email && (
-                        <span className="block truncate text-[10px] text-fg-muted">
-                          {m.email}
-                        </span>
-                      )}
+                      <span className="block truncate">{m.name ?? "Unknown"}</span>
+                      {m.email && <span className="block truncate text-[10px] text-fg-muted">{m.email}</span>}
                     </div>
                   </button>
                 ))}

@@ -68,10 +68,7 @@ export function StatusPicker({
           color: color,
         }}
       >
-        <div
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
         {isPending ? "Saving…" : STATUS_LABELS[status]}
         <ChevronDown size={9} className={open ? "rotate-180" : ""} />
       </button>
@@ -86,19 +83,11 @@ export function StatusPicker({
                 onClick={() => handleSelect(s)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
-                <div
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: STATUS_COLORS[s] }}
-                />
-                <span
-                  className={s === status ? "font-medium" : ""}
-                  style={{ color: STATUS_COLORS[s] }}
-                >
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
+                <span className={s === status ? "font-medium" : ""} style={{ color: STATUS_COLORS[s] }}>
                   {STATUS_LABELS[s]}
                 </span>
-                {s === status && (
-                  <Check size={11} className="ml-auto text-accent" />
-                )}
+                {s === status && <Check size={11} className="ml-auto text-accent" />}
               </button>
             ))}
           </div>
@@ -152,10 +141,7 @@ export function PriorityPicker({
           color: color,
         }}
       >
-        <div
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
         {isPending ? "Saving…" : PRIORITY_LABELS[priority]}
         <ChevronDown size={9} className={open ? "rotate-180" : ""} />
       </button>
@@ -170,19 +156,11 @@ export function PriorityPicker({
                 onClick={() => handleSelect(p)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
-                <div
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: PRIORITY_COLORS[p] }}
-                />
-                <span
-                  className={p === priority ? "font-medium" : ""}
-                  style={{ color: PRIORITY_COLORS[p] }}
-                >
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[p] }} />
+                <span className={p === priority ? "font-medium" : ""} style={{ color: PRIORITY_COLORS[p] }}>
                   {PRIORITY_LABELS[p]}
                 </span>
-                {p === priority && (
-                  <Check size={11} className="ml-auto text-accent" />
-                )}
+                {p === priority && <Check size={11} className="ml-auto text-accent" />}
               </button>
             ))}
           </div>
@@ -252,25 +230,13 @@ export function BoardPicker({
                 onClick={() => handleSelect(board.id)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-fg-primary transition-colors hover:bg-bg-secondary"
               >
-                {board.id === currentBoardId && (
-                  <Check size={11} className="shrink-0 text-accent" />
-                )}
-                <span
-                  className={
-                    board.id === currentBoardId
-                      ? "font-medium text-accent"
-                      : "pl-[19px]"
-                  }
-                >
+                {board.id === currentBoardId && <Check size={11} className="shrink-0 text-accent" />}
+                <span className={board.id === currentBoardId ? "font-medium text-accent" : "pl-[19px]"}>
                   {board.name}
                 </span>
               </button>
             ))}
-            {boards.length === 0 && (
-              <p className="px-3 py-2 text-[11px] text-fg-muted">
-                No other boards
-              </p>
-            )}
+            {boards.length === 0 && <p className="px-3 py-2 text-[11px] text-fg-muted">No other boards</p>}
           </div>
         </>
       )}
@@ -295,14 +261,10 @@ export function SprintPicker({
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const isDirty =
-    JSON.stringify([...selectedIds].sort()) !==
-    JSON.stringify([...currentSprintIds].sort());
+  const isDirty = JSON.stringify([...selectedIds].sort()) !== JSON.stringify([...currentSprintIds].sort());
 
   function toggle(id: string) {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function save() {
@@ -366,9 +328,7 @@ export function SprintPicker({
           <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-border bg-bg-elevated shadow-lg">
             <div className="max-h-48 overflow-y-auto p-1">
               {sprints.length === 0 && (
-                <p className="px-3 py-2 text-[11px] text-fg-muted">
-                  No sprints in this workspace
-                </p>
+                <p className="px-3 py-2 text-[11px] text-fg-muted">No sprints in this workspace</p>
               )}
               {sprints.map((sprint) => {
                 const isSelected = selectedIds.includes(sprint.id);
@@ -383,17 +343,9 @@ export function SprintPicker({
                         isSelected ? "border-accent bg-accent" : "border-border"
                       }`}
                     >
-                      {isSelected && (
-                        <Check size={9} className="text-bg-primary" />
-                      )}
+                      {isSelected && <Check size={9} className="text-bg-primary" />}
                     </div>
-                    <span
-                      className={
-                        isSelected
-                          ? "font-medium text-fg-primary"
-                          : "text-fg-secondary"
-                      }
-                    >
+                    <span className={isSelected ? "font-medium text-fg-primary" : "text-fg-secondary"}>
                       {sprint.title}
                     </span>
                   </button>
@@ -535,8 +487,7 @@ export function AssigneePicker({
   const available = members.filter(
     (m) =>
       !assigneeIds.includes(m.id) &&
-      (m.name?.toLowerCase().includes(search.toLowerCase()) ||
-        m.email?.toLowerCase().includes(search.toLowerCase())),
+      (m.name?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
@@ -545,14 +496,9 @@ export function AssigneePicker({
       {assigned.length > 0 ? (
         <div className="space-y-1">
           {assigned.map((m) => (
-            <div
-              key={m.id}
-              className="group/assignee flex items-center gap-1.5 text-[11px] text-fg-primary"
-            >
+            <div key={m.id} className="group/assignee flex items-center gap-1.5 text-[11px] text-fg-primary">
               <UserAvatar name={m.name} image={m.image} size={18} />
-              <span className="min-w-0 flex-1 truncate">
-                {m.name ?? m.email}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{m.name ?? m.email}</span>
               <button
                 onClick={() => remove(m.id)}
                 disabled={isPending}
@@ -645,9 +591,7 @@ export function TagPicker({
   const [isPending, startTransition] = useTransition();
 
   function toggle(id: string) {
-    const newIds = selectedIds.includes(id)
-      ? selectedIds.filter((x) => x !== id)
-      : [...selectedIds, id];
+    const newIds = selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id];
     setSelectedIds(newIds);
     startTransition(async () => {
       const formData = new FormData();
@@ -682,9 +626,7 @@ export function TagPicker({
             </button>
           );
         })}
-        {tags.length === 0 && (
-          <span className="text-[11px] text-fg-muted">No tags</span>
-        )}
+        {tags.length === 0 && <span className="text-[11px] text-fg-muted">No tags</span>}
       </div>
     </div>
   );

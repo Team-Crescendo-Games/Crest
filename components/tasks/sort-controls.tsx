@@ -63,8 +63,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
 
   const addSort = (field: SortField) => {
     // Default direction: priority = desc (highest first), dates = asc (soonest first), points = desc
-    const defaultDir: SortDirection =
-      field === "dueDate" || field === "startDate" ? "asc" : "desc";
+    const defaultDir: SortDirection = field === "dueDate" || field === "startDate" ? "asc" : "desc";
     const newSorts = [...currentSorts, { field, direction: defaultDir }];
     navigate(newSorts);
     setMenuOpen(false);
@@ -77,9 +76,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
 
   const toggleDirection = (index: number) => {
     const newSorts = currentSorts.map((s, i) =>
-      i === index
-        ? { ...s, direction: (s.direction === "asc" ? "desc" : "asc") as SortDirection }
-        : s,
+      i === index ? { ...s, direction: (s.direction === "asc" ? "desc" : "asc") as SortDirection } : s,
     );
     navigate(newSorts);
   };
@@ -145,10 +142,7 @@ export function SortControls({ currentSorts, extraParams }: Props) {
                 Add
               </>
             )}
-            <ChevronDown
-              size={9}
-              className={`transition-transform ${menuOpen ? "rotate-180" : ""}`}
-            />
+            <ChevronDown size={9} className={`transition-transform ${menuOpen ? "rotate-180" : ""}`} />
           </button>
 
           {menuOpen && (

@@ -1,22 +1,14 @@
 "use client";
 
-/**
- * Lightweight tooltip that appears on hover.
- * Uses pure CSS (group-hover) — no JS state or portals needed.
- */
-export function Tooltip({
-  label,
-  children,
-  position = "bottom",
-  variant = "default",
-}: {
+interface Props {
   label: string;
   children: React.ReactNode;
   position?: "top" | "bottom";
   variant?: "default" | "danger";
-}) {
-  const posClass =
-    position === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5";
+}
+
+export function Tooltip({ label, children, position = "bottom", variant = "default" }: Props) {
+  const posClass = position === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5";
 
   const colorClass =
     variant === "danger"

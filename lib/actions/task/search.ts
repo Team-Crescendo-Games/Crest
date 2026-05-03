@@ -12,10 +12,7 @@ import { buildOrderBy } from "./helpers";
  * Fetch the full dependency graph for a task, following parent/subtask edges
  * recursively across the entire workspace (not limited to a sprint).
  */
-export async function getFlowGraphTasks(
-  rootTaskId: string,
-  workspaceId: string,
-) {
+export async function getFlowGraphTasks(rootTaskId: string, workspaceId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -113,10 +110,7 @@ export async function getFlowGraphTasks(
  * flow-view search modal. Only runs when the caller provides a non-empty query
  * to avoid fetching the entire workspace task set.
  */
-export async function searchWorkspaceTasks(
-  workspaceId: string,
-  query: string,
-) {
+export async function searchWorkspaceTasks(workspaceId: string, query: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -196,17 +190,11 @@ export async function loadMyColumnTasks(
   if (filters?.workspaceIds && filters.workspaceIds.length > 0) {
     where.board = {
       ...(where.board as Record<string, unknown> | undefined),
-      workspaceId:
-        filters.workspaceIds.length === 1
-          ? filters.workspaceIds[0]
-          : { in: filters.workspaceIds },
+      workspaceId: filters.workspaceIds.length === 1 ? filters.workspaceIds[0] : { in: filters.workspaceIds },
     };
   }
   if (filters?.boardIds && filters.boardIds.length > 0) {
-    where.boardId =
-      filters.boardIds.length === 1
-        ? filters.boardIds[0]
-        : { in: filters.boardIds };
+    where.boardId = filters.boardIds.length === 1 ? filters.boardIds[0] : { in: filters.boardIds };
   }
 
   const orderBy = buildOrderBy(filters?.sorts);

@@ -19,79 +19,73 @@ export default async function TaskDetailPage({
   const userId = session!.user!.id!;
 
   // Run all independent queries in parallel
-  const [membership, task, members, boards, sprints, allTags] =
-    await Promise.all([
-      prisma.workspaceMember.findUnique({
-        where: { userId_workspaceId: { userId, workspaceId } },
-        include: { role: true },
-      }),
-      prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          board: { select: { name: true, workspaceId: true } },
-          author: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-          assignees: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-          tags: { select: { id: true, name: true, color: true } },
-          sprints: { select: { id: true, title: true } },
-          parentTask: { select: { id: true, title: true, boardId: true } },
-          subtasks: {
-            select: { id: true },
-          },
-          comments: {
-            include: { user: { select: { id: true, name: true } } },
-            orderBy: { createdAt: "asc" },
-          },
-          attachments: {
-            include: { uploadedBy: { select: { name: true } } },
-            orderBy: { createdAt: "desc" },
-          },
-          activities: {
-            include: { user: { select: { name: true } } },
-            orderBy: { createdAt: "desc" },
-          },
+  const [membership, task, members, boards, sprints, allTags] = await Promise.all([
+    prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId } },
+      include: { role: true },
+    }),
+    prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        board: { select: { name: true, workspaceId: true } },
+        author: {
+          select: { id: true, name: true, email: true, image: true },
         },
-      }),
-      prisma.workspaceMember.findMany({
-        where: { workspaceId },
-        select: {
-          id: true,
-          user: {
-            select: { id: true, name: true, email: true, image: true },
-          },
+        assignees: {
+          select: { id: true, name: true, email: true, image: true },
         },
-      }),
-      prisma.board.findMany({
-        where: { workspaceId, isActive: true },
-        select: { id: true, name: true },
-        orderBy: { displayOrder: "asc" },
-      }),
-      prisma.sprint.findMany({
-        where: { workspaceId },
-        select: { id: true, title: true, isActive: true },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.tag.findMany({
-        where: { workspaceId },
-        select: { id: true, name: true, color: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+        tags: { select: { id: true, name: true, color: true } },
+        sprints: { select: { id: true, title: true } },
+        parentTask: { select: { id: true, title: true, boardId: true } },
+        subtasks: {
+          select: { id: true },
+        },
+        comments: {
+          include: { user: { select: { id: true, name: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+        attachments: {
+          include: { uploadedBy: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        activities: {
+          include: { user: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        id: true,
+        user: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+      },
+    }),
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId },
+      select: { id: true, title: true, isActive: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   if (!membership) notFound();
 
-  if (
-    !task ||
-    task.board.workspaceId !== workspaceId ||
-    task.boardId !== boardId
-  ) {
+  if (!task || task.board.workspaceId !== workspaceId || task.boardId !== boardId) {
     notFound();
   }
 
-  // Build userId → workspaceMemberId map for profile links
   const memberIdMap: Record<string, string> = {};
   for (const m of members) {
     memberIdMap[m.user.id] = m.id;
@@ -101,10 +95,7 @@ export default async function TaskDetailPage({
     <div className="relative">
       <div className="mx-auto max-w-3xl">
         {/* Breadcrumb */}
-        <TaskBreadcrumb
-          boardName={task.board.name}
-          boardHref={`/w/${workspaceId}/b/${boardId}`}
-        />
+        <TaskBreadcrumb boardName={task.board.name} boardHref={`/w/${workspaceId}/b/${boardId}`} />
 
         {/* Unified form renders both columns */}
         <TaskEditForm
@@ -136,9 +127,7 @@ export default async function TaskDetailPage({
         {/* Parent task link */}
         {task.parentTask && (
           <div className="mt-6">
-            <h3 className="font-mono text-xs font-medium text-fg-secondary">
-              Parent Task
-            </h3>
+            <h3 className="font-mono text-xs font-medium text-fg-secondary">Parent Task</h3>
             <Link
               href={`/w/${workspaceId}/b/${task.parentTask.boardId}/t/${task.parentTask.id}`}
               className="mt-1.5 inline-block text-xs text-accent transition-colors hover:text-accent-emphasis"
@@ -164,12 +153,7 @@ export default async function TaskDetailPage({
           activities={task.activities}
           createdAt={task.createdAt}
           createdByName={task.author.name}
-          memberNames={Object.fromEntries(
-            members.map((m) => [
-              m.user.id,
-              m.user.name ?? m.user.email ?? "Unknown",
-            ]),
-          )}
+          memberNames={Object.fromEntries(members.map((m) => [m.user.id, m.user.name ?? m.user.email ?? "Unknown"]))}
         />
 
         {/* Comments — inline fallback for smaller screens */}

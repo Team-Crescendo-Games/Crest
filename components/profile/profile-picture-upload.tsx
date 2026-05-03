@@ -64,9 +64,7 @@ export function ProfilePictureUpload({
 
       // Use proxy URL for preview
       const match = presignData.key.match(/avatars\/([^/]+)\//);
-      setPreviewUrl(
-        match ? `/api/profile-picture/${match[1]}` : presignData.publicUrl,
-      );
+      setPreviewUrl(match ? `/api/profile-picture/${match[1]}` : presignData.publicUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -79,13 +77,7 @@ export function ProfilePictureUpload({
 
   return (
     <div className="relative">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileSelect}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
 
       <button
         onClick={() => fileInputRef.current?.click()}
@@ -116,9 +108,7 @@ export function ProfilePictureUpload({
         </div>
       </button>
 
-      {error && (
-        <p className="mt-1 text-[10px] text-accent-emphasis">{error}</p>
-      )}
+      {error && <p className="mt-1 text-[10px] text-accent-emphasis">{error}</p>}
     </div>
   );
 }

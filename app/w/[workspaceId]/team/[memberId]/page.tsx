@@ -31,22 +31,15 @@ export default async function MemberTasksPage({
   }>;
 }) {
   const { workspaceId, memberId } = await params;
-  const {
-    q,
-    priority: priorityParam,
-    tag: tagParam,
-    sort: sortParam,
-  } = await searchParams;
+  const { q, priority: priorityParam, tag: tagParam, sort: sortParam } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
-  // Verify the current user is a member of this workspace
   const currentMembership = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
   });
   if (!currentMembership) notFound();
 
-  // Fetch the target member
   const member = await prisma.workspaceMember.findUnique({
     where: { id: memberId },
     include: {
@@ -58,9 +51,7 @@ export default async function MemberTasksPage({
   if (!member || member.workspaceId !== workspaceId) notFound();
 
   // Parse filter params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const sorts = parseSorts(sortParam);
 
@@ -109,10 +100,7 @@ export default async function MemberTasksPage({
   // Build orderBy from sort options
   const orderBy =
     sorts.length > 0
-      ? [
-          ...sorts.map((s) => ({ [s.field]: s.direction })),
-          { createdAt: "desc" as const },
-        ]
+      ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
       : [{ createdAt: "desc" as const }];
 
   // Fetch tasks assigned to this member within this workspace, paginated per status
@@ -182,8 +170,7 @@ export default async function MemberTasksPage({
     }),
   ]);
 
-  const totalAssigned =
-    notStartedCount + inProgressCount + inReviewCount + completedCountVal;
+  const totalAssigned = notStartedCount + inProgressCount + inReviewCount + completedCountVal;
   const completedTasks = completedCountVal;
 
   // Aggregate total story points across ALL matching tasks (not just the first page)
@@ -194,18 +181,14 @@ export default async function MemberTasksPage({
   const totalPoints = pointsAgg._sum.points ?? 0;
 
   // Use a typed helper to get the correct Prisma return type with includes
-  type TaskWithIncludes = Awaited<
-    ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>
-  >[number];
+  type TaskWithIncludes = Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number];
 
   const mapTask = (t: TaskWithIncludes) => ({
     ...t,
     boardId: t.board.id,
     commentCount: t._count.comments,
     subtaskTotal: t.subtasks.length,
-    subtaskCompleted: t.subtasks.filter(
-      (s: { status: string }) => s.status === "COMPLETED",
-    ).length,
+    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
   });
 
   const tasksByStatus: Record<string, ReturnType<typeof mapTask>[]> = {
@@ -220,13 +203,9 @@ export default async function MemberTasksPage({
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder =
-          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder =
-          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc"
-          ? aOrder - bOrder
-          : bOrder - aOrder;
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
     }
   }
@@ -264,16 +243,10 @@ export default async function MemberTasksPage({
 
       {/* Member header */}
       <div className="flex items-center gap-4">
-        <UserAvatar
-          name={member.user.name}
-          image={member.user.image}
-          size={48}
-        />
+        <UserAvatar name={member.user.name} image={member.user.image} size={48} />
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-semibold text-fg-primary">
-              {member.user.name}
-            </h1>
+            <h1 className="font-mono text-lg font-semibold text-fg-primary">{member.user.name}</h1>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"
               style={{
@@ -346,28 +319,13 @@ export default async function MemberTasksPage({
   );
 }
 
-function StatCard({
-  label,
-  value,
-  barColor,
-}: {
-  label: string;
-  value: number;
-  barColor: string;
-}) {
+function StatCard({ label, value, barColor }: { label: string; value: number; barColor: string }) {
   return (
     <div className="relative overflow-hidden rounded-md border border-border bg-bg-elevated/60 backdrop-blur-sm">
-      <div
-        className="absolute left-0 top-0 h-full w-1"
-        style={{ backgroundColor: barColor }}
-      />
+      <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: barColor }} />
       <div className="p-4 pl-5">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-fg-muted">
-          {label}
-        </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold text-fg-primary">
-          {value}
-        </p>
+        <p className="text-[11px] font-medium uppercase tracking-wider text-fg-muted">{label}</p>
+        <p className="mt-1.5 font-mono text-2xl font-semibold text-fg-primary">{value}</p>
       </div>
     </div>
   );

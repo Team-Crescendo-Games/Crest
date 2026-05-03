@@ -42,9 +42,7 @@ export default function SignUpPage() {
       setLoading(false);
 
       if (result?.error) {
-        setError(
-          "Account created but sign-in failed. Please sign in manually.",
-        );
+        setError("Account created but sign-in failed. Please sign in manually.");
       } else {
         window.location.href = "/";
       }
@@ -61,32 +59,21 @@ export default function SignUpPage() {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
               <Logo size={32} />
-              <h1 className="font-mono text-xl font-semibold tracking-tight text-accent">
-                Crest
-              </h1>
+              <h1 className="font-mono text-xl font-semibold tracking-tight text-accent">Crest</h1>
             </div>
             <ThemeToggle />
           </div>
 
           <div>
             <div className="h-px w-12 bg-linear-to-r from-accent-subtle to-transparent" />
-            <p className="mt-3 text-xs text-fg-muted">
-              Create your account to get started
-            </p>
+            <p className="mt-3 text-xs text-fg-muted">Create your account to get started</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-error">{error}</div>}
 
             <div>
-              <label
-                htmlFor="name"
-                className="block text-xs font-medium text-fg-secondary"
-              >
+              <label htmlFor="name" className="form-label">
                 Name
               </label>
               <input
@@ -95,16 +82,13 @@ export default function SignUpPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="Your name"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-xs font-medium text-fg-secondary"
-              >
+              <label htmlFor="email" className="form-label">
                 Email
               </label>
               <input
@@ -113,16 +97,13 @@ export default function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-medium text-fg-secondary"
-              >
+              <label htmlFor="password" className="form-label">
                 Password
               </label>
               <input
@@ -132,16 +113,12 @@ export default function SignUpPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="At least 8 characters"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary transition-all hover:bg-accent-emphasis hover:shadow-[0_0_20px_-4px] hover:shadow-accent/40 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-elevated disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="w-full btn-primary">
               {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
@@ -154,19 +131,13 @@ export default function SignUpPage() {
 
           <p className="text-center text-xs text-fg-muted">
             Already have an account?{" "}
-            <Link
-              href="/sign-in"
-              className="font-medium text-accent transition-colors hover:text-accent-emphasis"
-            >
+            <Link href="/sign-in" className="font-medium text-accent transition-colors hover:text-accent-emphasis">
               Sign in
             </Link>
           </p>
           <p className="text-center text-xs text-fg-muted">
             Migrated account?{" "}
-            <Link
-              href="/set-password"
-              className="font-medium text-accent transition-colors hover:text-accent-emphasis"
-            >
+            <Link href="/set-password" className="font-medium text-accent transition-colors hover:text-accent-emphasis">
               Set your password
             </Link>
           </p>

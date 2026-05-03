@@ -22,10 +22,7 @@ interface NotificationFeedProps {
 
 const PAGE_SIZE = 10;
 
-export function NotificationFeed({
-  initial,
-  totalCount,
-}: NotificationFeedProps) {
+export function NotificationFeed({ initial, totalCount }: NotificationFeedProps) {
   const [items, setItems] = useState(initial);
   const [skip, setSkip] = useState(initial.length);
   const [hasMore, setHasMore] = useState(initial.length < totalCount);
@@ -33,11 +30,8 @@ export function NotificationFeed({
 
   function loadMore() {
     startTransition(async () => {
-      const res = await fetch(
-        `/api/notifications?skip=${skip}&take=${PAGE_SIZE}`,
-      );
-      const data: { notifications: NotificationItem[]; total: number } =
-        await res.json();
+      const res = await fetch(`/api/notifications?skip=${skip}&take=${PAGE_SIZE}`);
+      const data: { notifications: NotificationItem[]; total: number } = await res.json();
       setItems((prev) => [...prev, ...data.notifications]);
       const newSkip = skip + data.notifications.length;
       setSkip(newSkip);
@@ -47,9 +41,7 @@ export function NotificationFeed({
 
   async function markRead(id: string) {
     await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   }
 
   async function markAllRead() {
@@ -60,11 +52,7 @@ export function NotificationFeed({
   const hasUnread = items.some((n) => !n.isRead);
 
   if (items.length === 0) {
-    return (
-      <p className="py-6 text-center text-xs text-fg-muted">
-        No notifications yet.
-      </p>
-    );
+    return <p className="py-6 text-center text-xs text-fg-muted">No notifications yet.</p>;
   }
 
   return (
@@ -85,15 +73,10 @@ export function NotificationFeed({
           <li
             key={n.id}
             className={`group flex items-start gap-2.5 rounded-md border px-3 py-2.5 transition-colors ${
-              n.isRead
-                ? "border-border bg-bg-elevated/40"
-                : "border-accent-subtle/30 bg-accent/5"
+              n.isRead ? "border-border bg-bg-elevated/40" : "border-accent-subtle/30 bg-accent/5"
             }`}
           >
-            <Bell
-              size={12}
-              className={`mt-0.5 shrink-0 ${n.isRead ? "text-fg-muted" : "text-accent"}`}
-            />
+            <Bell size={12} className={`mt-0.5 shrink-0 ${n.isRead ? "text-fg-muted" : "text-accent"}`} />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-fg-secondary">{n.message}</p>
               {n.task && (

@@ -125,7 +125,7 @@ export async function deleteS3Object(fileUrl: string) {
     new DeleteObjectCommand({
       Bucket: BUCKET,
       Key: key,
-    })
+    }),
   );
 }
 
@@ -162,9 +162,7 @@ export async function deleteS3Prefix(prefix: string): Promise<number> {
         new DeleteObjectsCommand({
           Bucket: BUCKET,
           Delete: {
-            Objects: objects
-              .filter((o): o is { Key: string } => !!o.Key)
-              .map((o) => ({ Key: o.Key })),
+            Objects: objects.filter((o): o is { Key: string } => !!o.Key).map((o) => ({ Key: o.Key })),
             Quiet: true,
           },
         }),
@@ -172,9 +170,7 @@ export async function deleteS3Prefix(prefix: string): Promise<number> {
       totalDeleted += objects.length;
     }
 
-    continuationToken = listed.IsTruncated
-      ? listed.NextContinuationToken
-      : undefined;
+    continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
   } while (continuationToken);
 
   return totalDeleted;

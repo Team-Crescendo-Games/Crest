@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -25,12 +25,7 @@ export function DropdownPicker({
         className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors"
         style={color ? { backgroundColor: color + "20", color } : undefined}
       >
-        {color && (
-          <div
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-        )}
+        {color && <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />}
         {current.label}
         <ChevronDown size={9} className={open ? "rotate-180" : ""} />
       </button>
@@ -49,21 +44,14 @@ export function DropdownPicker({
                 }}
                 className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
-                {o.color && (
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: o.color }}
-                  />
-                )}
+                {o.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />}
                 <span
                   className={o.value === value ? "font-medium" : ""}
                   style={o.color ? { color: o.color } : undefined}
                 >
                   {o.label}
                 </span>
-                {o.value === value && (
-                  <Check size={11} className="ml-auto text-accent" />
-                )}
+                {o.value === value && <Check size={11} className="ml-auto text-accent" />}
               </button>
             ))}
           </div>
@@ -89,10 +77,7 @@ export function BoardField({
 
   return (
     <div className="relative flex items-center gap-1">
-      <Link
-        href={href}
-        className="text-[11px] text-accent transition-colors hover:text-accent-emphasis"
-      >
+      <Link href={href} className="text-[11px] text-accent transition-colors hover:text-accent-emphasis">
         {current.label}
       </Link>
       <button
@@ -118,18 +103,8 @@ export function BoardField({
                 }}
                 className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
-                <span
-                  className={
-                    o.value === value
-                      ? "font-medium text-accent"
-                      : "text-fg-primary"
-                  }
-                >
-                  {o.label}
-                </span>
-                {o.value === value && (
-                  <Check size={11} className="ml-auto text-accent" />
-                )}
+                <span className={o.value === value ? "font-medium text-accent" : "text-fg-primary"}>{o.label}</span>
+                {o.value === value && <Check size={11} className="ml-auto text-accent" />}
               </button>
             ))}
           </div>

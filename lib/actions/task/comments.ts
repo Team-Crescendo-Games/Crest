@@ -72,10 +72,6 @@ export async function deleteComment(_prev: unknown, formData: FormData) {
     return { error: "An unexpected error occurred" };
   }
 
-  revalidateTask(
-    comment.task.board.workspaceId,
-    comment.task.board.id,
-    comment.taskId,
-  );
+  revalidateTask(comment.task.board.workspaceId, comment.task.board.id, comment.taskId);
   return { success: true };
 }

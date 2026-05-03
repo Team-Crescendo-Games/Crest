@@ -23,15 +23,7 @@ interface Sprint {
   _count: { tasks: number };
 }
 
-export function SprintRow({
-  sprint,
-  workspaceId,
-  columns,
-  columnCounts,
-  columnPageSizes,
-  columnFilters,
-  permissions,
-}: {
+interface Props {
   sprint: Sprint;
   workspaceId: string;
   columns: Column[];
@@ -45,14 +37,21 @@ export function SprintRow({
     sprintId?: string;
   };
   permissions: number;
-}) {
+}
+
+export function SprintRow({
+  sprint,
+  workspaceId,
+  columns,
+  columnCounts,
+  columnPageSizes,
+  columnFilters,
+  permissions,
+}: Props) {
   const canCreate = hasPermission(permissions, Permission.CREATE_CONTENT);
 
   const filteredCount =
-    columnCounts.NOT_STARTED +
-    columnCounts.IN_PROGRESS +
-    columnCounts.IN_REVIEW +
-    columnCounts.COMPLETED;
+    columnCounts.NOT_STARTED + columnCounts.IN_PROGRESS + columnCounts.IN_REVIEW + columnCounts.COMPLETED;
 
   // Timeline progress
   const now = new Date();
@@ -62,19 +61,14 @@ export function SprintRow({
     const end = new Date(sprint.endDate).getTime();
     const total = end - start;
     if (total > 0) {
-      progress = Math.min(
-        100,
-        Math.max(0, ((now.getTime() - start) / total) * 100),
-      );
+      progress = Math.min(100, Math.max(0, ((now.getTime() - start) / total) * 100));
     }
   }
 
   return (
     <div
       className={`rounded-md border bg-bg-elevated/60 backdrop-blur-sm ${
-        sprint.isActive
-          ? "border-border"
-          : "border-dashed border-border opacity-60"
+        sprint.isActive ? "border-border" : "border-dashed border-border opacity-60"
       }`}
     >
       {/* Sprint header */}
@@ -89,9 +83,7 @@ export function SprintRow({
             </Link>
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                sprint.isActive
-                  ? "bg-accent/10 text-accent"
-                  : "bg-bg-secondary text-fg-muted"
+                sprint.isActive ? "bg-accent/10 text-accent" : "bg-bg-secondary text-fg-muted"
               }`}
             >
               {sprint.isActive ? "Active" : "Closed"}
@@ -103,9 +95,7 @@ export function SprintRow({
                   (columnFilters.priorities?.length ?? 0) > 0 ||
                   (columnFilters.tagFilters?.length ?? 0) > 0 ||
                   (columnFilters.assigneeFilters?.length ?? 0) > 0) &&
-                filteredCount !== sprint.totalTaskCount && (
-                  <> · {filteredCount} matching</>
-                )}
+                filteredCount !== sprint.totalTaskCount && <> · {filteredCount} matching</>}
             </span>
           </div>
 
@@ -124,15 +114,10 @@ export function SprintRow({
               </div>
               <div className="flex-1">
                 <div className="h-1.5 rounded-full bg-bg-secondary">
-                  <div
-                    className="h-1.5 rounded-full bg-accent/40 transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
+                  <div className="h-1.5 rounded-full bg-accent/40 transition-all" style={{ width: `${progress}%` }} />
                 </div>
               </div>
-              <span className="text-[11px] text-fg-muted">
-                {Math.round(progress)}% elapsed
-              </span>
+              <span className="text-[11px] text-fg-muted">{Math.round(progress)}% elapsed</span>
             </div>
           )}
         </div>

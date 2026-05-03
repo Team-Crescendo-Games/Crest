@@ -79,9 +79,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
     };
   }, []);
 
-  const [lastWorkspaceId, setLastWorkspaceId] = useState<string | undefined>(
-    undefined,
-  );
+  const [lastWorkspaceId, setLastWorkspaceId] = useState<string | undefined>(undefined);
 
   const workspaceMatch = pathname.match(/^\/w\/([^/]+)/);
   const urlWorkspaceId = workspaceMatch?.[1];
@@ -90,8 +88,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
     setLastWorkspaceId(urlWorkspaceId);
   }
 
-  const activeWorkspaceId =
-    urlWorkspaceId ?? lastWorkspaceId ?? workspaces[0]?.id;
+  const activeWorkspaceId = urlWorkspaceId ?? lastWorkspaceId ?? workspaces[0]?.id;
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
   return (
@@ -109,9 +106,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
       <div className="flex h-12 items-center justify-between border-b border-border px-4">
         <Link href="/" className="flex items-center gap-2">
           <Logo size={22} />
-          <span className="font-mono text-sm font-bold tracking-tight text-accent">
-            Crest
-          </span>
+          <span className="font-mono text-sm font-bold tracking-tight text-accent">Crest</span>
         </Link>
         <ThemeToggle />
       </div>
@@ -120,17 +115,13 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
       <nav className="space-y-0.5 px-2 pt-3 pb-2">
         {userNavigation.map((item) => {
           const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
+            item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}
               href={item.href}
               className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                isActive
-                  ? "bg-accent/10 text-accent"
-                  : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
+                isActive ? "bg-accent/10 text-accent" : "text-fg-secondary hover:bg-bg-secondary hover:text-fg-primary"
               }`}
             >
               <item.icon size={14} />
@@ -150,9 +141,7 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
 
       {/* Workspace section */}
       <div className="flex-1 overflow-y-auto px-2 pt-3">
-        <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-widest text-accent-subtle">
-          Workspace
-        </p>
+        <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-widest text-accent-subtle">Workspace</p>
 
         <WorkspaceSwitcher
           workspaces={workspaces}
@@ -169,17 +158,9 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               active={pathname === `/w/${activeWorkspaceId}`}
             />
 
-            <BoardNav
-              boards={activeWorkspace.boards}
-              activeWorkspaceId={activeWorkspaceId!}
-              pathname={pathname}
-            />
+            <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
 
-            <SprintNav
-              sprints={activeWorkspace.sprints}
-              activeWorkspaceId={activeWorkspaceId!}
-              pathname={pathname}
-            />
+            <SprintNav sprints={activeWorkspace.sprints} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
 
             <SidebarLink
               href={`/w/${activeWorkspaceId}/team`}

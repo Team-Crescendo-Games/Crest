@@ -11,17 +11,11 @@ export async function POST(request: Request) {
   const { email, password } = await request.json();
 
   if (!email || !password) {
-    return NextResponse.json(
-      { error: "Email and password are required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
   }
 
   if (password.length < 8) {
-    return NextResponse.json(
-      { error: "Password must be at least 8 characters" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({
@@ -35,10 +29,7 @@ export async function POST(request: Request) {
 
   // Only allow setting a password if none exists (migrated accounts)
   if (user.password) {
-    return NextResponse.json(
-      { error: "This account already has a password" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "This account already has a password" }, { status: 400 });
   }
 
   const hashed = await bcrypt.hash(password, 12);

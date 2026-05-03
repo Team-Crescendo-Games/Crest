@@ -14,16 +14,7 @@ export function Logo({ size = 24 }: { size?: number }) {
     () => false,
   );
 
-  const src =
-    mounted && resolvedTheme === "light" ? "/logo-light.png" : "/logo-dark.png";
+  const src = mounted && resolvedTheme === "light" ? "/logo-light.png" : "/logo-dark.png";
 
-  return (
-    <Image
-      src={src}
-      alt="Crest"
-      width={size}
-      height={size}
-      className="shrink-0"
-    />
-  );
+  return <Image src={src} alt="Crest" width={size} height={size} className="shrink-0" />;
 }

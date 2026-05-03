@@ -36,18 +36,10 @@ export interface TaskEditSidebarProps {
   onSprintIdsChange: (ids: string[]) => void;
 }
 
-function SidebarBlock({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function SidebarBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-fg-muted">
-        {label}
-      </p>
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-fg-muted">{label}</p>
       {children}
     </div>
   );

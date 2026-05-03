@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  type DropResult,
-} from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { useState, useTransition, useMemo } from "react";
 import { updateTaskStatus } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
@@ -85,11 +80,7 @@ export function KanbanBoard({
     assigneeFilters?: string[];
   };
   /** Custom loader for paginated tasks (e.g. dashboard "my tasks" view) */
-  loadPage?: (
-    status: string,
-    offset: number,
-    limit: number,
-  ) => Promise<TaskCardData[]>;
+  loadPage?: (status: string, offset: number, limit: number) => Promise<TaskCardData[]>;
   /** Custom create button renderer per column (overrides built-in CreateTaskForm) */
   renderCreateButton?: (status: string) => React.ReactNode;
 }) {
@@ -110,16 +101,15 @@ export function KanbanBoard({
 
   const effectiveFilters = columnFilters ?? completedFilters;
 
-  const { localColumns, paginationState, goToPage, setLocalColumns } =
-    useColumnPagination({
-      columns,
-      effectiveCounts,
-      effectivePageSizes,
-      effectiveFilters,
-      boardId,
-      workspaceId,
-      loadPage,
-    });
+  const { localColumns, paginationState, goToPage, setLocalColumns } = useColumnPagination({
+    columns,
+    effectiveCounts,
+    effectivePageSizes,
+    effectiveFilters,
+    boardId,
+    workspaceId,
+    loadPage,
+  });
 
   // Track which task is hovered to highlight its subtasks
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
@@ -150,9 +140,7 @@ export function KanbanBoard({
           return { ...col, tasks: col.tasks.filter((t) => t.id !== taskId) };
         }
         if (col.status === newStatus) {
-          const task = prev
-            .find((c) => c.status === oldStatus)
-            ?.tasks.find((t) => t.id === taskId);
+          const task = prev.find((c) => c.status === oldStatus)?.tasks.find((t) => t.id === taskId);
           if (task) {
             const updated = { ...task, status: newStatus };
             const newTasks = [...col.tasks];
@@ -174,10 +162,7 @@ export function KanbanBoard({
   }
 
   /** Build the page number buttons, collapsing middle pages with ellipsis. */
-  function pageNumbers(
-    currentPage: number,
-    totalPages: number,
-  ): (number | "ellipsis")[] {
+  function pageNumbers(currentPage: number, totalPages: number): (number | "ellipsis")[] {
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
@@ -193,40 +178,23 @@ export function KanbanBoard({
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div
-        className={`grid gap-4 lg:grid-cols-4 ${isPending ? "opacity-70" : ""}`}
-      >
+      <div className={`grid gap-4 lg:grid-cols-4 ${isPending ? "opacity-70" : ""}`}>
         {localColumns.map((column) => {
           const colState = paginationState[column.status];
           const hasPagination = !!colState;
           const currentPage = colState?.page ?? 1;
           const isPageLoading = colState?.isLoading ?? false;
-          const pageSize =
-            effectivePageSizes[column.status] ?? DEFAULT_PAGE_SIZE;
-          const totalCount =
-            effectiveCounts[column.status] ?? column.tasks.length;
-          const totalPages = hasPagination
-            ? Math.ceil(totalCount / pageSize)
-            : 1;
+          const pageSize = effectivePageSizes[column.status] ?? DEFAULT_PAGE_SIZE;
+          const totalCount = effectiveCounts[column.status] ?? column.tasks.length;
+          const totalPages = hasPagination ? Math.ceil(totalCount / pageSize) : 1;
 
           return (
-            <div
-              key={column.status}
-              className="rounded-lg p-2"
-              style={{ backgroundColor: column.color + "08" }}
-            >
+            <div key={column.status} className="rounded-lg p-2" style={{ backgroundColor: column.color + "08" }}>
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: column.color }}
-                  />
-                  <h3 className="text-xs font-medium text-fg-secondary">
-                    {column.label}
-                  </h3>
-                  <span className="text-[11px] text-fg-muted">
-                    {totalCount}
-                  </span>
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: column.color }} />
+                  <h3 className="text-xs font-medium text-fg-secondary">{column.label}</h3>
+                  <span className="text-[11px] text-fg-muted">{totalCount}</span>
                   {/* Compact prev/next arrows next to the header */}
                   {hasPagination && (
                     <div className="flex items-center gap-0.5">
@@ -273,17 +241,11 @@ export function KanbanBoard({
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={`min-h-[60px] space-y-2 rounded-md p-1 transition-colors ${
-                      snapshot.isDraggingOver
-                        ? "bg-accent/5 ring-1 ring-accent/20"
-                        : ""
+                      snapshot.isDraggingOver ? "bg-accent/5 ring-1 ring-accent/20" : ""
                     } ${isPageLoading ? "opacity-50" : ""}`}
                   >
                     {column.tasks.map((task, index) => (
-                      <Draggable
-                        key={task.id}
-                        draggableId={task.id}
-                        index={index}
-                      >
+                      <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
@@ -297,11 +259,7 @@ export function KanbanBoard({
                               workspaceId={workspaceId}
                               highlighted={highlightedIds.has(task.id)}
                               onHoverChange={setHoveredTaskId}
-                              className={
-                                snapshot.isDragging
-                                  ? "border-accent/40 shadow-lg shadow-accent/10"
-                                  : ""
-                              }
+                              className={snapshot.isDragging ? "border-accent/40 shadow-lg shadow-accent/10" : ""}
                             />
                           </div>
                         )}
@@ -310,9 +268,7 @@ export function KanbanBoard({
                     {provided.placeholder}
 
                     {column.tasks.length === 0 && !snapshot.isDraggingOver && (
-                      <p className="py-4 text-center text-[11px] text-fg-muted">
-                        No tasks
-                      </p>
+                      <p className="py-4 text-center text-[11px] text-fg-muted">No tasks</p>
                     )}
                   </div>
                 )}
@@ -332,10 +288,7 @@ export function KanbanBoard({
 
                   {pageNumbers(currentPage, totalPages).map((p, i) =>
                     p === "ellipsis" ? (
-                      <span
-                        key={`ellipsis-${i}`}
-                        className="px-0.5 text-[10px] text-fg-muted"
-                      >
+                      <span key={`ellipsis-${i}`} className="px-0.5 text-[10px] text-fg-muted">
                         …
                       </span>
                     ) : (

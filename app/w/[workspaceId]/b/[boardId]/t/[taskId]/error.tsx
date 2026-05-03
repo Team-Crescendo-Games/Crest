@@ -4,13 +4,12 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function TaskError({
-  error,
-  unstable_retry,
-}: {
+interface Props {
   error: Error & { digest?: string };
   unstable_retry: () => void;
-}) {
+}
+
+export default function TaskError({ error, unstable_retry }: Props) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -23,14 +22,8 @@ export default function TaskError({
   return (
     <div className="mx-auto max-w-5xl">
       <div className="rounded-md border border-border bg-bg-elevated p-8 text-center">
-        <p className="font-mono text-sm font-medium text-fg-primary">
-          Something went wrong
-        </p>
-        {error.digest && (
-          <p className="mt-1 font-mono text-xs text-fg-muted">
-            ref: {error.digest}
-          </p>
-        )}
+        <p className="font-mono text-sm font-medium text-fg-primary">Something went wrong</p>
+        {error.digest && <p className="mt-1 font-mono text-xs text-fg-muted">ref: {error.digest}</p>}
         <div className="mt-4 flex items-center justify-center gap-3">
           <button
             onClick={unstable_retry}

@@ -3,18 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  hasPermission,
-  getEffectivePermissions,
-  Permission,
-} from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { WorkspaceSettingsForm } from "@/components/workspaces/settings-form";
 
-export default async function WorkspaceSettingsPage({
-  params,
-}: {
-  params: Promise<{ workspaceId: string }>;
-}) {
+export default async function WorkspaceSettingsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params;
   const session = await auth();
   const userId = session!.user!.id!;
@@ -29,11 +21,7 @@ export default async function WorkspaceSettingsPage({
 
   if (!membership) notFound();
 
-  const effectivePerms = getEffectivePermissions(
-    membership.role.permissions,
-    userId,
-    membership.workspace.createdById,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
   if (!hasPermission(effectivePerms, Permission.MANAGE_WORKSPACE)) {
     notFound();
   }
@@ -48,12 +36,8 @@ export default async function WorkspaceSettingsPage({
         Back to workspace
       </Link>
 
-      <h1 className="font-mono text-lg font-semibold text-fg-primary">
-        Workspace Settings
-      </h1>
-      <p className="mt-1 text-xs text-fg-muted">
-        Manage your workspace configuration.
-      </p>
+      <h1 className="font-mono text-lg font-semibold text-fg-primary">Workspace Settings</h1>
+      <p className="mt-1 text-xs text-fg-muted">Manage your workspace configuration.</p>
 
       <div className="mt-6">
         <WorkspaceSettingsForm workspace={membership.workspace} />

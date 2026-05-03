@@ -22,22 +22,13 @@ function toProxyUrl(image: string | null | undefined): string | null {
  * Reusable avatar component. Shows the profile picture if available,
  * otherwise shows the first letter of the name on an accent background.
  */
-export function UserAvatar({
-  name,
-  image,
-  size = 28,
-  className = "",
-}: UserAvatarProps) {
+export function UserAvatar({ name, image, size = 28, className = "" }: UserAvatarProps) {
   const initial = name?.charAt(0)?.toUpperCase() ?? "?";
-  const fontSize =
-    size <= 20 ? "text-[8px]" : size <= 28 ? "text-xs" : "text-sm";
+  const fontSize = size <= 20 ? "text-[8px]" : size <= 28 ? "text-xs" : "text-sm";
   const src = toProxyUrl(image);
 
   return (
-    <div
-      className={`shrink-0 overflow-hidden rounded-full ${className}`}
-      style={{ width: size, height: size }}
-    >
+    <div className={`shrink-0 overflow-hidden rounded-full ${className}`} style={{ width: size, height: size }}>
       {src ? (
         <Image
           src={src}

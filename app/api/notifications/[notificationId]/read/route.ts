@@ -6,10 +6,7 @@ import { prisma } from "@/lib/prisma";
  * PATCH /api/notifications/[notificationId]/read
  * Marks a notification as read.
  */
-export async function PATCH(
-  _request: Request,
-  ctx: RouteContext<"/api/notifications/[notificationId]/read">
-) {
+export async function PATCH(_: Request, ctx: RouteContext<"/api/notifications/[notificationId]/read">) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

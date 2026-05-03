@@ -13,24 +13,10 @@ export {
   updateTaskDueDate,
 } from "./core";
 
-export {
-  updateTaskAssignees,
-  updateTaskTags,
-  updateTaskSprints,
-  setTaskParent,
-} from "./relations";
+export { updateTaskAssignees, updateTaskTags, updateTaskSprints, setTaskParent } from "./relations";
 
 export { addComment, deleteComment } from "./comments";
 
-export {
-  addSubtask,
-  removeSubtask,
-  getSubtasks,
-  getAvailableSubtasks,
-} from "./subtasks";
+export { addSubtask, removeSubtask, getSubtasks, getAvailableSubtasks } from "./subtasks";
 
-export {
-  searchWorkspaceTasks,
-  getFlowGraphTasks,
-  loadMyColumnTasks,
-} from "./search";
+export { searchWorkspaceTasks, getFlowGraphTasks, loadMyColumnTasks } from "./search";

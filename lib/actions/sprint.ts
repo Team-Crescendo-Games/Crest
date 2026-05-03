@@ -28,11 +28,7 @@ export async function createSprint(_prev: unknown, formData: FormData) {
   const { workspaceId, title, startDate, endDate } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.CREATE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
   } catch {
     return { error: "You don't have permission to create sprints" };
   }
@@ -66,11 +62,7 @@ export async function updateSprint(_prev: unknown, formData: FormData) {
   const { sprintId, workspaceId, title, startDate, endDate } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -104,11 +96,7 @@ export async function toggleSprintActive(_prev: unknown, formData: FormData) {
   const { sprintId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -144,11 +132,7 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
   const { sprintId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.DELETE_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
   } catch {
     return { error: "No permission" };
   }
@@ -257,11 +241,7 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
   const { sourceSprintId, workspaceId, title } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.EDIT_CONTENT,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
   } catch {
     return { error: "No permission" };
   }

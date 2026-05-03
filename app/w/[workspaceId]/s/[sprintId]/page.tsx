@@ -4,11 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { TaskPriority } from "@/prisma/generated/prisma/enums";
-import {
-  hasPermission,
-  getEffectivePermissions,
-  Permission,
-} from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import {
   TASK_PRIORITIES,
   TASK_STATUSES as STATUS_ORDER,
@@ -26,10 +22,7 @@ import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
 import { parseMulti } from "@/lib/url-helpers";
 
-export default async function SprintDetailPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string; sprintId: string }>;
   searchParams: Promise<{
     q?: string;
@@ -38,15 +31,11 @@ export default async function SprintDetailPage({
     assignee?: string;
     sort?: string;
   }>;
-}) {
+}
+
+export default async function SprintDetailPage({ params, searchParams }: Props) {
   const { workspaceId, sprintId } = await params;
-  const {
-    q,
-    priority: priorityParam,
-    tag: tagParam,
-    assignee: assigneeParam,
-    sort: sortParam,
-  } = await searchParams;
+  const { q, priority: priorityParam, tag: tagParam, assignee: assigneeParam, sort: sortParam } = await searchParams;
   const session = await getSession();
   const userId = session!.user!.id!;
 
@@ -57,15 +46,11 @@ export default async function SprintDetailPage({
 
   if (!membership) notFound();
 
-  // Parse comma-separated multi-value params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
   const sorts = parseSorts(sortParam);
 
-  // Build task where-clause for filters
   const taskWhere: Record<string, unknown> = {};
   if (q) {
     taskWhere.OR = [
@@ -113,17 +98,12 @@ export default async function SprintDetailPage({
     _count: { select: { comments: true } },
   } as const;
 
-  // Page sizes per column type
   const PAGE_SIZE_DEFAULT = 20;
   const PAGE_SIZE_COMPLETED = 20;
 
-  // Build orderBy from sort options
   const orderBy =
     sorts.length > 0
-      ? [
-          ...sorts.map((s) => ({ [s.field]: s.direction })),
-          { createdAt: "desc" as const },
-        ]
+      ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
       : [{ createdAt: "desc" as const }];
 
   const sprintTaskWhere = {
@@ -131,89 +111,76 @@ export default async function SprintDetailPage({
     ...taskWhere,
   };
 
-  const [
-    sprint,
-    allSprintTasks,
-    countsByStatus,
-    totalTaskCount,
-    tags,
-    members,
-    unassignedTasks,
-    boards,
-  ] = await Promise.all([
-    prisma.sprint.findUnique({
-      where: { id: sprintId },
-      include: {
-        tasks: {
-          select: {
-            id: true,
-            status: true,
-            startDate: true,
-            dueDate: true,
-            title: true,
-            description: true,
-            priority: true,
-            boardId: true,
-            parentTaskId: true,
+  const [sprint, allSprintTasks, countsByStatus, totalTaskCount, tags, members, unassignedTasks, boards] =
+    await Promise.all([
+      prisma.sprint.findUnique({
+        where: { id: sprintId },
+        include: {
+          tasks: {
+            select: {
+              id: true,
+              status: true,
+              startDate: true,
+              dueDate: true,
+              title: true,
+              description: true,
+              priority: true,
+              boardId: true,
+              parentTaskId: true,
+            },
+            where: hasTaskFilter ? taskWhere : undefined,
+            orderBy: { createdAt: "desc" },
           },
-          where: hasTaskFilter ? taskWhere : undefined,
-          orderBy: { createdAt: "desc" },
         },
-      },
-    }),
-    // Single task query instead of 4 separate findMany calls
-    prisma.task.findMany({
-      where: sprintTaskWhere,
-      orderBy,
-      include: taskInclude,
-    }),
-    // Single groupBy instead of 4 separate count() calls
-    prisma.task.groupBy({
-      by: ["status"],
-      where: sprintTaskWhere,
-      _count: true,
-    }),
-    // Always get total count for the sprint (unfiltered)
-    prisma.task.count({
-      where: { sprints: { some: { id: sprintId } } },
-    }),
-    prisma.tag.findMany({
-      where: { workspaceId },
-      select: { id: true, name: true, color: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.workspaceMember.findMany({
-      where: { workspaceId },
-      select: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
-      orderBy: { user: { name: "asc" } },
-    }),
-    // Moved from the second Promise.all to avoid a sequential waterfall
-    prisma.task.findMany({
-      where: {
-        board: { workspaceId },
-        sprints: { none: { id: sprintId } },
-      },
-      select: {
-        id: true,
-        title: true,
-        board: { select: { name: true } },
-        status: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }),
-    prisma.board.findMany({
-      where: { workspaceId, isActive: true },
-      select: { id: true, name: true },
-      orderBy: { displayOrder: "asc" },
-    }),
-  ]);
+      }),
+      prisma.task.findMany({
+        where: sprintTaskWhere,
+        orderBy,
+        include: taskInclude,
+      }),
+      prisma.task.groupBy({
+        by: ["status"],
+        where: sprintTaskWhere,
+        _count: true,
+      }),
+      prisma.task.count({
+        where: { sprints: { some: { id: sprintId } } },
+      }),
+      prisma.tag.findMany({
+        where: { workspaceId },
+        select: { id: true, name: true, color: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.workspaceMember.findMany({
+        where: { workspaceId },
+        select: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+        },
+        orderBy: { user: { name: "asc" } },
+      }),
+      prisma.task.findMany({
+        where: {
+          board: { workspaceId },
+          sprints: { none: { id: sprintId } },
+        },
+        select: {
+          id: true,
+          title: true,
+          board: { select: { name: true } },
+          status: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+      prisma.board.findMany({
+        where: { workspaceId, isActive: true },
+        select: { id: true, name: true },
+        orderBy: { displayOrder: "asc" },
+      }),
+    ]);
 
   if (!sprint || sprint.workspaceId !== workspaceId) notFound();
 
-  // Split tasks by status and apply per-column page limits
   const tasksByStatusRaw: Record<string, typeof allSprintTasks> = {};
   for (const task of allSprintTasks) {
     const list = (tasksByStatusRaw[task.status] ??= []);
@@ -227,24 +194,11 @@ export default async function SprintDetailPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(
-    0,
-    statusPageSizes["NOT_STARTED"],
-  );
-  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(
-    0,
-    statusPageSizes["IN_PROGRESS"],
-  );
-  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(
-    0,
-    statusPageSizes["IN_REVIEW"],
-  );
-  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(
-    0,
-    statusPageSizes["COMPLETED"],
-  );
+  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(0, statusPageSizes["NOT_STARTED"]);
+  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(0, statusPageSizes["IN_PROGRESS"]);
+  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
+  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
 
-  // Build count map from groupBy result
   const countMap: Record<string, number> = {};
   for (const row of countsByStatus) {
     countMap[row.status] = row._count;
@@ -267,37 +221,23 @@ export default async function SprintDetailPage({
     totalCompletedCount = completedCount;
   }
 
-  const effectivePerms = getEffectivePermissions(
-    membership.role.permissions,
-    userId,
-    membership.workspace.createdById,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
   const canEdit = hasPermission(effectivePerms, Permission.EDIT_CONTENT);
 
-  const mapTask = (
-    t: Awaited<
-      ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>
-    >[number],
-  ) => ({
+  const mapTask = (t: Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number]) => ({
     ...t,
     boardId: t.board.id,
     commentCount: t._count.comments,
     subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
     subtaskTotal: t.subtasks.length,
-    subtaskCompleted: t.subtasks.filter(
-      (s: { status: string }) => s.status === "COMPLETED",
-    ).length,
+    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
   });
 
   type MappedTask = ReturnType<typeof mapTask>;
 
   const tasksByStatus: Record<string, MappedTask[]> = {
-    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(
-      mapTask,
-    ),
-    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(
-      mapTask,
-    ),
+    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
+    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
     IN_REVIEW: (inReviewTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
     COMPLETED: (completedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
   };
@@ -307,13 +247,9 @@ export default async function SprintDetailPage({
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder =
-          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder =
-          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc"
-          ? aOrder - bOrder
-          : bOrder - aOrder;
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
     }
   }
@@ -328,20 +264,14 @@ export default async function SprintDetailPage({
   // Full (unsliced) columns for the list view
   const allTasksByStatus: Record<string, MappedTask[]> = {};
   for (const status of STATUS_ORDER) {
-    allTasksByStatus[status] = (
-      (tasksByStatusRaw[status] ?? []) as Parameters<typeof mapTask>[0][]
-    ).map(mapTask);
+    allTasksByStatus[status] = ((tasksByStatusRaw[status] ?? []) as Parameters<typeof mapTask>[0][]).map(mapTask);
   }
   if (prioritySort) {
     for (const tasks of Object.values(allTasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder =
-          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder =
-          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc"
-          ? aOrder - bOrder
-          : bOrder - aOrder;
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
     }
   }
@@ -374,20 +304,13 @@ export default async function SprintDetailPage({
     const end = new Date(sprint.endDate).getTime();
     const total = end - start;
     if (total > 0) {
-      progress = Math.min(
-        100,
-        Math.max(0, ((now.getTime() - start) / total) * 100),
-      );
+      progress = Math.min(100, Math.max(0, ((now.getTime() - start) / total) * 100));
     }
   }
 
-  const taskCompletion =
-    totalTaskCount > 0
-      ? Math.round((totalCompletedCount / totalTaskCount) * 100)
-      : 0;
+  const taskCompletion = totalTaskCount > 0 ? Math.round((totalCompletedCount / totalTaskCount) * 100) : 0;
 
-  const filteredCount =
-    notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -402,14 +325,10 @@ export default async function SprintDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-semibold text-fg-primary">
-              {sprint.title}
-            </h1>
+            <h1 className="font-mono text-lg font-semibold text-fg-primary">{sprint.title}</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                sprint.isActive
-                  ? "bg-accent/10 text-accent"
-                  : "bg-bg-secondary text-fg-muted"
+                sprint.isActive ? "bg-accent/10 text-accent" : "bg-bg-secondary text-fg-muted"
               }`}
             >
               {sprint.isActive ? "Active" : "Closed"}
@@ -472,10 +391,7 @@ export default async function SprintDetailPage({
           <div className="mt-2 flex items-center gap-2">
             <span className="text-[11px] text-fg-muted">Tasks:</span>
             <div className="flex-1 h-1.5 rounded-full bg-bg-secondary">
-              <div
-                className="h-1.5 rounded-full bg-[#6bc96b] transition-all"
-                style={{ width: `${taskCompletion}%` }}
-              />
+              <div className="h-1.5 rounded-full bg-[#6bc96b] transition-all" style={{ width: `${taskCompletion}%` }} />
             </div>
             <span className="text-[11px] text-fg-muted">
               {totalCompletedCount}/{totalTaskCount}

@@ -44,12 +44,10 @@ export function LeaveWorkspaceButton({
     <form action={action}>
       <input type="hidden" name="workspaceId" value={workspaceId} />
 
-      {state?.error && (
-        <p className="mb-2 text-xs text-accent-emphasis">{state.error}</p>
-      )}
+      {state?.error && <p className="mb-2 text-xs text-accent-emphasis">{state.error}</p>}
 
       {leaveWarning.isLastMember && (
-        <div className="mb-3 rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
+        <div className="mb-3 alert-error">
           You are the last member of this workspace.
           {leaveWarning.immediate
             ? " Leaving will permanently delete the workspace and all its data."

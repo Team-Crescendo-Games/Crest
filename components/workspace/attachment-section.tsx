@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import {
-  Paperclip,
-  Upload,
-  Trash2,
-  FileText,
-  Image as ImageIcon,
-  File,
-  X,
-} from "lucide-react";
+import { Paperclip, Upload, Trash2, FileText, Image as ImageIcon, File, X } from "lucide-react";
 
 interface Attachment {
   id: string;
@@ -169,13 +161,11 @@ export function AttachmentSection({
       <h3 className="flex items-center gap-2 font-mono text-xs font-medium text-fg-secondary">
         <Paperclip size={13} className="text-accent" />
         Attachments
-        <span className="text-[11px] text-fg-muted">
-          ({attachments.length})
-        </span>
+        <span className="text-[11px] text-fg-muted">({attachments.length})</span>
       </h3>
 
       {error && (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
+        <div className="mt-2 flex items-center justify-between alert-error">
           {error}
           <button onClick={() => setError(null)}>
             <X size={12} />
@@ -186,9 +176,7 @@ export function AttachmentSection({
       {/* Upload area */}
       <div
         className={`mt-3 cursor-pointer rounded-md border-2 border-dashed p-2.5 text-center transition-colors ${
-          dragOver
-            ? "border-accent/50 bg-accent/5"
-            : "border-border hover:border-accent/30 hover:bg-accent/5"
+          dragOver ? "border-accent/50 bg-accent/5" : "border-border hover:border-accent/30 hover:bg-accent/5"
         }`}
         onClick={() => !uploading && fileInputRef.current?.click()}
         onDragOver={(e) => {
@@ -198,12 +186,7 @@ export function AttachmentSection({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
 
         {uploading ? (
           <div className="flex items-center justify-center gap-2 text-xs text-fg-muted">
@@ -214,8 +197,7 @@ export function AttachmentSection({
           <div>
             <Upload size={14} className="mx-auto text-fg-muted" />
             <p className="mt-1 text-[11px] text-fg-muted">
-              Drop a file or{" "}
-              <span className="font-medium text-accent">browse</span>: Max 10 MB
+              Drop a file or <span className="font-medium text-accent">browse</span>: Max 10 MB
             </p>
           </div>
         )}
@@ -236,14 +218,10 @@ export function AttachmentSection({
               >
                 <FileIcon mimeType={att.mimeType} />
                 <span className="font-mono">{att.fileName}</span>
-                <span className="text-[11px] text-fg-muted">
-                  {formatFileSize(att.fileSize)}
-                </span>
+                <span className="text-[11px] text-fg-muted">{formatFileSize(att.fileSize)}</span>
               </button>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-fg-muted">
-                  {att.uploadedBy.name}
-                </span>
+                <span className="text-[11px] text-fg-muted">{att.uploadedBy.name}</span>
                 <button
                   onClick={() => deleteAttachment(att.id)}
                   className="rounded p-0.5 text-fg-muted transition-colors hover:text-accent-emphasis"

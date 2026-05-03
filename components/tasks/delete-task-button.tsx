@@ -15,16 +15,13 @@ export function DeleteTaskButton({
   boardId: string;
 }) {
   const router = useRouter();
-  const [, action, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await deleteTask(prev, formData);
-      if (result?.success) {
-        router.push(`/w/${workspaceId}/b/${boardId}`);
-      }
-      return result;
-    },
-    null,
-  );
+  const [, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await deleteTask(prev, formData);
+    if (result?.success) {
+      router.push(`/w/${workspaceId}/b/${boardId}`);
+    }
+    return result;
+  }, null);
 
   return (
     <form action={action}>

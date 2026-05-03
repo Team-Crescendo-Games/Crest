@@ -13,7 +13,7 @@ export default function SetPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleEmailSubmit(e: React.FormEvent) {
+  async function handleEmailSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -34,7 +34,7 @@ export default function SetPasswordPage() {
     }
   }
 
-  async function handlePasswordSubmit(e: React.FormEvent) {
+  async function handlePasswordSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     setError("");
 
@@ -73,42 +73,28 @@ export default function SetPasswordPage() {
       <div className="w-full max-w-sm rounded-lg border border-border bg-bg-elevated/80 p-8 shadow-[0_0_40px_-12px] shadow-accent/15 backdrop-blur-sm">
         <div className="flex items-center gap-2.5 mb-6">
           <Logo size={28} />
-          <h1 className="font-mono text-lg font-semibold tracking-tight text-accent">
-            Set Password
-          </h1>
+          <h1 className="font-mono text-lg font-semibold tracking-tight text-accent">Set Password</h1>
         </div>
 
         {step === "email" && (
           <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <p className="text-xs text-fg-muted">
-              Enter your email to set a password for your migrated account.
-            </p>
+            <p className="text-xs text-fg-muted">Enter your email to set a password for your migrated account.</p>
 
-            {error && (
-              <div className="rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-error">{error}</div>}
 
             <div>
-              <label className="block text-xs font-medium text-fg-secondary">
-                Email
-              </label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
                 placeholder="you@company.com"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="w-full btn-primary">
               {loading ? "Checking..." : "Continue"}
             </button>
           </form>
@@ -117,20 +103,13 @@ export default function SetPasswordPage() {
         {step === "password" && (
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <p className="text-xs text-fg-muted">
-              Setting password for{" "}
-              <span className="text-fg-primary">{email}</span>
+              Setting password for <span className="text-fg-primary">{email}</span>
             </p>
 
-            {error && (
-              <div className="rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-error">{error}</div>}
 
             <div>
-              <label className="block text-xs font-medium text-fg-secondary">
-                New Password
-              </label>
+              <label className="form-label">New Password</label>
               <input
                 type="password"
                 value={password}
@@ -138,28 +117,22 @@ export default function SetPasswordPage() {
                 required
                 minLength={8}
                 placeholder="At least 8 characters"
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-fg-secondary">
-                Confirm Password
-              </label>
+              <label className="form-label">Confirm Password</label>
               <input
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
-                className="mt-1.5 block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+                className="mt-1.5 block w-full input-field"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="w-full btn-primary">
               {loading ? "Setting..." : "Set Password"}
             </button>
           </form>
@@ -167,13 +140,8 @@ export default function SetPasswordPage() {
 
         {step === "done" && (
           <div className="space-y-4 text-center">
-            <p className="text-sm text-fg-primary">
-              Password set successfully.
-            </p>
-            <Link
-              href="/sign-in"
-              className="block w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary hover:bg-accent-emphasis"
-            >
+            <p className="text-sm text-fg-primary">Password set successfully.</p>
+            <Link href="/sign-in" className="block w-full btn-primary">
               Sign in
             </Link>
           </div>
@@ -182,10 +150,7 @@ export default function SetPasswordPage() {
         {step !== "done" && (
           <p className="mt-4 text-center text-xs text-fg-muted">
             Already have a password?{" "}
-            <Link
-              href="/sign-in"
-              className="text-accent hover:text-accent-emphasis"
-            >
+            <Link href="/sign-in" className="text-accent hover:text-accent-emphasis">
               Sign in
             </Link>
           </p>

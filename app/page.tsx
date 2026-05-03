@@ -45,16 +45,12 @@ export default async function DashboardPage({
   const session = await auth();
   const userId = session!.user!.id!;
 
-  // Parse filter params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const workspaceFilters = parseMulti(workspaceParam);
   const boardFilters = parseMulti(boardParam);
   const sorts = parseSorts(sortParam);
 
-  // Build task where-clause
   const taskWhere: Record<string, unknown> = {
     assignees: { some: { id: userId } },
   };
@@ -79,18 +75,13 @@ export default async function DashboardPage({
   if (workspaceFilters.length > 0) {
     taskWhere.board = {
       ...(taskWhere.board as Record<string, unknown> | undefined),
-      workspaceId:
-        workspaceFilters.length === 1
-          ? workspaceFilters[0]
-          : { in: workspaceFilters },
+      workspaceId: workspaceFilters.length === 1 ? workspaceFilters[0] : { in: workspaceFilters },
     };
   }
   if (boardFilters.length > 0) {
-    taskWhere.boardId =
-      boardFilters.length === 1 ? boardFilters[0] : { in: boardFilters };
+    taskWhere.boardId = boardFilters.length === 1 ? boardFilters[0] : { in: boardFilters };
   }
 
-  // Count tasks per status + sum all story points for the current user (with filters)
   const statusCountRows = await prisma.task.groupBy({
     by: ["status"],
     where: taskWhere as never,
@@ -104,77 +95,66 @@ export default async function DashboardPage({
     totalPoints += row._sum.points ?? 0;
   }
 
-  // Load first page of tasks per column + aggregate stats + metrics in parallel
-  const [
-    workspaceCount,
-    notifResult,
-    initialWeeklyPoints,
-    initialTagData,
-    userWorkspaces,
-    ...columnTaskResults
-  ] = await Promise.all([
-    prisma.workspaceMember.count({ where: { userId } }),
-    prisma.$transaction([
-      prisma.notification.findMany({
+  const [workspaceCount, notifResult, initialWeeklyPoints, initialTagData, userWorkspaces, ...columnTaskResults] =
+    await Promise.all([
+      prisma.workspaceMember.count({ where: { userId } }),
+      prisma.$transaction([
+        prisma.notification.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: NOTIF_PAGE,
+          include: {
+            task: {
+              select: {
+                id: true,
+                title: true,
+                board: { select: { id: true, workspaceId: true } },
+              },
+            },
+          },
+        }),
+        prisma.notification.count({ where: { userId } }),
+      ]),
+      getWeeklyCompletedPoints(userId, 8),
+      getTasksByTag(userId),
+      prisma.workspaceMember.findMany({
         where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: NOTIF_PAGE,
-        include: {
-          task: {
+        select: {
+          workspace: {
             select: {
               id: true,
-              title: true,
-              board: { select: { id: true, workspaceId: true } },
+              name: true,
+              boards: {
+                where: { isActive: true },
+                select: { id: true, name: true },
+                orderBy: { displayOrder: "asc" },
+              },
             },
           },
         },
+        orderBy: { workspace: { name: "asc" } },
       }),
-      prisma.notification.count({ where: { userId } }),
-    ]),
-    getWeeklyCompletedPoints(userId, 8),
-    getTasksByTag(userId),
-    // Fetch workspaces the user belongs to (for filter dropdown)
-    prisma.workspaceMember.findMany({
-      where: { userId },
-      select: {
-        workspace: {
-          select: {
-            id: true,
-            name: true,
-            boards: {
-              where: { isActive: true },
-              select: { id: true, name: true },
-              orderBy: { displayOrder: "asc" },
-            },
+      ...STATUS_ORDER.map((status) =>
+        prisma.task.findMany({
+          where: {
+            ...taskWhere,
+            status,
+          } as never,
+          orderBy:
+            sorts.length > 0
+              ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
+              : [{ createdAt: "desc" as const }],
+          take: TASKS_PER_COLUMN,
+          include: {
+            assignees: { select: { id: true, name: true, image: true } },
+            tags: { select: { name: true, color: true } },
+            board: { select: { id: true, name: true, workspaceId: true } },
+            subtasks: { select: { id: true, status: true } },
+            _count: { select: { comments: true } },
           },
-        },
-      },
-      orderBy: { workspace: { name: "asc" } },
-    }),
-    ...STATUS_ORDER.map((status) =>
-      prisma.task.findMany({
-        where: {
-          ...taskWhere,
-          status,
-        } as never,
-        orderBy:
-          sorts.length > 0
-            ? [
-                ...sorts.map((s) => ({ [s.field]: s.direction })),
-                { createdAt: "desc" as const },
-              ]
-            : [{ createdAt: "desc" as const }],
-        take: TASKS_PER_COLUMN,
-        include: {
-          assignees: { select: { id: true, name: true, image: true } },
-          tags: { select: { name: true, color: true } },
-          board: { select: { id: true, name: true, workspaceId: true } },
-          subtasks: { select: { id: true, status: true } },
-          _count: { select: { comments: true } },
-        },
-      }),
-    ),
-  ]);
+        }),
+      ),
+    ]);
 
   const [initialNotifications, totalNotifications] = notifResult;
 
@@ -194,8 +174,7 @@ export default async function DashboardPage({
       commentCount: t._count.comments,
       subtaskIds: t.subtasks.map((s) => s.id),
       subtaskTotal: t.subtasks.length,
-      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED")
-        .length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
     })),
   }));
 
@@ -204,18 +183,13 @@ export default async function DashboardPage({
   if (prioritySort) {
     for (const col of columns) {
       col.tasks.sort((a, b) => {
-        const aOrder =
-          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder =
-          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc"
-          ? aOrder - bOrder
-          : bOrder - aOrder;
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
     }
   }
 
-  // Build per-column counts and page sizes for the kanban pagination
   const columnCounts: Record<string, number> = {};
   const columnPageSizes: Record<string, number> = {};
   for (const status of STATUS_ORDER) {
@@ -224,31 +198,22 @@ export default async function DashboardPage({
     columnPageSizes[status] = TASKS_PER_COLUMN;
   }
 
-  // Build workspace and board options for filters
   const workspaceOptions = userWorkspaces.map((m) => m.workspace);
   // If workspace filter is active, only show boards from those workspaces
   const boardOptions =
     workspaceFilters.length > 0
       ? workspaceOptions
           .filter((w) => workspaceFilters.includes(w.id))
-          .flatMap((w) =>
-            w.boards.map((b) => ({ ...b, workspaceName: w.name })),
-          )
-      : workspaceOptions.flatMap((w) =>
-          w.boards.map((b) => ({ ...b, workspaceName: w.name })),
-        );
+          .flatMap((w) => w.boards.map((b) => ({ ...b, workspaceName: w.name })))
+      : workspaceOptions.flatMap((w) => w.boards.map((b) => ({ ...b, workspaceName: w.name })));
 
-  // Collect all tags across the user's workspaces for the tag filter
   const allTagsRaw = await prisma.tag.findMany({
     where: {
       workspace: {
         members: { some: { userId } },
         ...(workspaceFilters.length > 0
           ? {
-              id:
-                workspaceFilters.length === 1
-                  ? workspaceFilters[0]
-                  : { in: workspaceFilters },
+              id: workspaceFilters.length === 1 ? workspaceFilters[0] : { in: workspaceFilters },
             }
           : {}),
       },
@@ -272,13 +237,8 @@ export default async function DashboardPage({
     });
 
   const hasFilters =
-    !!q ||
-    priorities.length > 0 ||
-    tagFilters.length > 0 ||
-    workspaceFilters.length > 0 ||
-    boardFilters.length > 0;
+    !!q || priorities.length > 0 || tagFilters.length > 0 || workspaceFilters.length > 0 || boardFilters.length > 0;
 
-  // Build filter state to pass to DashboardKanban for paginated loading
   const dashboardFilters = {
     q,
     priorities,
@@ -293,12 +253,9 @@ export default async function DashboardPage({
       {/* Header */}
       <div>
         <h1 className="font-mono text-lg font-semibold text-fg-primary">
-          Welcome back,{" "}
-          <span className="text-accent">{session!.user!.name}</span>
+          Welcome back, <span className="text-accent">{session!.user!.name}</span>
         </h1>
-        <p className="mt-1 text-xs text-fg-muted">
-          Here&apos;s what&apos;s happening across your workspaces.
-        </p>
+        <p className="mt-1 text-xs text-fg-muted">Here&apos;s what&apos;s happening across your workspaces.</p>
       </div>
 
       {/* Stats + Notifications row */}
@@ -307,26 +264,10 @@ export default async function DashboardPage({
         <div className="space-y-3">
           <SectionHeading>Overview</SectionHeading>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              label="Workspaces"
-              value={workspaceCount}
-              barColor="#f1c258"
-            />
-            <StatCard
-              label="Assigned Tasks"
-              value={totalAssigned}
-              barColor="#f0a468"
-            />
-            <StatCard
-              label="Completed"
-              value={completedTasks}
-              barColor="#6bc96b"
-            />
-            <StatCard
-              label="Total Points"
-              value={totalPoints}
-              barColor="#9c9c98"
-            />
+            <StatCard label="Workspaces" value={workspaceCount} barColor="#f1c258" />
+            <StatCard label="Assigned Tasks" value={totalAssigned} barColor="#f0a468" />
+            <StatCard label="Completed" value={completedTasks} barColor="#6bc96b" />
+            <StatCard label="Total Points" value={totalPoints} barColor="#9c9c98" />
           </div>
         </div>
 
@@ -341,10 +282,7 @@ export default async function DashboardPage({
             )}
           </div>
           <div className="rounded-md border border-border bg-bg-elevated/60 p-3 backdrop-blur-sm max-h-[320px] overflow-y-auto">
-            <NotificationFeed
-              initial={initialNotifications}
-              totalCount={totalNotifications}
-            />
+            <NotificationFeed initial={initialNotifications} totalCount={totalNotifications} />
           </div>
         </div>
       </div>
@@ -362,10 +300,7 @@ export default async function DashboardPage({
           currentTags={tagFilters}
           currentAssignees={[]}
           extraParams={{
-            workspace:
-              workspaceFilters.length > 0
-                ? workspaceFilters.join(",")
-                : undefined,
+            workspace: workspaceFilters.length > 0 ? workspaceFilters.join(",") : undefined,
             board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
           }}
           extraControls={
@@ -379,14 +314,8 @@ export default async function DashboardPage({
               <SortControls
                 currentSorts={sorts}
                 extraParams={{
-                  workspace:
-                    workspaceFilters.length > 0
-                      ? workspaceFilters.join(",")
-                      : undefined,
-                  board:
-                    boardFilters.length > 0
-                      ? boardFilters.join(",")
-                      : undefined,
+                  workspace: workspaceFilters.length > 0 ? workspaceFilters.join(",") : undefined,
+                  board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
                 }}
               />
             </>
@@ -395,9 +324,7 @@ export default async function DashboardPage({
 
         {totalAssigned === 0 ? (
           <p className="py-8 text-center text-xs text-fg-muted">
-            {hasFilters
-              ? "No tasks match your filters."
-              : "No tasks assigned to you yet."}
+            {hasFilters ? "No tasks match your filters." : "No tasks assigned to you yet."}
           </p>
         ) : (
           <DashboardKanban
@@ -413,11 +340,7 @@ export default async function DashboardPage({
       {/* Metrics */}
       <div className="space-y-3">
         <SectionHeading>Metrics</SectionHeading>
-        <UserMetrics
-          userId={userId}
-          initialWeeklyData={initialWeeklyPoints}
-          initialTagData={initialTagData}
-        />
+        <UserMetrics userId={userId} initialWeeklyData={initialWeeklyPoints} initialTagData={initialTagData} />
       </div>
     </div>
   );
@@ -426,38 +349,19 @@ export default async function DashboardPage({
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="font-mono text-sm font-medium text-fg-primary">
-        {children}
-      </h2>
+      <h2 className="font-mono text-sm font-medium text-fg-primary">{children}</h2>
       <div className="mt-1 h-px w-8 bg-accent-subtle" />
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  barColor,
-}: {
-  label: string;
-  value: number;
-  barColor?: string;
-}) {
+function StatCard({ label, value, barColor }: { label: string; value: number; barColor?: string }) {
   return (
     <div className="relative overflow-hidden rounded-md border border-border bg-bg-elevated/60 backdrop-blur-sm">
-      {barColor && (
-        <div
-          className="absolute left-0 top-0 h-full w-1"
-          style={{ backgroundColor: barColor }}
-        />
-      )}
+      {barColor && <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: barColor }} />}
       <div className="p-4 pl-5">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-fg-muted">
-          {label}
-        </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold text-fg-primary">
-          {value}
-        </p>
+        <p className="text-[11px] font-medium uppercase tracking-wider text-fg-muted">{label}</p>
+        <p className="mt-1.5 font-mono text-2xl font-semibold text-fg-primary">{value}</p>
       </div>
     </div>
   );

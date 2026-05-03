@@ -3,12 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { UserAvatar } from "@/components/common/user-avatar";
-import {
-  STATUS_LABELS,
-  STATUS_COLORS,
-  PRIORITY_LABELS,
-  PRIORITY_COLORS,
-} from "@/lib/task-enums";
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -47,23 +42,15 @@ export function TaskListView({
   workspaceId: string;
   boardId?: string;
 }) {
-  const allTasks = useMemo(
-    () => columns.flatMap((col) => col.tasks),
-    [columns],
-  );
+  const allTasks = useMemo(() => columns.flatMap((col) => col.tasks), [columns]);
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(allTasks.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageTasks = allTasks.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const pageTasks = allTasks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   if (allTasks.length === 0) {
-    return (
-      <p className="py-8 text-center text-xs text-fg-muted">No tasks found.</p>
-    );
+    return <p className="py-8 text-center text-xs text-fg-muted">No tasks found.</p>;
   }
 
   /** Build page numbers with ellipsis for large page counts. */
@@ -85,9 +72,8 @@ export function TaskListView({
     totalPages > 1 ? (
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-fg-muted">
-          {(currentPage - 1) * PAGE_SIZE + 1}–
-          {Math.min(currentPage * PAGE_SIZE, allTasks.length)} of{" "}
-          {allTasks.length} tasks
+          {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, allTasks.length)} of {allTasks.length}{" "}
+          tasks
         </p>
         <div className="flex items-center gap-1">
           <button
@@ -101,10 +87,7 @@ export function TaskListView({
 
           {pageNumbers().map((p, i) =>
             p === "ellipsis" ? (
-              <span
-                key={`ellipsis-${i}`}
-                className="px-0.5 text-[10px] text-fg-muted"
-              >
+              <span key={`ellipsis-${i}`} className="px-0.5 text-[10px] text-fg-muted">
                 …
               </span>
             ) : (
@@ -189,15 +172,13 @@ export function TaskListView({
                     className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
                     style={{
                       color: STATUS_COLORS[task.status as TaskStatus],
-                      backgroundColor:
-                        STATUS_COLORS[task.status as TaskStatus] + "18",
+                      backgroundColor: STATUS_COLORS[task.status as TaskStatus] + "18",
                     }}
                   >
                     <span
                       className="h-1.5 w-1.5 rounded-full"
                       style={{
-                        backgroundColor:
-                          STATUS_COLORS[task.status as TaskStatus],
+                        backgroundColor: STATUS_COLORS[task.status as TaskStatus],
                       }}
                     />
                     {STATUS_LABELS[task.status as TaskStatus]}
@@ -219,21 +200,14 @@ export function TaskListView({
                 {/* Assignees */}
                 <div className="flex -space-x-1">
                   {task.assignees.slice(0, 3).map((a) => (
-                    <UserAvatar
-                      key={a.id}
-                      name={a.name}
-                      image={a.image}
-                      size={18}
-                    />
+                    <UserAvatar key={a.id} name={a.name} image={a.image} size={18} />
                   ))}
                   {task.assignees.length > 3 && (
                     <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-primary">
                       +{task.assignees.length - 3}
                     </span>
                   )}
-                  {task.assignees.length === 0 && (
-                    <span className="text-[10px] text-fg-muted">—</span>
-                  )}
+                  {task.assignees.length === 0 && <span className="text-[10px] text-fg-muted">—</span>}
                 </div>
 
                 {/* Due date */}
@@ -254,9 +228,7 @@ export function TaskListView({
                 {/* Points */}
                 <div className="text-right">
                   {task.points != null ? (
-                    <span className="text-[10px] font-medium text-fg-secondary">
-                      {task.points}
-                    </span>
+                    <span className="text-[10px] font-medium text-fg-secondary">{task.points}</span>
                   ) : (
                     <span className="text-[10px] text-fg-muted">—</span>
                   )}

@@ -4,11 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { TaskPriority } from "@/prisma/generated/prisma/enums";
-import {
-  hasPermission,
-  getEffectivePermissions,
-  Permission,
-} from "@/lib/permissions";
+import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { BoardActions } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { BoardViews } from "@/components/boards/board-views";
@@ -23,10 +19,7 @@ import {
 } from "@/lib/task-enums";
 import { parseMulti } from "@/lib/url-helpers";
 
-export default async function BoardDetailPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string; boardId: string }>;
   searchParams: Promise<{
     q?: string;
@@ -35,15 +28,11 @@ export default async function BoardDetailPage({
     assignee?: string;
     sort?: string;
   }>;
-}) {
+}
+
+export default async function BoardDetailPage({ params, searchParams }: Props) {
   const { workspaceId, boardId } = await params;
-  const {
-    q,
-    priority: priorityParam,
-    tag: tagParam,
-    assignee: assigneeParam,
-    sort: sortParam,
-  } = await searchParams;
+  const { q, priority: priorityParam, tag: tagParam, assignee: assigneeParam, sort: sortParam } = await searchParams;
   const session = await getSession();
   const userId = session!.user!.id!;
 
@@ -54,15 +43,11 @@ export default async function BoardDetailPage({
 
   if (!membership) notFound();
 
-  // Parse comma-separated multi-value params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
   const sorts = parseSorts(sortParam);
 
-  // Build task where-clause for filters
   const taskWhere: Record<string, unknown> = {};
   if (q) {
     taskWhere.OR = [
@@ -87,7 +72,6 @@ export default async function BoardDetailPage({
     const userIds = assigneeFilters.filter((v) => v !== "unassigned");
 
     if (hasUnassigned && userIds.length > 0) {
-      // "unassigned" OR specific users — match either
       taskWhere.OR = [
         ...(taskWhere.OR ? (taskWhere.OR as unknown[]) : []),
         { assignees: { none: {} } },
@@ -100,7 +84,6 @@ export default async function BoardDetailPage({
     }
   }
 
-  // Page sizes per column type
   const PAGE_SIZE_DEFAULT = 20;
   const PAGE_SIZE_COMPLETED = 20;
 
@@ -112,36 +95,17 @@ export default async function BoardDetailPage({
     _count: { select: { comments: true } },
   } as const;
 
-  // Build orderBy from sort options
   const orderBy =
     sorts.length > 0
-      ? [
-          ...sorts.map((s) => ({ [s.field]: s.direction })),
-          { createdAt: "desc" as const },
-        ]
+      ? [...sorts.map((s) => ({ [s.field]: s.direction })), { createdAt: "desc" as const }]
       : [{ createdAt: "desc" as const }];
 
-  // Fire all independent queries in parallel — use groupBy for counts
-  // instead of 4 separate count() calls, and fetch tasks in one query
-  // instead of 4 separate findMany calls.
-  const [
-    allTasks,
-    countsByStatus,
-    board,
-    totalTaskCount,
-    tags,
-    members,
-    sprints,
-  ] = await Promise.all([
-    // Single task query — fetch up to pageLimit per status via a combined query.
-    // We fetch all statuses at once and split in JS. This trades a slightly
-    // larger result set for 3 fewer round-trips.
+  const [allTasks, countsByStatus, board, totalTaskCount, tags, members, sprints] = await Promise.all([
     prisma.task.findMany({
       where: { boardId, ...taskWhere },
       orderBy,
       include: taskInclude,
     }),
-    // Single groupBy replaces 4 separate count() calls
     prisma.task.groupBy({
       by: ["status"],
       where: { boardId, ...taskWhere },
@@ -168,7 +132,6 @@ export default async function BoardDetailPage({
     }),
   ]);
 
-  // Split tasks by status and apply per-column page limits
   const tasksByStatusRaw: Record<string, typeof allTasks> = {};
   for (const task of allTasks) {
     const list = (tasksByStatusRaw[task.status] ??= []);
@@ -187,7 +150,6 @@ export default async function BoardDetailPage({
   const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
   const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
 
-  // Build count map from groupBy result
   const countMap: Record<string, number> = {};
   for (const row of countsByStatus) {
     countMap[row.status] = row._count;
@@ -199,11 +161,7 @@ export default async function BoardDetailPage({
 
   if (!board || board.workspaceId !== workspaceId) notFound();
 
-  const effectivePerms = getEffectivePermissions(
-    membership.role.permissions,
-    userId,
-    membership.workspace.createdById,
-  );
+  const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
   const canCreate = hasPermission(effectivePerms, Permission.CREATE_CONTENT);
 
   const mapTask = (t: (typeof completedTasks)[number]) => ({
@@ -214,7 +172,6 @@ export default async function BoardDetailPage({
     subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
   });
 
-  // Build per-status task lists
   const tasksByStatus: Record<string, ReturnType<typeof mapTask>[]> = {
     NOT_STARTED: notStartedTasks.map(mapTask),
     IN_PROGRESS: inProgressTasks.map(mapTask),
@@ -222,18 +179,13 @@ export default async function BoardDetailPage({
     COMPLETED: completedTasks.map(mapTask),
   };
 
-  // Re-sort by priority in memory if needed (Prisma sorts enum alphabetically)
   const prioritySort = sorts.find((s) => s.field === "priority");
   if (prioritySort) {
     for (const tasks of Object.values(tasksByStatus)) {
       tasks.sort((a, b) => {
-        const aOrder =
-          PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder =
-          PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc"
-          ? aOrder - bOrder
-          : bOrder - aOrder;
+        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
+        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
     }
   }
@@ -259,18 +211,11 @@ export default async function BoardDetailPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const allTaskCount =
-    notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const allTaskCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
 
-  const hasFilters =
-    !!q ||
-    priorities.length > 0 ||
-    tagFilters.length > 0 ||
-    assigneeFilters.length > 0;
-  const filteredCount =
-    notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const hasFilters = !!q || priorities.length > 0 || tagFilters.length > 0 || assigneeFilters.length > 0;
+  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
 
-  // Build full (unsliced) columns for the list view
   const allColumns = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_LABELS[status],
@@ -291,18 +236,12 @@ export default async function BoardDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-semibold text-fg-primary">
-              {board.name}
-            </h1>
+            <h1 className="font-mono text-lg font-semibold text-fg-primary">{board.name}</h1>
             {!board.isActive && (
-              <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[9px] text-fg-muted">
-                Archived
-              </span>
+              <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[9px] text-fg-muted">Archived</span>
             )}
           </div>
-          {board.description && (
-            <p className="mt-1 text-xs text-fg-muted">{board.description}</p>
-          )}
+          {board.description && <p className="mt-1 text-xs text-fg-muted">{board.description}</p>}
           <div className="mt-1 flex items-center gap-1.5 text-[10px] text-fg-muted">
             <Calendar size={10} />
             Created {board.createdAt.toLocaleDateString()}

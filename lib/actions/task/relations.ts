@@ -19,9 +19,7 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskAssigneesSchema, formData, [
-    "assigneeIds",
-  ]);
+  const parsed = parseFormData(updateTaskAssigneesSchema, formData, ["assigneeIds"]);
   if (!parsed.success) return { error: parsed.error };
   const { taskId, assigneeIds } = parsed.data;
 
@@ -110,9 +108,7 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskSprintsSchema, formData, [
-    "sprintIds",
-  ]);
+  const parsed = parseFormData(updateTaskSprintsSchema, formData, ["sprintIds"]);
   if (!parsed.success) return { error: parsed.error };
   const { taskId, sprintIds, workspaceId } = parsed.data;
 
@@ -229,8 +225,7 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
   // Check if child already has a parent
   if (child.parentTaskId && child.parentTaskId !== parentId) {
     return {
-      error:
-        "This task already has a parent. Remove the existing parent first.",
+      error: "This task already has a parent. Remove the existing parent first.",
     };
   }
 
@@ -243,11 +238,10 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
     }
     if (visited.has(current)) break; // already visited, stop
     visited.add(current);
-    const ancestor: { parentTaskId: string | null } | null =
-      await prisma.task.findUnique({
-        where: { id: current },
-        select: { parentTaskId: true },
-      });
+    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
+      where: { id: current },
+      select: { parentTaskId: true },
+    });
     current = ancestor?.parentTaskId ?? null;
   }
 

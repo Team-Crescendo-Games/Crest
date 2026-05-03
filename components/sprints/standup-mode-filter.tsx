@@ -108,9 +108,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
         type="button"
         onClick={() => select(null)}
         className={`flex cursor-pointer items-center justify-center rounded-full transition-all ${
-          !currentAssignee
-            ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary"
-            : "opacity-60 hover:opacity-100"
+          !currentAssignee ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary" : "opacity-60 hover:opacity-100"
         }`}
         title="All members"
       >
@@ -126,9 +124,7 @@ export function StandupModeFilter({ members }: { members: Member[] }) {
             type="button"
             onClick={() => select(member.id)}
             className={`cursor-pointer rounded-full transition-all ${
-              isActive
-                ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary"
-                : "opacity-60 hover:opacity-100"
+              isActive ? "ring-2 ring-accent ring-offset-1 ring-offset-bg-primary" : "opacity-60 hover:opacity-100"
             }`}
             title={member.name ?? "Member"}
           >

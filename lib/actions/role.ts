@@ -7,12 +7,7 @@ import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
 import { revalidateWorkspace } from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
-import {
-  createRoleSchema,
-  updateRoleSchema,
-  deleteRoleSchema,
-  assignRoleSchema,
-} from "@/lib/validations/role";
+import { createRoleSchema, updateRoleSchema, deleteRoleSchema, assignRoleSchema } from "@/lib/validations/role";
 
 const UNEDITABLE_ROLES = ["Owner"];
 const UNDELETABLE_ROLES = ["Owner", "Member"];
@@ -32,11 +27,7 @@ export async function createRole(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.MANAGE_ROLES,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission to manage roles" };
   }
@@ -82,11 +73,7 @@ export async function updateRole(_prev: unknown, formData: FormData) {
   }
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.MANAGE_ROLES,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }
@@ -124,17 +111,12 @@ export async function deleteRole(_prev: unknown, formData: FormData) {
   }
   if (role._count.members > 0) {
     return {
-      error:
-        "Cannot delete a role that has members assigned. Reassign them first.",
+      error: "Cannot delete a role that has members assigned. Reassign them first.",
     };
   }
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.MANAGE_ROLES,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }
@@ -160,11 +142,7 @@ export async function assignRole(_prev: unknown, formData: FormData) {
   const { memberId, roleId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(
-      session.user.id,
-      workspaceId,
-      Permission.MANAGE_ROLES,
-    );
+    await requireMemberWithPermission(session.user.id, workspaceId, Permission.MANAGE_ROLES);
   } catch {
     return { error: "No permission" };
   }

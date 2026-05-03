@@ -5,25 +5,11 @@
  * adds display metadata (human label + color) that the UI needs.
  */
 
-import type {
-  TaskStatus,
-  TaskPriority,
-} from "@/prisma/generated/prisma/enums";
+import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
-export const TASK_STATUSES: readonly TaskStatus[] = [
-  "NOT_STARTED",
-  "IN_PROGRESS",
-  "IN_REVIEW",
-  "COMPLETED",
-] as const;
+export const TASK_STATUSES: readonly TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"] as const;
 
-export const TASK_PRIORITIES: readonly TaskPriority[] = [
-  "NONE",
-  "LOW",
-  "MEDIUM",
-  "HIGH",
-  "URGENT",
-] as const;
+export const TASK_PRIORITIES: readonly TaskPriority[] = ["NONE", "LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   NOT_STARTED: "Not Started",
@@ -103,12 +89,7 @@ export function parseSorts(value: string | undefined): SortOption[] {
     .split(",")
     .map((part) => {
       const [field, direction] = part.split(":");
-      if (
-        field &&
-        direction &&
-        field in SORT_FIELD_LABELS &&
-        (direction === "asc" || direction === "desc")
-      ) {
+      if (field && direction && field in SORT_FIELD_LABELS && (direction === "asc" || direction === "desc")) {
         return { field: field as SortField, direction: direction as SortDirection };
       }
       return null;

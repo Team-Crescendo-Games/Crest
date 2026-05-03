@@ -3,12 +3,7 @@
 import { useActionState, useState } from "react";
 import { createRole, updateRole, deleteRole } from "@/lib/actions/role";
 import { Plus, Pencil, Trash2, X, Shield } from "lucide-react";
-import {
-  Permission,
-  PERMISSION_LABELS,
-  type PermissionKey,
-  hasPermission,
-} from "@/lib/permissions";
+import { Permission, PERMISSION_LABELS, type PermissionKey, hasPermission } from "@/lib/permissions";
 
 const PRESET_COLORS = [
   "#ef4444",
@@ -55,12 +50,7 @@ export function RoleManager({
       {roles
         .filter((role) => role.name !== "Owner")
         .map((role) => (
-          <RoleItem
-            key={role.id}
-            role={role}
-            workspaceId={workspaceId}
-            canManage={canManage}
-          />
+          <RoleItem key={role.id} role={role} workspaceId={workspaceId} canManage={canManage} />
         ))}
 
       {canManage && !showCreate && (
@@ -73,25 +63,12 @@ export function RoleManager({
         </button>
       )}
 
-      {showCreate && (
-        <CreateRoleForm
-          workspaceId={workspaceId}
-          onClose={() => setShowCreate(false)}
-        />
-      )}
+      {showCreate && <CreateRoleForm workspaceId={workspaceId} onClose={() => setShowCreate(false)} />}
     </div>
   );
 }
 
-function RoleItem({
-  role,
-  workspaceId,
-  canManage,
-}: {
-  role: Role;
-  workspaceId: string;
-  canManage: boolean;
-}) {
+function RoleItem({ role, workspaceId, canManage }: { role: Role; workspaceId: string; canManage: boolean }) {
   const [editing, setEditing] = useState(false);
   const isProtected = PROTECTED_ROLES.includes(role.name);
 
@@ -118,11 +95,7 @@ function RoleItem({
           <span className="text-xs font-medium" style={{ color: role.color }}>
             {role.name}
           </span>
-          {isProtected && (
-            <span className="rounded bg-bg-secondary px-1 py-px text-[10px] text-fg-muted">
-              Default
-            </span>
-          )}
+          {isProtected && <span className="rounded bg-bg-secondary px-1 py-px text-[10px] text-fg-muted">Default</span>}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-fg-muted">
@@ -140,20 +113,14 @@ function RoleItem({
       </div>
       <div className="mt-1 flex flex-wrap gap-1">
         {role.name === "Owner" ? (
-          <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted">
-            Everything
-          </span>
+          <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted">Everything</span>
         ) : (
-          (Object.entries(Permission) as [PermissionKey, number][]).map(
-            ([key, val]) =>
-              hasPermission(role.permissions, val) ? (
-                <span
-                  key={key}
-                  className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted"
-                >
-                  {PERMISSION_LABELS[key]}
-                </span>
-              ) : null,
+          (Object.entries(Permission) as [PermissionKey, number][]).map(([key, val]) =>
+            hasPermission(role.permissions, val) ? (
+              <span key={key} className="rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] text-fg-muted">
+                {PERMISSION_LABELS[key]}
+              </span>
+            ) : null,
           )
         )}
       </div>
@@ -161,21 +128,12 @@ function RoleItem({
   );
 }
 
-function CreateRoleForm({
-  workspaceId,
-  onClose,
-}: {
-  workspaceId: string;
-  onClose: () => void;
-}) {
-  const [state, action, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await createRole(prev, formData);
-      if (result?.success) onClose();
-      return result;
-    },
-    null,
-  );
+function CreateRoleForm({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createRole(prev, formData);
+    if (result?.success) onClose();
+    return result;
+  }, null);
 
   return (
     <RoleForm
@@ -219,18 +177,12 @@ function RoleForm({
   const [color, setColor] = useState(defaultColor);
   const [perms, setPerms] = useState(defaultPermissions);
 
-  const [editState, editAction, editPending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await updateRole(prev, formData);
-      if (result?.success) onCancel();
-      return result;
-    },
-    null,
-  );
-  const [deleteState, deleteAction, deletePending] = useActionState(
-    deleteRole,
-    null,
-  );
+  const [editState, editAction, editPending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await updateRole(prev, formData);
+    if (result?.success) onCancel();
+    return result;
+  }, null);
+  const [deleteState, deleteAction, deletePending] = useActionState(deleteRole, null);
 
   const action = externalAction ?? editAction;
   const pending = externalPending ?? editPending;
@@ -242,30 +194,18 @@ function RoleForm({
   }
 
   return (
-    <form
-      action={action}
-      className="rounded-md border border-border bg-bg-elevated/80 p-3 backdrop-blur-sm"
-    >
+    <form action={action} className="rounded-md border border-border bg-bg-elevated/80 p-3 backdrop-blur-sm">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       {roleId && <input type="hidden" name="roleId" value={roleId} />}
       <input type="hidden" name="color" value={color} />
       <input type="hidden" name="permissions" value={perms.toString()} />
 
-      {error && (
-        <p className="mb-2 text-[11px] text-accent-emphasis">{error}</p>
-      )}
-      {deleteState?.error && (
-        <p className="mb-2 text-[11px] text-accent-emphasis">
-          {deleteState.error}
-        </p>
-      )}
+      {error && <p className="mb-2 text-[11px] text-accent-emphasis">{error}</p>}
+      {deleteState?.error && <p className="mb-2 text-[11px] text-accent-emphasis">{deleteState.error}</p>}
 
       {/* Name + color preview */}
       <div className="mb-3 flex items-center gap-2">
-        <div
-          className="h-5 w-5 shrink-0 rounded-full border border-border"
-          style={{ backgroundColor: color }}
-        />
+        <div className="h-5 w-5 shrink-0 rounded-full border border-border" style={{ backgroundColor: color }} />
         <input
           name="name"
           defaultValue={defaultName}
@@ -286,9 +226,7 @@ function RoleForm({
               type="button"
               onClick={() => setColor(c)}
               className={`h-4 w-4 rounded-full border transition-transform hover:scale-110 ${
-                color === c
-                  ? "border-fg-primary scale-110"
-                  : "border-transparent"
+                color === c ? "border-fg-primary scale-110" : "border-transparent"
               }`}
               style={{ backgroundColor: c }}
             />
@@ -300,22 +238,20 @@ function RoleForm({
       <div className="mb-3">
         <p className="mb-1 text-[11px] text-fg-muted">Permissions</p>
         <div className="space-y-1">
-          {(Object.entries(Permission) as [PermissionKey, number][]).map(
-            ([key, val]) => (
-              <label
-                key={key}
-                className="flex items-center gap-2 rounded px-1.5 py-0.5 text-xs text-fg-primary hover:bg-bg-secondary cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={(perms & val) === val}
-                  onChange={() => togglePerm(val)}
-                  className="rounded border-border text-accent focus:ring-accent/50"
-                />
-                {PERMISSION_LABELS[key]}
-              </label>
-            ),
-          )}
+          {(Object.entries(Permission) as [PermissionKey, number][]).map(([key, val]) => (
+            <label
+              key={key}
+              className="flex items-center gap-2 rounded px-1.5 py-0.5 text-xs text-fg-primary hover:bg-bg-secondary cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={(perms & val) === val}
+                onChange={() => togglePerm(val)}
+                className="rounded border-border text-accent focus:ring-accent/50"
+              />
+              {PERMISSION_LABELS[key]}
+            </label>
+          ))}
         </div>
       </div>
 
@@ -327,11 +263,7 @@ function RoleForm({
             type="button"
             disabled={deletePending || (memberCount ?? 0) > 0}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-fg-muted hover:text-accent-emphasis disabled:opacity-40"
-            title={
-              (memberCount ?? 0) > 0
-                ? "Reassign members before deleting"
-                : "Delete role"
-            }
+            title={(memberCount ?? 0) > 0 ? "Reassign members before deleting" : "Delete role"}
             onClick={() => {
               if (!confirm(`Delete role "${defaultName}"?`)) return;
               const fd = new FormData();

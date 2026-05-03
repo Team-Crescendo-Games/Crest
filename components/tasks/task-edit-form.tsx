@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useActionState,
-  useState,
-  useEffect,
-  lazy,
-  Suspense,
-} from "react";
+import { useActionState, useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { updateTask, getFlowGraphTasks } from "@/lib/actions/task";
 import { TaskActions, FlowModeButton } from "./task-actions";
@@ -18,9 +12,7 @@ import { TaskEditSidebar } from "./task-edit-sidebar";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import type { TaskFormData } from "@/lib/types/task";
 
-const FlowCanvas = lazy(() =>
-  import("@/components/workspace/flow-view").then((m) => ({ default: m.FlowCanvas })),
-);
+const FlowCanvas = lazy(() => import("@/components/workspace/flow-view").then((m) => ({ default: m.FlowCanvas })));
 
 type TaskData = TaskFormData;
 
@@ -71,9 +63,7 @@ export function TaskEditForm({
   const [selectedBoardId, setSelectedBoardId] = useState(task.boardId);
   const [sprintIds, setSprintIds] = useState<string[]>(task.sprintIds);
   const [flowOpen, setFlowOpen] = useState(false);
-  const [flowTasks, setFlowTasks] = useState<Awaited<
-    ReturnType<typeof getFlowGraphTasks>
-  > | null>(null);
+  const [flowTasks, setFlowTasks] = useState<Awaited<ReturnType<typeof getFlowGraphTasks>> | null>(null);
   const [flowLoading, setFlowLoading] = useState(false);
 
   // Fetch the dependency graph when flow mode is opened
@@ -100,16 +90,13 @@ export function TaskEditForm({
     };
   }, [flowOpen, task.id, workspaceId]);
 
-  const [state, formAction, pending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await updateTask(prev, formData);
-      if (result?.success && result.newBoardId) {
-        router.push(`/w/${workspaceId}/b/${result.newBoardId}/t/${task.id}`);
-      }
-      return result;
-    },
-    null,
-  );
+  const [state, formAction, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await updateTask(prev, formData);
+    if (result?.success && result.newBoardId) {
+      router.push(`/w/${workspaceId}/b/${result.newBoardId}/t/${task.id}`);
+    }
+    return result;
+  }, null);
 
   const isDirty =
     title !== task.title ||
@@ -119,12 +106,9 @@ export function TaskEditForm({
     dueDate !== task.dueDate ||
     points !== (task.points?.toString() ?? "") ||
     selectedBoardId !== task.boardId ||
-    JSON.stringify(assigneeIds.slice().sort()) !==
-      JSON.stringify(task.assigneeIds.slice().sort()) ||
-    JSON.stringify(tagIds.slice().sort()) !==
-      JSON.stringify(task.tagIds.slice().sort()) ||
-    JSON.stringify(sprintIds.slice().sort()) !==
-      JSON.stringify(task.sprintIds.slice().sort());
+    JSON.stringify(assigneeIds.slice().sort()) !== JSON.stringify(task.assigneeIds.slice().sort()) ||
+    JSON.stringify(tagIds.slice().sort()) !== JSON.stringify(task.tagIds.slice().sort()) ||
+    JSON.stringify(sprintIds.slice().sort()) !== JSON.stringify(task.sprintIds.slice().sort());
 
   function reset() {
     setTitle(task.title);
@@ -169,16 +153,8 @@ export function TaskEditForm({
       <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
         {/* ── Left column: main content ── */}
         <div className="min-w-0 space-y-4">
-          {state?.success && (
-            <div className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
-              Task updated.
-            </div>
-          )}
-          {state?.error && (
-            <div className="rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis">
-              {state.error}
-            </div>
-          )}
+          {state?.success && <div className="alert-success">Task updated.</div>}
+          {state?.error && <div className="alert-error">{state.error}</div>}
 
           <input
             value={title}
@@ -190,9 +166,7 @@ export function TaskEditForm({
           <DescriptionField value={description} onChange={setDescription} />
 
           <div>
-            <label className="block text-[11px] font-medium text-fg-muted">
-              Points
-            </label>
+            <label className="block text-[11px] font-medium text-fg-muted">Points</label>
             <input
               type="number"
               min={0}
@@ -211,13 +185,7 @@ export function TaskEditForm({
             memberIdMap={memberIdMap}
           />
 
-          {tags.length > 0 && (
-            <TagEditor
-              tags={tags}
-              selectedTagIds={tagIds}
-              onChange={setTagIds}
-            />
-          )}
+          {tags.length > 0 && <TagEditor tags={tags} selectedTagIds={tagIds} onChange={setTagIds} />}
 
           {/* Action row */}
           <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
@@ -260,16 +228,9 @@ export function TaskEditForm({
               members={members}
             />
 
-            <FlowModeButton
-              active={flowOpen}
-              onToggle={() => setFlowOpen((v) => !v)}
-            />
+            <FlowModeButton active={flowOpen} onToggle={() => setFlowOpen((v) => !v)} />
 
-            <DeleteTaskButton
-              taskId={task.id}
-              workspaceId={workspaceId}
-              boardId={boardId}
-            />
+            <DeleteTaskButton taskId={task.id} workspaceId={workspaceId} boardId={boardId} />
           </div>
         </div>
 
@@ -300,17 +261,13 @@ export function TaskEditForm({
         <div className="mt-6">
           {flowLoading ? (
             <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
-              <p className="font-mono text-sm text-fg-muted animate-pulse">
-                Loading dependency graph…
-              </p>
+              <p className="font-mono text-sm text-fg-muted animate-pulse">Loading dependency graph…</p>
             </div>
           ) : flowTasks ? (
             <Suspense
               fallback={
                 <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
-                  <p className="font-mono text-sm text-fg-muted animate-pulse">
-                    Loading flow view…
-                  </p>
+                  <p className="font-mono text-sm text-fg-muted animate-pulse">Loading flow view…</p>
                 </div>
               }
             >
@@ -323,9 +280,7 @@ export function TaskEditForm({
             </Suspense>
           ) : (
             <div className="flex items-center justify-center rounded-md border border-border bg-bg-primary py-16">
-              <p className="font-mono text-sm text-fg-muted">
-                Could not load dependency graph.
-              </p>
+              <p className="font-mono text-sm text-fg-muted">Could not load dependency graph.</p>
             </div>
           )}
         </div>

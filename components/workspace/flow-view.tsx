@@ -11,11 +11,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { Search, X, ZoomIn, ZoomOut, Maximize2, Loader2 } from "lucide-react";
-import {
-  setTaskParent,
-  getFlowGraphTasks,
-  searchWorkspaceTasks,
-} from "@/lib/actions/task";
+import { setTaskParent, getFlowGraphTasks, searchWorkspaceTasks } from "@/lib/actions/task";
 import { STATUS_COLORS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
@@ -56,10 +52,7 @@ const V_GAP = 50;
 // ─── Graph traversal ────────────────────────────────────────────────────────
 
 /** BFS from a root task, following parent/subtask edges. Returns all connected task IDs. */
-function getConnectedGraph(
-  rootId: string,
-  taskMap: Map<string, FlowTask>,
-): Set<string> {
+function getConnectedGraph(rootId: string, taskMap: Map<string, FlowTask>): Set<string> {
   const visited = new Set<string>();
   const queue = [rootId];
 
@@ -104,11 +97,7 @@ function layoutGraph(
   while (true) {
     ancestorVisited.add(topRoot);
     const task = taskMap.get(topRoot);
-    if (
-      !task?.parentTaskId ||
-      !connectedIds.has(task.parentTaskId) ||
-      ancestorVisited.has(task.parentTaskId)
-    ) {
+    if (!task?.parentTaskId || !connectedIds.has(task.parentTaskId) || ancestorVisited.has(task.parentTaskId)) {
       break;
     }
     topRoot = task.parentTaskId;
@@ -208,53 +197,25 @@ function EdgePath({
   );
 }
 
-function DragEdgePath({
-  from,
-  to,
-}: {
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-}) {
+function DragEdgePath({ from, to }: { from: { x: number; y: number }; to: { x: number; y: number } }) {
   const midY = (from.y + to.y) / 2;
   const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
 
-  return (
-    <path
-      d={d}
-      fill="none"
-      stroke="var(--accent)"
-      strokeWidth={2}
-      strokeDasharray="6 4"
-      opacity={0.7}
-    />
-  );
+  return <path d={d} fill="none" stroke="var(--accent)" strokeWidth={2} strokeDasharray="6 4" opacity={0.7} />;
 }
 
 // ─── Task selector ──────────────────────────────────────────────────────────
 
-function TaskSelector({
-  tasks,
-  onSelect,
-}: {
-  tasks: FlowTask[];
-  onSelect: (taskId: string) => void;
-}) {
+function TaskSelector({ tasks, onSelect }: { tasks: FlowTask[]; onSelect: (taskId: string) => void }) {
   const [query, setQuery] = useState("");
 
-  const filtered = query
-    ? tasks.filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))
-    : tasks;
+  const filtered = query ? tasks.filter((t) => t.title.toLowerCase().includes(query.toLowerCase())) : tasks;
 
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <p className="mb-4 font-mono text-sm text-fg-secondary">
-        Select a task to view its dependency graph
-      </p>
+      <p className="mb-4 font-mono text-sm text-fg-secondary">Select a task to view its dependency graph</p>
       <div className="relative w-80">
-        <Search
-          size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
-        />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
         <input
           type="text"
           value={query}
@@ -265,14 +226,10 @@ function TaskSelector({
       </div>
       <div className="mt-3 max-h-64 w-80 overflow-y-auto rounded-md border border-border bg-bg-elevated">
         {filtered.length === 0 ? (
-          <p className="px-3 py-4 text-center text-xs text-fg-muted">
-            No tasks found
-          </p>
+          <p className="px-3 py-4 text-center text-xs text-fg-muted">No tasks found</p>
         ) : (
           filtered.map((task) => {
-            const hasRelations =
-              !!task.parentTaskId ||
-              (task.subtaskIds && task.subtaskIds.length > 0);
+            const hasRelations = !!task.parentTaskId || (task.subtaskIds && task.subtaskIds.length > 0);
             return (
               <button
                 key={task.id}
@@ -285,9 +242,7 @@ function TaskSelector({
                     backgroundColor: STATUS_COLORS[task.status],
                   }}
                 />
-                <span className="flex-1 truncate font-mono text-xs text-fg-primary">
-                  {task.title}
-                </span>
+                <span className="flex-1 truncate font-mono text-xs text-fg-primary">{task.title}</span>
                 {hasRelations && (
                   <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
                     has links
@@ -362,9 +317,7 @@ function AddTaskSearchModal({
     debounceRef.current = setTimeout(() => {
       searchWorkspaceTasks(workspaceId, query)
         .then((res) => {
-          setResults(
-            (res as SearchResult[]).filter((t) => t.id !== prompt.fromId),
-          );
+          setResults((res as SearchResult[]).filter((t) => t.id !== prompt.fromId));
           setSearching(false);
         })
         .catch(() => {
@@ -399,20 +352,14 @@ function AddTaskSearchModal({
           <span className="font-mono text-xs font-medium text-fg-primary">
             Add task as {prompt.fromPort === "child" ? "subtask" : "parent"}
           </span>
-          <button
-            onClick={onClose}
-            className="cursor-pointer text-fg-muted transition-colors hover:text-fg-primary"
-          >
+          <button onClick={onClose} className="cursor-pointer text-fg-muted transition-colors hover:text-fg-primary">
             <X size={14} />
           </button>
         </div>
 
         <div className="p-3">
           <div className="relative">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
-            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               ref={inputRef}
               type="text"
@@ -422,26 +369,17 @@ function AddTaskSearchModal({
               className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 pl-9 font-mono text-xs text-fg-primary placeholder:text-fg-muted focus:border-accent/50 focus:outline-none"
             />
             {searching && (
-              <Loader2
-                size={14}
-                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-fg-muted"
-              />
+              <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-fg-muted" />
             )}
           </div>
 
           <div className="mt-2 max-h-64 overflow-y-auto rounded-md border border-border bg-bg-primary">
             {!query.trim() ? (
-              <p className="px-3 py-6 text-center text-xs text-fg-muted">
-                Start typing to search tasks…
-              </p>
+              <p className="px-3 py-6 text-center text-xs text-fg-muted">Start typing to search tasks…</p>
             ) : searching ? (
-              <p className="px-3 py-6 text-center text-xs text-fg-muted animate-pulse">
-                Searching…
-              </p>
+              <p className="px-3 py-6 text-center text-xs text-fg-muted animate-pulse">Searching…</p>
             ) : results.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs text-fg-muted">
-                No tasks found
-              </p>
+              <p className="px-3 py-6 text-center text-xs text-fg-muted">No tasks found</p>
             ) : (
               results.map((task) => {
                 const alreadyInGraph = existingIds.has(task.id);
@@ -460,12 +398,8 @@ function AddTaskSearchModal({
                       }}
                     />
                     <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                      <span className="truncate font-mono text-xs text-fg-primary">
-                        {task.title}
-                      </span>
-                      <span className="text-[9px] text-fg-muted">
-                        {task.board.name}
-                      </span>
+                      <span className="truncate font-mono text-xs text-fg-primary">{task.title}</span>
+                      <span className="text-[9px] text-fg-muted">{task.board.name}</span>
                     </div>
                     {alreadyInGraph && (
                       <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
@@ -497,19 +431,11 @@ export function FlowCanvas({
   onBack: () => void;
 }) {
   const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
-  const connectedIds = useMemo(
-    () => getConnectedGraph(rootId, taskMap),
-    [rootId, taskMap],
-  );
-  const layoutPositions = useMemo(
-    () => layoutGraph(rootId, connectedIds, taskMap),
-    [rootId, connectedIds, taskMap],
-  );
+  const connectedIds = useMemo(() => getConnectedGraph(rootId, taskMap), [rootId, taskMap]);
+  const layoutPositions = useMemo(() => layoutGraph(rootId, connectedIds, taskMap), [rootId, connectedIds, taskMap]);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dragOverrides, setDragOverrides] = useState<Map<string, NodePosition>>(
-    new Map(),
-  );
+  const [dragOverrides, setDragOverrides] = useState<Map<string, NodePosition>>(new Map());
 
   // Reset drag overrides when the layout changes (tasks/rootId changed)
   const prevLayoutRef = useRef(layoutPositions);
@@ -535,9 +461,7 @@ export function FlowCanvas({
   } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(
-    null,
-  );
+  const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(null);
 
   // Pan & zoom
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -606,8 +530,7 @@ export function FlowCanvas({
       if (e.button !== 0) return;
       // Only pan if clicking on the canvas background
       const target = e.target as HTMLElement;
-      if (target.closest("[data-node]") || target.closest("[data-port]"))
-        return;
+      if (target.closest("[data-node]") || target.closest("[data-port]")) return;
 
       setIsPanning(true);
       panStart.current = {
@@ -636,9 +559,7 @@ export function FlowCanvas({
         });
       } else if (dragLine) {
         const canvasPos = screenToCanvas(e.clientX, e.clientY);
-        setDragLine((prev) =>
-          prev ? { ...prev, x: canvasPos.x, y: canvasPos.y } : null,
-        );
+        setDragLine((prev) => (prev ? { ...prev, x: canvasPos.x, y: canvasPos.y } : null));
       } else if (isPanning) {
         const dx = e.clientX - panStart.current.x;
         const dy = e.clientY - panStart.current.y;
@@ -664,10 +585,7 @@ export function FlowCanvas({
           // Dragged from child port to parent port: fromId is parent, hoveredPort.id is child
           parentId = dragLine.fromId;
           childId = hoveredPort.id;
-        } else if (
-          dragLine.fromPort === "parent" &&
-          hoveredPort.port === "child"
-        ) {
+        } else if (dragLine.fromPort === "parent" && hoveredPort.port === "child") {
           // Dragged from parent port to child port: hoveredPort.id is parent, fromId is child
           parentId = hoveredPort.id;
           childId = dragLine.fromId;
@@ -802,17 +720,12 @@ export function FlowCanvas({
           </button>
           {rootTask && (
             <span className="font-mono text-xs text-fg-muted">
-              Viewing graph for:{" "}
-              <span className="text-fg-primary">{rootTask.title}</span>
+              Viewing graph for: <span className="text-fg-primary">{rootTask.title}</span>
             </span>
           )}
         </div>
         <div className="flex items-center gap-1">
-          {isPending && (
-            <span className="mr-2 text-[11px] text-accent animate-pulse">
-              Saving...
-            </span>
-          )}
+          {isPending && <span className="mr-2 text-[11px] text-accent animate-pulse">Saving...</span>}
           <button
             onClick={zoomOut}
             className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-fg-primary"
@@ -820,9 +733,7 @@ export function FlowCanvas({
           >
             <ZoomOut size={14} />
           </button>
-          <span className="min-w-12 text-center font-mono text-[11px] text-fg-muted">
-            {Math.round(zoom * 100)}%
-          </span>
+          <span className="min-w-12 text-center font-mono text-[11px] text-fg-muted">{Math.round(zoom * 100)}%</span>
           <button
             onClick={zoomIn}
             className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-fg-primary"
@@ -846,15 +757,8 @@ export function FlowCanvas({
         className="relative overflow-hidden rounded-md border border-border bg-bg-primary"
         style={{
           height: "500px",
-          cursor: isPanning
-            ? "grabbing"
-            : draggingNode
-              ? "grabbing"
-              : dragLine
-                ? "crosshair"
-                : "grab",
-          backgroundImage:
-            "radial-gradient(circle, var(--border-subtle) 1px, transparent 1px)",
+          cursor: isPanning ? "grabbing" : draggingNode ? "grabbing" : dragLine ? "crosshair" : "grab",
+          backgroundImage: "radial-gradient(circle, var(--border-subtle) 1px, transparent 1px)",
           backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
           backgroundPosition: `${pan.x}px ${pan.y}px`,
         }}
@@ -898,16 +802,8 @@ export function FlowCanvas({
               (() => {
                 const fromPos = positions.get(dragLine.fromId);
                 if (!fromPos) return null;
-                const portPos =
-                  dragLine.fromPort === "child"
-                    ? getChildPortPos(fromPos)
-                    : getParentPortPos(fromPos);
-                return (
-                  <DragEdgePath
-                    from={portPos}
-                    to={{ x: dragLine.x, y: dragLine.y }}
-                  />
-                );
+                const portPos = dragLine.fromPort === "child" ? getChildPortPos(fromPos) : getParentPortPos(fromPos);
+                return <DragEdgePath from={portPos} to={{ x: dragLine.x, y: dragLine.y }} />;
               })()}
           </svg>
 
@@ -947,8 +843,7 @@ export function FlowCanvas({
                   <span
                     className="absolute inset-y-0 left-0 w-1 rounded-l-md"
                     style={{
-                      backgroundColor:
-                        PRIORITY_COLORS[task.priority] ?? "transparent",
+                      backgroundColor: PRIORITY_COLORS[task.priority] ?? "transparent",
                     }}
                   />
                 )}
@@ -986,9 +881,7 @@ export function FlowCanvas({
                         </span>
                       ))}
                     </div>
-                    <span className="text-[9px] text-fg-muted">
-                      {task.board.name}
-                    </span>
+                    <span className="text-[9px] text-fg-muted">{task.board.name}</span>
                   </div>
                 </div>
 
@@ -1041,9 +934,7 @@ export function FlowCanvas({
           <span className="inline-block h-px w-4 border-t border-dashed border-border" />
           Parent → Child
         </span>
-        <span>
-          Scroll to zoom · Drag background to pan · Drag nodes to reposition
-        </span>
+        <span>Scroll to zoom · Drag background to pan · Drag nodes to reposition</span>
       </div>
 
       {/* Add-task search modal */}
@@ -1062,13 +953,7 @@ export function FlowCanvas({
 
 // ─── Exported component ─────────────────────────────────────────────────────
 
-export function FlowView({
-  tasks,
-  workspaceId,
-}: {
-  tasks: FlowTask[];
-  workspaceId: string;
-}) {
+export function FlowView({ tasks, workspaceId }: { tasks: FlowTask[]; workspaceId: string }) {
   const [selectedRootId, setSelectedRootId] = useState<string | null>(null);
   const [graphTasks, setGraphTasks] = useState<FlowTask[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1109,9 +994,7 @@ export function FlowView({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <p className="font-mono text-sm text-fg-muted animate-pulse">
-          Loading dependency graph…
-        </p>
+        <p className="font-mono text-sm text-fg-muted animate-pulse">Loading dependency graph…</p>
       </div>
     );
   }
