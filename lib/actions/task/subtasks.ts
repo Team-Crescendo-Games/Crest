@@ -11,13 +11,14 @@ import { addSubtaskSchema, removeSubtaskSchema } from "@/lib/validations/task";
 
 export async function addSubtask(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(addSubtaskSchema, formData);
   if (!parsed.success) return { error: parsed.error };
   const { parentTaskId, subtaskId } = parsed.data;
 
-  if (parentTaskId === subtaskId) return { error: "A task cannot be its own subtask" };
+  if (parentTaskId === subtaskId)
+    return { error: "A task cannot be its own subtask" };
 
   let info;
   try {
@@ -55,17 +56,23 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
     if (current === subtaskId) {
       return { error: "Circular subtask reference detected" };
     }
-    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
-      where: { id: current },
-      select: { parentTaskId: true },
-    });
+    const ancestor: { parentTaskId: string | null } | null =
+      await prisma.task.findUnique({
+        where: { id: current },
+        select: { parentTaskId: true },
+      });
     current = ancestor?.parentTaskId ?? null;
   }
 
-  await prisma.task.update({
-    where: { id: subtaskId },
-    data: { parentTaskId },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: subtaskId },
+      data: { parentTaskId },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateTask(info.workspaceId, info.task.boardId, parentTaskId);
   return { success: true };
@@ -73,7 +80,7 @@ export async function addSubtask(_prev: unknown, formData: FormData) {
 
 export async function removeSubtask(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(removeSubtaskSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -96,10 +103,15 @@ export async function removeSubtask(_prev: unknown, formData: FormData) {
     return { error: "This task is not a subtask of the specified parent" };
   }
 
-  await prisma.task.update({
-    where: { id: subtaskId },
-    data: { parentTaskId: null },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: subtaskId },
+      data: { parentTaskId: null },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateTask(info.workspaceId, info.task.boardId, parentTaskId);
   return { success: true };

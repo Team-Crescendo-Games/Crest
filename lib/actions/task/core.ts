@@ -6,11 +6,7 @@ import { revalidatePath } from "next/cache";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import { PRIORITY_ORDER, type SortOption } from "@/lib/task-enums";
 import { revalidateTask } from "@/lib/actions/revalidation-helpers";
-import {
-  requireTaskMembership,
-  logActivity,
-  buildOrderBy,
-} from "./helpers";
+import { requireTaskMembership, logActivity, buildOrderBy } from "./helpers";
 import { parseFormData } from "@/lib/validations/helpers";
 import {
   createTaskSchema,
@@ -91,7 +87,11 @@ export async function loadColumnTasks(
   }
 
   // Only apply assignee filters when NOT in assignee-scoped mode
-  if (!filters?.assigneeUserId && filters?.assigneeFilters && filters.assigneeFilters.length > 0) {
+  if (
+    !filters?.assigneeUserId &&
+    filters?.assigneeFilters &&
+    filters.assigneeFilters.length > 0
+  ) {
     const hasUnassigned = filters.assigneeFilters.includes("unassigned");
     const userIds = filters.assigneeFilters.filter((v) => v !== "unassigned");
 
@@ -133,11 +133,20 @@ export async function loadColumnTasks(
     tasks.sort((a, b) => {
       const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
       const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
-      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+      return prioritySort.direction === "asc"
+        ? aOrder - bOrder
+        : bOrder - aOrder;
     });
   }
 
-  return tasks.map((t) => ({ ...t, boardId: t.board.id, commentCount: t._count.comments, subtaskIds: t.subtasks.map((s) => s.id), subtaskTotal: t.subtasks.length, subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length }));
+  return tasks.map((t) => ({
+    ...t,
+    boardId: t.board.id,
+    commentCount: t._count.comments,
+    subtaskIds: t.subtasks.map((s) => s.id),
+    subtaskTotal: t.subtasks.length,
+    subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+  }));
 }
 
 /** @deprecated Use loadColumnTasks instead */
@@ -153,18 +162,40 @@ export async function loadCompletedTasks(
     assigneeFilters?: string[];
   },
 ) {
-  return loadColumnTasks(boardId, workspaceId, "COMPLETED", offset, limit, filters);
+  return loadColumnTasks(
+    boardId,
+    workspaceId,
+    "COMPLETED",
+    offset,
+    limit,
+    filters,
+  );
 }
 
 // ─── Create ─────────────────────────────────────────────────────────────────
 
 export async function createTask(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(createTaskSchema, formData, ["assigneeIds", "tagIds"]);
+  const parsed = parseFormData(createTaskSchema, formData, [
+    "assigneeIds",
+    "tagIds",
+  ]);
   if (!parsed.success) return { error: parsed.error };
-  const { boardId, title, description, status, priority, startDate, dueDate, points, assigneeIds, tagIds, sprintId: rawSprintId } = parsed.data;
+  const {
+    boardId,
+    title,
+    description,
+    status,
+    priority,
+    startDate,
+    dueDate,
+    points,
+    assigneeIds,
+    tagIds,
+    sprintId: rawSprintId,
+  } = parsed.data;
   const sprintId = rawSprintId || null;
 
   const board = await prisma.board.findUnique({
@@ -175,7 +206,10 @@ export async function createTask(_prev: unknown, formData: FormData) {
 
   const membership = await prisma.workspaceMember.findUnique({
     where: {
-      userId_workspaceId: { userId: session.user.id, workspaceId: board.workspaceId },
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId: board.workspaceId,
+      },
     },
   });
   if (!membership) return { error: "Not a member" };
@@ -201,26 +235,34 @@ export async function createTask(_prev: unknown, formData: FormData) {
     }
   }
 
-  const task = await prisma.task.create({
-    data: {
-      title: title.trim(),
-      description: description?.trim() || null,
-      status,
-      priority,
-      startDate: startDate ? new Date(startDate) : null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      points: points ? parseInt(points) || null : null,
-      boardId,
-      authorId: session.user.id,
-      assignees: assigneeIds.length > 0
-        ? { connect: assigneeIds.map((id) => ({ id })) }
-        : undefined,
-      tags: tagIds.length > 0
-        ? { connect: tagIds.map((id) => ({ id })) }
-        : undefined,
-      sprints: sprintId ? { connect: { id: sprintId } } : undefined,
-    },
-  });
+  let task;
+  try {
+    task = await prisma.task.create({
+      data: {
+        title: title.trim(),
+        description: description?.trim() || null,
+        status,
+        priority,
+        startDate: startDate ? new Date(startDate) : null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        points: points ? parseInt(points) || null : null,
+        boardId,
+        authorId: session.user.id,
+        assignees:
+          assigneeIds.length > 0
+            ? { connect: assigneeIds.map((id) => ({ id })) }
+            : undefined,
+        tags:
+          tagIds.length > 0
+            ? { connect: tagIds.map((id) => ({ id })) }
+            : undefined,
+        sprints: sprintId ? { connect: { id: sprintId } } : undefined,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${board.workspaceId}/b/${boardId}`);
   revalidatePath(`/w/${board.workspaceId}/b`);
@@ -237,11 +279,28 @@ export async function createTask(_prev: unknown, formData: FormData) {
 
 export async function updateTask(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskSchema, formData, ["assigneeIds", "tagIds", "sprintIds"]);
+  const parsed = parseFormData(updateTaskSchema, formData, [
+    "assigneeIds",
+    "tagIds",
+    "sprintIds",
+  ]);
   if (!parsed.success) return { error: parsed.error };
-  const { taskId, title, description, status, priority, startDate, dueDate, points, assigneeIds, tagIds, boardId: newBoardId, sprintIds } = parsed.data;
+  const {
+    taskId,
+    title,
+    description,
+    status,
+    priority,
+    startDate,
+    dueDate,
+    points,
+    assigneeIds,
+    tagIds,
+    boardId: newBoardId,
+    sprintIds,
+  } = parsed.data;
 
   let info;
   try {
@@ -292,22 +351,27 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     },
   });
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      title: title.trim(),
-      description: description?.trim() || null,
-      status,
-      priority,
-      startDate: startDate ? new Date(startDate) : null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      points: points ? parseInt(points) || null : null,
-      boardId,
-      assignees: { set: assigneeIds.map((id) => ({ id })) },
-      tags: { set: tagIds.map((id) => ({ id })) },
-      sprints: { set: sprintIds.map((id) => ({ id })) },
-    },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        title: title.trim(),
+        description: description?.trim() || null,
+        status,
+        priority,
+        startDate: startDate ? new Date(startDate) : null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        points: points ? parseInt(points) || null : null,
+        boardId,
+        assignees: { set: assigneeIds.map((id) => ({ id })) },
+        tags: { set: tagIds.map((id) => ({ id })) },
+        sprints: { set: sprintIds.map((id) => ({ id })) },
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   // Log activities for changed fields
   if (oldTask) {
@@ -337,7 +401,9 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       await logActivity(taskId, session.user.id, "ASSIGNED", { newValue: id });
     }
     for (const id of removed) {
-      await logActivity(taskId, session.user.id, "UNASSIGNED", { oldValue: id });
+      await logActivity(taskId, session.user.id, "UNASSIGNED", {
+        oldValue: id,
+      });
     }
 
     if (boardId !== info.task.boardId) {
@@ -350,13 +416,21 @@ export async function updateTask(_prev: unknown, formData: FormData) {
 
     const oldSprintIds = oldTask.sprints.map((s) => s.id).sort();
     const newSprintIds = [...sprintIds].sort();
-    const addedSprints = newSprintIds.filter((id) => !oldSprintIds.includes(id));
-    const removedSprints = oldSprintIds.filter((id) => !newSprintIds.includes(id));
+    const addedSprints = newSprintIds.filter(
+      (id) => !oldSprintIds.includes(id),
+    );
+    const removedSprints = oldSprintIds.filter(
+      (id) => !newSprintIds.includes(id),
+    );
     for (const id of addedSprints) {
-      await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", { newValue: id });
+      await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", {
+        newValue: id,
+      });
     }
     for (const id of removedSprints) {
-      await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", { oldValue: id });
+      await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", {
+        oldValue: id,
+      });
     }
 
     const newPoints = points ? parseInt(points) || null : null;
@@ -368,7 +442,10 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       });
     }
 
-    if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
+    if (
+      title.trim() !== oldTask.title ||
+      (description?.trim() || null) !== oldTask.description
+    ) {
       await logActivity(taskId, session.user.id, "EDITED");
     }
   }
@@ -381,14 +458,17 @@ export async function updateTask(_prev: unknown, formData: FormData) {
   }
 
   // Return the new boardId so the client can redirect if the board changed
-  return { success: true, newBoardId: boardId !== info.task.boardId ? boardId : undefined };
+  return {
+    success: true,
+    newBoardId: boardId !== info.task.boardId ? boardId : undefined,
+  };
 }
 
 // ─── Delete ─────────────────────────────────────────────────────────────────
 
 export async function deleteTask(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const taskId = formData.get("taskId") as string;
   if (!taskId) return { error: "Invalid request" };
@@ -400,7 +480,12 @@ export async function deleteTask(_prev: unknown, formData: FormData) {
     return { error: "Not authorized" };
   }
 
-  await prisma.task.delete({ where: { id: taskId } });
+  try {
+    await prisma.task.delete({ where: { id: taskId } });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${info.workspaceId}/b/${info.task.boardId}`);
   revalidatePath(`/w/${info.workspaceId}/b`);
@@ -411,7 +496,7 @@ export async function deleteTask(_prev: unknown, formData: FormData) {
 
 export async function updateTaskStatus(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateTaskStatusSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -426,10 +511,15 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
 
   const oldStatus = info.task.status;
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { status },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { status },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   if (oldStatus !== status) {
     await logActivity(taskId, session.user.id, "STATUS_CHANGED", {
@@ -448,7 +538,7 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
 
 export async function updateTaskPriority(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateTaskPrioritySchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -463,10 +553,15 @@ export async function updateTaskPriority(_prev: unknown, formData: FormData) {
 
   const oldPriority = info.task.priority;
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { priority },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { priority },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   if (oldPriority !== priority) {
     await logActivity(taskId, session.user.id, "PRIORITY_CHANGED", {
@@ -486,7 +581,7 @@ export async function updateTaskPriority(_prev: unknown, formData: FormData) {
 
 export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(moveTaskToBoardSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -512,10 +607,15 @@ export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
 
   const oldBoardId = info.task.boardId;
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { boardId: newBoardId },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { boardId: newBoardId },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   await logActivity(taskId, session.user.id, "EDITED", {
     field: "board",
@@ -534,7 +634,7 @@ export async function moveTaskToBoard(_prev: unknown, formData: FormData) {
 
 export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateTaskDueDateSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -549,10 +649,15 @@ export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
 
   const dueDate = dueDateStr ? new Date(dueDateStr) : null;
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { dueDate },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { dueDate },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   await logActivity(taskId, session.user.id, "EDITED", {
     field: "dueDate",

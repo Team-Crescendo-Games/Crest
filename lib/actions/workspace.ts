@@ -6,7 +6,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { DEFAULT_MEMBER_PERMISSIONS, Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
+import {
+  revalidateWorkspace,
+  revalidateDashboard,
+} from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
 import {
   createWorkspaceSchema,
@@ -49,29 +52,35 @@ export async function createWorkspace(_prev: unknown, formData: FormData) {
   if (!parsed.success) return { error: parsed.error };
   const { name, description } = parsed.data;
 
-  const workspace = await prisma.workspace.create({
-    data: {
-      name: name.trim(),
-      description: description?.trim() || null,
-      createdById: session.user.id,
-      roles: {
-        create: {
-          name: "Member",
-          color: "#6B7280",
-          permissions: DEFAULT_MEMBER_PERMISSIONS,
+  let workspace;
+  try {
+    workspace = await prisma.workspace.create({
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+        createdById: session.user.id,
+        roles: {
+          create: {
+            name: "Member",
+            color: "#6B7280",
+            permissions: DEFAULT_MEMBER_PERMISSIONS,
+          },
         },
       },
-    },
-    include: { roles: true },
-  });
+      include: { roles: true },
+    });
 
-  await prisma.workspaceMember.create({
-    data: {
-      userId: session.user.id,
-      workspaceId: workspace.id,
-      roleId: workspace.roles[0].id,
-    },
-  });
+    await prisma.workspaceMember.create({
+      data: {
+        userId: session.user.id,
+        workspaceId: workspace.id,
+        roleId: workspace.roles[0].id,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   redirect(`/w/${workspace.id}`);
 }
@@ -80,7 +89,7 @@ export async function createWorkspace(_prev: unknown, formData: FormData) {
 
 export async function updateWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateWorkspaceSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -90,20 +99,25 @@ export async function updateWorkspace(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.MANAGE_WORKSPACE
+      Permission.MANAGE_WORKSPACE,
     );
   } catch {
     return { error: "You don't have permission to edit workspace settings" };
   }
 
-  await prisma.workspace.update({
-    where: { id: workspaceId },
-    data: {
-      name: name.trim(),
-      description: description?.trim() || null,
-      joinPolicy: joinPolicy || "INVITE_ONLY",
-    },
-  });
+  try {
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+        joinPolicy: joinPolicy || "INVITE_ONLY",
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateWorkspace(workspaceId);
   return { success: true };
@@ -124,7 +138,8 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
   });
 
   if (!workspace) return { error: "Workspace not found" };
-  if (workspace.joinPolicy !== "OPEN") return { error: "This workspace is not open" };
+  if (workspace.joinPolicy !== "OPEN")
+    return { error: "This workspace is not open" };
 
   const existing = await prisma.workspaceMember.findUnique({
     where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
@@ -133,9 +148,14 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
 
   const memberRole = await getOrCreateMemberRole(workspaceId);
 
-  await prisma.workspaceMember.create({
-    data: { userId: session.user.id, workspaceId, roleId: memberRole.id },
-  });
+  try {
+    await prisma.workspaceMember.create({
+      data: { userId: session.user.id, workspaceId, roleId: memberRole.id },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   redirect(`/w/${workspaceId}`);
 }
@@ -144,7 +164,7 @@ export async function joinWorkspace(_prev: unknown, formData: FormData) {
 
 export async function applyToWorkspace(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(applyToWorkspaceSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -169,13 +189,18 @@ export async function applyToWorkspace(_prev: unknown, formData: FormData) {
   });
   if (existingApp) return { error: "You already have a pending application" };
 
-  await prisma.workspaceApplication.create({
-    data: {
-      userId: session.user.id,
-      workspaceId,
-      message: message?.trim() || null,
-    },
-  });
+  try {
+    await prisma.workspaceApplication.create({
+      data: {
+        userId: session.user.id,
+        workspaceId,
+        message: message?.trim() || null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   return { success: true, message: "Application submitted" };
 }
@@ -184,7 +209,7 @@ export async function applyToWorkspace(_prev: unknown, formData: FormData) {
 
 export async function handleApplication(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(handleApplicationSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -200,33 +225,38 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       application.workspaceId,
-      Permission.MANAGE_APPLICATIONS
+      Permission.MANAGE_APPLICATIONS,
     );
   } catch {
     return { error: "You don't have permission to manage applications" };
   }
 
-  if (action === "approve") {
-    const memberRole = await getOrCreateMemberRole(application.workspaceId);
+  try {
+    if (action === "approve") {
+      const memberRole = await getOrCreateMemberRole(application.workspaceId);
 
-    await prisma.$transaction([
-      prisma.workspaceApplication.update({
+      await prisma.$transaction([
+        prisma.workspaceApplication.update({
+          where: { id: applicationId },
+          data: { status: "APPROVED" },
+        }),
+        prisma.workspaceMember.create({
+          data: {
+            userId: application.userId,
+            workspaceId: application.workspaceId,
+            roleId: memberRole.id,
+          },
+        }),
+      ]);
+    } else {
+      await prisma.workspaceApplication.update({
         where: { id: applicationId },
-        data: { status: "APPROVED" },
-      }),
-      prisma.workspaceMember.create({
-        data: {
-          userId: application.userId,
-          workspaceId: application.workspaceId,
-          roleId: memberRole.id,
-        },
-      }),
-    ]);
-  } else {
-    await prisma.workspaceApplication.update({
-      where: { id: applicationId },
-      data: { status: "REJECTED" },
-    });
+        data: { status: "REJECTED" },
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
   }
 
   revalidatePath(`/w/${application.workspaceId}/settings`);
@@ -237,7 +267,7 @@ export async function handleApplication(_prev: unknown, formData: FormData) {
 
 export async function createInvitation(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(createInvitationSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -249,7 +279,7 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.INVITE_MEMBERS
+      Permission.INVITE_MEMBERS,
     );
   } catch {
     return { error: "You don't have permission to invite members" };
@@ -258,13 +288,19 @@ export async function createInvitation(_prev: unknown, formData: FormData) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + expiresInDaysNum);
 
-  const invitation = await prisma.workspaceInvitation.create({
-    data: {
-      workspaceId,
-      createdById: session.user.id,
-      expiresAt,
-    },
-  });
+  let invitation;
+  try {
+    invitation = await prisma.workspaceInvitation.create({
+      data: {
+        workspaceId,
+        createdById: session.user.id,
+        expiresAt,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${workspaceId}/settings`);
   return { success: true, inviteId: invitation.id };
@@ -283,7 +319,8 @@ export async function acceptInvitation(_prev: unknown, formData: FormData) {
   });
 
   if (!invitation) return { error: "Invitation not found" };
-  if (invitation.expiresAt < new Date()) return { error: "Invitation has expired" };
+  if (invitation.expiresAt < new Date())
+    return { error: "Invitation has expired" };
 
   const existing = await prisma.workspaceMember.findUnique({
     where: {
@@ -297,13 +334,18 @@ export async function acceptInvitation(_prev: unknown, formData: FormData) {
 
   const memberRole = await getOrCreateMemberRole(invitation.workspaceId);
 
-  await prisma.workspaceMember.create({
-    data: {
-      userId: session.user.id,
-      workspaceId: invitation.workspaceId,
-      roleId: memberRole.id,
-    },
-  });
+  try {
+    await prisma.workspaceMember.create({
+      data: {
+        userId: session.user.id,
+        workspaceId: invitation.workspaceId,
+        roleId: memberRole.id,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   redirect(`/w/${invitation.workspaceId}`);
 }
@@ -370,8 +412,7 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
 
   if (workspace.createdById === session.user.id) {
     return {
-      error:
-        "Owners cannot leave the workspace. Delete the workspace instead.",
+      error: "Owners cannot leave the workspace. Delete the workspace instead.",
     };
   }
 
@@ -385,17 +426,22 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
     where: { workspaceId },
   });
 
-  await prisma.workspaceMember.delete({
-    where: { id: membership.id },
-  });
+  try {
+    await prisma.workspaceMember.delete({
+      where: { id: membership.id },
+    });
 
-  if (memberCount === 1) {
-    if (
-      workspace.joinPolicy === "INVITE_ONLY" ||
-      workspace.joinPolicy === "APPLY_TO_JOIN"
-    ) {
-      await prisma.workspace.delete({ where: { id: workspaceId } });
+    if (memberCount === 1) {
+      if (
+        workspace.joinPolicy === "INVITE_ONLY" ||
+        workspace.joinPolicy === "APPLY_TO_JOIN"
+      ) {
+        await prisma.workspace.delete({ where: { id: workspaceId } });
+      }
     }
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
   }
 
   revalidateDashboard();
@@ -406,7 +452,7 @@ export async function leaveWorkspace(_prev: unknown, formData: FormData) {
 
 export async function transferOwnership(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(transferOwnershipSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -432,10 +478,15 @@ export async function transferOwnership(_prev: unknown, formData: FormData) {
     return { error: "Target user is not a member of this workspace" };
   }
 
-  await prisma.workspace.update({
-    where: { id: workspaceId },
-    data: { createdById: newOwnerId },
-  });
+  try {
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { createdById: newOwnerId },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${workspaceId}/team`);
   revalidateWorkspace(workspaceId);

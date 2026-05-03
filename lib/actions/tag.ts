@@ -4,20 +4,32 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import { revalidateWorkspace, revalidateTask } from "@/lib/actions/revalidation-helpers";
+import {
+  revalidateWorkspace,
+  revalidateTask,
+} from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
-import { createTagSchema, updateTagSchema, deleteTagSchema, setTaskTagsSchema } from "@/lib/validations/tag";
+import {
+  createTagSchema,
+  updateTagSchema,
+  deleteTagSchema,
+  setTaskTagsSchema,
+} from "@/lib/validations/tag";
 
 export async function createTag(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(createTagSchema, formData);
   if (!parsed.success) return { error: parsed.error };
   const { workspaceId, name, color } = parsed.data;
 
   try {
-    await requireMemberWithPermission(session.user.id, workspaceId, Permission.CREATE_CONTENT);
+    await requireMemberWithPermission(
+      session.user.id,
+      workspaceId,
+      Permission.CREATE_CONTENT,
+    );
   } catch {
     return { error: "No permission" };
   }
@@ -27,13 +39,18 @@ export async function createTag(_prev: unknown, formData: FormData) {
   });
   if (existing) return { error: "A tag with this name already exists" };
 
-  await prisma.tag.create({
-    data: {
-      name: name.trim(),
-      color,
-      workspaceId,
-    },
-  });
+  try {
+    await prisma.tag.create({
+      data: {
+        name: name.trim(),
+        color,
+        workspaceId,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateWorkspace(workspaceId);
   return { success: true };
@@ -41,14 +58,18 @@ export async function createTag(_prev: unknown, formData: FormData) {
 
 export async function updateTag(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateTagSchema, formData);
   if (!parsed.success) return { error: parsed.error };
   const { tagId, workspaceId, name, color } = parsed.data;
 
   try {
-    await requireMemberWithPermission(session.user.id, workspaceId, Permission.EDIT_CONTENT);
+    await requireMemberWithPermission(
+      session.user.id,
+      workspaceId,
+      Permission.EDIT_CONTENT,
+    );
   } catch {
     return { error: "No permission" };
   }
@@ -58,10 +79,15 @@ export async function updateTag(_prev: unknown, formData: FormData) {
   });
   if (existing) return { error: "A tag with this name already exists" };
 
-  await prisma.tag.update({
-    where: { id: tagId },
-    data: { name: name.trim(), color },
-  });
+  try {
+    await prisma.tag.update({
+      where: { id: tagId },
+      data: { name: name.trim(), color },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateWorkspace(workspaceId);
   return { success: true };
@@ -69,19 +95,28 @@ export async function updateTag(_prev: unknown, formData: FormData) {
 
 export async function deleteTag(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(deleteTagSchema, formData);
   if (!parsed.success) return { error: parsed.error };
   const { tagId, workspaceId } = parsed.data;
 
   try {
-    await requireMemberWithPermission(session.user.id, workspaceId, Permission.DELETE_CONTENT);
+    await requireMemberWithPermission(
+      session.user.id,
+      workspaceId,
+      Permission.DELETE_CONTENT,
+    );
   } catch {
     return { error: "No permission" };
   }
 
-  await prisma.tag.delete({ where: { id: tagId } });
+  try {
+    await prisma.tag.delete({ where: { id: tagId } });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateWorkspace(workspaceId);
   return { success: true };
@@ -89,7 +124,7 @@ export async function deleteTag(_prev: unknown, formData: FormData) {
 
 export async function setTaskTags(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(setTaskTagsSchema, formData, ["tagIds"]);
   if (!parsed.success) return { error: parsed.error };
@@ -103,15 +138,23 @@ export async function setTaskTags(_prev: unknown, formData: FormData) {
 
   const membership = await prisma.workspaceMember.findUnique({
     where: {
-      userId_workspaceId: { userId: session.user.id, workspaceId: task.board.workspaceId },
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId: task.board.workspaceId,
+      },
     },
   });
   if (!membership) return { error: "Not a member" };
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { tags: { set: tagIds.map((id) => ({ id })) } },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { tags: { set: tagIds.map((id) => ({ id })) } },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateTask(workspaceId, task.board.id, taskId);
   return { success: true };

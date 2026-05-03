@@ -31,20 +31,26 @@ export async function createSprint(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.CREATE_CONTENT
+      Permission.CREATE_CONTENT,
     );
   } catch {
     return { error: "You don't have permission to create sprints" };
   }
 
-  const sprint = await prisma.sprint.create({
-    data: {
-      title: title.trim(),
-      workspaceId,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
-    },
-  });
+  let sprint;
+  try {
+    sprint = await prisma.sprint.create({
+      data: {
+        title: title.trim(),
+        workspaceId,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   redirect(`/w/${workspaceId}/s/${sprint.id}`);
 }
@@ -53,7 +59,7 @@ export async function createSprint(_prev: unknown, formData: FormData) {
 
 export async function updateSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateSprintSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -63,20 +69,25 @@ export async function updateSprint(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.EDIT_CONTENT
+      Permission.EDIT_CONTENT,
     );
   } catch {
     return { error: "No permission" };
   }
 
-  await prisma.sprint.update({
-    where: { id: sprintId },
-    data: {
-      title: title.trim(),
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
-    },
-  });
+  try {
+    await prisma.sprint.update({
+      where: { id: sprintId },
+      data: {
+        title: title.trim(),
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateSprint(workspaceId, sprintId);
   return { success: true };
@@ -86,7 +97,7 @@ export async function updateSprint(_prev: unknown, formData: FormData) {
 
 export async function toggleSprintActive(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(toggleSprintActiveSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -96,7 +107,7 @@ export async function toggleSprintActive(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.EDIT_CONTENT
+      Permission.EDIT_CONTENT,
     );
   } catch {
     return { error: "No permission" };
@@ -108,10 +119,15 @@ export async function toggleSprintActive(_prev: unknown, formData: FormData) {
   });
   if (!sprint) return { error: "Sprint not found" };
 
-  await prisma.sprint.update({
-    where: { id: sprintId },
-    data: { isActive: !sprint.isActive },
-  });
+  try {
+    await prisma.sprint.update({
+      where: { id: sprintId },
+      data: { isActive: !sprint.isActive },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateSprint(workspaceId, sprintId);
   return { success: true, isActive: !sprint.isActive };
@@ -131,18 +147,23 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.DELETE_CONTENT
+      Permission.DELETE_CONTENT,
     );
   } catch {
     return { error: "No permission" };
   }
 
-  await prisma.sprint.update({
-    where: { id: sprintId },
-    data: { tasks: { set: [] } },
-  });
+  try {
+    await prisma.sprint.update({
+      where: { id: sprintId },
+      data: { tasks: { set: [] } },
+    });
 
-  await prisma.sprint.delete({ where: { id: sprintId } });
+    await prisma.sprint.delete({ where: { id: sprintId } });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   redirect(`/w/${workspaceId}/s`);
 }
@@ -151,7 +172,7 @@ export async function deleteSprint(_prev: unknown, formData: FormData) {
 
 export async function assignTaskToSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(assignTaskToSprintSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -165,26 +186,31 @@ export async function assignTaskToSprint(_prev: unknown, formData: FormData) {
 
   const membership = await prisma.workspaceMember.findUnique({
     where: {
-      userId_workspaceId: { userId: session.user.id, workspaceId: sprint.workspaceId },
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId: sprint.workspaceId,
+      },
     },
   });
   if (!membership) return { error: "Not a member" };
 
-  await prisma.sprint.update({
-    where: { id: sprintId },
-    data: { tasks: { connect: { id: taskId } } },
-  });
+  try {
+    await prisma.sprint.update({
+      where: { id: sprintId },
+      data: { tasks: { connect: { id: taskId } } },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateSprint(workspaceId, sprintId);
   return { success: true };
 }
 
-export async function removeTaskFromSprint(
-  _prev: unknown,
-  formData: FormData
-) {
+export async function removeTaskFromSprint(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(removeTaskFromSprintSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -198,15 +224,23 @@ export async function removeTaskFromSprint(
 
   const membership = await prisma.workspaceMember.findUnique({
     where: {
-      userId_workspaceId: { userId: session.user.id, workspaceId: sprint.workspaceId },
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId: sprint.workspaceId,
+      },
     },
   });
   if (!membership) return { error: "Not a member" };
 
-  await prisma.sprint.update({
-    where: { id: sprintId },
-    data: { tasks: { disconnect: { id: taskId } } },
-  });
+  try {
+    await prisma.sprint.update({
+      where: { id: sprintId },
+      data: { tasks: { disconnect: { id: taskId } } },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateSprint(workspaceId, sprintId);
   return { success: true };
@@ -241,25 +275,31 @@ export async function migrateSprint(_prev: unknown, formData: FormData) {
     return { error: "Sprint not found" };
   }
 
-  const incompleteTasks = await prisma.task.findMany({
-    where: {
-      sprints: { some: { id: sourceSprintId } },
-      status: { not: "COMPLETED" },
-    },
-    select: { id: true },
-  });
+  let newSprint;
+  try {
+    const incompleteTasks = await prisma.task.findMany({
+      where: {
+        sprints: { some: { id: sourceSprintId } },
+        status: { not: "COMPLETED" },
+      },
+      select: { id: true },
+    });
 
-  const newSprint = await prisma.sprint.create({
-    data: {
-      title: title.trim(),
-      workspaceId,
-      ...(incompleteTasks.length > 0 && {
-        tasks: {
-          connect: incompleteTasks.map((t) => ({ id: t.id })),
-        },
-      }),
-    },
-  });
+    newSprint = await prisma.sprint.create({
+      data: {
+        title: title.trim(),
+        workspaceId,
+        ...(incompleteTasks.length > 0 && {
+          tasks: {
+            connect: incompleteTasks.map((t) => ({ id: t.id })),
+          },
+        }),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateSprint(workspaceId, sourceSprintId);
   revalidateSprint(workspaceId, newSprint.id);

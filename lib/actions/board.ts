@@ -6,9 +6,17 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Permission } from "@/lib/permissions";
 import { requireMemberWithPermission } from "@/lib/actions/auth-helpers";
-import { revalidateWorkspace, revalidateDashboard } from "@/lib/actions/revalidation-helpers";
+import {
+  revalidateWorkspace,
+  revalidateDashboard,
+} from "@/lib/actions/revalidation-helpers";
 import { parseFormData } from "@/lib/validations/helpers";
-import { createBoardSchema, updateBoardSchema, archiveBoardSchema, deleteBoardSchema } from "@/lib/validations/board";
+import {
+  createBoardSchema,
+  updateBoardSchema,
+  archiveBoardSchema,
+  deleteBoardSchema,
+} from "@/lib/validations/board";
 
 export async function createBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
@@ -22,22 +30,27 @@ export async function createBoard(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.CREATE_CONTENT
+      Permission.CREATE_CONTENT,
     );
   } catch {
     return { error: "You don't have permission to create boards" };
   }
 
-  const boardCount = await prisma.board.count({ where: { workspaceId } });
+  try {
+    const boardCount = await prisma.board.count({ where: { workspaceId } });
 
-  await prisma.board.create({
-    data: {
-      name: name.trim(),
-      description: description?.trim() || null,
-      workspaceId,
-      displayOrder: boardCount,
-    },
-  });
+    await prisma.board.create({
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+        workspaceId,
+        displayOrder: boardCount,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateDashboard();
   redirect(`/w/${workspaceId}`);
@@ -45,7 +58,7 @@ export async function createBoard(_prev: unknown, formData: FormData) {
 
 export async function updateBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateBoardSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -55,19 +68,24 @@ export async function updateBoard(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.EDIT_CONTENT
+      Permission.EDIT_CONTENT,
     );
   } catch {
     return { error: "You don't have permission to edit boards" };
   }
 
-  await prisma.board.update({
-    where: { id: boardId },
-    data: {
-      name: name.trim(),
-      description: description?.trim() || null,
-    },
-  });
+  try {
+    await prisma.board.update({
+      where: { id: boardId },
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${workspaceId}/b/${boardId}`);
   return { success: true };
@@ -75,7 +93,7 @@ export async function updateBoard(_prev: unknown, formData: FormData) {
 
 export async function archiveBoard(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(archiveBoardSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -85,7 +103,7 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.EDIT_CONTENT
+      Permission.EDIT_CONTENT,
     );
   } catch {
     return { error: "You don't have permission to archive boards" };
@@ -98,10 +116,15 @@ export async function archiveBoard(_prev: unknown, formData: FormData) {
 
   if (!board) return { error: "Board not found" };
 
-  await prisma.board.update({
-    where: { id: boardId },
-    data: { isActive: !board.isActive },
-  });
+  try {
+    await prisma.board.update({
+      where: { id: boardId },
+      data: { isActive: !board.isActive },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateWorkspace(workspaceId);
   revalidateDashboard();
@@ -120,13 +143,18 @@ export async function deleteBoard(_prev: unknown, formData: FormData) {
     await requireMemberWithPermission(
       session.user.id,
       workspaceId,
-      Permission.DELETE_CONTENT
+      Permission.DELETE_CONTENT,
     );
   } catch {
     return { error: "You don't have permission to delete boards" };
   }
 
-  await prisma.board.delete({ where: { id: boardId } });
+  try {
+    await prisma.board.delete({ where: { id: boardId } });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateDashboard();
   redirect(`/w/${workspaceId}/b`);

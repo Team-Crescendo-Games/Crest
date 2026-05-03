@@ -11,7 +11,7 @@ import { addCommentSchema, deleteCommentSchema } from "@/lib/validations/task";
 
 export async function addComment(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(addCommentSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -24,13 +24,18 @@ export async function addComment(_prev: unknown, formData: FormData) {
     return { error: "Not authorized" };
   }
 
-  await prisma.comment.create({
-    data: {
-      text: text.trim(),
-      taskId,
-      userId: session.user.id,
-    },
-  });
+  try {
+    await prisma.comment.create({
+      data: {
+        text: text.trim(),
+        taskId,
+        userId: session.user.id,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   await logActivity(taskId, session.user.id, "COMMENTED");
 
@@ -40,7 +45,7 @@ export async function addComment(_prev: unknown, formData: FormData) {
 
 export async function deleteComment(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(deleteCommentSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -48,7 +53,9 @@ export async function deleteComment(_prev: unknown, formData: FormData) {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    include: { task: { include: { board: { select: { workspaceId: true, id: true } } } } },
+    include: {
+      task: { include: { board: { select: { workspaceId: true, id: true } } } },
+    },
   });
 
   if (!comment) return { error: "Comment not found" };
@@ -58,12 +65,17 @@ export async function deleteComment(_prev: unknown, formData: FormData) {
     return { error: "You can only delete your own comments" };
   }
 
-  await prisma.comment.delete({ where: { id: commentId } });
+  try {
+    await prisma.comment.delete({ where: { id: commentId } });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidateTask(
     comment.task.board.workspaceId,
     comment.task.board.id,
-    comment.taskId
+    comment.taskId,
   );
   return { success: true };
 }

@@ -17,9 +17,11 @@ import {
 
 export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskAssigneesSchema, formData, ["assigneeIds"]);
+  const parsed = parseFormData(updateTaskAssigneesSchema, formData, [
+    "assigneeIds",
+  ]);
   if (!parsed.success) return { error: parsed.error };
   const { taskId, assigneeIds } = parsed.data;
 
@@ -36,10 +38,15 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
   });
   const oldAssigneeIds = oldTask?.assignees.map((a) => a.id) ?? [];
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { assignees: { set: assigneeIds.map((id) => ({ id })) } },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { assignees: { set: assigneeIds.map((id) => ({ id })) } },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   const added = assigneeIds.filter((id) => !oldAssigneeIds.includes(id));
   const removed = oldAssigneeIds.filter((id) => !assigneeIds.includes(id));
@@ -58,7 +65,7 @@ export async function updateTaskAssignees(_prev: unknown, formData: FormData) {
 
 export async function updateTaskTags(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(updateTaskTagsSchema, formData, ["tagIds"]);
   if (!parsed.success) return { error: parsed.error };
@@ -81,10 +88,15 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
     }
   }
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { tags: { set: tagIds.map((id) => ({ id })) } },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { tags: { set: tagIds.map((id) => ({ id })) } },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   await logActivity(taskId, session.user.id, "EDITED", { field: "tags" });
 
@@ -96,9 +108,11 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
 
 export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const parsed = parseFormData(updateTaskSprintsSchema, formData, ["sprintIds"]);
+  const parsed = parseFormData(updateTaskSprintsSchema, formData, [
+    "sprintIds",
+  ]);
   if (!parsed.success) return { error: parsed.error };
   const { taskId, sprintIds, workspaceId } = parsed.data;
 
@@ -126,21 +140,30 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
   });
   const oldSprintIds = oldTask?.sprints.map((s) => s.id) ?? [];
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      sprints: { set: sprintIds.map((id) => ({ id })) },
-    },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        sprints: { set: sprintIds.map((id) => ({ id })) },
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   // Log added/removed sprints
   const added = sprintIds.filter((id) => !oldSprintIds.includes(id));
   const removed = oldSprintIds.filter((id) => !sprintIds.includes(id));
   for (const id of added) {
-    await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", { newValue: id });
+    await logActivity(taskId, session.user.id, "MOVED_TO_SPRINT", {
+      newValue: id,
+    });
   }
   for (const id of removed) {
-    await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", { oldValue: id });
+    await logActivity(taskId, session.user.id, "REMOVED_FROM_SPRINT", {
+      oldValue: id,
+    });
   }
 
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
@@ -156,7 +179,7 @@ export async function updateTaskSprints(_prev: unknown, formData: FormData) {
 
 export async function setTaskParent(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
   const parsed = parseFormData(setTaskParentSchema, formData);
   if (!parsed.success) return { error: parsed.error };
@@ -179,10 +202,15 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
 
   // If removing parent (parentId is null or empty)
   if (!parentId) {
-    await prisma.task.update({
-      where: { id: childId },
-      data: { parentTaskId: null },
-    });
+    try {
+      await prisma.task.update({
+        where: { id: childId },
+        data: { parentTaskId: null },
+      });
+    } catch (err) {
+      console.error(err);
+      return { error: "An unexpected error occurred" };
+    }
     revalidatePath(`/w/${workspaceId}`);
     return { success: true };
   }
@@ -200,7 +228,10 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
 
   // Check if child already has a parent
   if (child.parentTaskId && child.parentTaskId !== parentId) {
-    return { error: "This task already has a parent. Remove the existing parent first." };
+    return {
+      error:
+        "This task already has a parent. Remove the existing parent first.",
+    };
   }
 
   // Prevent circular references: walk up from parentId, ensure we never hit childId
@@ -212,17 +243,23 @@ export async function setTaskParent(_prev: unknown, formData: FormData) {
     }
     if (visited.has(current)) break; // already visited, stop
     visited.add(current);
-    const ancestor: { parentTaskId: string | null } | null = await prisma.task.findUnique({
-      where: { id: current },
-      select: { parentTaskId: true },
-    });
+    const ancestor: { parentTaskId: string | null } | null =
+      await prisma.task.findUnique({
+        where: { id: current },
+        select: { parentTaskId: true },
+      });
     current = ancestor?.parentTaskId ?? null;
   }
 
-  await prisma.task.update({
-    where: { id: childId },
-    data: { parentTaskId: parentId },
-  });
+  try {
+    await prisma.task.update({
+      where: { id: childId },
+      data: { parentTaskId: parentId },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath(`/w/${workspaceId}`);
   return { success: true };
