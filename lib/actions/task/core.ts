@@ -15,6 +15,7 @@ import {
   updateTaskPrioritySchema,
   moveTaskToBoardSchema,
   updateTaskDueDateSchema,
+  updateTaskDatesSchema,
 } from "@/lib/validations/task";
 
 // ─── Load paginated tasks for any column ────────────────────────────────────
@@ -322,6 +323,7 @@ export async function updateTask(_prev: unknown, formData: FormData) {
     include: {
       assignees: { select: { id: true } },
       sprints: { select: { id: true } },
+      tags: { select: { id: true } },
     },
   });
 
@@ -403,6 +405,23 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       });
     }
 
+    const oldTagIds = oldTask.tags.map((t) => t.id).sort();
+    const newTagIds = [...tagIds].sort();
+    const addedTags = newTagIds.filter((id) => !oldTagIds.includes(id));
+    const removedTags = oldTagIds.filter((id) => !newTagIds.includes(id));
+    for (const id of addedTags) {
+      await logActivity(taskId, session.user.id, "EDITED", {
+        field: "tag_added",
+        newValue: id,
+      });
+    }
+    for (const id of removedTags) {
+      await logActivity(taskId, session.user.id, "EDITED", {
+        field: "tag_removed",
+        oldValue: id,
+      });
+    }
+
     const newPoints = points ? parseInt(points) || null : null;
     if (newPoints !== oldTask.points) {
       await logActivity(taskId, session.user.id, "EDITED", {
@@ -412,8 +431,11 @@ export async function updateTask(_prev: unknown, formData: FormData) {
       });
     }
 
-    if (title.trim() !== oldTask.title || (description?.trim() || null) !== oldTask.description) {
-      await logActivity(taskId, session.user.id, "EDITED");
+    if (title.trim() !== oldTask.title) {
+      await logActivity(taskId, session.user.id, "EDITED", { field: "title" });
+    }
+    if ((description?.trim() || null) !== oldTask.description) {
+      await logActivity(taskId, session.user.id, "EDITED", { field: "description" });
     }
   }
 
@@ -631,6 +653,59 @@ export async function updateTaskDueDate(_prev: unknown, formData: FormData) {
     oldValue: info.task.dueDate?.toISOString() ?? null,
     newValue: dueDate?.toISOString() ?? null,
   });
+
+  revalidateTask(info.workspaceId, info.task.boardId, taskId);
+  return { success: true };
+}
+
+// ─── Update both start and due date (used by timeline drag) ─────────────────
+
+export async function updateTaskDates(_prev: unknown, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const parsed = parseFormData(updateTaskDatesSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { taskId, startDate: startStr, dueDate: dueStr } = parsed.data;
+
+  let info;
+  try {
+    info = await requireTaskMembership(session.user.id, taskId);
+  } catch {
+    return { error: "Not authorized" };
+  }
+
+  const startDate = startStr ? new Date(startStr) : null;
+  const dueDate = dueStr ? new Date(dueStr) : null;
+
+  if (startDate && dueDate && startDate.getTime() > dueDate.getTime()) {
+    return { error: "Start date must be on or before due date" };
+  }
+
+  try {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { startDate, dueDate },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
+
+  if (info.task.startDate?.getTime() !== startDate?.getTime()) {
+    await logActivity(taskId, session.user.id, "EDITED", {
+      field: "startDate",
+      oldValue: info.task.startDate?.toISOString() ?? null,
+      newValue: startDate?.toISOString() ?? null,
+    });
+  }
+  if (info.task.dueDate?.getTime() !== dueDate?.getTime()) {
+    await logActivity(taskId, session.user.id, "EDITED", {
+      field: "dueDate",
+      oldValue: info.task.dueDate?.toISOString() ?? null,
+      newValue: dueDate?.toISOString() ?? null,
+    });
+  }
 
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };

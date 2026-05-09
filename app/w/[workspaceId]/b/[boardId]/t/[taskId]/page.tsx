@@ -19,7 +19,16 @@ export default async function TaskDetailPage({
   const userId = session!.user!.id!;
 
   // Run all independent queries in parallel
-  const [membership, task, members, boards, sprints, allTags] = await Promise.all([
+  const [
+    membership,
+    task,
+    members,
+    boards,
+    sprints,
+    allTags,
+    allBoardsForActivity,
+    allSprintsForActivity,
+  ] = await Promise.all([
     prisma.workspaceMember.findUnique({
       where: { userId_workspaceId: { userId, workspaceId } },
       include: { role: true },
@@ -78,6 +87,16 @@ export default async function TaskDetailPage({
       select: { id: true, name: true, color: true },
       orderBy: { name: "asc" },
     }),
+    // Lookup maps include inactive records so historical activity entries
+    // can still resolve names for boards/sprints that have since been archived.
+    prisma.board.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId },
+      select: { id: true, title: true },
+    }),
   ]);
 
   if (!membership) notFound();
@@ -122,6 +141,7 @@ export default async function TaskDetailPage({
           authorName={task.author.name}
           authorImage={task.author.image}
           memberIdMap={memberIdMap}
+          currentUserId={userId}
         />
 
         {/* Parent task — styled to match SubtaskSection */}
@@ -147,9 +167,10 @@ export default async function TaskDetailPage({
 
         <ActivityLog
           activities={task.activities}
-          createdAt={task.createdAt}
-          createdByName={task.author.name}
           memberNames={Object.fromEntries(members.map((m) => [m.user.id, m.user.name ?? m.user.email ?? "Unknown"]))}
+          sprintNames={Object.fromEntries(allSprintsForActivity.map((s) => [s.id, s.title]))}
+          boardNames={Object.fromEntries(allBoardsForActivity.map((b) => [b.id, b.name]))}
+          tagNames={Object.fromEntries(allTags.map((t) => [t.id, t.name]))}
         />
 
         {/* Comments — inline fallback for smaller screens */}

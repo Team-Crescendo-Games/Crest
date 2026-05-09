@@ -62,6 +62,12 @@ export const updateTaskDueDateSchema = z.object({
   dueDate: z.string().optional().default(""),
 });
 
+export const updateTaskDatesSchema = z.object({
+  taskId: z.string().min(1),
+  startDate: z.string().optional().default(""),
+  dueDate: z.string().optional().default(""),
+});
+
 export const updateTaskAssigneesSchema = z.object({
   taskId: z.string().min(1),
   assigneeIds: z.array(z.string()).default([]),

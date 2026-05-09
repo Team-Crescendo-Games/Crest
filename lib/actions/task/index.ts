@@ -11,6 +11,7 @@ export {
   updateTaskPriority,
   moveTaskToBoard,
   updateTaskDueDate,
+  updateTaskDates,
 } from "./core";
 
 export { updateTaskAssignees, updateTaskTags, updateTaskSprints, setTaskParent } from "./relations";

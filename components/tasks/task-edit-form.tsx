@@ -34,6 +34,7 @@ interface Props {
   authorImage: string | null;
   /** Maps userId → workspaceMemberId for profile links */
   memberIdMap: Record<string, string>;
+  currentUserId: string;
 }
 
 export function TaskEditForm({
@@ -48,6 +49,7 @@ export function TaskEditForm({
   authorName,
   authorImage,
   memberIdMap,
+  currentUserId,
 }: Props) {
   const router = useRouter();
 
@@ -184,6 +186,7 @@ export function TaskEditForm({
             onChange={setAssigneeIds}
             workspaceId={workspaceId}
             memberIdMap={memberIdMap}
+            currentUserId={currentUserId}
           />
 
           {tags.length > 0 && <TagEditor tags={tags} selectedTagIds={tagIds} onChange={setTagIds} />}
