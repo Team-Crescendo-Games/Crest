@@ -36,7 +36,7 @@ export function CommentSection({
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         aria-controls={`comments-${taskId}`}
-        className="group flex w-full items-center gap-2 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
+        className="cursor-pointer group flex w-full items-center gap-2 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
       >
         <ChevronDown size={13} className={`text-fg-muted transition-transform ${expanded ? "" : "-rotate-90"}`} />
         <MessageSquare size={13} className="text-accent" />
@@ -86,7 +86,7 @@ export function CommentSection({
               <button
                 type="submit"
                 disabled={addPending}
-                className="self-end rounded-md bg-accent px-3 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
+                className="cursor-pointer self-end rounded-md bg-accent px-3 py-2 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
               >
                 {addPending ? "..." : "Post"}
               </button>
@@ -123,7 +123,7 @@ function CommentItem({ comment, isOwn }: { comment: Comment; isOwn: boolean }) {
             <button
               type="submit"
               disabled={deletePending}
-              className="text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
+              className="cursor-pointer text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
               title="Delete comment"
             >
               <Trash2 size={10} />

@@ -25,11 +25,11 @@ export function TagEditor({
               onClick={() =>
                 onChange(isSelected ? selectedTagIds.filter((x) => x !== tag.id) : [...selectedTagIds, tag.id])
               }
-              className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
+              className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105"
               style={{
                 borderColor: color + (isSelected ? "80" : "40"),
                 color: isSelected ? "#fff" : color,
-                backgroundColor: isSelected ? color : "transparent",
+                backgroundColor: isSelected ? color : color + "15",
               }}
             >
               {tag.name}

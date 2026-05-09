@@ -44,7 +44,7 @@ export function SprintEditor({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary"
+        className="cursor-pointer mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <Plus size={10} />
         {selected.length > 0 ? "Edit sprints" : "Add to sprint"}
@@ -63,7 +63,7 @@ export function SprintEditor({
                     key={sprint.id}
                     type="button"
                     onClick={() => toggle(sprint.id)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                    className="cursor-pointer flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
                   >
                     <div
                       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
@@ -83,7 +83,7 @@ export function SprintEditor({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded bg-accent px-2 py-1 text-[11px] font-medium text-bg-primary hover:bg-accent-emphasis"
+                className="cursor-pointer rounded bg-accent px-2 py-1 text-[11px] font-medium text-bg-primary hover:bg-accent-emphasis"
               >
                 Done
               </button>

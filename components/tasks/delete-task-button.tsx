@@ -36,7 +36,7 @@ export function DeleteTaskButton({
         }}
         aria-label="Delete task"
         title={pending ? "Deleting..." : "Delete task"}
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-red-500/40 bg-red-500/5 text-red-500 transition-colors hover:border-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50"
+        className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-red-500/40 bg-red-500/5 text-red-500 transition-colors hover:border-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50"
       >
         <Trash2 size={14} />
       </button>

@@ -76,7 +76,7 @@ export function UserMetrics({
                 key={opt.value}
                 onClick={() => handleWeekChange(opt.value)}
                 disabled={isPending}
-                className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                className={`cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors ${
                   weeks === opt.value ? "bg-accent/15 text-accent" : "text-fg-muted hover:text-fg-secondary"
                 }`}
               >

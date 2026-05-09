@@ -78,7 +78,7 @@ export function ActivityLog({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="group flex items-center gap-2 font-mono text-xs font-medium text-fg-muted transition-colors hover:text-fg-secondary"
+        className="cursor-pointer group flex items-center gap-2 font-mono text-xs font-medium text-fg-muted transition-colors hover:text-fg-secondary"
       >
         <ChevronDown size={13} className={`transition-transform ${expanded ? "" : "-rotate-90"}`} />
         <Activity size={13} />

@@ -10,7 +10,7 @@ export function AcceptInviteButton({ inviteId }: { inviteId: string }) {
     <form action={action}>
       <input type="hidden" name="inviteId" value={inviteId} />
       {state?.error && <div className="mb-3 alert-error">{state.error}</div>}
-      <button type="submit" disabled={pending} className="w-full btn-primary">
+      <button type="submit" disabled={pending} className="cursor-pointer w-full btn-primary">
         {pending ? "Joining..." : "Accept & Join Workspace"}
       </button>
     </form>

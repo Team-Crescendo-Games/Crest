@@ -13,7 +13,7 @@ export function JoinButton({ workspaceId }: { workspaceId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
+        className="cursor-pointer rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-bg-primary transition-all hover:bg-accent-emphasis disabled:opacity-50"
       >
         {pending ? "Joining..." : "Join"}
       </button>
@@ -34,7 +34,7 @@ export function ApplyButton({ workspaceId }: { workspaceId: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md border border-accent/30 px-3 py-1.5 text-[11px] font-medium text-accent transition-all hover:bg-accent/10 disabled:opacity-50"
+          className="cursor-pointer rounded-md border border-accent/30 px-3 py-1.5 text-[11px] font-medium text-accent transition-all hover:bg-accent/10 disabled:opacity-50"
         >
           {pending ? "Applying..." : "Apply"}
         </button>

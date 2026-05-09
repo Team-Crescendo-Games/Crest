@@ -103,7 +103,7 @@ export function TaskEditSidebar({
             <button
               type="button"
               onClick={() => onDueDateChange("")}
-              className="shrink-0 rounded p-0.5 text-fg-muted hover:text-red-400"
+              className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted hover:text-red-400"
               title="Clear due date"
             >
               <X size={10} />

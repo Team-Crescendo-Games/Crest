@@ -13,7 +13,7 @@ export function FlowModeButton({ active, onToggle }: { active: boolean; onToggle
       onClick={onToggle}
       aria-label={active ? "Close Flow mode" : "Open Flow mode"}
       title={active ? "Close Flow mode" : "Open Flow mode"}
-      className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+      className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
         active
           ? "border-accent bg-accent/10 text-accent"
           : "border-border bg-bg-elevated/60 text-fg-secondary hover:border-accent/40 hover:text-accent"
@@ -76,7 +76,7 @@ export function TaskActions({
         onClick={handleCopyLink}
         aria-label={copied ? "Link copied" : "Copy link"}
         title={copyError ?? (copied ? "Link copied" : "Copy link")}
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-elevated/60 text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
+        className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-elevated/60 text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
       >
         {copied ? <Check size={14} className="text-accent" /> : <Link2 size={14} />}
       </button>
@@ -86,7 +86,7 @@ export function TaskActions({
         onClick={() => setDuplicateOpen(true)}
         aria-label="Duplicate task"
         title="Duplicate task"
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-elevated/60 text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
+        className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-elevated/60 text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
       >
         <Copy size={14} />
       </button>
@@ -146,7 +146,7 @@ function DuplicateTaskModal({
 
         <div className="flex items-center justify-between">
           <h3 className="font-mono text-xs font-medium text-fg-primary">Duplicate Task</h3>
-          <button type="button" onClick={onClose} className="text-fg-muted hover:text-fg-secondary" aria-label="Close">
+          <button type="button" onClick={onClose} className="cursor-pointer text-fg-muted hover:text-fg-secondary" aria-label="Close">
             <X size={14} />
           </button>
         </div>
@@ -243,7 +243,7 @@ function DuplicateTaskModal({
                   onClick={() =>
                     setAssigneeIds((prev) => (prev.includes(m.id) ? prev.filter((x) => x !== m.id) : [...prev, m.id]))
                   }
-                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
+                  className={`cursor-pointer flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
                     selected
                       ? "border-accent bg-accent/10 text-accent"
                       : "border-border bg-bg-secondary text-fg-secondary hover:border-accent/40"
@@ -261,14 +261,14 @@ function DuplicateTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+            className="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
           >
             {pending ? "Creating..." : "Create Duplicate"}
           </button>

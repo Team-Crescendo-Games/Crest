@@ -54,7 +54,7 @@ export function TagManager({
         {canCreate && !showCreate && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-accent/40 hover:text-accent"
+            className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-fg-muted transition-colors hover:border-accent/40 hover:text-accent"
           >
             <Plus size={11} />
             Add tag
@@ -114,7 +114,7 @@ function TagItem({
       {canEdit && (
         <button
           onClick={() => setEditing(true)}
-          className="absolute -right-1 -top-1 hidden rounded-full bg-bg-elevated p-0.5 shadow-sm border border-border text-fg-muted hover:text-fg-secondary group-hover:block"
+          className="cursor-pointer absolute -right-1 -top-1 hidden rounded-full bg-bg-elevated p-0.5 shadow-sm border border-border text-fg-muted hover:text-fg-secondary group-hover:block"
         >
           <Pencil size={9} />
         </button>
@@ -200,7 +200,7 @@ function TagForm({
                 setColor(c);
                 setCustomColor("");
               }}
-              className={`h-5 w-5 rounded-full border transition-transform hover:scale-110 ${
+              className={`cursor-pointer h-5 w-5 rounded-full border transition-transform hover:scale-110 ${
                 color === c ? "border-fg-primary scale-110" : "border-transparent"
               }`}
               style={{ backgroundColor: c }}
@@ -233,7 +233,7 @@ function TagForm({
           <button
             type="button"
             disabled={deletePending}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-fg-muted hover:text-accent-emphasis disabled:opacity-50"
+            className="cursor-pointer flex items-center gap-1 rounded px-2 py-1 text-xs text-fg-muted hover:text-accent-emphasis disabled:opacity-50"
             onClick={() => {
               if (confirm(`Delete tag "${defaultName}"?`)) {
                 const fd = new FormData();
@@ -254,14 +254,14 @@ function TagForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded px-2 py-1 text-xs text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer rounded px-2 py-1 text-xs text-fg-muted hover:text-fg-secondary"
           >
             <X size={12} />
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+            className="cursor-pointer rounded bg-accent px-2 py-1 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
           >
             {pending ? "..." : <Check size={12} />}
           </button>

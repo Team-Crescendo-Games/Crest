@@ -62,7 +62,7 @@ export function StatusPicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50"
+        className="cursor-pointer flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50"
         style={{
           backgroundColor: color + "20",
           color: color,
@@ -81,7 +81,7 @@ export function StatusPicker({
               <button
                 key={s}
                 onClick={() => handleSelect(s)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
                 <span className={s === status ? "font-medium" : ""} style={{ color: STATUS_COLORS[s] }}>
@@ -135,7 +135,7 @@ export function PriorityPicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50"
+        className="cursor-pointer flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50"
         style={{
           backgroundColor: color + "20",
           color: color,
@@ -154,7 +154,7 @@ export function PriorityPicker({
               <button
                 key={p}
                 onClick={() => handleSelect(p)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                className="cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
               >
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[p] }} />
                 <span className={p === priority ? "font-medium" : ""} style={{ color: PRIORITY_COLORS[p] }}>
@@ -213,7 +213,7 @@ export function BoardPicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1 text-[11px] text-accent transition-colors hover:text-accent-emphasis disabled:opacity-50"
+        className="cursor-pointer flex items-center gap-1 text-[11px] text-accent transition-colors hover:text-accent-emphasis disabled:opacity-50"
       >
         {isPending ? "Moving…" : currentBoardName}
         <ChevronDown size={10} className={open ? "rotate-180" : ""} />
@@ -228,7 +228,7 @@ export function BoardPicker({
               <button
                 key={board.id}
                 onClick={() => handleSelect(board.id)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-fg-primary transition-colors hover:bg-bg-secondary"
+                className="cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-fg-primary transition-colors hover:bg-bg-secondary"
               >
                 {board.id === currentBoardId && <Check size={11} className="shrink-0 text-accent" />}
                 <span className={board.id === currentBoardId ? "font-medium text-accent" : "pl-[19px]"}>
@@ -310,7 +310,7 @@ export function SprintPicker({
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
+        className="cursor-pointer mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
       >
         {isPending ? (
           "Saving…"
@@ -336,7 +336,7 @@ export function SprintPicker({
                   <button
                     key={sprint.id}
                     onClick={() => toggle(sprint.id)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                    className="cursor-pointer flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
                   >
                     <div
                       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
@@ -357,14 +357,14 @@ export function SprintPicker({
             <div className="flex items-center justify-end gap-1.5 border-t border-border px-2 py-1.5">
               <button
                 onClick={cancel}
-                className="rounded px-2 py-1 text-[11px] text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary"
+                className="cursor-pointer rounded px-2 py-1 text-[11px] text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={save}
                 disabled={!isDirty}
-                className="rounded bg-accent px-2 py-1 text-[11px] font-medium text-bg-primary transition-colors hover:bg-accent-emphasis disabled:opacity-40"
+                className="cursor-pointer rounded bg-accent px-2 py-1 text-[11px] font-medium text-bg-primary transition-colors hover:bg-accent-emphasis disabled:opacity-40"
               >
                 Save
               </button>
@@ -427,7 +427,7 @@ export function DueDatePicker({
           <button
             onClick={handleClear}
             disabled={isPending}
-            className="shrink-0 rounded p-0.5 text-fg-muted hover:text-red-400 disabled:opacity-50"
+            className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted hover:text-red-400 disabled:opacity-50"
             title="Clear due date"
           >
             <X size={10} />
@@ -502,7 +502,7 @@ export function AssigneePicker({
               <button
                 onClick={() => remove(m.id)}
                 disabled={isPending}
-                className="shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-all hover:text-red-400 group-hover/assignee:opacity-100 disabled:opacity-50"
+                className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-all hover:text-red-400 group-hover/assignee:opacity-100 disabled:opacity-50"
                 title="Remove assignee"
               >
                 <X size={10} />
@@ -519,7 +519,7 @@ export function AssigneePicker({
         <button
           onClick={() => setShowDropdown(true)}
           disabled={isPending}
-          className="mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
+          className="cursor-pointer mt-1 flex items-center gap-1 text-[10px] text-fg-muted transition-colors hover:text-fg-secondary disabled:opacity-50"
         >
           <Plus size={10} />
           Add assignee
@@ -541,7 +541,7 @@ export function AssigneePicker({
                 setShowDropdown(false);
                 setSearch("");
               }}
-              className="shrink-0 text-fg-muted hover:text-fg-secondary"
+              className="cursor-pointer shrink-0 text-fg-muted hover:text-fg-secondary"
             >
               <X size={11} />
             </button>
@@ -554,7 +554,7 @@ export function AssigneePicker({
                   key={m.id}
                   onClick={() => add(m.id)}
                   disabled={isPending}
-                  className="flex w-full items-center gap-2 px-2 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary disabled:opacity-50"
+                  className="cursor-pointer flex w-full items-center gap-2 px-2 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary disabled:opacity-50"
                 >
                   <UserAvatar name={m.name} image={m.image} size={16} />
                   <span className="truncate">{m.name ?? m.email}</span>
@@ -615,7 +615,7 @@ export function TagPicker({
               key={tag.id}
               onClick={() => toggle(tag.id)}
               disabled={isPending}
-              className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-all disabled:opacity-50"
+              className="cursor-pointer rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-all disabled:opacity-50"
               style={{
                 borderColor: color + (isSelected ? "80" : "30"),
                 color: isSelected ? "#fff" : color,

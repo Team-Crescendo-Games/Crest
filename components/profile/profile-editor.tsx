@@ -15,7 +15,7 @@ export function ProfileForm({ currentName }: { currentName: string }) {
 
       <input name="name" defaultValue={currentName} required className="block w-full input-field" />
 
-      <button type="submit" disabled={pending} className="btn-primary text-xs">
+      <button type="submit" disabled={pending} className="cursor-pointer btn-primary text-xs">
         {pending ? "Saving..." : "Update Name"}
       </button>
     </form>
@@ -52,7 +52,7 @@ export function EmailForm({ currentEmail }: { currentEmail: string }) {
         />
       </div>
 
-      <button type="submit" disabled={pending} className="btn-primary text-xs">
+      <button type="submit" disabled={pending} className="cursor-pointer btn-primary text-xs">
         {pending ? "Updating..." : "Update Email"}
       </button>
     </form>
@@ -100,7 +100,7 @@ export function PasswordForm() {
         />
       </div>
 
-      <button type="submit" disabled={pending} className="btn-primary text-xs">
+      <button type="submit" disabled={pending} className="cursor-pointer btn-primary text-xs">
         {pending ? "Changing..." : "Change Password"}
       </button>
     </form>

@@ -27,7 +27,7 @@ export default function TaskError({ error, unstable_retry }: Props) {
         <div className="mt-4 flex items-center justify-center gap-3">
           <button
             onClick={unstable_retry}
-            className="rounded-md bg-accent px-4 py-1.5 font-mono text-xs text-bg-primary hover:bg-accent-emphasis"
+            className="cursor-pointer rounded-md bg-accent px-4 py-1.5 font-mono text-xs text-bg-primary hover:bg-accent-emphasis"
           >
             Try again
           </button>

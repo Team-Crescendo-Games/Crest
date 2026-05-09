@@ -36,7 +36,7 @@ export function AssignTaskSection({
         <h3 className="font-mono text-xs font-medium text-fg-secondary">Tasks in Sprint ({assignedTaskIds.length})</h3>
         <button
           onClick={() => setShowPicker(!showPicker)}
-          className="flex items-center gap-1 rounded-md border border-border bg-bg-secondary px-2 py-1 text-xs text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
+          className="cursor-pointer flex items-center gap-1 rounded-md border border-border bg-bg-secondary px-2 py-1 text-xs text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
         >
           {showPicker ? <X size={11} /> : <Plus size={11} />}
           {showPicker ? "Close" : "Find Available Tasks"}
@@ -99,7 +99,7 @@ function AssignRow({ task, sprintId, workspaceId }: { task: UnassignedTask; spri
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/20 disabled:opacity-50"
+        className="cursor-pointer rounded bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/20 disabled:opacity-50"
       >
         {pending ? "..." : "Add"}
       </button>

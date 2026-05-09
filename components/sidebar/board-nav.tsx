@@ -33,7 +33,7 @@ export function BoardNav({ boards, activeWorkspaceId, pathname }: BoardNavProps)
       >
         <button
           onClick={() => setExpanded(!expanded)}
-          className="shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
+          className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
         >
           {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         </button>
@@ -48,7 +48,7 @@ export function BoardNav({ boards, activeWorkspaceId, pathname }: BoardNavProps)
         </Link>
         <button
           onClick={() => setShowArchived(!showArchived)}
-          className={`shrink-0 rounded p-0.5 mr-1 transition-colors ${
+          className={`cursor-pointer shrink-0 rounded p-0.5 mr-1 transition-colors ${
             showArchived ? "text-accent hover:text-accent-emphasis" : "text-fg-muted hover:text-fg-secondary"
           }`}
           title={showArchived ? "Hide archived boards" : "Show archived boards"}

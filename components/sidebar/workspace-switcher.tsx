@@ -74,7 +74,7 @@ export function WorkspaceSwitcher({ workspaces, activeWorkspaceId, activeWorkspa
     <div className="relative mb-2">
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex w-full items-center justify-between rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-fg-primary transition-colors hover:border-accent/30 hover:text-accent"
+        className="cursor-pointer flex w-full items-center justify-between rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-fg-primary transition-colors hover:border-accent/30 hover:text-accent"
       >
         <span className="truncate">{activeWorkspaceName ?? "No workspace"}</span>
         <ChevronDown size={12} className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />

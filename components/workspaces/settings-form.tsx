@@ -67,7 +67,7 @@ export function WorkspaceSettingsForm({ workspace }: Props) {
         <p className="mt-1 text-[10px] text-fg-muted">Controls how others can discover and join this workspace.</p>
       </div>
 
-      <button type="submit" disabled={pending} className="w-full btn-primary">
+      <button type="submit" disabled={pending} className="cursor-pointer w-full btn-primary">
         {pending ? "Saving..." : "Save Settings"}
       </button>
     </form>

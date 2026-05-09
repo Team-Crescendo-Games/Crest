@@ -82,7 +82,7 @@ export default function SignInPage() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary">
+            <button type="submit" disabled={loading} className="cursor-pointer w-full btn-primary">
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>

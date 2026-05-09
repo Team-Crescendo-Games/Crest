@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Search } from "lucide-react";
+import { Plus, X, Search, ChevronDown, Check } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
@@ -224,8 +224,8 @@ function CreateTaskModal({
         />
       </div>
 
-      {/* Priority + Due Date */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Priority + Due Date + Points */}
+      <div className="grid grid-cols-3 gap-2">
         <div>
           <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
           <ColoredPrioritySelect value={priority} onChange={setPriority} />
@@ -236,6 +236,16 @@ function CreateTaskModal({
             name="dueDate"
             type="date"
             className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-fg-muted">Points</label>
+          <input
+            name="points"
+            type="number"
+            min="0"
+            placeholder="0"
+            className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none"
           />
         </div>
       </div>
@@ -279,11 +289,11 @@ function CreateTaskModal({
                   onClick={() =>
                     setSelectedTags((prev) => (isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]))
                   }
-                  className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
+                  className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105"
                   style={{
                     borderColor: color + (isSelected ? "80" : "40"),
                     color: isSelected ? "#fff" : color,
-                    backgroundColor: isSelected ? color : "transparent",
+                    backgroundColor: isSelected ? color : color + "15",
                   }}
                 >
                   {tag.name}
@@ -298,14 +308,14 @@ function CreateTaskModal({
         <button
           type="button"
           onClick={onClose}
-          className="rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
+          className="cursor-pointer rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+          className="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
           {pending ? "Creating..." : "Create"}
         </button>
@@ -314,41 +324,55 @@ function CreateTaskModal({
   );
 }
 
-/* ─── Colored priority select ──────────────────────────────────────────── */
+/* ─── Priority dropdown (matches PriorityPicker style) ────────────────── */
 
 function ColoredPrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
-  const current = PRIORITY_COLORS[value];
+  const [open, setOpen] = useState(false);
+  const color = PRIORITY_COLORS[value];
+
+  function handleSelect(p: TaskPriority) {
+    onChange(p);
+    setOpen(false);
+  }
 
   return (
     <div className="relative mt-1">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-        style={{ backgroundColor: current }}
-      />
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as TaskPriority)}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors"
         style={{
-          backgroundColor: current + "15",
-          borderColor: current + "40",
-          color: current,
+          backgroundColor: color + "20",
+          borderColor: color + "40",
+          color: color,
         }}
-        className="block w-full cursor-pointer rounded-md border py-1.5 pl-6 pr-2 font-mono text-xs font-medium focus:outline-none focus:ring-1"
       >
-        {TASK_PRIORITIES.map((p) => (
-          <option
-            key={p}
-            value={p}
-            style={{
-              color: PRIORITY_COLORS[p],
-              backgroundColor: "var(--bg-elevated)",
-            }}
-          >
-            {PRIORITY_LABELS[p]}
-          </option>
-        ))}
-      </select>
+        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+        {PRIORITY_LABELS[value]}
+        <ChevronDown size={10} className={`ml-auto ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
+            {TASK_PRIORITIES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handleSelect(p)}
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+              >
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: PRIORITY_COLORS[p] }} />
+                <span className={p === value ? "font-medium" : ""} style={{ color: PRIORITY_COLORS[p] }}>
+                  {PRIORITY_LABELS[p]}
+                </span>
+                {p === value && <Check size={11} className="ml-auto text-accent" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -424,7 +448,7 @@ function AssigneePicker({
           <button
             type="button"
             onClick={() => setShowSearch(true)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
+            className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
           >
             <Plus size={10} />
             Add

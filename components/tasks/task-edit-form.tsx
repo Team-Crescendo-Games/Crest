@@ -193,7 +193,7 @@ export function TaskEditForm({
               type="submit"
               form={formId}
               disabled={pending || !isDirty}
-              className={`rounded-md px-4 py-2 text-xs font-medium transition-all ${
+              className={`cursor-pointer rounded-md px-4 py-2 text-xs font-medium transition-all ${
                 isDirty
                   ? "bg-accent text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
                   : "bg-bg-secondary text-fg-muted cursor-not-allowed"
@@ -206,7 +206,7 @@ export function TaskEditForm({
               <button
                 type="button"
                 onClick={reset}
-                className="rounded-md border border-border px-4 py-2 text-xs font-medium text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary"
+                className="cursor-pointer rounded-md border border-border px-4 py-2 text-xs font-medium text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary"
               >
                 Reset
               </button>

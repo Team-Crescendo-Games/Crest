@@ -39,7 +39,7 @@ export function InviteSection({ workspaceId, invitations }: { workspaceId: strin
         <button
           type="submit"
           disabled={pending}
-          className="flex items-center gap-1.5 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+          className="cursor-pointer flex items-center gap-1.5 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
         >
           <Plus size={11} />
           {pending ? "Creating..." : "Create Invite Link"}
@@ -55,7 +55,7 @@ export function InviteSection({ workspaceId, invitations }: { workspaceId: strin
               ? `${window.location.origin}/invite/${state.inviteId}`
               : `/invite/${state.inviteId}`}
           </code>
-          <button onClick={() => copyLink(state.inviteId!)} className="shrink-0 text-accent hover:text-accent-emphasis">
+          <button onClick={() => copyLink(state.inviteId!)} className="cursor-pointer shrink-0 text-accent hover:text-accent-emphasis">
             {copiedId === state.inviteId ? <Check size={12} /> : <Copy size={12} />}
           </button>
         </div>
@@ -74,7 +74,7 @@ export function InviteSection({ workspaceId, invitations }: { workspaceId: strin
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => copyLink(inv.id)}
-                  className="text-fg-muted hover:text-fg-secondary"
+                  className="cursor-pointer text-fg-muted hover:text-fg-secondary"
                   title="Copy invite link"
                 >
                   {copiedId === inv.id ? <Check size={11} /> : <Copy size={11} />}

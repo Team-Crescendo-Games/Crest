@@ -18,7 +18,7 @@ export function CollapsibleSection({ title, defaultOpen = false, children, class
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-1.5 px-4 py-3 text-left"
+        className="cursor-pointer flex w-full items-center gap-1.5 px-4 py-3 text-left"
       >
         <ChevronRight size={12} className={`text-fg-muted transition-transform ${open ? "rotate-90" : ""}`} />
         <span className="text-xs font-medium text-fg-secondary">{title}</span>

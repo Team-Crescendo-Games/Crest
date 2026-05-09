@@ -94,7 +94,7 @@ export default function SetPasswordPage() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary">
+            <button type="submit" disabled={loading} className="cursor-pointer w-full btn-primary">
               {loading ? "Checking..." : "Continue"}
             </button>
           </form>
@@ -132,7 +132,7 @@ export default function SetPasswordPage() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary">
+            <button type="submit" disabled={loading} className="cursor-pointer w-full btn-primary">
               {loading ? "Setting..." : "Set Password"}
             </button>
           </form>

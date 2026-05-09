@@ -43,7 +43,7 @@ function ApplicationRow({ application }: { application: Application }) {
           <button
             type="submit"
             disabled={approvePending || rejectPending}
-            className="rounded-md bg-accent/10 p-1.5 text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-accent/10 p-1.5 text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
             title="Approve"
           >
             <Check size={12} />
@@ -55,7 +55,7 @@ function ApplicationRow({ application }: { application: Application }) {
           <button
             type="submit"
             disabled={approvePending || rejectPending}
-            className="rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-accent-emphasis disabled:opacity-50"
             title="Reject"
           >
             <X size={12} />

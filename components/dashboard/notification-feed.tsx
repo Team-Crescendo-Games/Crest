@@ -61,7 +61,7 @@ export function NotificationFeed({ initial, totalCount }: NotificationFeedProps)
         <div className="mb-2 flex justify-end">
           <button
             onClick={markAllRead}
-            className="flex items-center gap-1 text-[11px] text-fg-muted transition-colors hover:text-accent"
+            className="cursor-pointer flex items-center gap-1 text-[11px] text-fg-muted transition-colors hover:text-accent"
           >
             <Check size={11} />
             Mark all as read
@@ -99,7 +99,7 @@ export function NotificationFeed({ initial, totalCount }: NotificationFeedProps)
             {!n.isRead && (
               <button
                 onClick={() => markRead(n.id)}
-                className="shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-accent"
+                className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-accent"
                 title="Mark as read"
               >
                 <Check size={11} />
@@ -113,7 +113,7 @@ export function NotificationFeed({ initial, totalCount }: NotificationFeedProps)
         <button
           onClick={loadMore}
           disabled={isPending}
-          className="mt-3 w-full rounded-md border border-border py-2 text-xs text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary disabled:opacity-50"
+          className="cursor-pointer mt-3 w-full rounded-md border border-border py-2 text-xs text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary disabled:opacity-50"
         >
           {isPending ? "Loading…" : "Load more"}
         </button>

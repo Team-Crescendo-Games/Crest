@@ -49,7 +49,7 @@ export function TransferOwnership({ workspaceId, members }: { workspaceId: strin
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs text-fg-muted transition-colors hover:border-accent/40 hover:text-accent"
+        className="cursor-pointer flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs text-fg-muted transition-colors hover:border-accent/40 hover:text-accent"
       >
         <ArrowRightLeft size={12} />
         Transfer Ownership
@@ -72,14 +72,14 @@ export function TransferOwnership({ workspaceId, members }: { workspaceId: strin
           <button
             onClick={handleTransfer}
             disabled={pending}
-            className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
+            className="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
           >
             {pending ? "Transferring..." : "Confirm Transfer"}
           </button>
           <button
             onClick={reset}
             disabled={pending}
-            className="rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
+            className="cursor-pointer rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary"
           >
             Cancel
           </button>
@@ -99,7 +99,7 @@ export function TransferOwnership({ workspaceId, members }: { workspaceId: strin
               setSelectedId(member.id);
               setConfirming(true);
             }}
-            className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-bg-secondary/60 ${
+            className={`cursor-pointer flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-bg-secondary/60 ${
               selectedId === member.id ? "bg-accent/10 ring-1 ring-accent/30" : ""
             }`}
           >
@@ -112,7 +112,7 @@ export function TransferOwnership({ workspaceId, members }: { workspaceId: strin
         ))}
       </div>
       <div className="mt-3">
-        <button onClick={reset} className="rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary">
+        <button onClick={reset} className="cursor-pointer rounded px-3 py-1.5 text-xs text-fg-muted hover:text-fg-secondary">
           Cancel
         </button>
       </div>

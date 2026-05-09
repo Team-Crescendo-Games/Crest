@@ -26,7 +26,7 @@ export function UserFooter({ user }: UserFooterProps) {
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/sign-in" })}
-          className="shrink-0 rounded-md p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-accent-emphasis"
+          className="cursor-pointer shrink-0 rounded-md p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-accent-emphasis"
           aria-label="Sign out"
         >
           <LogOut size={14} />

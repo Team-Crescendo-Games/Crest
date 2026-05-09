@@ -82,7 +82,7 @@ export function ProfilePictureUpload({
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-border transition-colors hover:border-accent/40 disabled:opacity-50"
+        className="cursor-pointer group relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-border transition-colors hover:border-accent/40 disabled:opacity-50"
       >
         {previewUrl ? (
           <Image

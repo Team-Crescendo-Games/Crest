@@ -59,7 +59,7 @@ export function AssigneeEditor({
             <button
               type="button"
               onClick={() => onChange(assigneeIds.filter((a) => a !== m.id))}
-              className="text-fg-muted hover:text-accent-emphasis"
+              className="cursor-pointer text-fg-muted hover:text-accent-emphasis"
             >
               <X size={10} />
             </button>
@@ -70,7 +70,7 @@ export function AssigneeEditor({
           <button
             type="button"
             onClick={() => setShowDropdown(true)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
+            className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
           >
             <Plus size={10} />
             Add
@@ -93,7 +93,7 @@ export function AssigneeEditor({
                   setShowDropdown(false);
                   setSearch("");
                 }}
-                className="text-fg-muted hover:text-fg-secondary"
+                className="cursor-pointer text-fg-muted hover:text-fg-secondary"
               >
                 <X size={12} />
               </button>
@@ -108,7 +108,7 @@ export function AssigneeEditor({
                       onChange([...assigneeIds, m.id]);
                       setSearch("");
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
+                    className="cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
                     <span>{m.name ?? m.email}</span>
