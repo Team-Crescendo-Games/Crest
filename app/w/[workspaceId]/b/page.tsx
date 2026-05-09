@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, LayoutList } from "lucide-react";
+import { ArrowLeft, LayoutList } from "lucide-react";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import { TASK_STATUSES as STATUS_ORDER, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES } from "@/lib/task-enums";
 import { BoardRow } from "@/components/boards/board-row";
@@ -10,6 +10,7 @@ import { BoardExtras } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
 import { parseMulti } from "@/lib/url-helpers";
+import { CreateBoardModal } from "@/components/workspaces/create-board-modal";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
@@ -256,13 +257,7 @@ export default async function BoardsPage({ params, searchParams }: Props) {
             Boards in <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
-        <Link
-          href={`/w/${workspaceId}/b/new`}
-          className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
-        >
-          <Plus size={11} />
-          New Board
-        </Link>
+        <CreateBoardModal workspaceId={workspaceId} />
       </div>
 
       {/* Filters */}

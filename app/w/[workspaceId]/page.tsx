@@ -2,21 +2,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  Plus,
-  LayoutList,
-  Timer,
-  Settings,
-  Users,
-  Tag,
-  Shield,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { LayoutList, Timer, Users, Tag, Shield, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/workspace/tag-manager";
 import { RoleManager } from "@/components/workspace/role-manager";
+import { CreateBoardModal } from "@/components/workspaces/create-board-modal";
+import { CreateSprintModal } from "@/components/workspaces/create-sprint-modal";
+import { WorkspaceSettingsModal } from "@/components/workspaces/workspace-settings-modal";
 
 const SPRINTS_PER_PAGE = 5;
 
@@ -107,15 +99,7 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
             <Users size={12} />
             Team
           </Link>
-          {canManage && (
-            <Link
-              href={`/w/${workspaceId}/settings`}
-              className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
-            >
-              <Settings size={12} />
-              Settings
-            </Link>
-          )}
+          <WorkspaceSettingsModal workspace={workspace} canManage={canManage} />
         </div>
       </div>
 
@@ -126,13 +110,7 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
             <LayoutList size={14} className="text-accent" />
             Boards
           </h2>
-          <Link
-            href={`/w/${workspaceId}/b/new`}
-            className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
-          >
-            <Plus size={11} />
-            New Board
-          </Link>
+          <CreateBoardModal workspaceId={workspaceId} />
         </div>
         {workspace.boards.length === 0 ? (
           <p className="mt-4 text-xs text-fg-muted">No boards yet. Create one to start organizing tasks.</p>
@@ -170,13 +148,7 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
             Sprints
             {totalSprints > 0 && <span className="text-[11px] font-normal text-fg-muted">({totalSprints})</span>}
           </h2>
-          <Link
-            href={`/w/${workspaceId}/s/new`}
-            className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
-          >
-            <Plus size={11} />
-            New Sprint
-          </Link>
+          <CreateSprintModal workspaceId={workspaceId} />
         </div>
         {sprints.length === 0 && currentSprintPage === 1 ? (
           <p className="mt-4 text-xs text-fg-muted">

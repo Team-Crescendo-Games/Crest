@@ -6,9 +6,7 @@ const PUBLIC_PREFIXES = ["/invite/", "/api/auth/"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isPublic =
-    PUBLIC_ROUTES.includes(pathname) ||
-    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+  const isPublic = PUBLIC_ROUTES.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
 
@@ -24,5 +22,6 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclude Next.js internals and public static assets (logo images used on auth pages)
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo-dark.png|logo-light.png).*)"],
 };

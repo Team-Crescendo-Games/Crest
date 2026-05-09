@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Timer } from "lucide-react";
+import { ArrowLeft, Timer } from "lucide-react";
 import { SprintRow } from "@/components/sprints/sprint-row";
 import { SprintExtras } from "@/components/sprints/sprint-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
@@ -10,6 +10,7 @@ import { getEffectivePermissions } from "@/lib/permissions";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import { TASK_STATUSES as STATUS_ORDER, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES } from "@/lib/task-enums";
 import { parseMulti } from "@/lib/url-helpers";
+import { CreateSprintModal } from "@/components/workspaces/create-sprint-modal";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
@@ -238,13 +239,7 @@ export default async function SprintsPage({ params, searchParams }: Props) {
             Sprints in <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
-        <Link
-          href={`/w/${workspaceId}/s/new`}
-          className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
-        >
-          <Plus size={11} />
-          New Sprint
-        </Link>
+        <CreateSprintModal workspaceId={workspaceId} />
       </div>
 
       {/* Filters */}

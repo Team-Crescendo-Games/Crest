@@ -1,24 +1,47 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
+import { CreateWorkspaceModal } from "@/components/workspaces/create-workspace-modal";
+import { BrowseWorkspacesSection } from "@/components/workspaces/browse-workspaces-section";
 
 export default async function WorkspacesPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
-    include: {
-      workspace: {
-        include: {
-          _count: { select: { members: true, boards: true } },
+  const [memberships, myMembershipRows, myApplicationRows, discoverableWorkspaces] = await Promise.all([
+    prisma.workspaceMember.findMany({
+      where: { userId },
+      include: {
+        workspace: {
+          include: {
+            _count: { select: { members: true, boards: true } },
+          },
         },
+        role: true,
       },
-      role: true,
-    },
-    orderBy: { joinedAt: "desc" },
-  });
+      orderBy: { joinedAt: "desc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { userId },
+      select: { workspaceId: true },
+    }),
+    prisma.workspaceApplication.findMany({
+      where: { userId, status: "PENDING" },
+      select: { workspaceId: true },
+    }),
+    prisma.workspace.findMany({
+      where: { joinPolicy: { in: ["OPEN", "APPLY_TO_JOIN"] } },
+      include: { _count: { select: { members: true } } },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const myMembershipIds = new Set(myMembershipRows.map((m) => m.workspaceId));
+  const myApplicationIds = new Set(myApplicationRows.map((a) => a.workspaceId));
+
+  const joinable = discoverableWorkspaces.filter((ws) => !myMembershipIds.has(ws.id));
+  const alreadyIn = discoverableWorkspaces.filter((ws) => myMembershipIds.has(ws.id));
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -28,20 +51,8 @@ export default async function WorkspacesPage() {
           <p className="mt-1 text-xs text-fg-muted">Manage and access your workspaces</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/w/browse"
-            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-fg-secondary transition-colors hover:border-accent/30 hover:text-fg-primary"
-          >
-            <Search size={12} />
-            Browse
-          </Link>
-          <Link
-            href="/w/new"
-            className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis hover:shadow-[0_0_16px_-4px] hover:shadow-accent/40"
-          >
-            <Plus size={12} />
-            Create
-          </Link>
+          <BrowseWorkspacesSection joinable={joinable} alreadyIn={alreadyIn} myApplicationIds={myApplicationIds} />
+          <CreateWorkspaceModal />
         </div>
       </div>
 
@@ -53,12 +64,7 @@ export default async function WorkspacesPage() {
             <Plus size={20} className="text-accent-subtle" />
           </div>
           <p className="text-xs text-fg-muted">You&apos;re not a member of any workspaces yet.</p>
-          <Link
-            href="/w/new"
-            className="mt-4 inline-block rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary transition-all hover:bg-accent-emphasis"
-          >
-            Create your first workspace
-          </Link>
+          <CreateWorkspaceModal />
         </div>
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
