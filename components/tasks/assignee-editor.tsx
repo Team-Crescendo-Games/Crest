@@ -11,6 +11,7 @@ export function AssigneeEditor({
   onChange,
   workspaceId,
   memberIdMap,
+  currentUserId,
 }: {
   members: {
     id: string;
@@ -22,6 +23,7 @@ export function AssigneeEditor({
   onChange: (ids: string[]) => void;
   workspaceId: string;
   memberIdMap: Record<string, string>;
+  currentUserId?: string;
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [search, setSearch] = useState("");
@@ -32,6 +34,11 @@ export function AssigneeEditor({
       !assigneeIds.includes(m.id) &&
       (m.name?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())),
   );
+
+  const canAssignSelf =
+    !!currentUserId &&
+    !assigneeIds.includes(currentUserId) &&
+    members.some((m) => m.id === currentUserId);
 
   return (
     <div>
@@ -67,14 +74,25 @@ export function AssigneeEditor({
         ))}
 
         {!showDropdown ? (
-          <button
-            type="button"
-            onClick={() => setShowDropdown(true)}
-            className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
-          >
-            <Plus size={10} />
-            Add
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => setShowDropdown(true)}
+              className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
+            >
+              <Plus size={10} />
+              Add
+            </button>
+            {canAssignSelf && (
+              <button
+                type="button"
+                onClick={() => onChange([...assigneeIds, currentUserId!])}
+                className="cursor-pointer flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-fg-muted hover:border-accent/40 hover:text-accent"
+              >
+                Assign to me
+              </button>
+            )}
+          </>
         ) : (
           <div className="relative mt-1 w-full">
             <div className="flex items-center gap-1.5 rounded-md border border-border bg-bg-primary px-2 py-1">

@@ -26,6 +26,44 @@ export async function requireTaskMembership(userId: string, taskId: string) {
   return { task, workspaceId: task.board.workspaceId };
 }
 
+// ─── Activity pruning ──────────────────────────────────────────────────────
+// When the same user repeatedly changes the same field within a short window,
+// collapse the chain into a single entry so the timeline stays useful.
+
+const PRUNE_WINDOW_MS = 5 * 60 * 1000;
+
+const VALUE_EDIT_FIELDS = new Set([
+  "title",
+  "description",
+  "dueDate",
+  "startDate",
+  "points",
+  "board",
+]);
+
+/** Value-changing activities: collapse chain, preserving oldest oldValue. */
+function isValueChange(type: ActivityType, field: string | null): boolean {
+  if (type === "STATUS_CHANGED" || type === "PRIORITY_CHANGED") return true;
+  if (type === "EDITED" && field && VALUE_EDIT_FIELDS.has(field)) return true;
+  return false;
+}
+
+/** Reference-bearing activities: only collapse exact duplicates. */
+function isReferenceChange(type: ActivityType, field: string | null): boolean {
+  if (
+    type === "ASSIGNED" ||
+    type === "UNASSIGNED" ||
+    type === "MOVED_TO_SPRINT" ||
+    type === "REMOVED_FROM_SPRINT"
+  ) {
+    return true;
+  }
+  if (type === "EDITED" && (field === "tag_added" || field === "tag_removed")) {
+    return true;
+  }
+  return false;
+}
+
 export async function logActivity(
   taskId: string,
   userId: string,
@@ -36,16 +74,64 @@ export async function logActivity(
     newValue?: string | null;
   },
 ) {
-  await prisma.activity.create({
-    data: {
-      taskId,
-      userId,
-      type,
-      field: opts?.field ?? null,
-      oldValue: opts?.oldValue ?? null,
-      newValue: opts?.newValue ?? null,
-    },
+  const field = opts?.field ?? null;
+  const oldValue = opts?.oldValue ?? null;
+  const newValue = opts?.newValue ?? null;
+
+  const created = await prisma.activity.create({
+    data: { taskId, userId, type, field, oldValue, newValue },
   });
+
+  const since = new Date(created.createdAt.getTime() - PRUNE_WINDOW_MS);
+
+  if (isValueChange(type, field)) {
+    // Find all same-user/same-type/same-field activities in the window
+    // (excluding the one we just created), then collapse them into the new entry.
+    const earlier = await prisma.activity.findMany({
+      where: {
+        taskId,
+        userId,
+        type,
+        field,
+        id: { not: created.id },
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, oldValue: true },
+    });
+
+    if (earlier.length > 0) {
+      // Inherit the oldest oldValue so the surviving entry spans the whole chain.
+      await prisma.activity.update({
+        where: { id: created.id },
+        data: { oldValue: earlier[0].oldValue },
+      });
+      await prisma.activity.deleteMany({
+        where: { id: { in: earlier.map((e) => e.id) } },
+      });
+    }
+  } else if (isReferenceChange(type, field)) {
+    // Only collapse exact-duplicate references (same entity).
+    const dupes = await prisma.activity.findMany({
+      where: {
+        taskId,
+        userId,
+        type,
+        field,
+        oldValue,
+        newValue,
+        id: { not: created.id },
+        createdAt: { gte: since },
+      },
+      select: { id: true },
+    });
+
+    if (dupes.length > 0) {
+      await prisma.activity.deleteMany({
+        where: { id: { in: dupes.map((d) => d.id) } },
+      });
+    }
+  }
 }
 
 export function buildOrderBy(sorts?: SortOption[]): Record<string, string>[] {

@@ -122,6 +122,7 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
               status: true,
               startDate: true,
               dueDate: true,
+              createdAt: true,
               title: true,
               description: true,
               priority: true,

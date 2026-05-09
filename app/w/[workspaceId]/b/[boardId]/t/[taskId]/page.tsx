@@ -1,13 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { TaskEditForm } from "@/components/tasks/task-edit-form";
 import { TaskBreadcrumb } from "@/components/tasks/task-breadcrumb";
 import { CommentSection } from "@/components/tasks/comment-section";
 import { ActivityLog } from "@/components/tasks/activity-log";
 import { AttachmentSection } from "@/components/workspace/attachment-section";
 import { SubtaskSection } from "@/components/workspace/subtask-section";
+import { ParentTaskSection } from "@/components/workspace/parent-task-section";
 
 export default async function TaskDetailPage({
   params,
@@ -19,7 +19,16 @@ export default async function TaskDetailPage({
   const userId = session!.user!.id!;
 
   // Run all independent queries in parallel
-  const [membership, task, members, boards, sprints, allTags] = await Promise.all([
+  const [
+    membership,
+    task,
+    members,
+    boards,
+    sprints,
+    allTags,
+    allBoardsForActivity,
+    allSprintsForActivity,
+  ] = await Promise.all([
     prisma.workspaceMember.findUnique({
       where: { userId_workspaceId: { userId, workspaceId } },
       include: { role: true },
@@ -36,7 +45,7 @@ export default async function TaskDetailPage({
         },
         tags: { select: { id: true, name: true, color: true } },
         sprints: { select: { id: true, title: true } },
-        parentTask: { select: { id: true, title: true, boardId: true } },
+        parentTask: { select: { id: true, title: true, boardId: true, status: true } },
         subtasks: {
           select: { id: true },
         },
@@ -77,6 +86,16 @@ export default async function TaskDetailPage({
       where: { workspaceId },
       select: { id: true, name: true, color: true },
       orderBy: { name: "asc" },
+    }),
+    // Lookup maps include inactive records so historical activity entries
+    // can still resolve names for boards/sprints that have since been archived.
+    prisma.board.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true },
+    }),
+    prisma.sprint.findMany({
+      where: { workspaceId },
+      select: { id: true, title: true },
     }),
   ]);
 
@@ -122,19 +141,16 @@ export default async function TaskDetailPage({
           authorName={task.author.name}
           authorImage={task.author.image}
           memberIdMap={memberIdMap}
+          currentUserId={userId}
         />
 
-        {/* Parent task link */}
+        {/* Parent task — styled to match SubtaskSection */}
         {task.parentTask && (
-          <div className="mt-6">
-            <h3 className="font-mono text-xs font-medium text-fg-secondary">Parent Task</h3>
-            <Link
-              href={`/w/${workspaceId}/b/${task.parentTask.boardId}/t/${task.parentTask.id}`}
-              className="mt-1.5 inline-block text-xs text-accent transition-colors hover:text-accent-emphasis"
-            >
-              {task.parentTask.title}
-            </Link>
-          </div>
+          <ParentTaskSection
+            workspaceId={workspaceId}
+            parent={task.parentTask}
+            childTaskId={taskId}
+          />
         )}
 
         {/* Below the form: subtasks, attachments, activity log */}
@@ -151,9 +167,10 @@ export default async function TaskDetailPage({
 
         <ActivityLog
           activities={task.activities}
-          createdAt={task.createdAt}
-          createdByName={task.author.name}
           memberNames={Object.fromEntries(members.map((m) => [m.user.id, m.user.name ?? m.user.email ?? "Unknown"]))}
+          sprintNames={Object.fromEntries(allSprintsForActivity.map((s) => [s.id, s.title]))}
+          boardNames={Object.fromEntries(allBoardsForActivity.map((b) => [b.id, b.name]))}
+          tagNames={Object.fromEntries(allTags.map((t) => [t.id, t.name]))}
         />
 
         {/* Comments — inline fallback for smaller screens */}

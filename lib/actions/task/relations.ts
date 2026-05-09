@@ -86,6 +86,12 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
     }
   }
 
+  const oldTask = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { tags: { select: { id: true } } },
+  });
+  const oldTagIds = oldTask?.tags.map((t) => t.id) ?? [];
+
   try {
     await prisma.task.update({
       where: { id: taskId },
@@ -96,7 +102,20 @@ export async function updateTaskTags(_prev: unknown, formData: FormData) {
     return { error: "An unexpected error occurred" };
   }
 
-  await logActivity(taskId, session.user.id, "EDITED", { field: "tags" });
+  const addedTags = tagIds.filter((id) => !oldTagIds.includes(id));
+  const removedTags = oldTagIds.filter((id) => !tagIds.includes(id));
+  for (const id of addedTags) {
+    await logActivity(taskId, session.user.id, "EDITED", {
+      field: "tag_added",
+      newValue: id,
+    });
+  }
+  for (const id of removedTags) {
+    await logActivity(taskId, session.user.id, "EDITED", {
+      field: "tag_removed",
+      oldValue: id,
+    });
+  }
 
   revalidateTask(info.workspaceId, info.task.boardId, taskId);
   return { success: true };

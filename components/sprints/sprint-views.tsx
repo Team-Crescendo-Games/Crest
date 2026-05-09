@@ -16,6 +16,7 @@ interface Task {
   priority: TaskPriority;
   startDate: Date | null;
   dueDate: Date | null;
+  createdAt: Date;
   boardId: string;
   author: { name: string | null };
   assignees: { id: string; name: string | null }[];
@@ -139,7 +140,13 @@ export function SprintViews({
       {view === "list" ? (
         <TaskListView columns={allColumns ?? columns} workspaceId={workspaceId} />
       ) : view === "timeline" && hasTimeline ? (
-        <SprintTimeline tasks={tasks} sprintStart={sprintStart!} sprintEnd={sprintEnd!} workspaceId={workspaceId} />
+        <SprintTimeline
+          tasks={tasks}
+          sprintStart={sprintStart!}
+          sprintEnd={sprintEnd!}
+          workspaceId={workspaceId}
+          canEdit={canCreate}
+        />
       ) : (
         <KanbanBoard
           columns={columns}

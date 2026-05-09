@@ -16,6 +16,7 @@ import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { SortControls } from "@/components/tasks/sort-controls";
+import { BoardFilterDropdown } from "@/components/tasks/board-filter-dropdown";
 import { parseMulti } from "@/lib/url-helpers";
 
 export default async function MemberTasksPage({
@@ -27,11 +28,12 @@ export default async function MemberTasksPage({
     q?: string;
     priority?: string;
     tag?: string;
+    board?: string;
     sort?: string;
   }>;
 }) {
   const { workspaceId, memberId } = await params;
-  const { q, priority: priorityParam, tag: tagParam, sort: sortParam } = await searchParams;
+  const { q, priority: priorityParam, tag: tagParam, board: boardParam, sort: sortParam } = await searchParams;
   const session = await auth();
   const userId = session!.user!.id!;
 
@@ -53,6 +55,7 @@ export default async function MemberTasksPage({
   // Parse filter params
   const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
+  const boardFilters = parseMulti(boardParam);
   const sorts = parseSorts(sortParam);
 
   // Build task where-clause
@@ -60,6 +63,9 @@ export default async function MemberTasksPage({
     assignees: { some: { id: member.user.id } },
     board: { workspaceId },
   };
+  if (boardFilters.length > 0) {
+    taskWhere.boardId = boardFilters.length === 1 ? boardFilters[0] : { in: boardFilters };
+  }
   if (q) {
     taskWhere.OR = [
       { title: { contains: q, mode: "insensitive" } },
@@ -281,7 +287,20 @@ export default async function MemberTasksPage({
             currentPriorities={priorities}
             currentTags={tagFilters}
             currentAssignees={[]}
-            extraControls={<SortControls currentSorts={sorts} />}
+            extraParams={{
+              board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
+            }}
+            extraControls={
+              <>
+                <BoardFilterDropdown boards={boards} currentBoards={boardFilters} />
+                <SortControls
+                  currentSorts={sorts}
+                  extraParams={{
+                    board: boardFilters.length > 0 ? boardFilters.join(",") : undefined,
+                  }}
+                />
+              </>
+            }
           />
         </div>
 

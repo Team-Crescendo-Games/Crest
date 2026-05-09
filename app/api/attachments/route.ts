@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/actions/task/helpers";
 
 /**
  * POST /api/attachments
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
         taskId,
         uploadedById: session.user.id,
       },
+    });
+
+    await logActivity(taskId, session.user.id, "ATTACHMENT_ADDED", {
+      newValue: fileName,
     });
 
     return NextResponse.json({ attachment }, { status: 201 });
