@@ -1,25 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/set-password"];
 const PUBLIC_PREFIXES = ["/invite/", "/api/auth/"];
 
-export async function proxy(req: NextRequest) {
+export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isPublic = PUBLIC_ROUTES.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
-
-  if (!token && !isPublic) {
+  if (!req.auth && !isPublic) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  if (token && (pathname === "/sign-in" || pathname === "/sign-up")) {
+  if (req.auth && (pathname === "/sign-in" || pathname === "/sign-up")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   // Exclude Next.js internals and public static assets (logo images used on auth pages)
