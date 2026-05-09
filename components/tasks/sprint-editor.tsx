@@ -53,7 +53,7 @@ export function SprintEditor({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-border bg-bg-elevated shadow-lg">
+          <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-md border border-border bg-bg-elevated shadow-lg">
             <div className="max-h-48 overflow-y-auto p-1">
               {sprints.length === 0 && <p className="px-3 py-2 text-[11px] text-fg-muted">No sprints</p>}
               {sprints.map((sprint) => {

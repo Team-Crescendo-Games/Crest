@@ -65,8 +65,9 @@ export function TaskEditForm({
   const [flowOpen, setFlowOpen] = useState(false);
   const [flowTasks, setFlowTasks] = useState<Awaited<ReturnType<typeof getFlowGraphTasks>> | null>(null);
   const [flowLoading, setFlowLoading] = useState(false);
+  const [flowRefetchKey, setFlowRefetchKey] = useState(0);
 
-  // Fetch the dependency graph when flow mode is opened
+  // Fetch the dependency graph when flow mode is opened or refreshed
   useEffect(() => {
     if (!flowOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -88,7 +89,7 @@ export function TaskEditForm({
     return () => {
       cancelled = true;
     };
-  }, [flowOpen, task.id, workspaceId]);
+  }, [flowOpen, task.id, workspaceId, flowRefetchKey]);
 
   const [state, formAction, pending] = useActionState(async (prev: unknown, formData: FormData) => {
     const result = await updateTask(prev, formData);
@@ -276,10 +277,15 @@ export function TaskEditForm({
               }
             >
               <FlowCanvas
+                key={flowRefetchKey}
                 tasks={flowTasks as Parameters<typeof FlowCanvas>[0]["tasks"]}
                 rootId={task.id}
                 workspaceId={workspaceId}
-                onBack={() => setFlowOpen(false)}
+                boards={boards}
+                sprints={sprints}
+                members={members}
+                tags={tags}
+                onGraphChange={() => setFlowRefetchKey((k) => k + 1)}
               />
             </Suspense>
           ) : (

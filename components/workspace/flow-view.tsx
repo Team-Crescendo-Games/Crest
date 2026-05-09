@@ -6,12 +6,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useTransition,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import Link from "next/link";
-import { Search, X, ZoomIn, ZoomOut, Maximize2, Loader2 } from "lucide-react";
+import { Search, X, Locate, Loader2, RefreshCw, LayoutGrid, Plus } from "lucide-react";
 import { setTaskParent, getFlowGraphTasks, searchWorkspaceTasks } from "@/lib/actions/task";
+import { CreateTaskFormModal } from "@/components/tasks/create-task-form";
 import { STATUS_COLORS, PRIORITY_COLORS } from "@/lib/task-enums";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
@@ -48,6 +48,9 @@ const NODE_HEIGHT = 80;
 const PORT_RADIUS = 6;
 const H_GAP = 60;
 const V_GAP = 50;
+
+// Module-level cache: persists pan/zoom across refresh remounts (keyed by rootId).
+const viewportCache = new Map<string, { pan: { x: number; y: number }; zoom: number }>();
 
 // ─── Graph traversal ────────────────────────────────────────────────────────
 
@@ -89,7 +92,6 @@ function layoutGraph(
   taskMap: Map<string, FlowTask>,
 ): Map<string, NodePosition> {
   const positions = new Map<string, NodePosition>();
-  const visited = new Set<string>();
 
   // Find the topmost ancestor of the root to start layout from the real root
   let topRoot = rootId;
@@ -103,58 +105,93 @@ function layoutGraph(
     topRoot = task.parentTaskId;
   }
 
-  // BFS layer-by-layer from topRoot
-  interface LayerNode {
-    id: string;
-    depth: number;
-  }
+  // Tree layout: each parent is centered above its subtree.
+  // Walk children in DFS order, accumulating x as we lay out leaves left-to-right.
+  // `placed` prevents revisiting nodes via cycle edges.
+  const placed = new Set<string>();
+  const subtreeWidth = new Map<string, number>();
 
-  const layers: string[][] = [];
-  const queue: LayerNode[] = [{ id: topRoot, depth: 0 }];
-
-  while (queue.length > 0) {
-    const { id, depth } = queue.shift()!;
-    if (visited.has(id)) continue;
-    visited.add(id);
-
-    while (layers.length <= depth) layers.push([]);
-    layers[depth].push(id);
-
+  const childrenOf = (id: string): string[] => {
     const task = taskMap.get(id);
-    if (!task?.subtaskIds) continue;
+    if (!task?.subtaskIds) return [];
+    return task.subtaskIds.filter((c) => connectedIds.has(c));
+  };
 
-    for (const childId of task.subtaskIds) {
-      if (connectedIds.has(childId) && !visited.has(childId)) {
-        queue.push({ id: childId, depth: depth + 1 });
-      }
+  // First pass: compute subtree width (in pixels) for each node.
+  const computeWidth = (id: string, seen: Set<string>): number => {
+    if (subtreeWidth.has(id)) return subtreeWidth.get(id)!;
+    if (seen.has(id)) return NODE_WIDTH;
+    seen.add(id);
+    const kids = childrenOf(id).filter((c) => !seen.has(c));
+    if (kids.length === 0) {
+      subtreeWidth.set(id, NODE_WIDTH);
+      return NODE_WIDTH;
     }
-  }
+    const total = kids.reduce((sum, c) => sum + computeWidth(c, seen), 0) + (kids.length - 1) * H_GAP;
+    const w = Math.max(NODE_WIDTH, total);
+    subtreeWidth.set(id, w);
+    return w;
+  };
+  computeWidth(topRoot, new Set());
 
-  // Place any remaining connected nodes that weren't reached (cycle edges)
-  for (const id of connectedIds) {
-    if (!visited.has(id)) {
-      visited.add(id);
-      // Add to the last layer + 1
-      const depth = layers.length;
-      while (layers.length <= depth) layers.push([]);
-      layers[depth].push(id);
-    }
-  }
+  // Second pass: assign x positions. Each subtree gets a horizontal slot of `subtreeWidth`,
+  // and the node sits centered above its subtree.
+  const place = (id: string, leftX: number, depth: number, seen: Set<string>) => {
+    if (placed.has(id) || seen.has(id)) return;
+    seen.add(id);
+    placed.add(id);
+    const width = subtreeWidth.get(id) ?? NODE_WIDTH;
+    const kids = childrenOf(id).filter((c) => !placed.has(c) && !seen.has(c));
 
-  // Calculate positions centered per layer
-  const maxLayerWidth = Math.max(...layers.map((l) => l.length));
-  const totalWidth = maxLayerWidth * (NODE_WIDTH + H_GAP) - H_GAP;
-
-  for (let depth = 0; depth < layers.length; depth++) {
-    const layer = layers[depth];
-    const layerWidth = layer.length * (NODE_WIDTH + H_GAP) - H_GAP;
-    const offsetX = (totalWidth - layerWidth) / 2;
-
-    for (let i = 0; i < layer.length; i++) {
-      positions.set(layer[i], {
-        x: offsetX + i * (NODE_WIDTH + H_GAP) + 40,
+    if (kids.length === 0) {
+      positions.set(id, {
+        x: leftX + (width - NODE_WIDTH) / 2 + 40,
         y: depth * (NODE_HEIGHT + V_GAP) + 40,
       });
+      return;
+    }
+
+    // Lay out children left-to-right within this subtree's slot.
+    let cursor = leftX;
+    for (const childId of kids) {
+      const childWidth = subtreeWidth.get(childId) ?? NODE_WIDTH;
+      place(childId, cursor, depth + 1, seen);
+      cursor += childWidth + H_GAP;
+    }
+
+    // Center the parent over the actual span of placed children.
+    const firstChildPos = positions.get(kids[0]);
+    const lastChildPos = positions.get(kids[kids.length - 1]);
+    if (firstChildPos && lastChildPos) {
+      const childrenCenter = (firstChildPos.x + lastChildPos.x + NODE_WIDTH) / 2;
+      positions.set(id, {
+        x: childrenCenter - NODE_WIDTH / 2,
+        y: depth * (NODE_HEIGHT + V_GAP) + 40,
+      });
+    } else {
+      positions.set(id, {
+        x: leftX + (width - NODE_WIDTH) / 2 + 40,
+        y: depth * (NODE_HEIGHT + V_GAP) + 40,
+      });
+    }
+  };
+
+  place(topRoot, 0, 0, new Set());
+
+  // Place any remaining connected nodes that weren't reached (cycle edges / disconnected)
+  let extraDepth = 0;
+  for (const pos of positions.values()) {
+    extraDepth = Math.max(extraDepth, Math.round((pos.y - 40) / (NODE_HEIGHT + V_GAP)));
+  }
+  let extraX = 0;
+  for (const id of connectedIds) {
+    if (!placed.has(id)) {
+      placed.add(id);
+      positions.set(id, {
+        x: extraX + 40,
+        y: (extraDepth + 1) * (NODE_HEIGHT + V_GAP) + 40,
+      });
+      extraX += NODE_WIDTH + H_GAP;
     }
   }
 
@@ -177,23 +214,55 @@ function EdgePath({
   from,
   to,
   isHighlighted,
+  isHovered,
+  onMouseEnter,
+  onMouseLeave,
+  onDisconnect,
 }: {
   from: { x: number; y: number };
   to: { x: number; y: number };
   isHighlighted?: boolean;
+  isHovered?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onDisconnect?: () => void;
 }) {
   const midY = (from.y + to.y) / 2;
+  const midX = (from.x + to.x) / 2;
   const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+  const active = isHighlighted || isHovered;
 
   return (
-    <path
-      d={d}
-      fill="none"
-      stroke={isHighlighted ? "var(--accent)" : "var(--border)"}
-      strokeWidth={isHighlighted ? 2 : 1.5}
-      strokeDasharray={isHighlighted ? undefined : "4 3"}
-      className="transition-colors duration-150"
-    />
+    <g
+      className="pointer-events-auto"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Wide invisible hit target for easier hover/click */}
+      <path d={d} fill="none" stroke="transparent" strokeWidth={14} style={{ cursor: "pointer" }} />
+      <path
+        d={d}
+        fill="none"
+        stroke={active ? "var(--accent)" : "var(--border)"}
+        strokeWidth={active ? 2 : 1.5}
+        strokeDasharray={active ? undefined : "4 3"}
+        className="pointer-events-none transition-colors duration-150"
+      />
+      {isHovered && onDisconnect && (
+        <g
+          onClick={(e) => {
+            e.stopPropagation();
+            onDisconnect();
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <circle cx={midX} cy={midY} r={9} fill="var(--bg-elevated)" stroke="var(--accent)" strokeWidth={1.5} />
+          <line x1={midX - 3.5} y1={midY - 3.5} x2={midX + 3.5} y2={midY + 3.5} stroke="var(--accent)" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1={midX + 3.5} y1={midY - 3.5} x2={midX - 3.5} y2={midY + 3.5} stroke="var(--accent)" strokeWidth={1.5} strokeLinecap="round" />
+        </g>
+      )}
+    </g>
   );
 }
 
@@ -282,6 +351,7 @@ function AddTaskSearchModal({
   workspaceId,
   existingIds,
   onSelect,
+  onCreate,
   onClose,
 }: {
   prompt: AddTaskPrompt;
@@ -289,6 +359,7 @@ function AddTaskSearchModal({
   /** IDs already in the graph — we'll dim them but still allow selection */
   existingIds: Set<string>;
   onSelect: (taskId: string) => void;
+  onCreate: () => void;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
@@ -373,6 +444,15 @@ function AddTaskSearchModal({
             )}
           </div>
 
+          <button
+            type="button"
+            onClick={onCreate}
+            className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-bg-primary px-3 py-2 font-mono text-[11px] text-fg-secondary transition-colors hover:border-accent/40 hover:text-accent"
+          >
+            <Plus size={12} />
+            Create new task
+          </button>
+
           <div className="mt-2 max-h-64 overflow-y-auto rounded-md border border-border bg-bg-primary">
             {!query.trim() ? (
               <p className="px-3 py-6 text-center text-xs text-fg-muted">Start typing to search tasks…</p>
@@ -383,12 +463,19 @@ function AddTaskSearchModal({
             ) : (
               results.map((task) => {
                 const alreadyInGraph = existingIds.has(task.id);
+                // When adding as a subtask, the candidate cannot already have a parent.
+                const blockedAsSubtask = prompt.fromPort === "child" && task.parentTaskId !== null;
+                const disabled = blockedAsSubtask;
                 return (
                   <button
                     key={task.id}
-                    onClick={() => onSelect(task.id)}
-                    className={`flex w-full cursor-pointer items-center gap-2 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-bg-secondary/50 ${
-                      alreadyInGraph ? "opacity-50" : ""
+                    onClick={() => !disabled && onSelect(task.id)}
+                    disabled={disabled}
+                    title={blockedAsSubtask ? "This task already has a parent" : undefined}
+                    className={`flex w-full items-center gap-2 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 ${
+                      disabled
+                        ? "cursor-not-allowed opacity-40"
+                        : `cursor-pointer hover:bg-bg-secondary/50 ${alreadyInGraph ? "opacity-50" : ""}`
                     }`}
                   >
                     <span
@@ -401,11 +488,15 @@ function AddTaskSearchModal({
                       <span className="truncate font-mono text-xs text-fg-primary">{task.title}</span>
                       <span className="text-[9px] text-fg-muted">{task.board.name}</span>
                     </div>
-                    {alreadyInGraph && (
+                    {blockedAsSubtask ? (
+                      <span className="shrink-0 rounded bg-fg-muted/10 px-1.5 py-0.5 text-[9px] font-medium text-fg-muted">
+                        has parent
+                      </span>
+                    ) : alreadyInGraph ? (
                       <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">
                         in graph
                       </span>
-                    )}
+                    ) : null}
                   </button>
                 );
               })
@@ -417,18 +508,54 @@ function AddTaskSearchModal({
   );
 }
 
+// ─── Tooltip-capable tool button ────────────────────────────────────────────
+
+function FlowToolButton({
+  onClick,
+  label,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="group/btn relative">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className="cursor-pointer rounded-md border border-border bg-bg-elevated/90 p-1.5 text-fg-muted backdrop-blur-sm transition-colors hover:text-fg-primary"
+      >
+        {children}
+      </button>
+      <span className="pointer-events-none absolute right-0 top-full z-20 mt-1 whitespace-nowrap rounded-md border border-border bg-bg-elevated px-2 py-1 font-mono text-[10px] text-fg-secondary opacity-0 shadow-md transition-opacity duration-150 group-hover/btn:opacity-100">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 // ─── Flow canvas ────────────────────────────────────────────────────────────
 
 export function FlowCanvas({
   tasks,
   rootId,
   workspaceId,
-  onBack,
+  boards,
+  sprints,
+  members,
+  tags,
+  onGraphChange,
 }: {
   tasks: FlowTask[];
   rootId: string;
   workspaceId: string;
-  onBack: () => void;
+  boards?: { id: string; name: string }[];
+  sprints?: { id: string; title: string }[];
+  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  tags?: { id: string; name: string; color: string | null }[];
+  onGraphChange?: () => void;
 }) {
   const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
   const connectedIds = useMemo(() => getConnectedGraph(rootId, taskMap), [rootId, taskMap]);
@@ -460,14 +587,26 @@ export function FlowCanvas({
     port: "parent" | "child";
   } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [hoveredEdge, setHoveredEdge] = useState<{ from: string; to: string } | null>(null);
   const [addTaskPrompt, setAddTaskPrompt] = useState<AddTaskPrompt | null>(null);
+  const [createPrompt, setCreatePrompt] = useState<AddTaskPrompt | null>(null);
 
-  // Pan & zoom
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  // Pan & zoom — restore from module cache so refresh keeps the viewport in place.
+  const cached = viewportCache.get(rootId);
+  const [pan, setPan] = useState(cached?.pan ?? { x: 0, y: 0 });
+  const [zoom, setZoom] = useState(cached?.zoom ?? 1);
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const panRef = useRef(pan);
+  const zoomRef = useRef(zoom);
+  useEffect(() => {
+    panRef.current = pan;
+    viewportCache.set(rootId, { pan, zoom: zoomRef.current });
+  }, [pan, rootId]);
+  useEffect(() => {
+    zoomRef.current = zoom;
+    viewportCache.set(rootId, { pan: panRef.current, zoom });
+  }, [zoom, rootId]);
 
   // Convert screen coords to canvas coords
   const screenToCanvas = useCallback(
@@ -602,8 +741,10 @@ export function FlowCanvas({
           formData.set("childId", childId);
           formData.set("parentId", parentId);
           formData.set("workspaceId", workspaceId);
-          startTransition(() => {
-            setTaskParent(null, formData);
+          setTaskParent(null, formData).then((result) => {
+            if (result && "success" in result && result.success) {
+              onGraphChange?.();
+            }
           });
         }
       } else if (dragLine && !hoveredPort) {
@@ -621,7 +762,7 @@ export function FlowCanvas({
       setDraggingNode(null);
       setIsPanning(false);
     },
-    [dragLine, hoveredPort, workspaceId, screenToCanvas],
+    [dragLine, hoveredPort, workspaceId, screenToCanvas, onGraphChange],
   );
 
   // ── Zoom ───────────────────────────────────────────────────────────────
@@ -635,51 +776,108 @@ export function FlowCanvas({
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.05 : 0.05;
-      setZoom((z) => Math.min(2, Math.max(0.3, z + delta)));
+      const rect = el.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      // Scale step proportional to current zoom for smooth feel
+      const prevZoom = zoomRef.current;
+      const prevPan = panRef.current;
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      const nextZoom = Math.min(2, Math.max(0.3, prevZoom * factor));
+      if (nextZoom === prevZoom) return;
+      // Keep the point under the cursor stationary in canvas space.
+      // canvasX = (mouseX - panX) / zoom must remain constant.
+      const nextPan = {
+        x: mouseX - ((mouseX - prevPan.x) / prevZoom) * nextZoom,
+        y: mouseY - ((mouseY - prevPan.y) / prevZoom) * nextZoom,
+      };
+      zoomRef.current = nextZoom;
+      panRef.current = nextPan;
+      setZoom(nextZoom);
+      setPan(nextPan);
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  const zoomIn = () => setZoom((z) => Math.min(2, z + 0.15));
-  const zoomOut = () => setZoom((z) => Math.max(0.3, z - 0.15));
   const fitView = () => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
+    // Center the viewport on the root (shown) task at 100% zoom.
+    const rootPos = positions.get(rootId);
+    const el = containerRef.current;
+    if (!rootPos || !el) {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    const nextZoom = 1;
+    // We want the root node's center to land at the container's center.
+    // canvasX_center = rootPos.x + NODE_WIDTH/2
+    // screenX_center = rect.width / 2
+    // screenX = canvasX * zoom + panX  ⇒  panX = screenX - canvasX * zoom
+    const nextPan = {
+      x: rect.width / 2 - (rootPos.x + NODE_WIDTH / 2) * nextZoom,
+      y: rect.height / 2 - (rootPos.y + NODE_HEIGHT / 2) * nextZoom,
+    };
+    setZoom(nextZoom);
+    setPan(nextPan);
   };
+
+  // ── Disconnect a parent/child edge ─────────────────────────────────────
+
+  const handleDisconnect = useCallback(
+    (childId: string) => {
+      const formData = new FormData();
+      formData.set("childId", childId);
+      formData.set("parentId", "");
+      formData.set("workspaceId", workspaceId);
+      setTaskParent(null, formData).then((result) => {
+        if (result && "success" in result && result.success) {
+          onGraphChange?.();
+        }
+      });
+    },
+    [workspaceId, onGraphChange],
+  );
 
   // ── Handle task selected from search modal ─────────────────────────────
 
-  const handleAddTaskSelect = useCallback(
-    (selectedTaskId: string) => {
-      if (!addTaskPrompt) return;
-
+  const linkTaskToPrompt = useCallback(
+    (selectedTaskId: string, prompt: AddTaskPrompt) => {
       let parentId: string;
       let childId: string;
 
-      if (addTaskPrompt.fromPort === "child") {
+      if (prompt.fromPort === "child") {
         // Dragged from child port → the source is the parent, selected task is the child
-        parentId = addTaskPrompt.fromId;
+        parentId = prompt.fromId;
         childId = selectedTaskId;
       } else {
         // Dragged from parent port → selected task is the parent, source is the child
         parentId = selectedTaskId;
-        childId = addTaskPrompt.fromId;
+        childId = prompt.fromId;
       }
 
       const formData = new FormData();
       formData.set("childId", childId);
       formData.set("parentId", parentId);
       formData.set("workspaceId", workspaceId);
-      startTransition(() => {
-        setTaskParent(null, formData);
+      setTaskParent(null, formData).then((result) => {
+        if (result && "success" in result && result.success) {
+          onGraphChange?.();
+        }
       });
+    },
+    [workspaceId, onGraphChange],
+  );
 
+  const handleAddTaskSelect = useCallback(
+    (selectedTaskId: string) => {
+      if (!addTaskPrompt) return;
+      linkTaskToPrompt(selectedTaskId, addTaskPrompt);
       setAddTaskPrompt(null);
     },
-    [addTaskPrompt, workspaceId],
+    [addTaskPrompt, linkTaskToPrompt],
   );
 
   // ── Build edges ────────────────────────────────────────────────────────
@@ -704,53 +902,9 @@ export function FlowCanvas({
     svgHeight = Math.max(svgHeight, pos.y + NODE_HEIGHT + 80);
   }
 
-  const rootTask = taskMap.get(rootId);
-
   return (
     <div className="relative">
       {/* Toolbar */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="flex cursor-pointer items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
-          >
-            <X size={12} />
-            Close
-          </button>
-          {rootTask && (
-            <span className="font-mono text-xs text-fg-muted">
-              Viewing graph for: <span className="text-fg-primary">{rootTask.title}</span>
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {isPending && <span className="mr-2 text-[11px] text-accent animate-pulse">Saving...</span>}
-          <button
-            onClick={zoomOut}
-            className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-fg-primary"
-            title="Zoom out"
-          >
-            <ZoomOut size={14} />
-          </button>
-          <span className="min-w-12 text-center font-mono text-[11px] text-fg-muted">{Math.round(zoom * 100)}%</span>
-          <button
-            onClick={zoomIn}
-            className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-fg-primary"
-            title="Zoom in"
-          >
-            <ZoomIn size={14} />
-          </button>
-          <button
-            onClick={fitView}
-            className="cursor-pointer rounded-md bg-bg-secondary p-1.5 text-fg-muted transition-colors hover:text-fg-primary"
-            title="Fit view"
-          >
-            <Maximize2 size={14} />
-          </button>
-        </div>
-      </div>
-
       {/* Canvas */}
       <div
         ref={containerRef}
@@ -782,18 +936,24 @@ export function FlowCanvas({
             height={svgHeight}
             className="pointer-events-none absolute inset-0"
             style={{ overflow: "visible" }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {edges.map(({ from, to }) => {
               const fromPos = positions.get(from);
               const toPos = positions.get(to);
               if (!fromPos || !toPos) return null;
               const isHighlighted = hoveredNode === from || hoveredNode === to;
+              const isHovered = hoveredEdge?.from === from && hoveredEdge?.to === to;
               return (
                 <EdgePath
                   key={`${from}-${to}`}
                   from={getChildPortPos(fromPos)}
                   to={getParentPortPos(toPos)}
                   isHighlighted={isHighlighted}
+                  isHovered={isHovered}
+                  onMouseEnter={() => setHoveredEdge({ from, to })}
+                  onMouseLeave={() => setHoveredEdge(null)}
+                  onDisconnect={() => handleDisconnect(to)}
                 />
               );
             })}
@@ -820,12 +980,12 @@ export function FlowCanvas({
               <div
                 key={id}
                 data-node
-                className={`absolute select-none rounded-md border bg-bg-elevated shadow-sm transition-shadow ${
+                className={`absolute select-none rounded-md bg-bg-elevated shadow-sm transition-shadow ${
                   isRoot
-                    ? "border-accent/50 ring-1 ring-accent/20"
+                    ? "border-2 border-accent ring-2 ring-accent/30 shadow-md"
                     : isHovered
-                      ? "border-accent/40 shadow-md"
-                      : "border-border"
+                      ? "border border-accent/40 shadow-md"
+                      : "border border-border"
                 }`}
                 style={{
                   left: pos.x,
@@ -853,8 +1013,9 @@ export function FlowCanvas({
                   <div className="flex items-start justify-between gap-1">
                     <Link
                       href={`/w/${workspaceId}/b/${task.boardId}/t/${task.id}`}
-                      className="flex-1 truncate font-mono text-[11px] font-medium text-fg-primary hover:text-accent"
+                      className="line-clamp-2 flex-1 font-mono text-[10px] font-medium leading-tight text-fg-primary hover:text-accent"
                       onClick={(e) => e.stopPropagation()}
+                      title={task.title}
                     >
                       {task.title}
                     </Link>
@@ -885,22 +1046,30 @@ export function FlowCanvas({
                   </div>
                 </div>
 
-                {/* Parent port (top center) */}
-                <div
-                  data-port="parent"
-                  className={`absolute top-[-6px] left-1/2 -translate-x-1/2 cursor-crosshair rounded-full border-2 transition-colors ${
-                    hoveredPort?.id === id && hoveredPort?.port === "parent"
-                      ? "border-accent bg-accent scale-125"
-                      : "border-border bg-bg-elevated hover:border-accent hover:bg-accent/30"
-                  }`}
-                  style={{
-                    width: PORT_RADIUS * 2,
-                    height: PORT_RADIUS * 2,
-                  }}
-                  onMouseDown={(e) => handlePortMouseDown(e, id, "parent")}
-                  onMouseEnter={() => setHoveredPort({ id, port: "parent" })}
-                  onMouseLeave={() => setHoveredPort(null)}
-                />
+                {/* Parent port (top center) — disabled if task already has a parent */}
+                {(() => {
+                  const hasParent = !!task.parentTaskId;
+                  return (
+                    <div
+                      data-port={hasParent ? undefined : "parent"}
+                      title={hasParent ? "Already has a parent" : "Drag to add a parent"}
+                      className={`absolute top-[-6px] left-1/2 -translate-x-1/2 rounded-full border-2 transition-colors ${
+                        hasParent
+                          ? "cursor-not-allowed border-border-subtle bg-bg-secondary opacity-50"
+                          : hoveredPort?.id === id && hoveredPort?.port === "parent"
+                            ? "cursor-crosshair border-accent bg-accent scale-125"
+                            : "cursor-crosshair border-border bg-bg-elevated hover:border-accent hover:bg-accent/30"
+                      }`}
+                      style={{
+                        width: PORT_RADIUS * 2,
+                        height: PORT_RADIUS * 2,
+                      }}
+                      onMouseDown={hasParent ? undefined : (e) => handlePortMouseDown(e, id, "parent")}
+                      onMouseEnter={hasParent ? undefined : () => setHoveredPort({ id, port: "parent" })}
+                      onMouseLeave={hasParent ? undefined : () => setHoveredPort(null)}
+                    />
+                  );
+                })()}
 
                 {/* Child port (bottom center) */}
                 <div
@@ -922,19 +1091,19 @@ export function FlowCanvas({
             );
           })}
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="mt-3 flex items-center gap-4 text-[10px] text-fg-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full border border-border bg-bg-elevated" />
-          Port — drag to connect
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-px w-4 border-t border-dashed border-border" />
-          Parent → Child
-        </span>
-        <span>Scroll to zoom · Drag background to pan · Drag nodes to reposition</span>
+        {/* Docked controls */}
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+          <FlowToolButton onClick={() => setDragOverrides(new Map())} label="Reorganize nodes">
+            <LayoutGrid size={14} />
+          </FlowToolButton>
+          <FlowToolButton onClick={fitView} label="Focus on this task">
+            <Locate size={14} />
+          </FlowToolButton>
+          <FlowToolButton onClick={() => onGraphChange?.()} label="Refresh graph">
+            <RefreshCw size={14} />
+          </FlowToolButton>
+        </div>
       </div>
 
       {/* Add-task search modal */}
@@ -944,7 +1113,28 @@ export function FlowCanvas({
           workspaceId={workspaceId}
           existingIds={connectedIds}
           onSelect={handleAddTaskSelect}
+          onCreate={() => {
+            setCreatePrompt(addTaskPrompt);
+            setAddTaskPrompt(null);
+          }}
           onClose={() => setAddTaskPrompt(null)}
+        />
+      )}
+
+      {/* Create-new-task modal — reuses the shared task form */}
+      {createPrompt && boards && boards.length > 0 && (
+        <CreateTaskFormModal
+          workspaceId={workspaceId}
+          boards={boards}
+          sprints={sprints}
+          members={members}
+          tags={tags}
+          title={createPrompt.fromPort === "child" ? "New Subtask" : "New Parent Task"}
+          onClose={() => setCreatePrompt(null)}
+          onCreated={(newTaskId) => {
+            linkTaskToPrompt(newTaskId, createPrompt);
+            setCreatePrompt(null);
+          }}
         />
       )}
     </div>
@@ -957,6 +1147,17 @@ export function FlowView({ tasks, workspaceId }: { tasks: FlowTask[]; workspaceI
   const [selectedRootId, setSelectedRootId] = useState<string | null>(null);
   const [graphTasks, setGraphTasks] = useState<FlowTask[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refetchKey, setRefetchKey] = useState(0);
+
+  const forceRefresh = useCallback(() => {
+    // Mimic close + reopen: blow away state, then re-select on next tick.
+    if (!selectedRootId) return;
+    const id = selectedRootId;
+    setGraphTasks(null);
+    setSelectedRootId(null);
+    setRefetchKey((k) => k + 1);
+    setTimeout(() => setSelectedRootId(id), 0);
+  }, [selectedRootId]);
 
   // When a root task is selected, fetch the full dependency graph from the DB
   useEffect(() => {
@@ -985,13 +1186,13 @@ export function FlowView({ tasks, workspaceId }: { tasks: FlowTask[]; workspaceI
     return () => {
       cancelled = true;
     };
-  }, [selectedRootId, workspaceId]);
+  }, [selectedRootId, workspaceId, refetchKey]);
 
   if (!selectedRootId) {
     return <TaskSelector tasks={tasks} onSelect={setSelectedRootId} />;
   }
 
-  if (loading) {
+  if (loading && !graphTasks) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <p className="font-mono text-sm text-fg-muted animate-pulse">Loading dependency graph…</p>
@@ -1001,10 +1202,11 @@ export function FlowView({ tasks, workspaceId }: { tasks: FlowTask[]; workspaceI
 
   return (
     <FlowCanvas
+      key={refetchKey}
       tasks={graphTasks ?? tasks}
       rootId={selectedRootId}
       workspaceId={workspaceId}
-      onBack={() => setSelectedRootId(null)}
+      onGraphChange={forceRefresh}
     />
   );
 }

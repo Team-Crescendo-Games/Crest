@@ -1,13 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { TaskEditForm } from "@/components/tasks/task-edit-form";
 import { TaskBreadcrumb } from "@/components/tasks/task-breadcrumb";
 import { CommentSection } from "@/components/tasks/comment-section";
 import { ActivityLog } from "@/components/tasks/activity-log";
 import { AttachmentSection } from "@/components/workspace/attachment-section";
 import { SubtaskSection } from "@/components/workspace/subtask-section";
+import { ParentTaskSection } from "@/components/workspace/parent-task-section";
 
 export default async function TaskDetailPage({
   params,
@@ -36,7 +36,7 @@ export default async function TaskDetailPage({
         },
         tags: { select: { id: true, name: true, color: true } },
         sprints: { select: { id: true, title: true } },
-        parentTask: { select: { id: true, title: true, boardId: true } },
+        parentTask: { select: { id: true, title: true, boardId: true, status: true } },
         subtasks: {
           select: { id: true },
         },
@@ -124,17 +124,13 @@ export default async function TaskDetailPage({
           memberIdMap={memberIdMap}
         />
 
-        {/* Parent task link */}
+        {/* Parent task — styled to match SubtaskSection */}
         {task.parentTask && (
-          <div className="mt-6">
-            <h3 className="font-mono text-xs font-medium text-fg-secondary">Parent Task</h3>
-            <Link
-              href={`/w/${workspaceId}/b/${task.parentTask.boardId}/t/${task.parentTask.id}`}
-              className="mt-1.5 inline-block text-xs text-accent transition-colors hover:text-accent-emphasis"
-            >
-              {task.parentTask.title}
-            </Link>
-          </div>
+          <ParentTaskSection
+            workspaceId={workspaceId}
+            parent={task.parentTask}
+            childTaskId={taskId}
+          />
         )}
 
         {/* Below the form: subtasks, attachments, activity log */}

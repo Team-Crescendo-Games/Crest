@@ -127,6 +127,65 @@ export function CreateTaskForm({
 }
 
 /**
+ * Standalone modal for creating a task. Like DuplicateTaskFormModal but starts blank
+ * and supports an optional board picker. Used by flow view to create + link a new task.
+ */
+export function CreateTaskFormModal({
+  workspaceId,
+  boardId,
+  boards,
+  defaults,
+  sprints,
+  members,
+  tags,
+  title,
+  onClose,
+  onCreated,
+}: {
+  workspaceId: string;
+  boardId?: string;
+  boards?: BoardOption[];
+  defaults?: TaskDefaults;
+  sprints?: SprintOption[];
+  members?: MemberOption[];
+  tags?: TagOption[];
+  title?: string;
+  onClose: () => void;
+  onCreated?: (newTaskId: string) => void;
+}) {
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createTask(prev, formData);
+    if (result?.success && result.newTaskId) {
+      onCreated?.(result.newTaskId);
+    }
+    return result;
+  }, null);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <TaskFormModal
+        workspaceId={workspaceId}
+        boardId={boardId}
+        boards={boards}
+        defaults={defaults ?? {}}
+        sprints={sprints}
+        members={members}
+        tags={tags}
+        state={state}
+        action={action}
+        pending={pending}
+        onClose={onClose}
+        mode="create"
+        titleOverride={title}
+      />
+    </div>
+  );
+}
+
+/**
  * Standalone modal for duplicating a task, used by TaskActions.
  */
 export function DuplicateTaskFormModal({
@@ -201,6 +260,7 @@ function TaskFormModal({
   pending,
   onClose,
   mode,
+  titleOverride,
 }: {
   workspaceId: string;
   boardId?: string;
@@ -214,6 +274,7 @@ function TaskFormModal({
   pending: boolean;
   onClose: () => void;
   mode: "create" | "duplicate";
+  titleOverride?: string;
 }) {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(defaults.assigneeIds ?? []);
   const [selectedTags, setSelectedTags] = useState<string[]>(defaults.tagIds ?? []);
@@ -244,7 +305,7 @@ function TaskFormModal({
 
       <div className="flex items-center justify-between">
         <h3 className="font-mono text-xs font-medium text-fg-primary">
-          {isDuplicate ? "Duplicate Task" : "New Task"}
+          {titleOverride ?? (isDuplicate ? "Duplicate Task" : "New Task")}
         </h3>
         <button type="button" onClick={onClose} className="cursor-pointer text-fg-muted hover:text-fg-secondary" aria-label="Close">
           <X size={14} />
