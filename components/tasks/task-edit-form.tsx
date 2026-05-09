@@ -224,8 +224,12 @@ export function TaskEditForm({
                 dueDate: task.dueDate,
                 points: task.points,
                 assigneeIds: task.assigneeIds,
+                tagIds: task.tagIds,
+                sprintIds: task.sprintIds,
               }}
               members={members}
+              tags={tags}
+              sprints={sprints}
             />
 
             <FlowModeButton active={flowOpen} onToggle={() => setFlowOpen((v) => !v)} />

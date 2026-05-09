@@ -69,8 +69,8 @@ export default async function TaskDetailPage({
       orderBy: { displayOrder: "asc" },
     }),
     prisma.sprint.findMany({
-      where: { workspaceId },
-      select: { id: true, title: true, isActive: true },
+      where: { workspaceId, isActive: true },
+      select: { id: true, title: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.tag.findMany({

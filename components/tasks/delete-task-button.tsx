@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { Tooltip } from "@/components/common/tooltip";
 import { deleteTask } from "@/lib/actions/task";
 
 export function DeleteTaskButton({
@@ -26,20 +27,21 @@ export function DeleteTaskButton({
   return (
     <form action={action}>
       <input type="hidden" name="taskId" value={taskId} />
-      <button
-        type="submit"
-        disabled={pending}
-        onClick={(e) => {
-          if (!confirm("Delete this task? This cannot be undone.")) {
-            e.preventDefault();
-          }
-        }}
-        aria-label="Delete task"
-        title={pending ? "Deleting..." : "Delete task"}
-        className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-red-500/40 bg-red-500/5 text-red-500 transition-colors hover:border-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50"
-      >
-        <Trash2 size={14} />
-      </button>
+      <Tooltip label={pending ? "Deleting..." : "Delete task"} variant="danger">
+        <button
+          type="submit"
+          disabled={pending}
+          onClick={(e) => {
+            if (!confirm("Delete this task? This cannot be undone.")) {
+              e.preventDefault();
+            }
+          }}
+          aria-label="Delete task"
+          className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-red-500/40 bg-red-500/5 text-red-500 transition-colors hover:border-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50"
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
     </form>
   );
 }

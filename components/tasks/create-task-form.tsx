@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Plus, X, Search, ChevronDown, Check } from "lucide-react";
 import { createTask } from "@/lib/actions/task";
 import { UserAvatar } from "@/components/common/user-avatar";
-import { TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
-import type { TaskPriority } from "@/prisma/generated/prisma/enums";
+import { TASK_STATUSES, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
+import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface BoardOption {
   id: string;
@@ -31,8 +31,21 @@ interface TagOption {
   color: string | null;
 }
 
+export interface TaskDefaults {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  dueDate?: string;
+  points?: number | null;
+  assigneeIds?: string[];
+  tagIds?: string[];
+  sprintId?: string;
+}
+
 /**
  * Unified task creation form used across board, sprint, and member views.
+ * Also supports "duplicate" mode when given defaults and mode="duplicate".
  */
 export function CreateTaskForm({
   workspaceId,
@@ -95,13 +108,11 @@ export function CreateTaskForm({
         if (e.key === "Escape") setOpen(false);
       }}
     >
-      <CreateTaskModal
+      <TaskFormModal
         workspaceId={workspaceId}
         boardId={boardId}
         boards={boards}
-        defaultStatus={defaultStatus}
-        assigneeId={assigneeId}
-        sprintId={sprintId}
+        defaults={{ status: defaultStatus, assigneeIds: assigneeId ? [assigneeId] : [], sprintId: sprintId }}
         sprints={sprints}
         members={members}
         tags={tags}
@@ -109,18 +120,79 @@ export function CreateTaskForm({
         action={action}
         pending={pending}
         onClose={() => setOpen(false)}
+        mode="create"
       />
     </div>
   );
 }
 
-function CreateTaskModal({
+/**
+ * Standalone modal for duplicating a task, used by TaskActions.
+ */
+export function DuplicateTaskFormModal({
+  workspaceId,
+  boardId,
+  defaults,
+  sprints,
+  members,
+  tags,
+  onClose,
+  onCreated,
+}: {
+  workspaceId: string;
+  boardId: string;
+  defaults: TaskDefaults;
+  sprints?: SprintOption[];
+  members?: MemberOption[];
+  tags?: TagOption[];
+  onClose: () => void;
+  onCreated?: (newTaskId: string) => void;
+}) {
+  const router = useRouter();
+
+  const [state, action, pending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await createTask(prev, formData);
+    if (result?.success && result.newTaskId) {
+      if (onCreated) {
+        onCreated(result.newTaskId);
+      } else {
+        router.push(`/w/${workspaceId}/b/${boardId}/t/${result.newTaskId}`);
+      }
+    }
+    return result;
+  }, null);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <TaskFormModal
+        workspaceId={workspaceId}
+        boardId={boardId}
+        defaults={defaults}
+        sprints={sprints}
+        members={members}
+        tags={tags}
+        state={state}
+        action={action}
+        pending={pending}
+        onClose={onClose}
+        mode="duplicate"
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shared modal used by both Create and Duplicate flows
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function TaskFormModal({
   workspaceId,
   boardId,
   boards,
-  defaultStatus,
-  assigneeId,
-  sprintId,
+  defaults,
   sprints,
   members,
   tags,
@@ -128,13 +200,12 @@ function CreateTaskModal({
   action,
   pending,
   onClose,
+  mode,
 }: {
   workspaceId: string;
   boardId?: string;
   boards?: BoardOption[];
-  defaultStatus: string;
-  assigneeId?: string;
-  sprintId?: string;
+  defaults: TaskDefaults;
   sprints?: SprintOption[];
   members?: MemberOption[];
   tags?: TagOption[];
@@ -142,13 +213,16 @@ function CreateTaskModal({
   action: (payload: FormData) => void;
   pending: boolean;
   onClose: () => void;
+  mode: "create" | "duplicate";
 }) {
-  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(assigneeId ? [assigneeId] : []);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedSprint, setSelectedSprint] = useState(sprintId ?? "");
-  const [priority, setPriority] = useState<TaskPriority>("NONE");
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(defaults.assigneeIds ?? []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(defaults.tagIds ?? []);
+  const [selectedSprint, setSelectedSprint] = useState(defaults.sprintId ?? "");
+  const [priority, setPriority] = useState<TaskPriority>((defaults.priority as TaskPriority) ?? "NONE");
+  const [status, setStatus] = useState<TaskStatus>((defaults.status as TaskStatus) ?? "NOT_STARTED");
 
   const showBoardPicker = !boardId && boards && boards.length > 0;
+  const isDuplicate = mode === "duplicate";
 
   return (
     <form
@@ -157,7 +231,7 @@ function CreateTaskModal({
       className="w-full max-w-md max-h-[90vh] overflow-y-auto space-y-3 rounded-md border border-border bg-bg-elevated p-4 shadow-lg"
     >
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      <input type="hidden" name="status" value={defaultStatus} />
+      <input type="hidden" name="status" value={status} />
       <input type="hidden" name="priority" value={priority} />
       {boardId && <input type="hidden" name="boardId" value={boardId} />}
       {selectedAssignees.map((id) => (
@@ -169,8 +243,10 @@ function CreateTaskModal({
       {selectedSprint && <input type="hidden" name="sprintId" value={selectedSprint} />}
 
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-xs font-medium text-fg-primary">New Task</h3>
-        <button type="button" onClick={onClose} className="text-fg-muted hover:text-fg-secondary" aria-label="Close">
+        <h3 className="font-mono text-xs font-medium text-fg-primary">
+          {isDuplicate ? "Duplicate Task" : "New Task"}
+        </h3>
+        <button type="button" onClick={onClose} className="cursor-pointer text-fg-muted hover:text-fg-secondary" aria-label="Close">
           <X size={14} />
         </button>
       </div>
@@ -208,6 +284,7 @@ function CreateTaskModal({
           type="text"
           required
           autoFocus
+          defaultValue={defaults.title ?? ""}
           placeholder="Task title"
           className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none"
         />
@@ -216,27 +293,22 @@ function CreateTaskModal({
       {/* Description */}
       <div>
         <label className="block text-[11px] font-medium text-fg-muted">Description</label>
-        <textarea
+        <ResizableTextarea
           name="description"
-          rows={2}
-          placeholder="(optional)"
-          className="mt-1 block w-full resize-none rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none"
+          defaultValue={defaults.description ?? ""}
+          placeholder="Add a description..."
         />
       </div>
 
-      {/* Priority + Due Date + Points */}
+      {/* Status + Priority + Points */}
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
-          <ColoredPrioritySelect value={priority} onChange={setPriority} />
+          <label className="block text-[11px] font-medium text-fg-muted">Status</label>
+          <StatusSelect value={status} onChange={setStatus} />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-fg-muted">Due Date</label>
-          <input
-            name="dueDate"
-            type="date"
-            className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-          />
+          <label className="block text-[11px] font-medium text-fg-muted">Priority</label>
+          <PrioritySelect value={priority} onChange={setPriority} />
         </div>
         <div>
           <label className="block text-[11px] font-medium text-fg-muted">Points</label>
@@ -244,29 +316,27 @@ function CreateTaskModal({
             name="points"
             type="number"
             min="0"
+            defaultValue={defaults.points ?? ""}
             placeholder="0"
             className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary placeholder-fg-muted focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
+      {/* Due Date */}
+      <div>
+        <label className="block text-[11px] font-medium text-fg-muted">Due Date</label>
+        <input
+          name="dueDate"
+          type="date"
+          defaultValue={defaults.dueDate ?? ""}
+          className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
+        />
+      </div>
+
       {/* Sprint picker */}
       {sprints && sprints.length > 0 && (
-        <div>
-          <label className="block text-[11px] font-medium text-fg-muted">Sprint</label>
-          <select
-            value={selectedSprint}
-            onChange={(e) => setSelectedSprint(e.target.value)}
-            className="mt-1 block w-full rounded border border-border bg-bg-primary px-2 py-1.5 font-mono text-xs text-fg-primary focus:border-accent focus:outline-none"
-          >
-            <option value="">No sprint</option>
-            {sprints.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SprintDropdown sprints={sprints} value={selectedSprint} onChange={setSelectedSprint} />
       )}
 
       {/* Assignee picker */}
@@ -317,16 +387,128 @@ function CreateTaskModal({
           disabled={pending}
           className="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
-          {pending ? "Creating..." : "Create"}
+          {pending ? "Creating..." : isDuplicate ? "Create Duplicate" : "Create"}
         </button>
       </div>
     </form>
   );
 }
 
-/* ─── Priority dropdown (matches PriorityPicker style) ────────────────── */
+/* ─── Resizable textarea with drag handle ─────────────────────────────── */
 
-function ColoredPrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
+function ResizableTextarea({
+  name,
+  defaultValue,
+  placeholder,
+}: {
+  name: string;
+  defaultValue: string;
+  placeholder: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+  const minHeight = 72;
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.preventDefault();
+    dragging.current = true;
+    startY.current = e.clientY;
+    startH.current = textareaRef.current?.getBoundingClientRect().height ?? minHeight;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragging.current) return;
+    const delta = e.clientY - startY.current;
+    setHeight(Math.max(minHeight, startH.current + delta));
+  }
+
+  function onPointerUp() {
+    dragging.current = false;
+  }
+
+  return (
+    <div className="mt-1">
+      <textarea
+        ref={textareaRef}
+        name={name}
+        rows={3}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        className="block w-full resize-none rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors outline-none focus:border-accent focus:ring-1 focus:ring-accent/50"
+        style={{ minHeight, height: height ?? undefined }}
+      />
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        className="group flex cursor-row-resize items-center justify-center py-1"
+      >
+        <div className="h-0.5 w-8 rounded-full bg-transparent transition-colors group-hover:bg-border" />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Status dropdown ─────────────────────────────────────────────────── */
+
+function StatusSelect({ value, onChange }: { value: TaskStatus; onChange: (v: TaskStatus) => void }) {
+  const [open, setOpen] = useState(false);
+  const color = STATUS_COLORS[value];
+
+  function handleSelect(s: TaskStatus) {
+    onChange(s);
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative mt-1">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors"
+        style={{
+          backgroundColor: color + "20",
+          borderColor: color + "40",
+          color: color,
+        }}
+      >
+        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+        {STATUS_LABELS[value]}
+        <ChevronDown size={10} className={`ml-auto ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
+            {TASK_STATUSES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleSelect(s)}
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+              >
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
+                <span className={s === value ? "font-medium" : ""} style={{ color: STATUS_COLORS[s] }}>
+                  {STATUS_LABELS[s]}
+                </span>
+                {s === value && <Check size={11} className="ml-auto text-accent" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── Priority dropdown ───────────────────────────────────────────────── */
+
+function PrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
   const [open, setOpen] = useState(false);
   const color = PRIORITY_COLORS[value];
 
@@ -373,6 +555,73 @@ function ColoredPrioritySelect({ value, onChange }: { value: TaskPriority; onCha
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ─── Sprint dropdown ─────────────────────────────────────────────────── */
+
+function SprintDropdown({
+  sprints,
+  value,
+  onChange,
+}: {
+  sprints: SprintOption[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = sprints.find((s) => s.id === value);
+
+  function handleSelect(id: string) {
+    onChange(id === value ? "" : id);
+    setOpen(false);
+  }
+
+  return (
+    <div>
+      <label className="block text-[11px] font-medium text-fg-muted">Sprint</label>
+      <div className="relative mt-1">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-bg-primary px-2 py-1.5 text-xs transition-colors hover:border-accent/40"
+        >
+          <span className={selected ? "font-medium text-fg-primary" : "text-fg-muted"}>
+            {selected ? selected.title : "No sprint"}
+          </span>
+          <ChevronDown size={10} className={`ml-auto text-fg-muted ${open ? "rotate-180" : ""}`} />
+        </button>
+
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs text-fg-muted transition-colors hover:bg-bg-secondary"
+              >
+                No sprint
+                {!value && <Check size={11} className="ml-auto text-accent" />}
+              </button>
+              {sprints.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => handleSelect(s.id)}
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-secondary"
+                >
+                  <span className={s.id === value ? "font-medium text-fg-primary" : "text-fg-secondary"}>
+                    {s.title}
+                  </span>
+                  {s.id === value && <Check size={11} className="ml-auto text-accent" />}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -437,7 +686,7 @@ function AssigneePicker({
           >
             <UserAvatar name={m.name} image={m.image} size={16} />
             {m.name ?? m.email ?? "Unknown"}
-            <button type="button" onClick={() => remove(m.id)} className="text-fg-muted hover:text-accent-emphasis">
+            <button type="button" onClick={() => remove(m.id)} className="cursor-pointer text-fg-muted hover:text-accent-emphasis">
               <X size={10} />
             </button>
           </span>
@@ -471,7 +720,7 @@ function AssigneePicker({
                   setShowSearch(false);
                   setSearch("");
                 }}
-                className="text-fg-muted hover:text-fg-secondary"
+                className="cursor-pointer text-fg-muted hover:text-fg-secondary"
               >
                 <X size={12} />
               </button>
@@ -484,7 +733,7 @@ function AssigneePicker({
                     key={m.id}
                     type="button"
                     onClick={() => add(m.id)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
+                    className="cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-xs text-fg-primary hover:bg-bg-secondary"
                   >
                     <UserAvatar name={m.name} image={m.image} size={18} />
                     <div className="min-w-0 text-left">
