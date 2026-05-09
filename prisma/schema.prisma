@@ -112,14 +112,14 @@ model User {
   sessions Session[]
 
   // Workspace relations
-  memberships            WorkspaceMember[]
-  workspaceApplications  WorkspaceApplication[]
-  createdWorkspaces      Workspace[]            @relation("WorkspaceCreator")
-  createdInvitations     WorkspaceInvitation[]  @relation("InvitationCreator")
+  memberships           WorkspaceMember[]
+  workspaceApplications WorkspaceApplication[]
+  createdWorkspaces     Workspace[]            @relation("WorkspaceCreator")
+  createdInvitations    WorkspaceInvitation[]  @relation("InvitationCreator")
 
   // Task relations
-  authoredTasks Task[]           @relation("TaskAuthor")
-  assignedTasks Task[]           @relation("TaskAssignees")
+  authoredTasks Task[]         @relation("TaskAuthor")
+  assignedTasks Task[]         @relation("TaskAssignees")
   attachments   Attachment[]
   comments      Comment[]
   activities    Activity[]
@@ -163,8 +163,8 @@ model Role {
 }
 
 model WorkspaceMember {
-  id        String   @id @default(cuid())
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  joinedAt DateTime @default(now())
 
   userId      String
   workspaceId String
@@ -210,11 +210,11 @@ model WorkspaceInvitation {
 // ─── Board ──────────────────────────────────────────────────────────────────
 
 model Board {
-  id           String  @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
   description  String?
-  isActive     Boolean @default(true)
-  displayOrder Int     @default(0)
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -244,17 +244,17 @@ model Task {
   authorId     String
   parentTaskId String?
 
-  board      Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  author     User   @relation("TaskAuthor", fields: [authorId], references: [id])
-  parentTask Task?  @relation("Subtasks", fields: [parentTaskId], references: [id])
+  board      Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author     User  @relation("TaskAuthor", fields: [authorId], references: [id])
+  parentTask Task? @relation("Subtasks", fields: [parentTaskId], references: [id])
 
-  subtasks    Task[]       @relation("Subtasks")
-  assignees   User[]       @relation("TaskAssignees")
-  tags        Tag[]        @relation("TaskTags")
-  sprints     Sprint[]     @relation("SprintTasks")
-  attachments Attachment[]
-  comments    Comment[]
-  activities  Activity[]
+  subtasks      Task[]         @relation("Subtasks")
+  assignees     User[]         @relation("TaskAssignees")
+  tags          Tag[]          @relation("TaskTags")
+  sprints       Sprint[]       @relation("SprintTasks")
+  attachments   Attachment[]
+  comments      Comment[]
+  activities    Activity[]
   notifications Notification[]
 
   @@index([boardId, status])
