@@ -11,11 +11,7 @@ interface Application {
   user: { id: string; name: string | null; email: string | null };
 }
 
-export function ApplicationList({
-  applications,
-}: {
-  applications: Application[];
-}) {
+export function ApplicationList({ applications }: { applications: Application[] }) {
   return (
     <div className="space-y-2">
       {applications.map((app) => (
@@ -26,25 +22,15 @@ export function ApplicationList({
 }
 
 function ApplicationRow({ application }: { application: Application }) {
-  const [, approveAction, approvePending] = useActionState(
-    handleApplication,
-    null,
-  );
-  const [, rejectAction, rejectPending] = useActionState(
-    handleApplication,
-    null,
-  );
+  const [, approveAction, approvePending] = useActionState(handleApplication, null);
+  const [, rejectAction, rejectPending] = useActionState(handleApplication, null);
 
   return (
-    <div className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm">
+    <div className="flex items-center justify-between card-panel">
       <div>
-        <p className="text-xs font-medium text-fg-primary">
-          {application.user.name ?? application.user.email}
-        </p>
+        <p className="text-xs font-medium text-fg-primary">{application.user.name ?? application.user.email}</p>
         {application.message && (
-          <p className="mt-0.5 text-[11px] text-fg-muted italic">
-            &ldquo;{application.message}&rdquo;
-          </p>
+          <p className="mt-0.5 text-[11px] text-fg-muted italic">&ldquo;{application.message}&rdquo;</p>
         )}
         <p className="mt-0.5 text-[11px] text-fg-muted">
           Applied {new Date(application.createdAt).toLocaleDateString()}

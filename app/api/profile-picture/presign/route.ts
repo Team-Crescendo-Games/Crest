@@ -37,13 +37,10 @@ export async function POST(request: Request) {
     const stage = getStage();
     const avatarPrefix = `${stage}/avatars/${session.user.id}/`;
 
-    // Clean up any existing avatars for this user before uploading the new
-    // one. Failures are logged but don't block the upload — the worst case
-    // is a leaked object, not a broken upload flow.
     try {
       await deleteS3Prefix(avatarPrefix);
-    } catch (err) {
-      console.error("Failed to clean up old avatars:", err);
+    } catch (e) {
+      console.error("Failed to clean up old avatars:", e);
     }
 
     const key = `${avatarPrefix}${Date.now()}.${ext}`;
@@ -62,8 +59,8 @@ export async function POST(request: Request) {
       : `https://${BUCKET}.s3.${process.env.S3_REGION ?? "us-east-1"}.amazonaws.com/${key}`;
 
     return NextResponse.json({ uploadUrl, publicUrl, key });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Upload failed";
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Upload failed";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

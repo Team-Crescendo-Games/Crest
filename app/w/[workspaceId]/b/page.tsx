@@ -2,35 +2,20 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, LayoutList } from "lucide-react";
+import { ArrowLeft, LayoutList } from "lucide-react";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
-import {
-  TASK_STATUSES as STATUS_ORDER,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  TASK_PRIORITIES,
-} from "@/lib/task-enums";
+import { TASK_STATUSES as STATUS_ORDER, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES } from "@/lib/task-enums";
 import { BoardRow } from "@/components/boards/board-row";
-import { BoardExtras } from "@/components/boards/board-extras";
+import { BoardExtras } from "@/components/boards/board-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { getEffectivePermissions } from "@/lib/permissions";
+import { parseMulti } from "@/lib/url-helpers";
+import { CreateBoardModal } from "@/components/workspaces/create-board-modal";
 
 const PAGE_SIZE_DEFAULT = 5;
 const PAGE_SIZE_COMPLETED = 5;
 
-/** Split a comma-separated param into a trimmed, non-empty array. */
-function parseMulti(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
-
-export default async function BoardsPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{
     showArchived?: string;
@@ -40,7 +25,9 @@ export default async function BoardsPage({
     tag?: string;
     assignee?: string;
   }>;
-}) {
+}
+
+export default async function BoardsPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
   const {
     showArchived,
@@ -66,9 +53,7 @@ export default async function BoardsPage({
   const includeArchived = showArchived === "true";
 
   // Parse multi-value filter params
-  const priorities = parseMulti(priorityParam).filter((p) =>
-    (TASK_PRIORITIES as readonly string[]).includes(p),
-  );
+  const priorities = parseMulti(priorityParam).filter((p) => (TASK_PRIORITIES as readonly string[]).includes(p));
   const tagFilters = parseMulti(tagParam);
   const assigneeFilters = parseMulti(assigneeParam);
 
@@ -118,39 +103,38 @@ export default async function BoardsPage({
   if (boardFilter) boardWhere.id = boardFilter;
 
   // Fetch boards (metadata only)
-  const [boardList, allBoards, allTags, allMembers, archivedCount] =
-    await Promise.all([
-      prisma.board.findMany({
-        where: boardWhere,
-        orderBy: { displayOrder: "asc" },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          isActive: true,
+  const [boardList, allBoards, allTags, allMembers, archivedCount] = await Promise.all([
+    prisma.board.findMany({
+      where: boardWhere,
+      orderBy: { displayOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        isActive: true,
+      },
+    }),
+    prisma.board.findMany({
+      where: { workspaceId, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { displayOrder: "asc" },
+    }),
+    prisma.tag.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        user: {
+          select: { id: true, name: true, email: true, image: true },
         },
-      }),
-      prisma.board.findMany({
-        where: { workspaceId, isActive: true },
-        select: { id: true, name: true },
-        orderBy: { displayOrder: "asc" },
-      }),
-      prisma.tag.findMany({
-        where: { workspaceId },
-        select: { id: true, name: true, color: true },
-        orderBy: { name: "asc" },
-      }),
-      prisma.workspaceMember.findMany({
-        where: { workspaceId },
-        select: {
-          user: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-        },
-        orderBy: { user: { name: "asc" } },
-      }),
-      prisma.board.count({ where: { workspaceId, isActive: false } }),
-    ]);
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.board.count({ where: { workspaceId, isActive: false } }),
+  ]);
 
   const taskInclude = {
     author: { select: { name: true } },
@@ -239,11 +223,7 @@ export default async function BoardsPage({
     }),
   );
 
-  const hasTaskFilter =
-    !!q ||
-    priorities.length > 0 ||
-    tagFilters.length > 0 ||
-    assigneeFilters.length > 0;
+  const hasTaskFilter = !!q || priorities.length > 0 || tagFilters.length > 0 || assigneeFilters.length > 0;
 
   const columnPageSizes: Record<string, number> = {
     NOT_STARTED: PAGE_SIZE_DEFAULT,
@@ -252,9 +232,7 @@ export default async function BoardsPage({
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
 
-  const columnFilters = hasTaskFilter
-    ? { q, priorities, tagFilters, assigneeFilters }
-    : undefined;
+  const columnFilters = hasTaskFilter ? { q, priorities, tagFilters, assigneeFilters } : undefined;
 
   // Extra params to preserve across TaskFilters navigations
   const extraParams: Record<string, string | undefined> = {
@@ -276,17 +254,10 @@ export default async function BoardsPage({
         <div className="flex items-center gap-2">
           <LayoutList size={16} className="text-accent" />
           <h1 className="font-mono text-lg font-semibold text-fg-primary">
-            Boards in{" "}
-            <span className="text-accent">{membership.workspace.name}</span>
+            Boards in <span className="text-accent">{membership.workspace.name}</span>
           </h1>
         </div>
-        <Link
-          href={`/w/${workspaceId}/b/new`}
-          className="flex items-center gap-1 rounded-md bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20"
-        >
-          <Plus size={11} />
-          New Board
-        </Link>
+        <CreateBoardModal workspaceId={workspaceId} />
       </div>
 
       {/* Filters */}
@@ -315,9 +286,7 @@ export default async function BoardsPage({
       <div className="mt-6">
         {boardData.length === 0 ? (
           <p className="mt-8 text-center text-xs text-fg-muted">
-            {hasTaskFilter || boardFilter
-              ? "No results match your filters."
-              : "No boards yet."}
+            {hasTaskFilter || boardFilter ? "No results match your filters." : "No boards yet."}
           </p>
         ) : (
           <div className="space-y-3">

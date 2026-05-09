@@ -4,21 +4,31 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import { parseFormData } from "@/lib/validations/helpers";
+import {
+  updateProfileSchema,
+  updateEmailSchema,
+  changePasswordSchema,
+  updateProfilePictureSchema,
+} from "@/lib/validations/user";
 
 export async function updateProfile(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const name = formData.get("name") as string;
+  const parsed = parseFormData(updateProfileSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { name } = parsed.data;
 
-  if (!name?.trim()) {
-    return { error: "Name is required" };
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { name: name.trim() },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
   }
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { name: name.trim() },
-  });
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");
@@ -27,13 +37,11 @@ export async function updateProfile(_prev: unknown, formData: FormData) {
 
 export async function updateEmail(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
-  if (!email?.trim()) return { error: "Email is required" };
-  if (!password) return { error: "Current password is required to change email" };
+  const parsed = parseFormData(updateEmailSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { email, password } = parsed.data;
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -46,7 +54,6 @@ export async function updateEmail(_prev: unknown, formData: FormData) {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return { error: "Incorrect password" };
 
-  // Check if email is already taken
   const existing = await prisma.user.findUnique({
     where: { email: email.trim() },
   });
@@ -54,10 +61,15 @@ export async function updateEmail(_prev: unknown, formData: FormData) {
     return { error: "This email is already in use" };
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { email: email.trim() },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { email: email.trim() },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath("/dashboard/profile");
   return { success: true, message: "Email updated" };
@@ -65,23 +77,11 @@ export async function updateEmail(_prev: unknown, formData: FormData) {
 
 export async function changePassword(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const currentPassword = formData.get("currentPassword") as string;
-  const newPassword = formData.get("newPassword") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
-
-  if (!currentPassword || !newPassword) {
-    return { error: "All fields are required" };
-  }
-
-  if (newPassword.length < 8) {
-    return { error: "New password must be at least 8 characters" };
-  }
-
-  if (newPassword !== confirmPassword) {
-    return { error: "Passwords do not match" };
-  }
+  const parsed = parseFormData(changePasswordSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { currentPassword, newPassword } = parsed.data;
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -96,26 +96,36 @@ export async function changePassword(_prev: unknown, formData: FormData) {
 
   const hashed = await bcrypt.hash(newPassword, 12);
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { password: hashed },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { password: hashed },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   return { success: true, message: "Password changed" };
 }
 
 export async function updateProfilePicture(_prev: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const imageUrl = formData.get("imageUrl") as string;
+  const parsed = parseFormData(updateProfilePictureSchema, formData);
+  if (!parsed.success) return { error: parsed.error };
+  const { imageUrl } = parsed.data;
 
-  if (!imageUrl) return { error: "Image URL is required" };
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { image: imageUrl },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { image: imageUrl },
+    });
+  } catch (err) {
+    console.error(err);
+    return { error: "An unexpected error occurred" };
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");

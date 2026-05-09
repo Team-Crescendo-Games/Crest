@@ -18,17 +18,11 @@ export async function POST(request: Request) {
   });
 
   if (!user) {
-    return NextResponse.json(
-      { error: "No account found with this email" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No account found with this email" }, { status: 404 });
   }
 
   if (user.password) {
-    return NextResponse.json(
-      { error: "This account already has a password. Use the sign-in page." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "This account already has a password. Use the sign-in page." }, { status: 400 });
   }
 
   return NextResponse.json({ ok: true });

@@ -15,17 +15,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId, fileName, fileUrl, fileSize, mimeType } =
-      await request.json();
+    const { taskId, fileName, fileUrl, fileSize, mimeType } = await request.json();
 
     if (!taskId || !fileName || !fileUrl || !fileSize || !mimeType) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    // Verify membership
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: { board: { select: { workspaceId: true } } },
@@ -61,9 +56,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ attachment }, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

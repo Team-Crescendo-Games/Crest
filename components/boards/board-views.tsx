@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Columns3, List } from "lucide-react";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import type { SortOption } from "@/lib/task-enums";
 
@@ -35,6 +35,31 @@ interface Column {
   tasks: Task[];
 }
 
+interface Props {
+  columns: Column[];
+  allColumns?: Column[];
+  boardId: string;
+  workspaceId: string;
+  canCreate: boolean;
+  sprints?: { id: string; title: string }[];
+  members?: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
+  tags?: { id: string; name: string; color: string | null }[];
+  columnCounts?: Record<string, number>;
+  columnPageSizes?: Record<string, number>;
+  columnFilters?: {
+    q?: string;
+    priorities?: string[];
+    tagFilters?: string[];
+    assigneeFilters?: string[];
+    sorts?: SortOption[];
+  };
+}
+
 export function BoardViews({
   columns,
   allColumns,
@@ -47,25 +72,7 @@ export function BoardViews({
   columnCounts,
   columnPageSizes,
   columnFilters,
-}: {
-  columns: Column[];
-  allColumns?: Column[];
-  boardId: string;
-  workspaceId: string;
-  canCreate: boolean;
-  sprints?: { id: string; title: string }[];
-  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
-  tags?: { id: string; name: string; color: string | null }[];
-  columnCounts?: Record<string, number>;
-  columnPageSizes?: Record<string, number>;
-  columnFilters?: {
-    q?: string;
-    priorities?: string[];
-    tagFilters?: string[];
-    assigneeFilters?: string[];
-    sorts?: SortOption[];
-  };
-}) {
+}: Props) {
   const [view, setView] = useState<"columns" | "list">(() => {
     if (typeof window === "undefined") return "columns";
     const saved = localStorage.getItem(viewKey(boardId));
@@ -84,9 +91,7 @@ export function BoardViews({
           <button
             onClick={() => setView("columns")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "columns"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "columns" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <Columns3 size={13} />
@@ -95,9 +100,7 @@ export function BoardViews({
           <button
             onClick={() => setView("list")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "list"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "list" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <List size={13} />
@@ -107,11 +110,7 @@ export function BoardViews({
       </div>
 
       {view === "list" ? (
-        <TaskListView
-          columns={allColumns ?? columns}
-          workspaceId={workspaceId}
-          boardId={boardId}
-        />
+        <TaskListView columns={allColumns ?? columns} workspaceId={workspaceId} boardId={boardId} />
       ) : (
         <KanbanBoard
           columns={columns}

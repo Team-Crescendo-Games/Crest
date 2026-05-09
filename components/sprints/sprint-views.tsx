@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Columns3, GanttChart, List } from "lucide-react";
-import { KanbanBoard } from "@/components/kanban-board";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { SprintTimeline } from "@/components/sprints/sprint-timeline";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import type { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
@@ -59,7 +59,12 @@ export function SprintViews({
   hasTimeline: boolean;
   boards: { id: string; name: string }[];
   canCreate: boolean;
-  members?: { id: string; name: string | null; email?: string | null; image?: string | null }[];
+  members?: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image?: string | null;
+  }[];
   tags?: { id: string; name: string; color: string | null }[];
   columnCounts?: Record<string, number>;
   columnPageSizes?: Record<string, number>;
@@ -93,9 +98,7 @@ export function SprintViews({
           <button
             onClick={() => setView("columns")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "columns"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "columns" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <Columns3 size={13} />
@@ -104,9 +107,7 @@ export function SprintViews({
           <button
             onClick={() => setView("list")}
             className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-              view === "list"
-                ? "bg-bg-elevated text-fg-primary shadow-sm"
-                : "text-fg-muted hover:text-fg-secondary"
+              view === "list" ? "bg-bg-elevated text-fg-primary shadow-sm" : "text-fg-muted hover:text-fg-secondary"
             }`}
           >
             <List size={13} />
@@ -136,17 +137,9 @@ export function SprintViews({
       </div>
 
       {view === "list" ? (
-        <TaskListView
-          columns={allColumns ?? columns}
-          workspaceId={workspaceId}
-        />
+        <TaskListView columns={allColumns ?? columns} workspaceId={workspaceId} />
       ) : view === "timeline" && hasTimeline ? (
-        <SprintTimeline
-          tasks={tasks}
-          sprintStart={sprintStart!}
-          sprintEnd={sprintEnd!}
-          workspaceId={workspaceId}
-        />
+        <SprintTimeline tasks={tasks} sprintStart={sprintStart!} sprintEnd={sprintEnd!} workspaceId={workspaceId} />
       ) : (
         <KanbanBoard
           columns={columns}

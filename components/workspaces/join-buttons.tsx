@@ -9,9 +9,7 @@ export function JoinButton({ workspaceId }: { workspaceId: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      {state?.error && (
-        <p className="mb-1 text-[10px] text-accent-emphasis">{state.error}</p>
-      )}
+      {state?.error && <p className="mb-1 text-[10px] text-accent-emphasis">{state.error}</p>}
       <button
         type="submit"
         disabled={pending}
@@ -29,13 +27,9 @@ export function ApplyButton({ workspaceId }: { workspaceId: string }) {
   return (
     <form action={action} className="flex items-center gap-2">
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      {state?.error && (
-        <p className="text-[10px] text-accent-emphasis">{state.error}</p>
-      )}
+      {state?.error && <p className="text-[10px] text-accent-emphasis">{state.error}</p>}
       {state?.success ? (
-        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-medium text-accent">
-          Applied
-        </span>
+        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-medium text-accent">Applied</span>
       ) : (
         <button
           type="submit"

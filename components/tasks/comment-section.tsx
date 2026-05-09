@@ -23,14 +23,11 @@ export function CommentSection({
 }) {
   const [expanded, setExpanded] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
-  const [addState, addAction, addPending] = useActionState(
-    async (prev: unknown, formData: FormData) => {
-      const result = await addComment(prev, formData);
-      if (result?.success) formRef.current?.reset();
-      return result;
-    },
-    null,
-  );
+  const [addState, addAction, addPending] = useActionState(async (prev: unknown, formData: FormData) => {
+    const result = await addComment(prev, formData);
+    if (result?.success) formRef.current?.reset();
+    return result;
+  }, null);
 
   return (
     <div>
@@ -41,12 +38,7 @@ export function CommentSection({
         aria-controls={`comments-${taskId}`}
         className="group flex w-full items-center gap-2 font-mono text-xs font-medium text-fg-secondary transition-colors hover:text-fg-primary"
       >
-        <ChevronDown
-          size={13}
-          className={`text-fg-muted transition-transform ${
-            expanded ? "" : "-rotate-90"
-          }`}
-        />
+        <ChevronDown size={13} className={`text-fg-muted transition-transform ${expanded ? "" : "-rotate-90"}`} />
         <MessageSquare size={13} className="text-accent" />
         Comments
         <span className="text-[11px] text-fg-muted">({comments.length})</span>
@@ -57,27 +49,17 @@ export function CommentSection({
           {/* Comment list */}
           <div className="mt-3 space-y-3">
             {comments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                isOwn={comment.userId === currentUserId}
-              />
+              <CommentItem key={comment.id} comment={comment} isOwn={comment.userId === currentUserId} />
             ))}
 
-            {comments.length === 0 && (
-              <p className="text-[11px] text-fg-muted">No comments yet.</p>
-            )}
+            {comments.length === 0 && <p className="text-[11px] text-fg-muted">No comments yet.</p>}
           </div>
 
           {/* Add comment */}
           <form ref={formRef} action={addAction} className="mt-4">
             <input type="hidden" name="taskId" value={taskId} />
 
-            {addState?.error && (
-              <p className="mb-2 text-[11px] text-accent-emphasis">
-                {addState.error}
-              </p>
-            )}
+            {addState?.error && <p className="mb-2 text-[11px] text-accent-emphasis">{addState.error}</p>}
 
             <div className="flex gap-2">
               <textarea
@@ -90,12 +72,8 @@ export function CommentSection({
                     e.preventDefault();
                     const target = e.currentTarget;
                     const { selectionStart, selectionEnd } = target;
-                    target.value =
-                      target.value.slice(0, selectionStart) +
-                      "\n" +
-                      target.value.slice(selectionEnd);
-                    target.selectionStart = target.selectionEnd =
-                      selectionStart + 1;
+                    target.value = target.value.slice(0, selectionStart) + "\n" + target.value.slice(selectionEnd);
+                    target.selectionStart = target.selectionEnd = selectionStart + 1;
                   } else if (e.key === "Enter" && !e.shiftKey) {
                     // Enter submits the form
                     e.preventDefault();
@@ -130,9 +108,7 @@ function CommentItem({ comment, isOwn }: { comment: Comment; isOwn: boolean }) {
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-[9px] font-bold text-accent">
             {comment.userName?.charAt(0)?.toUpperCase() ?? "?"}
           </div>
-          <span className="text-[11px] font-medium text-fg-primary">
-            {comment.userName}
-          </span>
+          <span className="text-[11px] font-medium text-fg-primary">{comment.userName}</span>
           <span className="text-[10px] text-fg-muted">
             {new Date(comment.createdAt).toLocaleDateString()}{" "}
             {new Date(comment.createdAt).toLocaleTimeString([], {
@@ -155,7 +131,7 @@ function CommentItem({ comment, isOwn }: { comment: Comment; isOwn: boolean }) {
           </form>
         )}
       </div>
-      <p className="mt-1.5 whitespace-pre-wrap break-words text-xs text-fg-secondary">
+      <p className="mt-1.5 whitespace-pre-wrap wrap-break-words text-xs text-fg-secondary">
         <Linkify text={comment.text} />
       </p>
     </div>

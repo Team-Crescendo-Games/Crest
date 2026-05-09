@@ -193,3 +193,24 @@ body {
   max-width: 100%;
   border-radius: 6px;
 }
+
+@layer utilities {
+  .input-field {
+    @apply rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-sm text-fg-primary placeholder-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50;
+  }
+  .alert-error {
+    @apply rounded-md border border-accent-emphasis/30 bg-accent-emphasis/10 px-3 py-2 text-xs text-accent-emphasis;
+  }
+  .btn-primary {
+    @apply rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg-primary transition-all hover:bg-accent-emphasis hover:shadow-[0_0_20px_-4px] hover:shadow-accent/40 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg-elevated disabled:opacity-50;
+  }
+  .alert-success {
+    @apply rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent;
+  }
+  .card-panel {
+    @apply rounded-md border border-border bg-bg-elevated/60 px-4 py-3 backdrop-blur-sm;
+  }
+  .form-label {
+    @apply block text-xs font-medium text-fg-secondary;
+  }
+}

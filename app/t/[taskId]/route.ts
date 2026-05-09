@@ -5,10 +5,7 @@ import { prisma } from "@/lib/prisma";
  * GET /t/[taskId]
  * Short-link redirect: looks up the task and redirects to its full URL.
  */
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ taskId: string }> },
-) {
+export async function GET(_: Request, { params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = await params;
 
   const task = await prisma.task.findUnique({

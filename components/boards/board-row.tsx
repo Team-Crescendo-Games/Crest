@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { hasPermission, Permission } from "@/lib/permissions";
-import { KanbanBoard } from "@/components/kanban-board";
-import type { TaskCardData } from "@/components/tasks/task-card";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
+import type { TaskCardData } from "@/lib/types/task";
 
 interface Column {
   status: string;
@@ -47,17 +47,12 @@ export function BoardRow({
   const canCreate = hasPermission(permissions, Permission.CREATE_CONTENT);
 
   const filteredCount =
-    columnCounts.NOT_STARTED +
-    columnCounts.IN_PROGRESS +
-    columnCounts.IN_REVIEW +
-    columnCounts.COMPLETED;
+    columnCounts.NOT_STARTED + columnCounts.IN_PROGRESS + columnCounts.IN_REVIEW + columnCounts.COMPLETED;
 
   return (
     <div
       className={`rounded-md border bg-bg-elevated/60 backdrop-blur-sm ${
-        board.isActive
-          ? "border-border"
-          : "border-dashed border-border opacity-60"
+        board.isActive ? "border-border" : "border-dashed border-border opacity-60"
       }`}
     >
       {/* Board header */}
@@ -70,19 +65,14 @@ export function BoardRow({
             {board.name}
           </Link>
           {!board.isActive && (
-            <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[11px] text-fg-muted">
-              Archived
-            </span>
+            <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-[11px] text-fg-muted">Archived</span>
           )}
           <span className="text-[11px] text-fg-muted">
             {board.totalTaskCount} task{board.totalTaskCount !== 1 && "s"}
-            {searchQuery && filteredCount !== board.totalTaskCount && (
-              <> · {filteredCount} matching</>
-            )}
+            {searchQuery && filteredCount !== board.totalTaskCount && <> · {filteredCount} matching</>}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-        </div>
+        <div className="flex items-center gap-1"></div>
       </div>
 
       {/* Kanban columns with pagination */}

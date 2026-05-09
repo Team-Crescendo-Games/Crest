@@ -7,10 +7,7 @@ import { deleteS3Object, getPresignedDownloadUrl } from "@/lib/s3";
  * GET /api/attachments/[attachmentId]
  * Returns a short-lived presigned download URL for the attachment.
  */
-export async function GET(
-  request: Request,
-  ctx: RouteContext<"/api/attachments/[attachmentId]">
-) {
+export async function GET(_: Request, ctx: RouteContext<"/api/attachments/[attachmentId]">) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -54,10 +51,7 @@ export async function GET(
  * DELETE /api/attachments/[attachmentId]
  * Deletes the attachment from S3 and the database.
  */
-export async function DELETE(
-  request: Request,
-  ctx: RouteContext<"/api/attachments/[attachmentId]">
-) {
+export async function DELETE(_: Request, ctx: RouteContext<"/api/attachments/[attachmentId]">) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -74,10 +68,7 @@ export async function DELETE(
     });
 
     if (!attachment) {
-      return NextResponse.json(
-        { error: "Attachment not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Attachment not found" }, { status: 404 });
     }
 
     // Verify membership
@@ -94,22 +85,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
 
-    // Delete from S3
     try {
       await deleteS3Object(attachment.fileUrl);
     } catch {
-      // Log but don't fail — the DB record should still be cleaned up
       console.error("Failed to delete S3 object:", attachment.fileUrl);
     }
 
-    // Delete from database
     await prisma.attachment.delete({ where: { id: attachmentId } });
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

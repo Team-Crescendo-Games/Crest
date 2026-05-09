@@ -3,12 +3,8 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Search, X, ChevronDown, User } from "lucide-react";
-import {
-  TASK_PRIORITIES,
-  PRIORITY_LABELS,
-  PRIORITY_COLORS,
-} from "@/lib/task-enums";
-import { UserAvatar } from "@/components/user-avatar";
+import { TASK_PRIORITIES, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/task-enums";
+import { UserAvatar } from "@/components/common/user-avatar";
 import type { TaskPriority } from "@/prisma/generated/prisma/enums";
 
 interface Props {
@@ -47,24 +43,14 @@ export function TaskFilters({
     const qVal = overrides.q !== undefined ? overrides.q : currentQ;
     if (typeof qVal === "string" && qVal) params.set("q", qVal);
 
-    const priorities =
-      overrides.priority !== undefined
-        ? (overrides.priority as string[])
-        : currentPriorities;
-    if (Array.isArray(priorities) && priorities.length > 0)
-      params.set("priority", priorities.join(","));
+    const priorities = overrides.priority !== undefined ? (overrides.priority as string[]) : currentPriorities;
+    if (Array.isArray(priorities) && priorities.length > 0) params.set("priority", priorities.join(","));
 
-    const tagVals =
-      overrides.tag !== undefined ? (overrides.tag as string[]) : currentTags;
-    if (Array.isArray(tagVals) && tagVals.length > 0)
-      params.set("tag", tagVals.join(","));
+    const tagVals = overrides.tag !== undefined ? (overrides.tag as string[]) : currentTags;
+    if (Array.isArray(tagVals) && tagVals.length > 0) params.set("tag", tagVals.join(","));
 
-    const assigneeVals =
-      overrides.assignee !== undefined
-        ? (overrides.assignee as string[])
-        : currentAssignees;
-    if (Array.isArray(assigneeVals) && assigneeVals.length > 0)
-      params.set("assignee", assigneeVals.join(","));
+    const assigneeVals = overrides.assignee !== undefined ? (overrides.assignee as string[]) : currentAssignees;
+    if (Array.isArray(assigneeVals) && assigneeVals.length > 0) params.set("assignee", assigneeVals.join(","));
 
     // Preserve extra params (e.g. board, showArchived) but reset page on filter change
     if (extraParams) {
@@ -83,20 +69,14 @@ export function TaskFilters({
   }
 
   const hasFilters =
-    !!currentQ ||
-    currentPriorities.length > 0 ||
-    currentTags.length > 0 ||
-    currentAssignees.length > 0;
+    !!currentQ || currentPriorities.length > 0 || currentTags.length > 0 || currentAssignees.length > 0;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         {/* Search */}
         <div className="relative min-w-[200px] flex-1">
-          <Search
-            size={12}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted"
-          />
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted" />
           <input
             type="text"
             value={q}
@@ -136,8 +116,7 @@ export function TaskFilters({
                   key={v}
                   className="inline-block h-2 w-2 rounded-full"
                   style={{
-                    backgroundColor:
-                      PRIORITY_COLORS[v as TaskPriority] ?? "#9c9c98",
+                    backgroundColor: PRIORITY_COLORS[v as TaskPriority] ?? "#9c9c98",
                   }}
                 />
               ))}
@@ -165,9 +144,7 @@ export function TaskFilters({
                   <span className="flex flex-col">
                     <span>{t.name}</span>
                     {t.workspaceName && (
-                      <span className="text-[9px] leading-tight text-fg-muted">
-                        {t.workspaceName}
-                      </span>
+                      <span className="text-[9px] leading-tight text-fg-muted">{t.workspaceName}</span>
                     )}
                   </span>
                 </span>
@@ -194,66 +171,60 @@ export function TaskFilters({
 
         {/* Assignee multi-select */}
         {!hideAssignees && (
-        <MultiSelect
-          label="Assignee"
-          selected={currentAssignees}
-          onChange={(vals) => navigate({ assignee: vals })}
-          options={[
-            {
-              value: "unassigned",
-              label: "Unassigned",
-              node: (
-                <span className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary">
-                    <User size={10} className="text-fg-muted" />
-                  </span>
-                  Unassigned
-                </span>
-              ),
-            },
-            ...assignees.map((a) => ({
-              value: a.id,
-              label: a.name ?? "Unknown",
-              node: (
-                <span className="flex items-center gap-2">
-                  <UserAvatar name={a.name} image={a.image} size={20} />
-                  {a.name ?? "Unknown"}
-                </span>
-              ),
-            })),
-          ]}
-          renderSelected={(vals) => (
-            <span className="flex items-center -space-x-1">
-              {vals.slice(0, 3).map((v) => {
-                if (v === "unassigned") {
-                  return (
-                    <span
-                      key={v}
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary ring-1 ring-bg-elevated"
-                    >
+          <MultiSelect
+            label="Assignee"
+            selected={currentAssignees}
+            onChange={(vals) => navigate({ assignee: vals })}
+            options={[
+              {
+                value: "unassigned",
+                label: "Unassigned",
+                node: (
+                  <span className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary">
                       <User size={10} className="text-fg-muted" />
                     </span>
+                    Unassigned
+                  </span>
+                ),
+              },
+              ...assignees.map((a) => ({
+                value: a.id,
+                label: a.name ?? "Unknown",
+                node: (
+                  <span className="flex items-center gap-2">
+                    <UserAvatar name={a.name} image={a.image} size={20} />
+                    {a.name ?? "Unknown"}
+                  </span>
+                ),
+              })),
+            ]}
+            renderSelected={(vals) => (
+              <span className="flex items-center -space-x-1">
+                {vals.slice(0, 3).map((v) => {
+                  if (v === "unassigned") {
+                    return (
+                      <span
+                        key={v}
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary ring-1 ring-bg-elevated"
+                      >
+                        <User size={10} className="text-fg-muted" />
+                      </span>
+                    );
+                  }
+                  const a = assignees.find((a) => a.id === v);
+                  return (
+                    <UserAvatar key={v} name={a?.name} image={a?.image} size={20} className="ring-1 ring-bg-elevated" />
                   );
-                }
-                const a = assignees.find((a) => a.id === v);
-                return (
-                  <UserAvatar
-                    key={v}
-                    name={a?.name}
-                    image={a?.image}
-                    size={20}
-                    className="ring-1 ring-bg-elevated"
-                  />
-                );
-              })}
-              {vals.length > 3 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-elevated">
-                  +{vals.length - 3}
-                </span>
-              )}
-            </span>
-          )}
-        />
+                })}
+                {vals.length > 3 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-bg-secondary text-[8px] font-medium text-fg-muted ring-1 ring-bg-elevated">
+                    +{vals.length - 3}
+                  </span>
+                )}
+              </span>
+            )}
+          />
         )}
 
         {extraControls}
@@ -276,9 +247,7 @@ export function TaskFilters({
             <FilterChip
               key={p}
               color={PRIORITY_COLORS[p as TaskPriority]}
-              label={
-                PRIORITY_LABELS[p as keyof typeof PRIORITY_LABELS] ?? p
-              }
+              label={PRIORITY_LABELS[p as keyof typeof PRIORITY_LABELS] ?? p}
               onRemove={() =>
                 navigate({
                   priority: currentPriorities.filter((v) => v !== p),
@@ -293,9 +262,7 @@ export function TaskFilters({
                 key={t}
                 color={tag?.color ?? undefined}
                 label={t}
-                onRemove={() =>
-                  navigate({ tag: currentTags.filter((v) => v !== t) })
-                }
+                onRemove={() => navigate({ tag: currentTags.filter((v) => v !== t) })}
               />
             );
           })}
@@ -304,18 +271,10 @@ export function TaskFilters({
             return (
               <FilterChip
                 key={a}
-                label={
-                  a === "unassigned"
-                    ? "Unassigned"
-                    : (assignee?.name ?? "Assignee")
-                }
+                label={a === "unassigned" ? "Unassigned" : (assignee?.name ?? "Assignee")}
                 avatar={
                   a !== "unassigned" ? (
-                    <UserAvatar
-                      name={assignee?.name}
-                      image={assignee?.image}
-                      size={14}
-                    />
+                    <UserAvatar name={assignee?.name} image={assignee?.image} size={14} />
                   ) : undefined
                 }
                 onRemove={() =>
@@ -384,9 +343,7 @@ function MultiSelect({
   }, [open]);
 
   function toggle(value: string) {
-    const next = selected.includes(value)
-      ? selected.filter((v) => v !== value)
-      : [...selected, value];
+    const next = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value];
     onChange(next);
   }
 
@@ -402,10 +359,7 @@ function MultiSelect({
         }`}
       >
         {selected.length > 0 ? renderSelected(selected) : label}
-        <ChevronDown
-          size={10}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown size={10} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -423,9 +377,7 @@ function MultiSelect({
               >
                 <span
                   className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border text-[8px] ${
-                    isSelected
-                      ? "border-accent bg-accent text-white"
-                      : "border-border"
+                    isSelected ? "border-accent bg-accent text-white" : "border-border"
                   }`}
                 >
                   {isSelected && "✓"}
@@ -461,21 +413,11 @@ function FilterChip({
         color: color ?? undefined,
       }}
     >
-      {!color && !avatar && (
-        <span className="text-accent" />
-      )}
+      {!color && !avatar && <span className="text-accent" />}
       {avatar}
-      {color && (
-        <span
-          className="inline-block h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-      )}
+      {color && <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />}
       <span className={color ? "" : "text-accent"}>{label}</span>
-      <button
-        onClick={onRemove}
-        className="cursor-pointer transition-opacity hover:opacity-70"
-      >
+      <button onClick={onRemove} className="cursor-pointer transition-opacity hover:opacity-70">
         <X size={9} />
       </button>
     </span>

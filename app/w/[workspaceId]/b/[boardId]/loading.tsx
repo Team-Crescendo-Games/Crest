@@ -27,10 +27,7 @@ export default function BoardLoading() {
           <div key={col} className="space-y-3">
             <div className="h-5 w-24 rounded bg-bg-secondary" />
             {Array.from({ length: 3 - col }).map((_, row) => (
-              <div
-                key={row}
-                className="h-24 rounded-md border border-border-subtle bg-bg-elevated/40"
-              />
+              <div key={row} className="h-24 rounded-md border border-border-subtle bg-bg-elevated/40" />
             ))}
           </div>
         ))}

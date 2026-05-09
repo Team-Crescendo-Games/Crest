@@ -12,13 +12,7 @@ interface Invitation {
   isExpired: boolean;
 }
 
-export function InviteSection({
-  workspaceId,
-  invitations,
-}: {
-  workspaceId: string;
-  invitations: Invitation[];
-}) {
+export function InviteSection({ workspaceId, invitations }: { workspaceId: string; invitations: Invitation[] }) {
   const [state, action, pending] = useActionState(createInvitation, null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -50,11 +44,7 @@ export function InviteSection({
           <Plus size={11} />
           {pending ? "Creating..." : "Create Invite Link"}
         </button>
-        {state?.error && (
-          <span className="text-[11px] text-accent-emphasis">
-            {state.error}
-          </span>
-        )}
+        {state?.error && <span className="text-[11px] text-accent-emphasis">{state.error}</span>}
       </form>
 
       {/* Newly created link */}
@@ -65,15 +55,8 @@ export function InviteSection({
               ? `${window.location.origin}/invite/${state.inviteId}`
               : `/invite/${state.inviteId}`}
           </code>
-          <button
-            onClick={() => copyLink(state.inviteId!)}
-            className="shrink-0 text-accent hover:text-accent-emphasis"
-          >
-            {copiedId === state.inviteId ? (
-              <Check size={12} />
-            ) : (
-              <Copy size={12} />
-            )}
+          <button onClick={() => copyLink(state.inviteId!)} className="shrink-0 text-accent hover:text-accent-emphasis">
+            {copiedId === state.inviteId ? <Check size={12} /> : <Copy size={12} />}
           </button>
         </div>
       )}
@@ -85,9 +68,7 @@ export function InviteSection({
             <div
               key={inv.id}
               className={`flex items-center justify-between rounded-md border px-3 py-2 ${
-                inv.isExpired
-                  ? "border-border bg-bg-secondary/50"
-                  : "border-border bg-bg-elevated/60"
+                inv.isExpired ? "border-border bg-bg-secondary/50" : "border-border bg-bg-elevated/60"
               }`}
             >
               <div className="flex items-center gap-2">
@@ -96,15 +77,9 @@ export function InviteSection({
                   className="text-fg-muted hover:text-fg-secondary"
                   title="Copy invite link"
                 >
-                  {copiedId === inv.id ? (
-                    <Check size={11} />
-                  ) : (
-                    <Copy size={11} />
-                  )}
+                  {copiedId === inv.id ? <Check size={11} /> : <Copy size={11} />}
                 </button>
-                <code className="font-mono text-[11px] text-fg-muted">
-                  {inv.id.slice(0, 12)}...
-                </code>
+                <code className="font-mono text-[11px] text-fg-muted">{inv.id.slice(0, 12)}...</code>
               </div>
               <div className="flex items-center gap-3 text-[11px] text-fg-muted">
                 <span>by {inv.createdByName}</span>
