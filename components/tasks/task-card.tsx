@@ -207,7 +207,7 @@ export function TaskCard({
       )}
 
       {/* Row 1: title */}
-      <p className="font-mono text-xs font-medium text-fg-primary line-clamp-2">{task.title}</p>
+      <p className="font-mono text-[11px] font-medium text-fg-primary line-clamp-2">{task.title}</p>
 
       {/* Row 2: description (1 line) */}
       {task.description && <p className="mt-1 text-[11px] text-fg-muted line-clamp-1">{task.description}</p>}

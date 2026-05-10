@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { LayoutGrid, Users } from "lucide-react";
+import { LayoutGrid, Users, ListChecks } from "lucide-react";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { Logo } from "@/components/common/logo";
 import { SidebarLink } from "./sidebar-link";
@@ -172,6 +172,13 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               icon={Users}
               label="Team"
               active={pathname.startsWith(`/w/${activeWorkspaceId}/team`)}
+            />
+
+            <SidebarLink
+              href={`/w/${activeWorkspaceId}/tasks`}
+              icon={ListChecks}
+              label="Tasks"
+              active={pathname.startsWith(`/w/${activeWorkspaceId}/tasks`)}
             />
 
             <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />

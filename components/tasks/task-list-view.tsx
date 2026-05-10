@@ -9,6 +9,15 @@ import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
+type ServerPagination = {
+  mode: "server";
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  buildHref: (page: number) => string;
+};
+
 interface Task {
   id: string;
   title: string;
@@ -37,19 +46,24 @@ export function TaskListView({
   columns,
   workspaceId,
   boardId,
+  pagination,
 }: {
   columns: Column[];
   workspaceId: string;
   boardId?: string;
+  pagination?: ServerPagination;
 }) {
   const allTasks = useMemo(() => columns.flatMap((col) => col.tasks), [columns]);
   const [page, setPage] = useState(1);
 
-  const totalPages = Math.max(1, Math.ceil(allTasks.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageTasks = allTasks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const isServer = pagination?.mode === "server";
+  const totalPages = isServer ? pagination.totalPages : Math.max(1, Math.ceil(allTasks.length / PAGE_SIZE));
+  const currentPage = isServer ? pagination.page : Math.min(page, totalPages);
+  const pageSize = isServer ? pagination.pageSize : PAGE_SIZE;
+  const totalCount = isServer ? pagination.total : allTasks.length;
+  const pageTasks = isServer ? allTasks : allTasks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  if (allTasks.length === 0) {
+  if (totalCount === 0) {
     return <p className="py-8 text-center text-xs text-fg-muted">No tasks found.</p>;
   }
 
@@ -68,22 +82,67 @@ export function TaskListView({
     return pages;
   }
 
-  const pagination =
+  const renderPageControl = (opts: {
+    p: number;
+    children: React.ReactNode;
+    disabled?: boolean;
+    isCurrent?: boolean;
+    ariaLabel?: string;
+    extraClass?: string;
+    key?: string | number;
+  }) => {
+    const baseClass = opts.isCurrent
+      ? "bg-accent/15 text-accent"
+      : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary";
+    const className = `min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${baseClass} ${opts.extraClass ?? ""}`;
+    if (pagination?.mode === "server") {
+      if (opts.disabled) {
+        return (
+          <span
+            key={opts.key}
+            className={`${className} cursor-not-allowed opacity-30`}
+            aria-label={opts.ariaLabel}
+          >
+            {opts.children}
+          </span>
+        );
+      }
+      return (
+        <Link key={opts.key} href={pagination.buildHref(opts.p)} className={className} aria-label={opts.ariaLabel}>
+          {opts.children}
+        </Link>
+      );
+    }
+    return (
+      <button
+        key={opts.key}
+        onClick={() => setPage(opts.p)}
+        disabled={opts.disabled}
+        className={`${className} ${opts.disabled ? "disabled:opacity-30 disabled:cursor-not-allowed" : ""}`}
+        aria-label={opts.ariaLabel}
+      >
+        {opts.children}
+      </button>
+    );
+  };
+
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalCount);
+
+  const paginationEl =
     totalPages > 1 ? (
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-fg-muted">
-          {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, allTasks.length)} of {allTasks.length}{" "}
-          tasks
+          {startIndex}–{endIndex} of {totalCount} tasks
         </p>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Previous page"
-          >
-            <ChevronLeft size={13} />
-          </button>
+          {renderPageControl({
+            p: Math.max(1, currentPage - 1),
+            disabled: currentPage === 1,
+            ariaLabel: "Previous page",
+            extraClass: "!p-1",
+            children: <ChevronLeft size={13} />,
+          })}
 
           {pageNumbers().map((p, i) =>
             p === "ellipsis" ? (
@@ -91,28 +150,22 @@ export function TaskListView({
                 …
               </span>
             ) : (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`min-w-[22px] cursor-pointer rounded px-1 py-0.5 text-[11px] font-medium transition-colors ${
-                  p === currentPage
-                    ? "bg-accent/15 text-accent"
-                    : "text-fg-muted hover:bg-bg-secondary hover:text-fg-secondary"
-                }`}
-              >
-                {p}
-              </button>
+              renderPageControl({
+                key: p,
+                p,
+                isCurrent: p === currentPage,
+                children: p,
+              })
             ),
           )}
 
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="cursor-pointer rounded p-1 text-fg-muted transition-colors hover:bg-bg-secondary hover:text-fg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Next page"
-          >
-            <ChevronRight size={13} />
-          </button>
+          {renderPageControl({
+            p: Math.min(totalPages, currentPage + 1),
+            disabled: currentPage === totalPages,
+            ariaLabel: "Next page",
+            extraClass: "!p-1",
+            children: <ChevronRight size={13} />,
+          })}
         </div>
       </div>
     ) : null;
@@ -120,7 +173,7 @@ export function TaskListView({
   return (
     <div>
       {/* Top pagination */}
-      {pagination && <div className="mb-3">{pagination}</div>}
+      {paginationEl && <div className="mb-3">{paginationEl}</div>}
 
       <div className="overflow-hidden rounded-md border border-border">
         {/* Header */}
@@ -145,7 +198,7 @@ export function TaskListView({
               >
                 {/* Title + tags */}
                 <div className="min-w-0">
-                  <p className="truncate font-mono text-xs font-medium text-fg-primary transition-colors group-hover:text-accent">
+                  <p className="truncate font-mono text-[11px] font-medium text-fg-primary transition-colors group-hover:text-accent">
                     {task.title}
                   </p>
                   {task.tags && task.tags.length > 0 && (
@@ -240,7 +293,7 @@ export function TaskListView({
       </div>
 
       {/* Bottom pagination */}
-      {pagination && <div className="mt-3">{pagination}</div>}
+      {paginationEl && <div className="mt-3">{paginationEl}</div>}
     </div>
   );
 }

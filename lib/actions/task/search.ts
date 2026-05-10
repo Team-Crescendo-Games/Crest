@@ -142,6 +142,170 @@ export async function searchWorkspaceTasks(workspaceId: string, query: string) {
   return tasks;
 }
 
+// ─── Workspace tasks: paginated list with filters/sorts ────────────────────
+
+export interface WorkspaceTaskFilters {
+  q?: string;
+  priorities?: string[];
+  tagFilters?: string[];
+  assigneeFilters?: string[];
+  boardIds?: string[];
+  sprintIds?: string[];
+  statuses?: string[];
+  showArchived?: boolean;
+}
+
+/**
+ * Fetch a paginated list of tasks across an entire workspace, filtered and
+ * sorted. Used by the workspace-wide Tasks search page.
+ */
+export async function searchWorkspaceTasksList(
+  workspaceId: string,
+  filters: WorkspaceTaskFilters,
+  sorts: SortOption[],
+  page: number,
+  pageSize: number,
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId: session.user.id, workspaceId } },
+  });
+  if (!membership) throw new Error("Not a member");
+
+  const boardWhere: Record<string, unknown> = { workspaceId };
+  if (!filters.showArchived) boardWhere.isActive = true;
+
+  const where: Record<string, unknown> = { board: boardWhere };
+
+  if (filters.q) {
+    where.OR = [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { description: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters.priorities && filters.priorities.length > 0) {
+    where.priority =
+      filters.priorities.length === 1
+        ? (filters.priorities[0] as TaskPriority)
+        : { in: filters.priorities as TaskPriority[] };
+  }
+
+  if (filters.statuses && filters.statuses.length > 0) {
+    where.status =
+      filters.statuses.length === 1
+        ? (filters.statuses[0] as TaskStatus)
+        : { in: filters.statuses as TaskStatus[] };
+  }
+
+  if (filters.tagFilters && filters.tagFilters.length > 0) {
+    if (filters.tagFilters.length === 1) {
+      where.tags = { some: { name: filters.tagFilters[0] } };
+    } else {
+      where.AND = filters.tagFilters.map((name) => ({
+        tags: { some: { name } },
+      }));
+    }
+  }
+
+  if (filters.assigneeFilters && filters.assigneeFilters.length > 0) {
+    const hasUnassigned = filters.assigneeFilters.includes("unassigned");
+    const userIds = filters.assigneeFilters.filter((v) => v !== "unassigned");
+
+    if (hasUnassigned && userIds.length > 0) {
+      where.OR = [
+        ...(Array.isArray(where.OR) ? where.OR : []),
+        { assignees: { none: {} } },
+        { assignees: { some: { id: { in: userIds } } } },
+      ];
+    } else if (hasUnassigned) {
+      where.assignees = { none: {} };
+    } else {
+      where.assignees = { some: { id: { in: userIds } } };
+    }
+  }
+
+  if (filters.boardIds && filters.boardIds.length > 0) {
+    where.boardId = filters.boardIds.length === 1 ? filters.boardIds[0] : { in: filters.boardIds };
+  }
+
+  if (filters.sprintIds && filters.sprintIds.length > 0) {
+    where.sprints = { some: { id: { in: filters.sprintIds } } };
+  }
+
+  const orderBy = buildOrderBy(sorts);
+  const hasPrioritySort = sorts.some((s) => s.field === "priority");
+
+  // If sorting by priority, fetch all matching to allow correct in-memory
+  // priority ordering before paginating; otherwise paginate at the DB level.
+  if (hasPrioritySort) {
+    const [allTasks, total] = await Promise.all([
+      prisma.task.findMany({
+        where: where as never,
+        orderBy,
+        include: {
+          assignees: { select: { id: true, name: true, image: true } },
+          tags: { select: { name: true, color: true } },
+          board: { select: { id: true, name: true, workspaceId: true } },
+          subtasks: { select: { id: true, status: true } },
+          _count: { select: { comments: true } },
+        },
+      }),
+      prisma.task.count({ where: where as never }),
+    ]);
+
+    const prioritySort = sorts.find((s) => s.field === "priority")!;
+    allTasks.sort((a, b) => {
+      const aOrder = PRIORITY_ORDER[a.priority] ?? 99;
+      const bOrder = PRIORITY_ORDER[b.priority] ?? 99;
+      return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    });
+
+    const start = (page - 1) * pageSize;
+    const tasks = allTasks.slice(start, start + pageSize).map((t) => ({
+      ...t,
+      boardId: t.board.id,
+      workspaceId: t.board.workspaceId,
+      commentCount: t._count.comments,
+      subtaskTotal: t.subtasks.length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+    }));
+
+    return { tasks, total };
+  }
+
+  const [tasks, total] = await Promise.all([
+    prisma.task.findMany({
+      where: where as never,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        assignees: { select: { id: true, name: true, image: true } },
+        tags: { select: { name: true, color: true } },
+        board: { select: { id: true, name: true, workspaceId: true } },
+        subtasks: { select: { id: true, status: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
+    prisma.task.count({ where: where as never }),
+  ]);
+
+  return {
+    tasks: tasks.map((t) => ({
+      ...t,
+      boardId: t.board.id,
+      workspaceId: t.board.workspaceId,
+      commentCount: t._count.comments,
+      subtaskTotal: t.subtasks.length,
+      subtaskCompleted: t.subtasks.filter((s) => s.status === "COMPLETED").length,
+    })),
+    total,
+  };
+}
+
 // ─── Dashboard: load paginated tasks assigned to the current user ───────────
 
 export async function loadMyColumnTasks(
