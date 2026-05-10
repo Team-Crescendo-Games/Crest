@@ -70,13 +70,17 @@ export default async function WorkspaceTeamPage({ params }: { params: Promise<{ 
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="flex items-center gap-2">
-        <Users size={16} className="text-accent" />
-        <h1 className="font-mono text-lg font-semibold text-fg-primary">Team</h1>
+    <div className="mx-auto max-w-6xl">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <Users size={16} className="text-accent" />
+          <h1 className="font-mono text-lg font-semibold text-fg-primary">
+            Team in <span className="text-accent">{workspace?.name}</span>
+          </h1>
+        </div>
       </div>
       <p className="mt-1 text-xs text-fg-muted">
-        {members.length} member{members.length !== 1 && "s"} in {workspace?.name}
+        {members.length} member{members.length !== 1 && "s"}
       </p>
 
       {/* Members */}
@@ -87,7 +91,10 @@ export default async function WorkspaceTeamPage({ params }: { params: Promise<{ 
         </h2>
         <div className="mt-3 space-y-2">
           {members.map((member) => (
-            <div key={member.id} className="flex items-center justify-between card-panel">
+            <div
+              key={member.id}
+              className="flex items-center justify-between card-panel transition-all duration-200 ease-out hover:scale-[1.005]"
+            >
               <Link
                 href={`/w/${workspaceId}/team/${member.id}`}
                 className="flex items-center gap-3 transition-opacity hover:opacity-80"
