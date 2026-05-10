@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, LayoutList } from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { TaskStatus, TaskPriority } from "@/prisma/generated/prisma/enums";
 import { TASK_STATUSES as STATUS_ORDER, STATUS_LABELS, STATUS_COLORS, TASK_PRIORITIES } from "@/lib/task-enums";
 import { BoardRow } from "@/components/boards/board-row";
@@ -242,14 +241,6 @@ export default async function BoardsPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        href={`/w/${workspaceId}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
-      >
-        <ArrowLeft size={12} />
-        Back to workspace
-      </Link>
-
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <LayoutList size={16} className="text-accent" />

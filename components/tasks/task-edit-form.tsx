@@ -27,6 +27,7 @@ interface Props {
   tags: { id: string; name: string; color: string | null }[];
   boards: { id: string; name: string }[];
   sprints: { id: string; title: string }[];
+  taskSprints: { id: string; title: string }[];
   workspaceId: string;
   boardId: string;
   authorId: string;
@@ -43,6 +44,7 @@ export function TaskEditForm({
   tags,
   boards,
   sprints,
+  taskSprints,
   workspaceId,
   boardId,
   authorId,
@@ -159,11 +161,23 @@ export function TaskEditForm({
           {state?.success && <div className="alert-success">Task updated.</div>}
           {state?.error && <div className="alert-error">{state.error}</div>}
 
-          <input
+          <textarea
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+            ref={(el) => {
+              if (el) {
+                el.style.height = "auto";
+                el.style.height = `${el.scrollHeight}px`;
+              }
+            }}
             required
-            className="block w-full rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
+            rows={1}
+            className="block w-full resize-none overflow-hidden rounded-md border border-border bg-bg-primary px-3 py-2 font-mono text-base font-semibold leading-snug text-fg-primary transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
 
           <DescriptionField value={description} onChange={setDescription} />
@@ -259,6 +273,7 @@ export function TaskEditForm({
           onBoardChange={setSelectedBoardId}
           boards={boards}
           sprints={sprints}
+          taskSprints={taskSprints}
           sprintIds={sprintIds}
           onSprintIdsChange={setSprintIds}
         />

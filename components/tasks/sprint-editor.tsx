@@ -6,11 +6,15 @@ import { Plus, Check } from "lucide-react";
 
 export function SprintEditor({
   sprints,
+  selectedSprints,
   selectedIds,
   onChange,
   workspaceId,
 }: {
+  /** Active sprints — shown in the dropdown for editing */
   sprints: { id: string; title: string }[];
+  /** All sprints currently attached to the task (may include inactive) — shown in the display list */
+  selectedSprints: { id: string; title: string }[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   workspaceId: string;
@@ -21,7 +25,10 @@ export function SprintEditor({
     onChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
   }
 
-  const selected = sprints.filter((s) => selectedIds.includes(s.id));
+  const sprintMap = new Map<string, { id: string; title: string }>();
+  for (const s of selectedSprints) sprintMap.set(s.id, s);
+  for (const s of sprints) sprintMap.set(s.id, s);
+  const selected = selectedIds.map((id) => sprintMap.get(id)).filter((s): s is { id: string; title: string } => Boolean(s));
 
   return (
     <div className="relative">

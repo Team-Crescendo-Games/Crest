@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { LayoutGrid, Users } from "lucide-react";
+import { LayoutGrid, Users, ListChecks } from "lucide-react";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { Logo } from "@/components/common/logo";
 import { SidebarLink } from "./sidebar-link";
@@ -40,7 +40,7 @@ interface SidebarProps {
   workspaces: Workspace[];
 }
 
-const userNavigation = [{ name: "Dashboard", href: "/", icon: LayoutGrid }];
+const userNavigation = [{ name: "My Dashboard", href: "/", icon: LayoutGrid }];
 
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 400;
@@ -139,28 +139,33 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
         </div>
       </div>
 
-      {/* Workspace section */}
-      <div className="flex-1 overflow-y-auto px-2 pt-3">
-        <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-widest text-accent-subtle">Workspace</p>
-
+      {/* Workspace switcher */}
+      <div className="px-2 pt-3 pb-2">
         <WorkspaceSwitcher
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
           activeWorkspaceName={activeWorkspace?.name}
         />
+      </div>
 
+      {/* Divider */}
+      <div className="relative mx-3">
+        <div className="border-t border-border" />
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+          <div className="h-1.5 w-1.5 rounded-full bg-accent-subtle" />
+        </div>
+      </div>
+
+      {/* Workspace navigation */}
+      <div className="flex-1 overflow-y-auto px-2 pt-3">
         {activeWorkspace && (
           <nav className="space-y-0.5">
             <SidebarLink
               href={`/w/${activeWorkspaceId}`}
               icon={LayoutGrid}
-              label="Overview"
+              label="Workspace Overview"
               active={pathname === `/w/${activeWorkspaceId}`}
             />
-
-            <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
-
-            <SprintNav sprints={activeWorkspace.sprints} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
 
             <SidebarLink
               href={`/w/${activeWorkspaceId}/team`}
@@ -168,6 +173,17 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               label="Team"
               active={pathname.startsWith(`/w/${activeWorkspaceId}/team`)}
             />
+
+            <SidebarLink
+              href={`/w/${activeWorkspaceId}/tasks`}
+              icon={ListChecks}
+              label="Tasks"
+              active={pathname.startsWith(`/w/${activeWorkspaceId}/tasks`)}
+            />
+
+            <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
+
+            <SprintNav sprints={activeWorkspace.sprints} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
           </nav>
         )}
       </div>

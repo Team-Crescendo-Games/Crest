@@ -20,4 +20,4 @@ export { addComment, deleteComment } from "./comments";
 
 export { addSubtask, removeSubtask, getSubtasks, getAvailableSubtasks } from "./subtasks";
 
-export { searchWorkspaceTasks, getFlowGraphTasks, loadMyColumnTasks } from "./search";
+export { searchWorkspaceTasks, getFlowGraphTasks, loadMyColumnTasks, searchWorkspaceTasksList } from "./search";

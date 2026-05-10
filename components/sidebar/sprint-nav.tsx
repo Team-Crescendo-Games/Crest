@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Timer, Eye, EyeOff } from "lucide-react";
+import { ChevronRight, Timer, Eye, EyeOff } from "lucide-react";
 
 interface Sprint {
   id: string;
@@ -34,7 +34,7 @@ export function SprintNav({ sprints, activeWorkspaceId, pathname }: SprintNavPro
           onClick={() => setExpanded(!expanded)}
           className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
         >
-          {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <ChevronRight size={10} className={`transition-transform duration-200 ease-out ${expanded ? "rotate-90" : ""}`} />
         </button>
         <Link
           href={`/w/${activeWorkspaceId}/s`}
@@ -56,30 +56,38 @@ export function SprintNav({ sprints, activeWorkspaceId, pathname }: SprintNavPro
         </button>
       </div>
 
-      {expanded && sprints.filter((s) => showArchived || s.isActive).length > 0 && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-          {sprints
-            .filter((s) => showArchived || s.isActive)
-            .map((sprint) => {
-              const sprintHref = `/w/${activeWorkspaceId}/s/${sprint.id}`;
-              const isSprintActive = pathname.startsWith(sprintHref);
-              return (
-                <Link
-                  key={sprint.id}
-                  href={sprintHref}
-                  className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
-                    isSprintActive
-                      ? "bg-accent/10 text-accent"
-                      : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                  } ${!sprint.isActive ? "italic opacity-60" : ""}`}
-                >
-                  {sprint.title}
-                  {!sprint.isActive && <span className="text-[8px] text-fg-muted">(archived)</span>}
-                </Link>
-              );
-            })}
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out ${
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0">
+          {sprints.filter((s) => showArchived || s.isActive).length > 0 && (
+            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
+              {sprints
+                .filter((s) => showArchived || s.isActive)
+                .map((sprint) => {
+                  const sprintHref = `/w/${activeWorkspaceId}/s/${sprint.id}`;
+                  const isSprintActive = pathname.startsWith(sprintHref);
+                  return (
+                    <Link
+                      key={sprint.id}
+                      href={sprintHref}
+                      className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                        isSprintActive
+                          ? "bg-accent/10 text-accent"
+                          : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
+                      } ${!sprint.isActive ? "italic opacity-60" : ""}`}
+                    >
+                      {sprint.title}
+                      {!sprint.isActive && <span className="text-[8px] text-fg-muted">(archived)</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

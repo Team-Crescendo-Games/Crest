@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { LayoutList, Timer, Users, Tag, Shield, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutGrid, LayoutList, Timer, Tag, Shield, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/workspace/tag-manager";
 import { RoleManager } from "@/components/workspace/role-manager";
@@ -71,36 +71,30 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-mono text-lg font-semibold text-fg-primary">{workspace.name}</h1>
-          {workspace.description && <p className="mt-1 text-xs text-fg-muted">{workspace.description}</p>}
-          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-fg-muted">
-            <span>
-              {workspace._count.members} member
-              {workspace._count.members !== 1 && "s"}
-            </span>
-            <span className="text-border">·</span>
-            <span>{JOIN_POLICY_LABELS[workspace.joinPolicy]}</span>
-            <span className="text-border">·</span>
-            <span className="flex items-center gap-1">
-              <Calendar size={10} />
-              {workspace.createdAt.toLocaleDateString()}
-            </span>
-          </div>
-        </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/w/${workspaceId}/team`}
-            className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
-          >
-            <Users size={12} />
-            Team
-          </Link>
-          <WorkspaceSettingsModal workspace={workspace} canManage={canManage} />
+          <LayoutGrid size={16} className="text-accent" />
+          <h1 className="font-mono text-lg font-semibold text-fg-primary">
+            Overview of <span className="text-accent">{workspace.name}</span>
+          </h1>
         </div>
+        <WorkspaceSettingsModal workspace={workspace} canManage={canManage} />
+      </div>
+      {workspace.description && <p className="mt-1 text-xs text-fg-muted">{workspace.description}</p>}
+      <div className="mt-1 flex items-center gap-3 text-[11px] text-fg-muted">
+        <span>
+          {workspace._count.members} member
+          {workspace._count.members !== 1 && "s"}
+        </span>
+        <span className="text-border">·</span>
+        <span>{JOIN_POLICY_LABELS[workspace.joinPolicy]}</span>
+        <span className="text-border">·</span>
+        <span className="flex items-center gap-1">
+          <Calendar size={10} />
+          {workspace.createdAt.toLocaleDateString()}
+        </span>
       </div>
 
       {/* Boards */}
@@ -122,7 +116,7 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
                   <Link
                     key={board.id}
                     href={`/w/${workspaceId}/b/${board.id}`}
-                    className="group rounded-md border border-accent-subtle/25 bg-accent-subtle/5 p-4 backdrop-blur-sm transition-all hover:border-accent/40 hover:bg-accent-subtle/10"
+                    className="group rounded-md border border-accent-subtle/25 bg-accent-subtle/5 p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:border-accent/40 hover:bg-accent-subtle/10 hover:scale-[1.015]"
                   >
                     <h3 className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">
                       {board.name}
@@ -161,7 +155,7 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
                 <Link
                   key={sprint.id}
                   href={`/w/${workspaceId}/s/${sprint.id}`}
-                  className="group flex items-center justify-between rounded-md border border-border bg-bg-secondary/50 px-4 py-3 backdrop-blur-sm transition-all hover:border-fg-muted/30 hover:bg-bg-secondary"
+                  className="group flex items-center justify-between rounded-md border border-border bg-bg-secondary/50 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-out hover:border-fg-muted/30 hover:bg-bg-secondary hover:scale-[1.005]"
                 >
                   <div>
                     <p className="font-mono text-sm font-medium text-fg-primary transition-colors group-hover:text-accent">

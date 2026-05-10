@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, LayoutList, Eye, EyeOff } from "lucide-react";
+import { ChevronRight, LayoutList, Eye, EyeOff } from "lucide-react";
 
 interface Board {
   id: string;
@@ -35,7 +35,7 @@ export function BoardNav({ boards, activeWorkspaceId, pathname }: BoardNavProps)
           onClick={() => setExpanded(!expanded)}
           className="cursor-pointer shrink-0 rounded p-0.5 text-fg-muted hover:text-fg-secondary"
         >
-          {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <ChevronRight size={10} className={`transition-transform duration-200 ease-out ${expanded ? "rotate-90" : ""}`} />
         </button>
         <Link
           href={boardsHref}
@@ -57,30 +57,38 @@ export function BoardNav({ boards, activeWorkspaceId, pathname }: BoardNavProps)
         </button>
       </div>
 
-      {expanded && boards.filter((b) => showArchived || b.isActive).length > 0 && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
-          {boards
-            .filter((b) => showArchived || b.isActive)
-            .map((board) => {
-              const boardHref = `/w/${activeWorkspaceId}/b/${board.id}`;
-              const isBoardActive = pathname.startsWith(boardHref);
-              return (
-                <Link
-                  key={board.id}
-                  href={boardHref}
-                  className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
-                    isBoardActive
-                      ? "bg-accent/10 text-accent"
-                      : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
-                  } ${!board.isActive ? "italic opacity-60" : ""}`}
-                >
-                  {board.name}
-                  {!board.isActive && <span className="text-[8px] text-fg-muted">(archived)</span>}
-                </Link>
-              );
-            })}
+      <div
+        className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out ${
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0">
+          {boards.filter((b) => showArchived || b.isActive).length > 0 && (
+            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border-subtle pl-2">
+              {boards
+                .filter((b) => showArchived || b.isActive)
+                .map((board) => {
+                  const boardHref = `/w/${activeWorkspaceId}/b/${board.id}`;
+                  const isBoardActive = pathname.startsWith(boardHref);
+                  return (
+                    <Link
+                      key={board.id}
+                      href={boardHref}
+                      className={`flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors ${
+                        isBoardActive
+                          ? "bg-accent/10 text-accent"
+                          : "text-fg-muted hover:bg-bg-secondary/40 hover:text-fg-secondary"
+                      } ${!board.isActive ? "italic opacity-60" : ""}`}
+                    >
+                      {board.name}
+                      {!board.isActive && <span className="text-[8px] text-fg-muted">(archived)</span>}
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -611,7 +611,7 @@ export function SprintTimeline({
                               )}
                               <Link
                                 href={`/w/${workspaceId}/b/${boardId}/t/${task.id}`}
-                                className="block min-w-0 flex-1 truncate text-xs text-fg-primary hover:text-accent"
+                                className="block min-w-0 flex-1 truncate text-[11px] text-fg-primary hover:text-accent"
                               >
                                 {task.title}
                               </Link>
