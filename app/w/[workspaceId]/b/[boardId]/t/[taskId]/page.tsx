@@ -135,6 +135,7 @@ export default async function TaskDetailPage({
           tags={allTags}
           boards={boards}
           sprints={sprints}
+          taskSprints={task.sprints}
           workspaceId={workspaceId}
           boardId={boardId}
           authorId={task.author.id}

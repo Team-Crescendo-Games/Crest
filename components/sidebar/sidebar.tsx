@@ -158,16 +158,16 @@ export function Sidebar({ user, workspaces }: SidebarProps) {
               active={pathname === `/w/${activeWorkspaceId}`}
             />
 
-            <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
-
-            <SprintNav sprints={activeWorkspace.sprints} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
-
             <SidebarLink
               href={`/w/${activeWorkspaceId}/team`}
               icon={Users}
               label="Team"
               active={pathname.startsWith(`/w/${activeWorkspaceId}/team`)}
             />
+
+            <BoardNav boards={activeWorkspace.boards} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
+
+            <SprintNav sprints={activeWorkspace.sprints} activeWorkspaceId={activeWorkspaceId!} pathname={pathname} />
           </nav>
         )}
       </div>

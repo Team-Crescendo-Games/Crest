@@ -32,6 +32,7 @@ export interface TaskEditSidebarProps {
   onBoardChange: (v: string) => void;
   boards: { id: string; name: string }[];
   sprints: { id: string; title: string }[];
+  taskSprints: { id: string; title: string }[];
   sprintIds: string[];
   onSprintIdsChange: (ids: string[]) => void;
 }
@@ -61,6 +62,7 @@ export function TaskEditSidebar({
   onBoardChange,
   boards,
   sprints,
+  taskSprints,
   sprintIds,
   onSprintIdsChange,
 }: TaskEditSidebarProps) {
@@ -141,6 +143,7 @@ export function TaskEditSidebar({
       <SidebarBlock label="Sprints">
         <SprintEditor
           sprints={sprints}
+          selectedSprints={taskSprints}
           selectedIds={sprintIds}
           onChange={onSprintIdsChange}
           workspaceId={workspaceId}

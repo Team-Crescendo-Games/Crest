@@ -27,6 +27,7 @@ interface Props {
   tags: { id: string; name: string; color: string | null }[];
   boards: { id: string; name: string }[];
   sprints: { id: string; title: string }[];
+  taskSprints: { id: string; title: string }[];
   workspaceId: string;
   boardId: string;
   authorId: string;
@@ -43,6 +44,7 @@ export function TaskEditForm({
   tags,
   boards,
   sprints,
+  taskSprints,
   workspaceId,
   boardId,
   authorId,
@@ -259,6 +261,7 @@ export function TaskEditForm({
           onBoardChange={setSelectedBoardId}
           boards={boards}
           sprints={sprints}
+          taskSprints={taskSprints}
           sprintIds={sprintIds}
           onSprintIdsChange={setSprintIds}
         />
