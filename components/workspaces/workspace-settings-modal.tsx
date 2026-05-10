@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Settings } from "lucide-react";
 import { Modal } from "@/components/common/modal";
+import { Tooltip } from "@/components/common/tooltip";
 import { WorkspaceSettingsForm } from "@/components/workspaces/settings-form";
 
 interface WorkspaceProps {
@@ -24,14 +25,16 @@ export function WorkspaceSettingsModal({ workspace, canManage }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
-      >
-        <Settings size={12} />
-        Settings
-      </button>
+      <Tooltip label="Workspace settings">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Workspace settings"
+          className="cursor-pointer rounded p-1.5 text-fg-muted transition-colors hover:text-fg-secondary"
+        >
+          <Settings size={13} />
+        </button>
+      </Tooltip>
 
       <Modal
         open={open}

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, Mail, ClipboardList } from "lucide-react";
+import { Users, Mail, ClipboardList } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { getLeaveWarning } from "@/lib/actions/workspace";
 import { InviteSection } from "@/components/team/invite-section";
@@ -71,14 +71,6 @@ export default async function WorkspaceTeamPage({ params }: { params: Promise<{ 
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link
-        href={`/w/${workspaceId}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
-      >
-        <ArrowLeft size={12} />
-        Back to workspace
-      </Link>
-
       <div className="flex items-center gap-2">
         <Users size={16} className="text-accent" />
         <h1 className="font-mono text-lg font-semibold text-fg-primary">Team</h1>

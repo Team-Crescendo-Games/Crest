@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Timer } from "lucide-react";
+import { Timer } from "lucide-react";
 import { SprintRow } from "@/components/sprints/sprint-row";
 import { SprintExtras } from "@/components/sprints/sprint-actions";
 import { TaskFilters } from "@/components/tasks/task-filters";
@@ -224,14 +223,6 @@ export default async function SprintsPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        href={`/w/${workspaceId}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg-secondary"
-      >
-        <ArrowLeft size={12} />
-        Back to workspace
-      </Link>
-
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <Timer size={16} className="text-accent" />

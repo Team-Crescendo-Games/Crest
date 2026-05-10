@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { LayoutList, Timer, Users, Tag, Shield, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutList, Timer, Tag, Shield, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { hasPermission, getEffectivePermissions, Permission } from "@/lib/permissions";
 import { TagManager } from "@/components/workspace/tag-manager";
 import { RoleManager } from "@/components/workspace/role-manager";
@@ -92,13 +92,6 @@ export default async function WorkspaceOverviewPage({ params, searchParams }: Pr
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/w/${workspaceId}/team`}
-            className="flex items-center gap-1.5 rounded-md bg-bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-fg-secondary transition-colors hover:text-fg-primary"
-          >
-            <Users size={12} />
-            Team
-          </Link>
           <WorkspaceSettingsModal workspace={workspace} canManage={canManage} />
         </div>
       </div>
