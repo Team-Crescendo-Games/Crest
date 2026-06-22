@@ -333,6 +333,7 @@ export default async function DashboardPage({
             columnPageSizes={columnPageSizes}
             filters={dashboardFilters}
             workspaces={workspaceOptions}
+            currentUserId={userId}
           />
         )}
       </div>

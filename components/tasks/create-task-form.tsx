@@ -247,7 +247,7 @@ export function DuplicateTaskFormModal({
    Shared modal used by both Create and Duplicate flows
    ═══════════════════════════════════════════════════════════════════════════ */
 
-function TaskFormModal({
+export function TaskFormModal({
   workspaceId,
   boardId,
   boards,
@@ -261,6 +261,9 @@ function TaskFormModal({
   onClose,
   mode,
   titleOverride,
+  headerSlot,
+  loadingExtras = false,
+  resetKey,
 }: {
   workspaceId: string;
   boardId?: string;
@@ -275,6 +278,16 @@ function TaskFormModal({
   onClose: () => void;
   mode: "create" | "duplicate";
   titleOverride?: string;
+  /** Optional content rendered above the board picker (e.g. a workspace selector). */
+  headerSlot?: React.ReactNode;
+  /** When true, workspace-specific fields (sprint/assignees/tags) show a loading placeholder. */
+  loadingExtras?: boolean;
+  /**
+   * When this value changes, the assignee/tag/sprint selections re-sync to `defaults`.
+   * Used by the dashboard to apply newly-loaded workspace data (e.g. default assignee)
+   * without remounting the form and discarding a half-typed title.
+   */
+  resetKey?: string;
 }) {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(defaults.assigneeIds ?? []);
   const [selectedTags, setSelectedTags] = useState<string[]>(defaults.tagIds ?? []);
@@ -282,7 +295,22 @@ function TaskFormModal({
   const [priority, setPriority] = useState<TaskPriority>((defaults.priority as TaskPriority) ?? "NONE");
   const [status, setStatus] = useState<TaskStatus>((defaults.status as TaskStatus) ?? "NOT_STARTED");
 
-  const showBoardPicker = !boardId && boards && boards.length > 0;
+  // Re-sync collection selections when the caller signals a reset (dashboard workspace
+  // switch / data load). This uses React's adjust-state-during-render pattern rather than
+  // an effect, so the new defaults apply without an extra render or remounting the form.
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== undefined && resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
+    setSelectedAssignees(defaults.assigneeIds ?? []);
+    setSelectedTags(defaults.tagIds ?? []);
+    setSelectedSprint(defaults.sprintId ?? "");
+  }
+
+  // "Board selection mode" = caller passes a boards list instead of a fixed boardId.
+  const boardSelectionMode = !boardId && boards !== undefined;
+  const showBoardPicker = boardSelectionMode && boards.length > 0;
+  // Only treat an empty board list as "no boards" once loading has settled.
+  const noBoards = boardSelectionMode && boards.length === 0 && !loadingExtras;
   const isDuplicate = mode === "duplicate";
 
   return (
@@ -318,11 +346,16 @@ function TaskFormModal({
         </div>
       )}
 
+      {/* Optional header content (e.g. workspace selector on the dashboard) */}
+      {headerSlot}
+
       {/* Board picker */}
       {showBoardPicker && (
         <div>
           <label className="block text-[11px] font-medium text-fg-muted">Board</label>
           <select
+            // Re-key on resetKey so the default board re-applies when the workspace changes.
+            key={resetKey ?? "board"}
             name="boardId"
             required
             defaultValue={boards[0]?.id}
@@ -335,6 +368,10 @@ function TaskFormModal({
             ))}
           </select>
         </div>
+      )}
+
+      {noBoards && (
+        <p className="text-[11px] text-fg-muted">No boards in this workspace. Create a board first.</p>
       )}
 
       {/* Title */}
@@ -395,44 +432,52 @@ function TaskFormModal({
         />
       </div>
 
-      {/* Sprint picker */}
-      {sprints && sprints.length > 0 && (
-        <SprintDropdown sprints={sprints} value={selectedSprint} onChange={setSelectedSprint} />
-      )}
+      {loadingExtras ? (
+        <p className="text-[11px] text-fg-muted animate-pulse">Loading workspace data…</p>
+      ) : (
+        <>
+          {/* Sprint picker */}
+          {sprints && sprints.length > 0 && (
+            <SprintDropdown sprints={sprints} value={selectedSprint} onChange={setSelectedSprint} />
+          )}
 
-      {/* Assignee picker */}
-      {members && members.length > 0 && (
-        <AssigneePicker members={members} selectedIds={selectedAssignees} onChange={setSelectedAssignees} />
-      )}
+          {/* Assignee picker */}
+          {members && members.length > 0 && (
+            <AssigneePicker members={members} selectedIds={selectedAssignees} onChange={setSelectedAssignees} />
+          )}
 
-      {/* Tag picker */}
-      {tags && tags.length > 0 && (
-        <div>
-          <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {tags.map((tag) => {
-              const color = tag.color ?? "#6B7280";
-              const isSelected = selectedTags.includes(tag.id);
-              return (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() =>
-                    setSelectedTags((prev) => (isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]))
-                  }
-                  className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105"
-                  style={{
-                    borderColor: color + (isSelected ? "80" : "40"),
-                    color: isSelected ? "#fff" : color,
-                    backgroundColor: isSelected ? color : color + "15",
-                  }}
-                >
-                  {tag.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          {/* Tag picker */}
+          {tags && tags.length > 0 && (
+            <div>
+              <label className="block text-[11px] font-medium text-fg-muted">Tags</label>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {tags.map((tag) => {
+                  const color = tag.color ?? "#6B7280";
+                  const isSelected = selectedTags.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedTags((prev) =>
+                          isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id],
+                        )
+                      }
+                      className="cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all hover:scale-105"
+                      style={{
+                        borderColor: color + (isSelected ? "80" : "40"),
+                        color: isSelected ? "#fff" : color,
+                        backgroundColor: isSelected ? color : color + "15",
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex justify-end gap-2 border-t border-border pt-3">
@@ -445,7 +490,7 @@ function TaskFormModal({
         </button>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || noBoards || (boardSelectionMode && loadingExtras)}
           className="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs font-medium text-bg-primary hover:bg-accent-emphasis disabled:opacity-50"
         >
           {pending ? "Creating..." : isDuplicate ? "Create Duplicate" : "Create"}
@@ -569,7 +614,7 @@ function StatusSelect({ value, onChange }: { value: TaskStatus; onChange: (v: Ta
 
 /* ─── Priority dropdown ───────────────────────────────────────────────── */
 
-function PrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
+export function PrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v: TaskPriority) => void }) {
   const [open, setOpen] = useState(false);
   const color = PRIORITY_COLORS[value];
 
@@ -622,7 +667,7 @@ function PrioritySelect({ value, onChange }: { value: TaskPriority; onChange: (v
 
 /* ─── Sprint dropdown ─────────────────────────────────────────────────── */
 
-function SprintDropdown({
+export function SprintDropdown({
   sprints,
   value,
   onChange,
