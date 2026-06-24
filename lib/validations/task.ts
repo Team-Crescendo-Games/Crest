@@ -41,7 +41,9 @@ export const updateTaskSchema = z.object({
 
 export const updateTaskStatusSchema = z.object({
   taskId: z.string().min(1),
-  workspaceId: z.string().min(1),
+  // Optional: callers like the dashboard don't know the workspace up-front.
+  // The action resolves the real workspace from the task itself.
+  workspaceId: z.string().optional().default(""),
   status: z.nativeEnum(TaskStatus),
 });
 

@@ -35,12 +35,14 @@ export function DashboardKanban({
   columnPageSizes,
   filters,
   workspaces,
+  currentUserId,
 }: {
   columns: Column[];
   columnCounts: Record<string, number>;
   columnPageSizes: Record<string, number>;
   filters?: DashboardFilters;
   workspaces?: WorkspaceOption[];
+  currentUserId?: string;
 }) {
   const loadPage = useCallback(
     async (status: string, offset: number, limit: number) => {
@@ -52,7 +54,14 @@ export function DashboardKanban({
 
   const renderCreateButton =
     workspaces && workspaces.length > 0
-      ? (status: string) => <DashboardCreateTask workspaces={workspaces} defaultStatus={status} compact />
+      ? (status: string) => (
+          <DashboardCreateTask
+            workspaces={workspaces}
+            defaultStatus={status}
+            currentUserId={currentUserId}
+            compact
+          />
+        )
       : undefined;
 
   return (

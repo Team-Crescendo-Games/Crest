@@ -518,8 +518,10 @@ export async function updateTaskStatus(_prev: unknown, formData: FormData) {
     });
   }
 
-  revalidatePath(`/w/${workspaceId}/b/${info.task.boardId}`);
-  revalidatePath(`/w/${workspaceId}/b`);
+  // Use the resolved workspace, since callers (e.g. dashboard) may not pass one.
+  const wsId = workspaceId || info.workspaceId;
+  revalidatePath(`/w/${wsId}/b/${info.task.boardId}`);
+  revalidatePath(`/w/${wsId}/b`);
   return { success: true };
 }
 
