@@ -44,6 +44,7 @@ export function SprintViews({
   hasTimeline,
   boards,
   canCreate,
+  assigneeId,
   members,
   tags,
   columnCounts,
@@ -60,6 +61,8 @@ export function SprintViews({
   hasTimeline: boolean;
   boards: { id: string; name: string }[];
   canCreate: boolean;
+  /** Pre-selected assignee for newly created tasks (standup mode focus). */
+  assigneeId?: string;
   members?: {
     id: string;
     name: string | null;
@@ -155,6 +158,7 @@ export function SprintViews({
           workspaceId={workspaceId}
           canCreate={canCreate}
           boards={boards}
+          assigneeId={assigneeId}
           sprintId={sprintId}
           members={members}
           tags={tags}

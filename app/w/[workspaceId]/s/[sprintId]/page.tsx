@@ -89,6 +89,10 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
 
   const hasTaskFilter = Object.keys(taskWhere).length > 0;
 
+  // Standup mode narrows to exactly one member — new tasks default to that person.
+  const focusedAssigneeId =
+    assigneeFilters.length === 1 && assigneeFilters[0] !== "unassigned" ? assigneeFilters[0] : undefined;
+
   const taskInclude = {
     author: { select: { name: true } },
     assignees: { select: { id: true, name: true, image: true } },
@@ -448,6 +452,7 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
           hasTimeline={!!sprint.startDate && !!sprint.endDate}
           boards={boards}
           canCreate={canEdit}
+          assigneeId={focusedAssigneeId}
           members={members.map((m) => m.user)}
           tags={tags}
           columnCounts={columnCounts}
