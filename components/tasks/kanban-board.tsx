@@ -6,11 +6,14 @@ import { updateTaskStatus } from "@/lib/actions/task";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
 import { TaskCard } from "@/components/tasks/task-card";
 import type { TaskCardData } from "@/lib/types/task";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import type { SortOption } from "@/lib/task-enums";
 import { useColumnPagination } from "@/components/tasks/use-column-pagination";
 
 const DEFAULT_PAGE_SIZE = 5;
+
+/** Tasks in this status are hidden until the user opts in. */
+const COLLAPSED_STATUS = "COMPLETED";
 
 interface Column {
   status: string;
@@ -114,6 +117,8 @@ export function KanbanBoard({
   // Track which task is hovered to highlight its subtasks
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
 
+  const [showCompleted, setShowCompleted] = useState(false);
+
   // Build a set of subtask IDs for the currently hovered task
   const highlightedIds = useMemo(() => {
     if (!hoveredTaskId) return new Set<string>();
@@ -181,12 +186,15 @@ export function KanbanBoard({
       <div className={`grid gap-4 lg:grid-cols-4 ${isPending ? "opacity-70" : ""}`}>
         {localColumns.map((column) => {
           const colState = paginationState[column.status];
-          const hasPagination = !!colState;
+          const isCollapsible = column.status === COLLAPSED_STATUS;
+          const isCollapsed = isCollapsible && !showCompleted;
+          const hasPagination = !!colState && !isCollapsed;
           const currentPage = colState?.page ?? 1;
           const isPageLoading = colState?.isLoading ?? false;
           const pageSize = effectivePageSizes[column.status] ?? DEFAULT_PAGE_SIZE;
           const totalCount = effectiveCounts[column.status] ?? column.tasks.length;
           const totalPages = hasPagination ? Math.ceil(totalCount / pageSize) : 1;
+          const visibleTasks = isCollapsed ? [] : column.tasks;
 
           return (
             <div key={column.status} className="rounded-lg p-2" style={{ backgroundColor: column.color + "08" }}>
@@ -244,7 +252,7 @@ export function KanbanBoard({
                       snapshot.isDraggingOver ? "bg-accent/5 ring-1 ring-accent/20" : ""
                     } ${isPageLoading ? "opacity-50" : ""}`}
                   >
-                    {column.tasks.map((task, index) => (
+                    {visibleTasks.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided, snapshot) => (
                           <div
@@ -267,12 +275,31 @@ export function KanbanBoard({
                     ))}
                     {provided.placeholder}
 
-                    {column.tasks.length === 0 && !snapshot.isDraggingOver && (
+                    {visibleTasks.length === 0 && !isCollapsed && !snapshot.isDraggingOver && (
                       <p className="py-4 text-center text-[11px] text-fg-muted">No tasks</p>
                     )}
                   </div>
                 )}
               </Droppable>
+
+              {isCollapsible && totalCount > 0 && (
+                <button
+                  onClick={() => setShowCompleted((prev) => !prev)}
+                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-dashed border-border py-1.5 text-[11px] text-fg-muted transition-colors hover:border-accent/30 hover:text-fg-secondary"
+                >
+                  {showCompleted ? (
+                    <>
+                      <ChevronUp size={12} />
+                      Hide completed
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={12} />
+                      Load {totalCount} completed
+                    </>
+                  )}
+                </button>
+              )}
 
               {/* Page pagination at the bottom of paginated columns */}
               {hasPagination && (
