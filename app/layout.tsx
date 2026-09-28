@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { GridBackground } from "@/components/common/grid-background";
+import { redirect } from "next/navigation";
 import { getSession } from "@/lib/cached-auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/sidebar";
@@ -30,32 +31,44 @@ export default async function RootLayout({
   const session = await getSession();
 
   if (session?.user) {
-    const memberships = await prisma.workspaceMember.findMany({
-      where: { userId: session.user.id! },
-      include: {
-        workspace: {
+    // Single query for both the sidebar shell data and the user's own
+    // name/email/image, so the session callback needs no DB round trip.
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id! },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        memberships: {
           select: {
-            id: true,
-            name: true,
-            boards: {
-              select: { id: true, name: true, isActive: true },
-              orderBy: { displayOrder: "asc" },
-            },
-            sprints: {
+            workspace: {
               select: {
                 id: true,
-                title: true,
-                isActive: true,
-                startDate: true,
+                name: true,
+                boards: {
+                  select: { id: true, name: true, isActive: true },
+                  orderBy: { displayOrder: "asc" },
+                },
+                sprints: {
+                  select: {
+                    id: true,
+                    title: true,
+                    isActive: true,
+                    startDate: true,
+                  },
+                  orderBy: { startDate: "desc" },
+                },
               },
-              orderBy: { startDate: "desc" },
             },
           },
+          orderBy: { joinedAt: "desc" },
         },
       },
-      orderBy: { joinedAt: "desc" },
     });
-    const workspaces = memberships.map((m) => m.workspace);
+
+    if (!user) redirect("/sign-in");
+
+    const workspaces = user.memberships.map((m) => m.workspace);
 
     return (
       <html
@@ -68,7 +81,7 @@ export default async function RootLayout({
             <GridBackground />
             <div className="relative z-10">
               <div className="flex min-h-screen">
-                <Sidebar user={session.user} workspaces={workspaces} />
+                <Sidebar user={user} workspaces={workspaces} />
                 <main className="flex-1 overflow-y-auto p-8">{children}</main>
               </div>
             </div>

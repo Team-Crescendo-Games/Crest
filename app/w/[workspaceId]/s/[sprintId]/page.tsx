@@ -115,42 +115,25 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
     ...taskWhere,
   };
 
-  const [sprint, allSprintTasks, countsByStatus, totalTaskCount, tags, members, unassignedTasks, boards] =
+  const [sprint, allSprintTasks, totalTaskCount, filteredCompletedCount, tags, members, unassignedTasks, boards] =
     await Promise.all([
-      prisma.sprint.findUnique({
-        where: { id: sprintId },
-        include: {
-          tasks: {
-            select: {
-              id: true,
-              status: true,
-              startDate: true,
-              dueDate: true,
-              createdAt: true,
-              title: true,
-              description: true,
-              priority: true,
-              boardId: true,
-              parentTaskId: true,
-            },
-            where: hasTaskFilter ? taskWhere : undefined,
-            orderBy: { createdAt: "desc" },
-          },
-        },
-      }),
+      prisma.sprint.findUnique({ where: { id: sprintId } }),
       prisma.task.findMany({
         where: sprintTaskWhere,
         orderBy,
         include: taskInclude,
       }),
-      prisma.task.groupBy({
-        by: ["status"],
-        where: sprintTaskWhere,
-        _count: true,
-      }),
       prisma.task.count({
         where: { sprints: { some: { id: sprintId } } },
       }),
+      hasTaskFilter
+        ? prisma.task.count({
+            where: {
+              sprints: { some: { id: sprintId } },
+              status: "COMPLETED",
+            },
+          })
+        : Promise.resolve(null),
       prisma.tag.findMany({
         where: { workspaceId },
         select: { id: true, name: true, color: true },
@@ -186,91 +169,32 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
 
   if (!sprint || sprint.workspaceId !== workspaceId) notFound();
 
-  const tasksByStatusRaw: Record<string, typeof allSprintTasks> = {};
-  for (const task of allSprintTasks) {
-    const list = (tasksByStatusRaw[task.status] ??= []);
-    list.push(task);
-  }
-
-  const statusPageSizes: Record<string, number> = {
-    NOT_STARTED: PAGE_SIZE_DEFAULT,
-    IN_PROGRESS: PAGE_SIZE_DEFAULT,
-    IN_REVIEW: PAGE_SIZE_DEFAULT,
-    COMPLETED: PAGE_SIZE_COMPLETED,
-  };
-
-  const notStartedTasks = (tasksByStatusRaw["NOT_STARTED"] ?? []).slice(0, statusPageSizes["NOT_STARTED"]);
-  const inProgressTasks = (tasksByStatusRaw["IN_PROGRESS"] ?? []).slice(0, statusPageSizes["IN_PROGRESS"]);
-  const inReviewTasks = (tasksByStatusRaw["IN_REVIEW"] ?? []).slice(0, statusPageSizes["IN_REVIEW"]);
-  const completedTasks = (tasksByStatusRaw["COMPLETED"] ?? []).slice(0, statusPageSizes["COMPLETED"]);
-
-  const countMap: Record<string, number> = {};
-  for (const row of countsByStatus) {
-    countMap[row.status] = row._count;
-  }
-  const notStartedCount = countMap["NOT_STARTED"] ?? 0;
-  const inProgressCount = countMap["IN_PROGRESS"] ?? 0;
-  const inReviewCount = countMap["IN_REVIEW"] ?? 0;
-  const completedCount = countMap["COMPLETED"] ?? 0;
-
-  // For completion stats, we need unfiltered completed count
-  let totalCompletedCount: number;
-  if (hasTaskFilter) {
-    totalCompletedCount = await prisma.task.count({
-      where: {
-        sprints: { some: { id: sprintId } },
-        status: "COMPLETED",
-      },
-    });
-  } else {
-    totalCompletedCount = completedCount;
-  }
-
   const effectivePerms = getEffectivePermissions(membership.role.permissions, userId, membership.workspace.createdById);
   const canEdit = hasPermission(effectivePerms, Permission.EDIT_CONTENT);
 
-  const mapTask = (t: Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number]) => ({
-    ...t,
-    boardId: t.board.id,
-    commentCount: t._count.comments,
-    subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
-    subtaskTotal: t.subtasks.length,
-    subtaskCompleted: t.subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
-  });
+  const mapTask = (t: Awaited<ReturnType<typeof prisma.task.findMany<{ include: typeof taskInclude }>>>[number]) => {
+    const { _count, subtasks, ...rest } = t;
+    return {
+      ...rest,
+      boardId: t.board.id,
+      commentCount: _count.comments,
+      subtaskIds: subtasks.map((s: { id: string }) => s.id),
+      subtaskTotal: subtasks.length,
+      subtaskCompleted: subtasks.filter((s: { status: string }) => s.status === "COMPLETED").length,
+    };
+  };
 
   type MappedTask = ReturnType<typeof mapTask>;
 
-  const tasksByStatus: Record<string, MappedTask[]> = {
-    NOT_STARTED: (notStartedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
-    IN_PROGRESS: (inProgressTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
-    IN_REVIEW: (inReviewTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
-    COMPLETED: (completedTasks as Parameters<typeof mapTask>[0][]).map(mapTask),
-  };
+  // Map each task exactly once. The kanban slices, list view and timeline all
+  // hold the same object references, so the RSC payload carries one copy.
+  const allTasksByStatus: Record<string, MappedTask[]> = {};
+  for (const task of allSprintTasks) {
+    (allTasksByStatus[task.status] ??= []).push(mapTask(task));
+  }
 
   // Re-sort by priority in memory if needed (Prisma sorts enum alphabetically)
   const prioritySort = sorts.find((s) => s.field === "priority");
-  if (prioritySort) {
-    for (const tasks of Object.values(tasksByStatus)) {
-      tasks.sort((a, b) => {
-        const aOrder = PRIORITY_ORDER[a.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        const bOrder = PRIORITY_ORDER[b.priority as keyof typeof PRIORITY_ORDER] ?? 99;
-        return prioritySort.direction === "asc" ? aOrder - bOrder : bOrder - aOrder;
-      });
-    }
-  }
-
-  const columns = STATUS_ORDER.map((status) => ({
-    status,
-    label: STATUS_LABELS[status],
-    color: STATUS_COLORS[status],
-    tasks: tasksByStatus[status] ?? [],
-  }));
-
-  // Full (unsliced) columns for the list view
-  const allTasksByStatus: Record<string, MappedTask[]> = {};
-  for (const status of STATUS_ORDER) {
-    allTasksByStatus[status] = ((tasksByStatusRaw[status] ?? []) as Parameters<typeof mapTask>[0][]).map(mapTask);
-  }
   if (prioritySort) {
     for (const tasks of Object.values(allTasksByStatus)) {
       tasks.sort((a, b) => {
@@ -280,19 +204,6 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
       });
     }
   }
-  const allColumns = STATUS_ORDER.map((status) => ({
-    status,
-    label: STATUS_LABELS[status],
-    color: STATUS_COLORS[status],
-    tasks: allTasksByStatus[status] ?? [],
-  }));
-
-  const columnCounts: Record<string, number> = {
-    NOT_STARTED: notStartedCount,
-    IN_PROGRESS: inProgressCount,
-    IN_REVIEW: inReviewCount,
-    COMPLETED: completedCount,
-  };
 
   const columnPageSizes: Record<string, number> = {
     NOT_STARTED: PAGE_SIZE_DEFAULT,
@@ -300,6 +211,25 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
     IN_REVIEW: PAGE_SIZE_DEFAULT,
     COMPLETED: PAGE_SIZE_COMPLETED,
   };
+
+  const allColumns = STATUS_ORDER.map((status) => ({
+    status,
+    label: STATUS_LABELS[status],
+    color: STATUS_COLORS[status],
+    tasks: allTasksByStatus[status] ?? [],
+  }));
+
+  const columns = allColumns.map((c) => ({ ...c, tasks: c.tasks.slice(0, columnPageSizes[c.status]) }));
+
+  const columnCounts: Record<string, number> = {};
+  for (const status of STATUS_ORDER) {
+    columnCounts[status] = allTasksByStatus[status]?.length ?? 0;
+  }
+
+  const timelineTasks = allColumns.flatMap((c) => c.tasks);
+
+  const completedCount = columnCounts["COMPLETED"];
+  const totalCompletedCount = filteredCompletedCount ?? completedCount;
 
   // Timeline
   const now = new Date();
@@ -315,7 +245,7 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
 
   const taskCompletion = totalTaskCount > 0 ? Math.round((totalCompletedCount / totalTaskCount) * 100) : 0;
 
-  const filteredCount = notStartedCount + inProgressCount + inReviewCount + completedCount;
+  const filteredCount = allSprintTasks.length;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -411,7 +341,7 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
           <AssignTaskSection
             sprintId={sprintId}
             workspaceId={workspaceId}
-            assignedTaskIds={sprint.tasks.map((t) => t.id)}
+            assignedTaskIds={allSprintTasks.map((t) => t.id)}
             unassignedTasks={unassignedTasks}
           />
         </div>
@@ -437,14 +367,7 @@ export default async function SprintDetailPage({ params, searchParams }: Props) 
         <SprintViews
           columns={columns}
           allColumns={allColumns}
-          tasks={sprint.tasks.map((t) => ({
-            ...t,
-            author: { name: null },
-            assignees: [],
-            tags: [],
-            board: { id: t.boardId, name: "" },
-            subtaskIds: [],
-          }))}
+          tasks={timelineTasks}
           sprintId={sprintId}
           sprintStart={sprint.startDate}
           sprintEnd={sprint.endDate}
